@@ -1,3 +1,32 @@
+version 3.6.0 / 2020-XX-YY
+
+  libcw:
+
+  - enabling ALSA's configuration of HW period size.
+
+    libcw's ALSA code now tries to configure HW period size to be
+    smaller than in previous versions of code. Normally the period
+    size could be in range of hundreds of frames, now it's possible to
+    have the period size of tens, or low hundreds of frames.
+    
+    Decreased period size should lead to better behaviour of ALSA's
+    writei() function: the function should now properly block during
+    write of samples to ALSA handle in all circumstances.
+
+    Correct blocking behaviour of writei() should lead to correct
+    behaviour of libcw's internal keying mechanism, responsible
+    e.g. for calling keying callbacks registered by programs using
+    libcw (such as cwdaemon). Such callbacks will be now called at
+    proper time intervals that match duration of enqueued
+    dots/dashes/spaces.
+
+    Initial report of incorrect behaviour, initial debugging, and
+    confirmation of a fix come from Matthew M5EVT. Thanks Matthew!
+
+
+----------------------------------------------------------------------------
+    
+
 version 3.5.1 / 2017-02-XX
 
   libcw:

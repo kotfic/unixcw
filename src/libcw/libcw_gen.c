@@ -124,7 +124,7 @@ const unsigned int cw_supported_sample_rates[] = {
 	22050,
 	16000,
 	11025,
-	 8000,
+	 8000, /* This is the lowest value, dictated by value of CW_FREQUENCY_MAX */
 	    0 /* guard */
 };
 
