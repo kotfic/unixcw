@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
- * Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+ * Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -61,6 +61,7 @@
 #include "libcw_debug.h"
 
 #include "test_framework.h"
+#include "test_framework_tools.h"
 
 
 
@@ -1343,6 +1344,9 @@ bool cw_test_sound_system_is_member(__attribute__((unused)) cw_test_executor_t *
 
 int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 {
+	resource_meas_start(&cte->resource_meas);
+
+
 	int set = 0;
 	while (LIBCW_TEST_SET_VALID == test_sets[set].set_valid) {
 
@@ -1381,6 +1385,7 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 						cw_test_set_current_topic_and_sound_system(cte, topic, sound_system);
 						//fprintf(stderr, "+++ %s +++\n", test_set->test_functions[f].name);
 						(*test_set->test_functions[f].fn)(cte);
+						fprintf(stderr, "CPU usage = %6.2f%%\n", resource_meas_get_cpu_usage(&cte->resource_meas));
 					}
 
 					f++;
@@ -1389,6 +1394,8 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 		}
 		set++;
 	}
+
+	resource_meas_stop(&cte->resource_meas);
 
 	return 0;
 }

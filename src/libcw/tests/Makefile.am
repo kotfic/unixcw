@@ -1,5 +1,5 @@
 # Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
-# Copyright (C) 2011-2017  Kamil Ignacak (acerion@wp.pl)
+# Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -27,7 +27,9 @@ LIBCW_BUG_TEST_FILES = \
 
 test_framework_files = \
 	test_framework.c \
-	test_framework.h
+	test_framework.h \
+	test_framework_tools.c \
+	test_framework_tools.h
 
 legacy_api_test_files = \
 	libcw_legacy_api_tests.c \
@@ -71,6 +73,7 @@ libcw_test_legacy_api_SOURCES = \
 	libcw_legacy_api_sets.c \
 	$(LIBCW_BUG_TEST_FILES) \
 	test_framework.c \
+	test_framework_tools.c \
 	test_data.c \
 	test_main.c
 
@@ -93,6 +96,7 @@ libcw_test_all_SOURCES = \
 	test_data.c \
 	test_all_sets.c \
 	test_framework.c \
+	test_framework_tools.c \
 	libcw_utils_tests.c \
 	libcw_data_tests.c \
 	libcw_debug_tests.c \

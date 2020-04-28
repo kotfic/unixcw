@@ -24,6 +24,9 @@
 
 
 
+#include "test_framework_tools.h"
+
+
 
 /* Total width of test name + test status printed in console (without
    ending '\n'). Remember that some consoles have width = 80. Not
@@ -78,6 +81,8 @@ typedef struct cw_test_executor_t {
 	char msg_prefix[32];
 	FILE * stdout;
 	FILE * stderr;
+
+	resource_meas resource_meas;
 
 	suseconds_t random_seed;
 
