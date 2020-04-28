@@ -85,7 +85,7 @@ static const int tq_low_watermark = 1;
 */
 int legacy_api_test_tq_short_space(cw_test_executor_t * cte)
 {
-	const int max = rand() % 10 + 5; /* TODO: this should be a large value that will allow making the test many times. */
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 

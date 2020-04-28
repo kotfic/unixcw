@@ -942,7 +942,7 @@ int legacy_api_test_volume_functions(cw_test_executor_t * cte)
 */
 int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 {
-	const int max = rand() % 30 + 20;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 	legacy_api_cw_single_test_setup();

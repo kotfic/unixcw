@@ -99,6 +99,12 @@ typedef struct cw_test_executor_t {
 	int tested_sound_systems[LIBCW_TEST_SOUND_SYSTEM_MAX + 1];
 	int tested_topics[LIBCW_TEST_TOPIC_MAX + 1];
 
+	/* Whether there should be many test repetitions leading to
+	   longer overall test execution. */
+	bool long_test;
+
+	/* Generator speed, in wpm. */
+	int gen_speed;
 
 
 
@@ -231,6 +237,14 @@ typedef struct cw_test_executor_t {
 	int (* process_args)(struct cw_test_executor_t * self, int argc, char * const argv[]);
 
 
+	/**
+	   \brief Get count of repetitions of a test
+
+	   Get a loop limit for some repeating tests. It may be a
+	   small value for quick tests, or it may be a large value for
+	   long-term tests.
+	 */
+	int (* get_repetitions_count)(struct cw_test_executor_t * self);
 
 
 	/**

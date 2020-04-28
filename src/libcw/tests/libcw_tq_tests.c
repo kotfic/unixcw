@@ -94,7 +94,7 @@ static void gen_destroy(cw_gen_t ** gen)
 */
 int test_cw_tq_new_delete_internal(cw_test_executor_t * cte)
 {
-	const int loop_max = (rand() % 40) + 20;
+	const int loop_max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, loop_max);
 
@@ -158,7 +158,7 @@ int test_cw_tq_new_delete_internal(cw_test_executor_t * cte)
 */
 int test_cw_tq_get_capacity_internal(cw_test_executor_t * cte)
 {
-	const int loop_max = (rand() % 40) + 20;
+	const int loop_max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, loop_max);
 
@@ -395,7 +395,7 @@ int test_cw_tq_length_internal_1(cw_test_executor_t * cte)
 */
 int test_cw_tq_enqueue_dequeue_internal(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 10) + 10;
+	const int max = cte->get_repetitions_count(cte);
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
 	cw_tone_queue_t * tq = cw_tq_new_internal();
@@ -1041,7 +1041,7 @@ int test_cw_tq_enqueue_internal_B(cw_test_executor_t * cte)
 */
 int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 {
-	const int max = rand() % 40 + 10;
+	const int max = cte->get_repetitions_count(cte);
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
 	cw_tone_t tone;
@@ -1119,7 +1119,7 @@ int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 */
 int test_cw_tq_gen_operations_A(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 40) + 20;
+	const int max = cte->get_repetitions_count(cte);
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
 	cw_gen_t * gen = NULL;
@@ -1511,7 +1511,7 @@ struct cw_callback_struct {
 */
 int test_cw_tq_callback(cw_test_executor_t * cte)
 {
-	const int max = rand() % 15 + 10;
+	const int max = cte->get_repetitions_count(cte);
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
 	cw_gen_t * gen = NULL;

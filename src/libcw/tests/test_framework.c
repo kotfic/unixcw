@@ -86,6 +86,7 @@ static void cw_test_print_test_footer(cw_test_executor_t * self, const char * te
 static void cw_test_append_status_string(cw_test_executor_t * self, char * msg_buf, int n, const char * status_string);
 
 static int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[]);
+static int cw_test_get_repetitions_count(cw_test_executor_t * self);
 static int cw_test_fill_default_sound_systems_and_topics(cw_test_executor_t * self);
 
 static void cw_test_print_test_options(cw_test_executor_t * self);
@@ -202,9 +203,10 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 
 	size_t optarg_len = 0;
 	int dest_idx = 0;
+	self->gen_speed = CW_SPEED_INITIAL;
 
 	int opt;
-	while ((opt = getopt(argc, argv, "t:s:n:h")) != -1) {
+	while ((opt = getopt(argc, argv, "t:s:n:lw:h")) != -1) {
 		switch (opt) {
 		case 's':
 			optarg_len = strlen(optarg);
@@ -329,6 +331,17 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 			self->single_test_function_name[sizeof (self->single_test_function_name) - 1] = '\0';
 			break;
 
+		case 'l':
+			self->long_test = true;
+			break;
+
+		case 'w':
+			self->gen_speed = atoi(optarg);
+			if (self->gen_speed < CW_SPEED_MIN || self->gen_speed > CW_SPEED_MAX) {
+				goto help_and_error;
+			}
+			break;
+
 		case 'h':
 			cw_test_print_help(self, argv[0]);
 			exit(EXIT_SUCCESS);
@@ -347,6 +360,19 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 
 
 
+static int cw_test_get_repetitions_count(cw_test_executor_t * self)
+{
+	if (self->long_test) {
+		return (rand() % 40) + 30;
+	} else {
+		return 5;
+	}
+}
+
+
+
+
+
 /**
    @brief Print help text with summary of available command line
    options and their possible values
@@ -356,7 +382,7 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 void cw_test_print_help(__attribute__((unused)) cw_test_executor_t * self, const char * program_name)
 {
 	fprintf(stderr, "\n");
-	fprintf(stderr, "Usage: %s [-s <sound systems>] [-t <topics>] [-n <test function name>]\n\n", program_name);
+	fprintf(stderr, "Usage: %s [-s <sound systems>] [-t <topics>] [-n <test function name>] -l\n\n", program_name);
 	fprintf(stderr, "    <sound system> is one or more of those:\n");
 	fprintf(stderr, "    n - Null\n");
 	fprintf(stderr, "    c - console\n");
@@ -372,6 +398,10 @@ void cw_test_print_help(__attribute__((unused)) cw_test_executor_t * self, const
 	fprintf(stderr, "    o - other\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "    -n argument is used to specify one (and only one) test function to be executed.\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "    -l - long duration of tests, with many repetitions of single test functions.\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "    -w <wpm> - generator speed (WPM) for some generator tests, between %d and %d\n", CW_SPEED_MIN, CW_SPEED_MAX);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "    If no argument is provided, the program will attempt to test all sound systems available on the machine and all topics\n");
 
@@ -1035,6 +1065,8 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 	self->print_test_footer = cw_test_print_test_footer;
 
 	self->process_args = cw_test_process_args;
+
+	self->get_repetitions_count = cw_test_get_repetitions_count;
 
 	self->print_test_options = cw_test_print_test_options;
 

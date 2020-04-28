@@ -47,12 +47,57 @@ extern const char * test_invalid_representations[];
 
 
 
+static int gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen);
+static void gen_destroy(cw_gen_t ** gen);
+
+
+
+
+/**
+
+   \brief Prepare new generator, possibly with parameter values passed through command line
+
+   @reviewed on 2020-04-27
+*/
+static int gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen)
+{
+	*gen = cw_gen_new(cte->current_sound_system, NULL);
+	if (!*gen) {
+		cte->log_error(cte, "Can't create gen, stopping the test\n");
+		return -1;
+	}
+
+	cw_gen_reset_parameters_internal(*gen);
+	cw_gen_sync_parameters_internal(*gen);
+	cw_gen_set_speed(*gen, cte->gen_speed);
+
+	return 0;
+}
+
+
+
+
+/**
+   @reviewed on 2020-04-27
+*/
+void gen_destroy(cw_gen_t ** gen)
+{
+	if (NULL != gen) {
+		if (NULL != *gen) {
+			cw_gen_delete(gen);
+		}
+	}
+}
+
+
+
+
 /**
    @reviewed on 2019-10-08
 */
 int test_cw_gen_new_delete(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 70) + 60;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
@@ -115,7 +160,7 @@ int test_cw_gen_new_delete(cw_test_executor_t * cte)
 */
 int test_cw_gen_new_start_delete(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 70) + 60;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
@@ -162,7 +207,7 @@ int test_cw_gen_new_start_delete(cw_test_executor_t * cte)
 */
 int test_cw_gen_new_stop_delete(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 70) + 60;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
@@ -213,7 +258,7 @@ int test_cw_gen_new_stop_delete(cw_test_executor_t * cte)
 */
 int test_cw_gen_new_start_stop_delete(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 20) + 20;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
@@ -954,11 +999,12 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 */
 int test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 40) + 10;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
-	cw_gen_t * gen = cw_gen_new(cte->current_sound_system, NULL);
+	cw_gen_t * gen = NULL;
+	gen_setup(cte, &gen);
 	cw_gen_start(gen);
 
 	/* Test: sending dot. */
@@ -1025,7 +1071,7 @@ int test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, false, "==", failure, 0, "enqueue eow space internal()");
 	}
 
-	cw_gen_delete(&gen);
+	gen_destroy(&gen);
 
 	cte->print_test_footer(cte, __func__);
 
@@ -1049,7 +1095,8 @@ int test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	   doesn't care about correct mapping of representation to a
 	   character. */
 
-	cw_gen_t * gen = cw_gen_new(cte->current_sound_system, NULL);
+	cw_gen_t * gen = NULL;
+	gen_setup(cte, &gen);
 	cw_gen_start(gen);
 
 	/* Test: sending valid representations. */
@@ -1089,7 +1136,7 @@ int test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
 	cw_nanosleep_internal(&req);
 #endif
-	cw_gen_delete(&gen);
+	gen_destroy(&gen);
 
 	cte->print_test_footer(cte, __func__);
 
@@ -1108,7 +1155,8 @@ int test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
-	cw_gen_t * gen = cw_gen_new(cte->current_sound_system, NULL);
+	cw_gen_t * gen = NULL;
+	gen_setup(cte, &gen);
 	cw_gen_start(gen);
 
 	/* Test: sending all supported characters as individual characters. */
@@ -1154,7 +1202,7 @@ int test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 	}
 
 
-	cw_gen_delete(&gen);
+	gen_destroy(&gen);
 
 	cte->print_test_footer(cte, __func__);
 
@@ -1173,7 +1221,8 @@ int test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
-	cw_gen_t * gen = cw_gen_new(cte->current_sound_system, NULL);
+	cw_gen_t * gen = NULL;
+	gen_setup(cte, &gen);
 	cw_gen_start(gen);
 
 	/* Test: sending all supported characters as single string. */
@@ -1215,7 +1264,7 @@ int test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, false, "==", failure, 0, "enqueue string(<invalid>)");
 	}
 
-	cw_gen_delete(&gen);
+	gen_destroy(&gen);
 
 	cte->print_test_footer(cte, __func__);
 

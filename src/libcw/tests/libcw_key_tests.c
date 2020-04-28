@@ -164,7 +164,7 @@ int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, int intended_dot
 */
 int test_keyer(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 30) + 20;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
@@ -254,7 +254,7 @@ int test_straight_key_helper(cw_test_executor_t * cte, cw_key_t * key, int inten
 */
 int test_straight_key(cw_test_executor_t * cte)
 {
-	const int max = (rand() % 30) + 20;
+	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
