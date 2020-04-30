@@ -181,8 +181,7 @@
 /* Define as 1 if your build machine can support PulseAudio. */
 #undef LIBCW_WITH_PULSEAUDIO
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Name of package */
