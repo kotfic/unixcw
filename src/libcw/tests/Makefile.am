@@ -23,7 +23,8 @@ check_PROGRAMS = libcw_test_legacy_api libcw_test_all
 
 # List of files that implement tests of specific bug fixes.
 LIBCW_BUG_TEST_FILES = \
-	libcw_test_tq_short_space.c
+	libcw_test_tq_short_space.c \
+	libcw_test_tq_short_space.h
 
 test_framework_files = \
 	test_framework.c \
