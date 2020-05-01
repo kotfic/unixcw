@@ -846,7 +846,6 @@ const char *get_dictionary_random_word(const dictionary *dict)
 #ifdef CW_DICTIONARY_UNIT_TESTS
 
 
-#include "tests/libcw_test_framework.h"
 
 
 static unsigned int test_cw_dictionary_check_line(void);
@@ -884,7 +883,7 @@ int main(void)
 
 unsigned int test_cw_dictionary_check_line(void)
 {
-	int p = fprintf(stderr, "dictionary: cw_dictionary_check_line():");
+	fprintf(stderr, "dictionary: cw_dictionary_check_line():");
 
 	/* First test the function giving it strings with some invalid
 	   characters. */
@@ -954,7 +953,7 @@ unsigned int test_cw_dictionary_check_line(void)
 	}
 
 
-	CW_TEST_PRINT_TEST_RESULT(false, p);
+	fprintf(stderr, "dictionary: cw_dictionary_check_line() passed");
 
 	return 0;
 }

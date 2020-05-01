@@ -455,7 +455,8 @@ AC_FUNC_SELECT_ARGTYPES
 
 # Decide on which subdirectories to build; substitute into SRC_SUBDIRS.
 # Build cwcp if curses is available, and xcwcp if Qt is available.
-SRC_SUBDIRS="libcw cwutils cw cwgen"
+# libcw tests depend on static library from cwutils, so cwutils goes first.
+SRC_SUBDIRS="cwutils libcw cw cwgen"
 
 if test "$WITH_CWCP" = 'yes' ; then
     SRC_SUBDIRS="$SRC_SUBDIRS cwcp"

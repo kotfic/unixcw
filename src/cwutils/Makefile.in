@@ -138,6 +138,11 @@ lib_cwgen_a_LIBADD =
 am_lib_cwgen_a_OBJECTS = i18n.$(OBJEXT) cmdline.$(OBJEXT) \
 	memory.$(OBJEXT)
 lib_cwgen_a_OBJECTS = $(am_lib_cwgen_a_OBJECTS)
+lib_libcw_tests_a_AR = $(AR) $(ARFLAGS)
+lib_libcw_tests_a_LIBADD =
+am_lib_libcw_tests_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
+	cmdline.$(OBJEXT) memory.$(OBJEXT)
+lib_libcw_tests_a_OBJECTS = $(am_lib_libcw_tests_a_OBJECTS)
 lib_xcwcp_a_AR = $(AR) $(ARFLAGS)
 lib_xcwcp_a_LIBADD =
 am_lib_xcwcp_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
@@ -193,11 +198,11 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(lib_cw_a_SOURCES) $(lib_cwcp_a_SOURCES) \
-	$(lib_cwgen_a_SOURCES) $(lib_xcwcp_a_SOURCES) \
-	$(cw_dictionary_tests_SOURCES)
+	$(lib_cwgen_a_SOURCES) $(lib_libcw_tests_a_SOURCES) \
+	$(lib_xcwcp_a_SOURCES) $(cw_dictionary_tests_SOURCES)
 DIST_SOURCES = $(lib_cw_a_SOURCES) $(lib_cwcp_a_SOURCES) \
-	$(lib_cwgen_a_SOURCES) $(lib_xcwcp_a_SOURCES) \
-	$(cw_dictionary_tests_SOURCES)
+	$(lib_cwgen_a_SOURCES) $(lib_libcw_tests_a_SOURCES) \
+	$(lib_xcwcp_a_SOURCES) $(cw_dictionary_tests_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -583,11 +588,12 @@ cw_dictionary_tests_CFLAGS = -rdynamic
 # noinst_HEADERS = cmdline.h cw_copyright.h cw_common.h cw_words.h dictionary.h i18n.h memory.h
 
 # convenience libraries
-noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a
+noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a lib_libcw_tests.a
 lib_cw_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h
 lib_cwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
 lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h                         cmdline.c cmdline.h memory.c memory.h
 lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
+lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h
 
 # Test targets; no self-test, but make sure all is built.
 #check: all
@@ -650,6 +656,11 @@ lib_cwgen.a: $(lib_cwgen_a_OBJECTS) $(lib_cwgen_a_DEPENDENCIES) $(EXTRA_lib_cwge
 	$(AM_V_at)-rm -f lib_cwgen.a
 	$(AM_V_AR)$(lib_cwgen_a_AR) lib_cwgen.a $(lib_cwgen_a_OBJECTS) $(lib_cwgen_a_LIBADD)
 	$(AM_V_at)$(RANLIB) lib_cwgen.a
+
+lib_libcw_tests.a: $(lib_libcw_tests_a_OBJECTS) $(lib_libcw_tests_a_DEPENDENCIES) $(EXTRA_lib_libcw_tests_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f lib_libcw_tests.a
+	$(AM_V_AR)$(lib_libcw_tests_a_AR) lib_libcw_tests.a $(lib_libcw_tests_a_OBJECTS) $(lib_libcw_tests_a_LIBADD)
+	$(AM_V_at)$(RANLIB) lib_libcw_tests.a
 
 lib_xcwcp.a: $(lib_xcwcp_a_OBJECTS) $(lib_xcwcp_a_DEPENDENCIES) $(EXTRA_lib_xcwcp_a_DEPENDENCIES) 
 	$(AM_V_at)-rm -f lib_xcwcp.a

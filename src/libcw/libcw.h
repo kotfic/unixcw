@@ -51,6 +51,10 @@ enum cw_audio_systems {
 	CW_AUDIO_SOUNDCARD  /* OSS, ALSA or PulseAudio (PA) */
 };
 
+/* First and last distinct sound system. SOUNDCARD doesn't count as distinct sound system - it is a collective one. */
+#define CW_SOUND_SYSTEM_FIRST CW_AUDIO_NULL
+#define CW_SOUND_SYSTEM_LAST  CW_AUDIO_PA
+
 enum {
 	CW_KEY_STATE_OPEN = 0,  /* key is open, no electrical contact in key, no sound */
 	CW_KEY_STATE_CLOSED     /* key is closed, there is an electrical contact in key, a sound is generated */

@@ -305,17 +305,27 @@ void cw_print_help(cw_config_t *config)
 	}
 
 	fprintf(stderr, "%s", _("Audio system options:\n"));
-	fprintf(stderr, "%s", _("  -s, --system=SYSTEM\n"));
-	fprintf(stderr, "%s", _("        generate sound using SYSTEM audio system\n"));
-	fprintf(stderr, "%s", _("        SYSTEM: {null|console|oss|alsa|pulseaudio|soundcard}\n"));
-	fprintf(stderr, "%s", _("        'null': don't use any sound output\n"));
-	fprintf(stderr, "%s", _("        'console': use system console/buzzer\n"));
-	fprintf(stderr, "%s", _("               this output may require root privileges\n"));
-	fprintf(stderr, "%s", _("        'oss': use OSS output\n"));
-	fprintf(stderr, "%s", _("        'alsa' use ALSA output\n"));
-	fprintf(stderr, "%s", _("        'pulseaudio' use PulseAudio output\n"));
-	fprintf(stderr, "%s", _("        'soundcard': use either PulseAudio, OSS or ALSA\n"));
-	fprintf(stderr, "%s", _("        default sound system: 'pulseaudio'->'oss'->'alsa'\n\n"));
+	if (config->has_feature_libcw_test_specific) {
+		fprintf(stderr, "%s", _("  -S, --test_systems=SYSTEMS\n"));
+		fprintf(stderr, "%s", _("        test one or more of these sound systems:\n"));
+		fprintf(stderr, "%s", _("        n - Null\n"));
+		fprintf(stderr, "%s", _("        c - console\n"));
+		fprintf(stderr, "%s", _("        o - OSS\n"));
+		fprintf(stderr, "%s", _("        a - ALSA\n"));
+		fprintf(stderr, "%s", _("        p - PulseAudio\n"));
+	} else {
+		fprintf(stderr, "%s", _("  -s, --system=SYSTEM\n"));
+		fprintf(stderr, "%s", _("        generate sound using SYSTEM audio system\n"));
+		fprintf(stderr, "%s", _("        SYSTEM: {null|console|oss|alsa|pulseaudio|soundcard}\n"));
+		fprintf(stderr, "%s", _("        'null': don't use any sound output\n"));
+		fprintf(stderr, "%s", _("        'console': use system console/buzzer\n"));
+		fprintf(stderr, "%s", _("               this output may require root privileges\n"));
+		fprintf(stderr, "%s", _("        'oss': use OSS output\n"));
+		fprintf(stderr, "%s", _("        'alsa' use ALSA output\n"));
+		fprintf(stderr, "%s", _("        'pulseaudio' use PulseAudio output\n"));
+		fprintf(stderr, "%s", _("        'soundcard': use either PulseAudio, OSS or ALSA\n"));
+		fprintf(stderr, "%s", _("        default sound system: 'pulseaudio'->'oss'->'alsa'\n\n"));
+	}
 	fprintf(stderr, "%s", _("  -d, --device=DEVICE\n"));
 	fprintf(stderr, "%s", _("        use DEVICE as output device instead of default one;\n"));
 	fprintf(stderr, "%s", _("        optional for {console|oss|alsa|pulseaudio};\n"));
@@ -345,30 +355,71 @@ void cw_print_help(cw_config_t *config)
 	fprintf(stderr,       _("                         valid values: %d - %d\n"), CW_WEIGHTING_MIN, CW_WEIGHTING_MAX);
 	fprintf(stderr,       _("                         default value: %d\n"), CW_WEIGHTING_INITIAL);
 
-	fprintf(stderr, "%s",     _("Other options:\n"));
-	if (config->has_feature_cw_specific) {
-		fprintf(stderr, "%s", _("  -e, --noecho           disable sending echo to stdout\n"));
-		fprintf(stderr, "%s", _("  -m, --nomessages       disable writing messages to stderr\n"));
-		fprintf(stderr, "%s", _("  -c, --nocommands       disable executing embedded commands\n"));
-		fprintf(stderr, "%s", _("  -o, --nocombinations   disallow [...] combinations\n"));
-		fprintf(stderr, "%s", _("  -p, --nocomments       disallow {...} comments\n"));
+	if (config->has_feature_cw_specific
+	    || config->has_feature_practice_time
+	    || config->has_feature_infile
+	    || config->has_feature_outfile
+	    || config->has_feature_cw_specific) {
+
+		fprintf(stderr, "%s",     _("Other options:\n"));
+
+		if (config->has_feature_cw_specific) {
+			fprintf(stderr, "%s", _("  -e, --noecho           disable sending echo to stdout\n"));
+			fprintf(stderr, "%s", _("  -m, --nomessages       disable writing messages to stderr\n"));
+			fprintf(stderr, "%s", _("  -c, --nocommands       disable executing embedded commands\n"));
+			fprintf(stderr, "%s", _("  -o, --nocombinations   disallow [...] combinations\n"));
+			fprintf(stderr, "%s", _("  -p, --nocomments       disallow {...} comments\n"));
+		}
+		if (config->has_feature_practice_time) {
+			fprintf(stderr, "%s", _("  -T, --time=TIME        set initial practice time (in minutes)\n"));
+			fprintf(stderr,       _("                         valid values: %d - %d\n"), CW_PRACTICE_TIME_MIN, CW_PRACTICE_TIME_MAX);
+			fprintf(stderr,       _("                         default value: %d\n"), CW_PRACTICE_TIME_INITIAL);
+		}
+		if (config->has_feature_infile) {
+			fprintf(stderr, "%s", _("  -f, --infile=FILE      read practice words from FILE\n"));
+		}
+		if (config->has_feature_outfile) {
+			fprintf(stderr, "%s", _("  -F, --outfile=FILE     write current practice words to FILE\n"));
+		}
+		/* TODO: this probably should be inside of "if (config->has_feature_infile)". */
+		if (config->has_feature_cw_specific) {
+			fprintf(stderr, "%s", _("                         default file: stdin\n"));
+		}
 	}
-	if (config->has_feature_practice_time) {
-		fprintf(stderr, "%s", _("  -T, --time=TIME        set initial practice time (in minutes)\n"));
-		fprintf(stderr,       _("                         valid values: %d - %d\n"), CW_PRACTICE_TIME_MIN, CW_PRACTICE_TIME_MAX);
-		fprintf(stderr,       _("                         default value: %d\n"), CW_PRACTICE_TIME_INITIAL);
+
+	if (config->has_feature_libcw_test_specific
+	    || config->has_feature_test_repetitions
+	    || config->has_feature_test_name
+	    || config->has_feature_libcw_test_specific) {
+
+		fprintf(stderr, "%s",     _("Options specific to test programs:\n"));
+
+		if (config->has_feature_libcw_test_specific) {
+			fprintf(stderr, "%s", _("  -A, --test_areas=AREAS\n"));
+			fprintf(stderr, "%s", _("        test one or more of these areas:\n"));
+			fprintf(stderr, "%s", _("        g - generator\n"));
+			fprintf(stderr, "%s", _("        t - tone queue\n"));
+			fprintf(stderr, "%s", _("        k - Morse key\n"));
+			fprintf(stderr, "%s", _("        r - receiver\n"));
+			fprintf(stderr, "%s", _("        o - other\n"));
+		}
+		if (config->has_feature_test_repetitions) {
+			fprintf(stderr, "%s", _("  -R, --test_repetitions=N\n"));
+			fprintf(stderr, "%s", _("        repeat each test function N times\n"));
+		}
+		if (config->has_feature_test_name) {
+			fprintf(stderr, "%s", _("  -N, --test_name=NAME\n"));
+			fprintf(stderr, "%s", _("        execute only a test function specified by NAME\n"));
+		}
+
+		if (config->has_feature_libcw_test_specific) {
+			fprintf(stderr, "\n");
+			fprintf(stderr, "%s", _("If no argument is provided, the program will attempt to test all sound systems available on the machine and all topics\n"));
+		}
 	}
-	if (config->has_feature_infile) {
-		fprintf(stderr, "%s", _("  -f, --infile=FILE      read practice words from FILE\n"));
-	}
-	if (config->has_feature_outfile) {
-		fprintf(stderr, "%s", _("  -F, --outfile=FILE     write current practice words to FILE\n"));
-	}
-	/* TODO: this probably should be inside of "if (config->has_feature_infile)". */
-	if (config->has_feature_cw_specific) {
-		fprintf(stderr, "%s", _("                         default file: stdin\n"));
-	}
+
 	fprintf(stderr, "\n");
+	fprintf(stderr, "%s",     _("Help and version information:\n"));
 	fprintf(stderr, "%s", _("  -h, --help             print this message\n"));
 	fprintf(stderr, "%s", _("  -V, --version          print version information\n\n"));
 
@@ -423,12 +474,25 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 	if (config->has_feature_outfile) {
 		append_option(buffer, size, &n, "F:|outfile");
 	}
+
 	if (config->has_feature_cw_specific) {
 		append_option(buffer, size, &n, "e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments");
 	}
 	if (config->has_feature_ui_colors) {
 		append_option(buffer, size, &n, "c:|colours,c:|colors,m|mono");
 	}
+
+	if (config->has_feature_libcw_test_specific) {
+		append_option(buffer, size, &n, "S:|test_systems");
+		append_option(buffer, size, &n, "A:|test_areas");
+	}
+	if (config->has_feature_test_repetitions) {
+		append_option(buffer, size, &n, "R:|test_repetitions");
+	}
+	if (config->has_feature_test_name) {
+		append_option(buffer, size, &n, "N:|test_name");
+	}
+
 	if (true) {
 		append_option(buffer, size, &n, "h|help,V|version");
 	}
@@ -473,6 +537,9 @@ int cw_process_program_arguments(int argc, char *const argv[], cw_config_t *conf
 
 int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 {
+	size_t optarg_len = 0;
+	int dest_idx = 0;
+
 	switch (opt) {
 	case 's':
 		if (!strcmp(optarg, "null")
@@ -635,19 +702,152 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 		break;
 
 	case 'h':
+	case '?':
 		cw_print_help(config);
 		exit(EXIT_SUCCESS);
 	case 'V':
 		fprintf(stderr, _("%s version %s\n"), config->program_name, PACKAGE_VERSION);
 		fprintf(stderr, "%s\n", CW_COPYRIGHT);
 		exit(EXIT_SUCCESS);
-	case '?':
+
+
+
+	case 'S':
+		optarg_len = strlen(optarg);
+		if (optarg_len > strlen(LIBCW_TEST_ALL_SOUND_SYSTEMS)) {
+			fprintf(stderr, "Too many values for 'sound system' option: '%s'\n", optarg);
+			goto help_and_error;
+		}
+
+		dest_idx = 0;
+		for (size_t i = 0; i < optarg_len; i++) {
+			const int val = optarg[i];
+			if (NULL == strchr(LIBCW_TEST_ALL_SOUND_SYSTEMS, val)) {
+				fprintf(stderr, "Unsupported sound system '%c'\n", val);
+				goto help_and_error;
+			}
+
+			/* If user has explicitly requested a sound system,
+			   then we have to fail if the system is not available.
+			   Otherwise we may mislead the user. */
+			switch (val) {
+			case 'n':
+				if (cw_is_null_possible(NULL)) {
+					config->tested_sound_systems[dest_idx] = CW_AUDIO_NULL;
+					dest_idx++;
+				} else {
+					fprintf(stderr, "Requested null sound system is not available on this machine\n");
+					goto help_and_error;
+				}
+				break;
+			case 'c':
+				if (cw_is_console_possible(NULL)) {
+					config->tested_sound_systems[dest_idx] = CW_AUDIO_CONSOLE;
+					dest_idx++;
+				} else {
+					fprintf(stderr, "Requested console sound system is not available on this machine\n");
+					goto help_and_error;
+
+				}
+				break;
+			case 'o':
+				if (cw_is_oss_possible(NULL)) {
+					config->tested_sound_systems[dest_idx] = CW_AUDIO_OSS;
+					dest_idx++;
+				} else {
+					fprintf(stderr, "Requested OSS sound system is not available on this machine\n");
+					goto help_and_error;
+
+				}
+				break;
+			case 'a':
+				if (cw_is_alsa_possible(NULL)) {
+					config->tested_sound_systems[dest_idx] = CW_AUDIO_ALSA;
+					dest_idx++;
+				} else {
+					fprintf(stderr, "Requested ALSA sound system is not available on this machine\n");
+					goto help_and_error;
+
+				}
+				break;
+			case 'p':
+				if (cw_is_pa_possible(NULL)) {
+					config->tested_sound_systems[dest_idx] = CW_AUDIO_PA;
+					dest_idx++;
+				} else {
+					fprintf(stderr, "Requested PulseAudio sound system is not available on this machine\n");
+					goto help_and_error;
+
+				}
+				break;
+			default:
+				fprintf(stderr, "Unsupported sound system '%c'\n", val);
+				goto help_and_error;
+			}
+		}
+		config->tested_sound_systems[dest_idx] = CW_AUDIO_NONE; /* Guard element. */
+		break;
+
+	case 'A':
+		optarg_len = strlen(optarg);
+		if (optarg_len > strlen(LIBCW_TEST_ALL_TOPICS)) {
+			fprintf(stderr, "Too many values for 'topics' option: '%s'\n", optarg);
+			return -1;
+		}
+
+		dest_idx = 0;
+		for (size_t i = 0; i < optarg_len; i++) {
+			const int val = optarg[i];
+			if (NULL == strchr(LIBCW_TEST_ALL_TOPICS, val)) {
+				fprintf(stderr, "Unsupported topic '%c'\n", val);
+				goto help_and_error;
+			}
+			switch (val) {
+			case 't':
+				config->tested_areas[dest_idx] = LIBCW_TEST_TOPIC_TQ;
+				break;
+			case 'g':
+				config->tested_areas[dest_idx] = LIBCW_TEST_TOPIC_GEN;
+				break;
+			case 'k':
+				config->tested_areas[dest_idx] = LIBCW_TEST_TOPIC_KEY;
+				break;
+			case 'r':
+				config->tested_areas[dest_idx] = LIBCW_TEST_TOPIC_REC;
+				break;
+			case 'd':
+				config->tested_areas[dest_idx] = LIBCW_TEST_TOPIC_DATA;
+				break;
+			case 'o':
+				config->tested_areas[dest_idx] = LIBCW_TEST_TOPIC_OTHER;
+				break;
+			default:
+				fprintf(stderr, "Unsupported test area: '%c'\n", val);
+				goto help_and_error;
+			}
+			dest_idx++;
+		}
+		config->tested_areas[dest_idx] = LIBCW_TEST_TOPIC_MAX; /* Guard element. */
+		break;
+
+	case 'N':
+		snprintf(config->test_function_name, sizeof (config->test_function_name), "%s", optarg);
+		break;
+
+	case 'R':
+		config->test_repetitions = atoi(optarg);
+		break;
+
 	default: /* '?' */
 		cw_print_usage(config->program_name);
 		return CW_FAILURE;
 	}
 
 	return CW_SUCCESS;
+
+ help_and_error:
+	cw_print_usage(config->program_name);
+	return CW_FAILURE;
 }
 
 

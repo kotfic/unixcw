@@ -80,6 +80,7 @@ libcw_test_legacy_api_SOURCES = \
 
 # target-specific preprocessor flags (#defs and include dirs)
 libcw_test_legacy_api_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
+#libcw_test_legacy_api_CFLAGS = -I../..
 
 # Target-specific linker flags (objects to link).
 #
@@ -87,7 +88,7 @@ libcw_test_legacy_api_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
 # to have access only to "regular" libcw library with only public
 # symbols (functions) provided by the library. Therefore link the test
 # executable with the library through "-lcw".
-libcw_test_legacy_api_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw
+libcw_test_legacy_api_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw $(top_builddir)/src/cwutils/lib_libcw_tests.a
 
 
 
@@ -109,8 +110,9 @@ libcw_test_all_SOURCES = \
 	$(LIBCW_BUG_TEST_FILES)
 
 libcw_test_all_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
+#libcw_test_all_CFLAGS = -I../../
 
-libcw_test_all_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test
+libcw_test_all_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test $(top_builddir)/src/cwutils/lib_libcw_tests.a
 
 
 

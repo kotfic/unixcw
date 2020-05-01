@@ -40,12 +40,13 @@ cw_dictionary_tests_CFLAGS = -rdynamic
 # noinst_HEADERS = cmdline.h cw_copyright.h cw_common.h cw_words.h dictionary.h i18n.h memory.h
 
 # convenience libraries
-noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a
+noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a lib_libcw_tests.a
 
-lib_cw_a_SOURCES    = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h
-lib_cwcp_a_SOURCES  = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
-lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h                         cmdline.c cmdline.h memory.c memory.h
-lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
+lib_cw_a_SOURCES          = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h
+lib_cwcp_a_SOURCES        = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
+lib_cwgen_a_SOURCES       = cw_copyright.h i18n.c i18n.h                         cmdline.c cmdline.h memory.c memory.h
+lib_xcwcp_a_SOURCES       = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
+lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h
 
 
 # Test targets; no self-test, but make sure all is built.

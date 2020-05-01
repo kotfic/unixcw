@@ -30,10 +30,37 @@ extern "C" {
 #include <stdio.h>
 
 
+
+
+#include <libcw.h>
+
+
+
+
 #define CW_PRACTICE_TIME_MIN        1
 #define CW_PRACTICE_TIME_MAX       99
 #define CW_PRACTICE_TIME_INITIAL   15
 #define CW_PRACTICE_TIME_STEP       1
+
+
+
+
+/* TODO: this has to be moved back to test framework. */
+#define LIBCW_TEST_ALL_TOPICS           "tgkrdo"   /* generator, tone queue, key, receiver, data, other. */
+#define LIBCW_TEST_ALL_SOUND_SYSTEMS    "ncoap"   /* Null, console, OSS, ALSA, PulseAudio. */
+enum {
+	/* Explicitly stated values in this enum shall never
+	   change. */
+	LIBCW_TEST_TOPIC_TQ      = 0,
+	LIBCW_TEST_TOPIC_GEN     = 1,
+	LIBCW_TEST_TOPIC_KEY     = 2,
+	LIBCW_TEST_TOPIC_REC     = 3,
+	LIBCW_TEST_TOPIC_DATA    = 4,
+	LIBCW_TEST_TOPIC_OTHER,
+	LIBCW_TEST_TOPIC_MAX
+};
+
+
 
 
 typedef struct {
@@ -62,6 +89,10 @@ typedef struct {
 	bool has_feature_cw_specific;   /* Does the program have features specific to cw program (i.e. is this program the cw program)? */
 	bool has_feature_ui_colors;     /* Can we control color theme of UI (cwcp-specific). */
 
+	bool has_feature_test_repetitions; /* Does the test program allow specifying count of repetitions of each test function? */
+	bool has_feature_test_name;        /* Does the test program allow specifying single one test function to be executed? */
+	bool has_feature_libcw_test_specific;
+
 	/*
 	 * Program-specific state variables, settable from the command line, or from
 	 * embedded input stream commands.  These options may be set by the embedded
@@ -75,6 +106,13 @@ typedef struct {
 	int do_commands;       /* Execute embedded commands */
 	int do_combinations;   /* Execute [...] combinations */
 	int do_comments;       /* Allow {...} as comments */
+
+
+	/* These fields are used in libcw tests only. */
+	enum cw_audio_systems tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1]; /* List of distinct sound systems, indexed from zero. End of values is marked by CW_AUDIO_NONE guard. */
+	int tested_areas[LIBCW_TEST_TOPIC_MAX + 1];
+	char test_function_name[128];  /* Execute only a test function with this name. */
+	unsigned int test_repetitions; /* How many times a single test function should be repeated? */
 } cw_config_t;
 
 

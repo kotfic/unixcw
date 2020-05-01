@@ -88,6 +88,11 @@ int main(int argc, char * const argv[])
 	cw_test_executor_t * cte = &g_tests_executor;
 	cw_test_init(cte, stdout, stderr, "libcw/tests");
 
+	cte->config->has_feature_libcw_test_specific = true;
+	cte->config->has_feature_test_repetitions = true;
+	cte->config->has_feature_test_name = true;
+	cte->config->has_feature_speed = true;
+
 	/* May cause exit on errors or "-h" option. */
 	cte->process_args(cte, argc, argv);
 

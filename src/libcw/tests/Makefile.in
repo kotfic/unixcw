@@ -134,7 +134,8 @@ am_libcw_test_all_OBJECTS = libcw_test_all-test_main.$(OBJEXT) \
 	$(am__objects_1)
 libcw_test_all_OBJECTS = $(am_libcw_test_all_OBJECTS)
 am__DEPENDENCIES_1 =
-libcw_test_all_DEPENDENCIES = $(am__DEPENDENCIES_1)
+libcw_test_all_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(top_builddir)/src/cwutils/lib_libcw_tests.a
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -150,7 +151,8 @@ am_libcw_test_legacy_api_OBJECTS =  \
 	libcw_test_legacy_api-test_data.$(OBJEXT) \
 	libcw_test_legacy_api-test_main.$(OBJEXT)
 libcw_test_legacy_api_OBJECTS = $(am_libcw_test_legacy_api_OBJECTS)
-libcw_test_legacy_api_DEPENDENCIES = $(am__DEPENDENCIES_1)
+libcw_test_legacy_api_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(top_builddir)/src/cwutils/lib_libcw_tests.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -408,6 +410,7 @@ libcw_test_legacy_api_SOURCES = \
 
 # target-specific preprocessor flags (#defs and include dirs)
 libcw_test_legacy_api_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
+#libcw_test_legacy_api_CFLAGS = -I../..
 
 # Target-specific linker flags (objects to link).
 #
@@ -415,7 +418,7 @@ libcw_test_legacy_api_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
 # to have access only to "regular" libcw library with only public
 # symbols (functions) provided by the library. Therefore link the test
 # executable with the library through "-lcw".
-libcw_test_legacy_api_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw
+libcw_test_legacy_api_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw $(top_builddir)/src/cwutils/lib_libcw_tests.a
 libcw_test_all_SOURCES = \
 	test_main.c \
 	test_data.c \
@@ -433,7 +436,8 @@ libcw_test_all_SOURCES = \
 	$(LIBCW_BUG_TEST_FILES)
 
 libcw_test_all_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
-libcw_test_all_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test
+#libcw_test_all_CFLAGS = -I../../
+libcw_test_all_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test $(top_builddir)/src/cwutils/lib_libcw_tests.a
 
 # CLEANFILES extends list of files that need to be removed when
 # calling "make clean"

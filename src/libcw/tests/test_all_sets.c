@@ -43,7 +43,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_OTHER, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, LIBCW_TEST_SOUND_SYSTEM_MAX }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			/* cw_utils topic */
@@ -64,7 +64,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_DATA, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, LIBCW_TEST_SOUND_SYSTEM_MAX }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			/* cw_data topic */
@@ -87,7 +87,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_TQ, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, LIBCW_TEST_SOUND_SYSTEM_MAX }, /* Sound systems. All sound systems are included in tests of tq, because sometimes a running gen is necessary. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. All sound systems are included in tests of tq, because sometimes a running gen is necessary. */
 
 		{
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_test_capacity_A),
@@ -118,7 +118,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_GEN, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, LIBCW_TEST_SOUND_SYSTEM_MAX }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_new_delete),
@@ -145,7 +145,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_KEY, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, LIBCW_TEST_SOUND_SYSTEM_MAX }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			LIBCW_TEST_FUNCTION_INSERT(test_keyer),
@@ -159,7 +159,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_REC, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, LIBCW_TEST_SOUND_SYSTEM_MAX }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_get_receive_parameters),
@@ -185,7 +185,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN, /* This field doesn't matter here, test set is invalid. */
 
 		{ LIBCW_TEST_TOPIC_MAX },
-		{ LIBCW_TEST_SOUND_SYSTEM_MAX },
+		{ CW_AUDIO_NONE /* Guard. */ },
 		{
 			LIBCW_TEST_FUNCTION_INSERT(NULL)
 		}

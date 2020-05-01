@@ -38,7 +38,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_LEGACY,
 
 		{ LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ LIBCW_TEST_SOUND_SYSTEM_MAX }, /* Sound systems. */
+		{ CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			LIBCW_TEST_FUNCTION_INSERT(NULL),
