@@ -53,15 +53,6 @@ void xcwcp_atexit(void);
 namespace {
 cw_config_t *config = NULL; /* program-specific configuration */
 bool generator = false;     /* have we created a generator? */
-std::string all_options = "s:|sound,d:|device,"
-	"w:|wpm,t:|tone,v:|volume,"
-	"g:|gap,k:|weighting,"
-	// "i:|infile,F:|outfile,"
-	// "T:|time,"
-	"h|help,V|version";
-
-
-
 
 
 
@@ -113,10 +104,17 @@ int main(int argc, char **argv)
 		if (!config) {
 			return EXIT_FAILURE;
 		}
-		config->has_practice_time = 0;
-		config->has_infile = false;
 
-		if (!cw_process_argv(argc, argv, all_options.c_str(), config)) {
+		config->has_feature_sound_system = true;
+		config->has_feature_speed = true;
+		config->has_feature_tone = true;
+		config->has_feature_volume = true;
+		config->has_feature_gap = true;
+		config->has_feature_weighting = true;
+		//config->has_feature_infile = true;
+		//config->has_feature_outfile = true;
+
+		if (CW_SUCCESS != cw_process_program_arguments(combined_argc, combined_argv, config)) {
 			fprintf(stderr, _("%s: failed to parse command line args\n"), config->program_name);
 			return EXIT_FAILURE;
 		}

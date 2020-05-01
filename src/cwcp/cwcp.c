@@ -77,13 +77,7 @@ static bool is_sending_active = false;
 
 static cw_config_t *config = NULL; /* program-specific configuration */
 static bool generator = false;     /* have we created a generator? */
-static const char *all_options = "s:|system,d:|device,"
-	"w:|wpm,t:|tone,v:|volume,"
-	"g:|gap,k:|weighting,"
-	"f:|infile,F:|outfile,"
-	"T:|time,"
-	/* "c:|colours,c:|colors,m|mono," */
-	"h|help,V|version";
+
 
 
 
@@ -1706,10 +1700,19 @@ int main(int argc, char **argv)
 	if (!config) {
 		return EXIT_FAILURE;
 	}
-	config->has_practice_time = true;
-	config->has_outfile = true;
 
-	if (!cw_process_argv(combined_argc, combined_argv, all_options, config)) {
+	config->has_feature_sound_system = true;
+	config->has_feature_speed = true;
+	config->has_feature_tone = true;
+	config->has_feature_volume = true;
+	config->has_feature_gap = true;
+	config->has_feature_weighting = true;
+	config->has_feature_practice_time = true;
+	config->has_feature_infile = true; /* TODO: do we really have this feature? */
+	config->has_feature_outfile = true; /* TODO: do we really have this feature? */
+	// config->has_feature_ui_colors = true;
+
+	if (CW_SUCCESS != cw_process_program_arguments(combined_argc, combined_argv, config)) {
 		fprintf(stderr, _("%s: failed to parse command line args\n"), config->program_name);
 		return EXIT_FAILURE;
 	}

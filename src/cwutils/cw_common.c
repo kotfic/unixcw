@@ -68,6 +68,7 @@ cw_config_t *cw_config_new(const char *program_name)
 		fprintf(stderr, "%s: can't allocate memory for configuration\n", program_name);
 		return NULL;
 	}
+	memset(config, 0, sizeof (cw_config_t));
 
 	config->program_name = strdup(program_name);
 	if (!(config->program_name)) {
@@ -89,11 +90,6 @@ cw_config_t *cw_config_new(const char *program_name)
 	config->practice_time = CW_PRACTICE_TIME_INITIAL;
 	config->input_file = NULL;
 	config->output_file = NULL;
-
-	config->is_cw = false;
-	config->has_practice_time = false;
-	config->has_outfile = false;
-	config->has_infile = true;
 
 	config->do_echo = true;
 	config->do_errors = true;
@@ -164,7 +160,7 @@ void cw_config_delete(cw_config_t **config)
 int cw_config_is_valid(cw_config_t *config)
 {
 	/* Deal with odd argument combinations. */
-        if (config->audio_device) {
+	if (config->audio_device) {
 		if (config->audio_system == CW_AUDIO_SOUNDCARD) {
 			fprintf(stderr, "libcw: a device has been specified for 'soundcard' sound system\n");
 			fprintf(stderr, "libcw: a device can be specified only for 'console', 'oss', 'alsa' or 'pulseaudio'\n");
@@ -182,7 +178,6 @@ int cw_config_is_valid(cw_config_t *config)
 
 	return true;
 }
-
 
 
 
@@ -389,13 +384,13 @@ void cw_start_beep(void)
 */
 void cw_end_beep(void)
 {
-      cw_flush_tone_queue();
-      cw_queue_tone(20000, 500);
-      cw_queue_tone(20000, 1000);
-      cw_queue_tone(20000, 500);
-      cw_queue_tone(20000, 1000);
-      cw_wait_for_tone_queue();
-      return;
+	cw_flush_tone_queue();
+	cw_queue_tone(20000, 500);
+	cw_queue_tone(20000, 1000);
+	cw_queue_tone(20000, 500);
+	cw_queue_tone(20000, 1000);
+	cw_wait_for_tone_queue();
+	return;
 }
 
 

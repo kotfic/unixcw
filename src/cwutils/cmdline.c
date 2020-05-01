@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
- * Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+ * Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,10 +31,6 @@
 # include <strings.h>
 #endif
 
-#if defined(HAVE_GETOPT_H)
-# include <getopt.h>
-#endif
-
 #include "libcw.h"
 #include "cmdline.h"
 #include "i18n.h"
@@ -44,6 +40,26 @@
 
 static int cw_process_option(int opt, const char *optarg, cw_config_t *config);
 static void cw_print_usage(const char *program_name);
+
+/**
+   Append option string @param option_string to given @param buffer
+
+   Options separator string (",") is added if necessary.
+
+   @param size - total size of @param buffer
+   @param n_chars - current count of characters (excluding terminating NUL) in the @param buffer
+
+   @return true
+*/
+static bool append_option(char * buffer, size_t size, int * n_chars, const char * option_string);
+/**
+   Fill given @param buffer with all command line switches that are
+   enabled in given @param config.
+
+   @return @param buffer
+*/
+static char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * config, char * buffer, size_t size);
+
 
 
 /*---------------------------------------------------------------------*/
@@ -142,14 +158,7 @@ void combine_arguments(const char *env_variable,
 
 
 
-
-/**
-   \brief Check if target system supports long options
-
-   \return true the system supports long options,
-   \return false otherwise
-*/
-bool has_longopts(void)
+bool cw_longopts_available(void)
 {
 #if defined(HAVE_GETOPT_LONG)
 	return true;
@@ -287,25 +296,11 @@ int get_option(int argc, char *const argv[],
 
 
 
-
-/**
-   Return the value of getopt()'s optind after get_options() calls complete.
-*/
-int get_optind(void)
-{
-	return optind;
-}
-
-
-
-
-
 void cw_print_help(cw_config_t *config)
 {
-	/* int format = has_longopts() */
 	fprintf(stderr, _("Usage: %s [options...]\n"), config->program_name);
 
-	if (!has_longopts()) {
+	if (!cw_longopts_available()) {
 		fprintf(stderr, "%s", _("Long format of options is not supported on your system\n\n"));
 	}
 
@@ -351,25 +346,26 @@ void cw_print_help(cw_config_t *config)
 	fprintf(stderr,       _("                         default value: %d\n"), CW_WEIGHTING_INITIAL);
 
 	fprintf(stderr, "%s",     _("Other options:\n"));
-	if (config->is_cw) {
+	if (config->has_feature_cw_specific) {
 		fprintf(stderr, "%s", _("  -e, --noecho           disable sending echo to stdout\n"));
 		fprintf(stderr, "%s", _("  -m, --nomessages       disable writing messages to stderr\n"));
 		fprintf(stderr, "%s", _("  -c, --nocommands       disable executing embedded commands\n"));
 		fprintf(stderr, "%s", _("  -o, --nocombinations   disallow [...] combinations\n"));
 		fprintf(stderr, "%s", _("  -p, --nocomments       disallow {...} comments\n"));
 	}
-	if (config->has_practice_time) {
+	if (config->has_feature_practice_time) {
 		fprintf(stderr, "%s", _("  -T, --time=TIME        set initial practice time (in minutes)\n"));
 		fprintf(stderr,       _("                         valid values: %d - %d\n"), CW_PRACTICE_TIME_MIN, CW_PRACTICE_TIME_MAX);
 		fprintf(stderr,       _("                         default value: %d\n"), CW_PRACTICE_TIME_INITIAL);
 	}
-	if (config->has_infile) {
+	if (config->has_feature_infile) {
 		fprintf(stderr, "%s", _("  -f, --infile=FILE      read practice words from FILE\n"));
 	}
-	if (config->has_outfile) {
+	if (config->has_feature_outfile) {
 		fprintf(stderr, "%s", _("  -F, --outfile=FILE     write current practice words to FILE\n"));
 	}
-	if (config->is_cw) {
+	/* TODO: this probably should be inside of "if (config->has_feature_infile)". */
+	if (config->has_feature_cw_specific) {
 		fprintf(stderr, "%s", _("                         default file: stdin\n"));
 	}
 	fprintf(stderr, "\n");
@@ -382,19 +378,87 @@ void cw_print_help(cw_config_t *config)
 
 
 
+bool append_option(char * buffer, size_t size, int * n_chars, const char * option_string)
+{
+	if ((*n_chars) > 0) {
+		/* Add options separator. */
+		(*n_chars) += snprintf(buffer + (*n_chars), size - (*n_chars), "%s", ",");
+	}
+	(*n_chars) += snprintf(buffer + (*n_chars), size - (*n_chars), "%s", option_string);
 
-int cw_process_argv(int argc, char *const argv[], const char *options, cw_config_t *config)
+	return true;
+}
+
+
+
+
+char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * config, char * buffer, size_t size)
+{
+	int n = 0;
+
+	if (config->has_feature_sound_system) {
+		append_option(buffer, size, &n, "s:|system,d:|device");
+	}
+	if (config->has_feature_speed) {
+		append_option(buffer, size, &n, "w:|wpm");
+	}
+	if (config->has_feature_tone) {
+		append_option(buffer, size, &n, "t:|tone");
+	}
+	if (config->has_feature_volume) {
+		append_option(buffer, size, &n, "v:|volume");
+	}
+	if (config->has_feature_gap) {
+		append_option(buffer, size, &n, "g:|gap");
+	}
+	if (config->has_feature_weighting) {
+		append_option(buffer, size, &n, "k:|weighting");
+	}
+	if (config->has_feature_practice_time) {
+		append_option(buffer, size, &n, "T:|time");
+	}
+	if (config->has_feature_infile) {
+		append_option(buffer, size, &n, "f:|infile");
+	}
+	if (config->has_feature_outfile) {
+		append_option(buffer, size, &n, "F:|outfile");
+	}
+	if (config->has_feature_cw_specific) {
+		append_option(buffer, size, &n, "e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments");
+	}
+	if (config->has_feature_ui_colors) {
+		append_option(buffer, size, &n, "c:|colours,c:|colors,m|mono");
+	}
+	if (true) {
+		append_option(buffer, size, &n, "h|help,V|version");
+	}
+
+	fprintf(stderr, "Command line options for supported features: '%s'\n", buffer);
+
+	return buffer;
+}
+
+
+
+
+int cw_process_program_arguments(int argc, char *const argv[], cw_config_t *config)
 {
 	int option;
 	char *argument;
 
-	while (get_option(argc, argv, options, &option, &argument)) {
+	/* All options that can be present in command line. I will be snprintf()-ing to the buffer, so I specify 3 times the expected size, just to be safe. */
+	char all_cmdline_options[sizeof ("s:|system,d:|device,w:|wpm,t:|tone,v:|volume,g:|gap,k:|weighting,f:|infile,F:|outfile,e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments,h|help,V|version"
+					 "s:|system,d:|device,w:|wpm,t:|tone,v:|volume,g:|gap,k:|weighting,f:|infile,F:|outfile,e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments,h|help,V|version"
+					 "s:|system,d:|device,w:|wpm,t:|tone,v:|volume,g:|gap,k:|weighting,f:|infile,F:|outfile,e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments,h|help,V|version")];
+	cw_config_get_supported_feature_cmdline_options(config, all_cmdline_options, sizeof (all_cmdline_options));
+
+	while (get_option(argc, argv, all_cmdline_options, &option, &argument)) {
 		if (!cw_process_option(option, argument, config)) {
 			return CW_FAILURE;
 		}
 	}
 
-	if (get_optind() != argc) {
+	if (optind != argc) {
 		fprintf(stderr, "%s: expected argument after options\n", config->program_name);
 		cw_print_usage(config->program_name);
 		return CW_FAILURE;
@@ -591,7 +655,7 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 
 void cw_print_usage(const char *program_name)
 {
-	const char *format = has_longopts()
+	const char *format = cw_longopts_available()
 		? _("Try '%s --help' for more information.\n")
 		: _("Try '%s -h' for more information.\n");
 

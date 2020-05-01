@@ -8,7 +8,7 @@ version 3.6.0 / 2020-XX-YY
     smaller than in previous versions of code. Normally the period
     size could be in range of hundreds of frames, now it's possible to
     have the period size of tens, or low hundreds of frames.
-    
+
     Decreased period size should lead to better behaviour of ALSA's
     writei() function: the function should now properly block during
     write of samples to ALSA handle in all circumstances.
@@ -24,8 +24,14 @@ version 3.6.0 / 2020-XX-YY
     confirmation of a fix come from Matthew M5EVT. Thanks Matthew!
 
 
+  xcwcp:
+
+  - program's command line option "--sound" has been changed to
+    "--system", for consistency with similar option in other unixcw's
+    programs.
+
 ----------------------------------------------------------------------------
-    
+
 
 version 3.5.1 / 2017-02-XX
 

@@ -80,7 +80,7 @@ struct cwgen_config {
 };
 
 
-static const char *all_options = "g:|groups,n:|groupsize,r:|repeat,x:|limit,c:|charset,h|help,v|version";
+static const char * all_cmdline_options = "g:|groups,n:|groupsize,r:|repeat,x:|limit,c:|charset,h|help,v|version";
 
 static void cwgen_generate_characters(struct cwgen_config *config);
 static void cwgen_print_usage(const char *program_name);
@@ -188,7 +188,7 @@ void cwgen_generate_characters(struct cwgen_config *config)
 */
 void cwgen_print_usage(const char *program_name)
 {
-	const char *format = has_longopts()
+	const char *format = cw_longopts_available()
 		? _("Try '%s --help' for more information.\n")
 		: _("Try '%s -h' for more information.\n");
 
@@ -207,7 +207,7 @@ void cwgen_print_usage(const char *program_name)
 */
 static void cwgen_print_help(const char *program_name)
 {
-	if (!has_longopts()) {
+	if (!cw_longopts_available()) {
 		fprintf(stderr, "%s", _("Long format of options is not supported on your system\n\n"));
 	}
 
@@ -256,7 +256,7 @@ void cwgen_parse_command_line(int argc, char **argv, struct cwgen_config *config
 		exit(EXIT_FAILURE);
 	}
 
-	while (get_option(argc, argv, all_options,
+	while (get_option(argc, argv, all_cmdline_options,
 			  &option, &argument)) {
 
 		switch (option) {
@@ -338,7 +338,7 @@ void cwgen_parse_command_line(int argc, char **argv, struct cwgen_config *config
 		}
 	}
 
-	if (get_optind() != argc) {
+	if (optind != argc) {
 		cwgen_print_usage(config->program_name);
 		exit(EXIT_FAILURE);
 	}

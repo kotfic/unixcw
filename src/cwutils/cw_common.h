@@ -49,10 +49,18 @@ typedef struct {
 	char *input_file;
 	char *output_file;
 
-	int is_cw;
-	int has_practice_time;
-	int has_outfile;
-	bool has_infile;
+	bool has_feature_sound_system;  /* Does the program have sound system output, for which we can specify sound system type and device? */
+	bool has_feature_speed;         /* Generator speed. */
+	bool has_feature_tone;          /* Sound tone (frequency). */
+	bool has_feature_volume;        /* Sound volume. */
+	bool has_feature_gap;           /* */
+	bool has_feature_weighting;     /* */
+	bool has_feature_practice_time; /* For cwcp/xcwcp program: allows specifying how long a training session will take. */
+	bool has_feature_infile;        /* Allows specifying some input data for a program from input file. */
+	bool has_feature_outfile;       /* */
+
+	bool has_feature_cw_specific;   /* Does the program have features specific to cw program (i.e. is this program the cw program)? */
+	bool has_feature_ui_colors;     /* Can we control color theme of UI (cwcp-specific). */
 
 	/*
 	 * Program-specific state variables, settable from the command line, or from

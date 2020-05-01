@@ -84,13 +84,6 @@ static void cw_atexit(void);
 
 static cw_config_t *config = NULL; /* program-specific configuration */
 static bool generator = false;     /* have we created a generator? */
-static const char *all_options = "s:|system,d:|device,"
-	"w:|wpm,t:|tone,v:|volume,"
-	"g:|gap,k:|weighting,"
-	"f:|infile,"
-	"e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments,"
-	"h|help,V|version";
-
 
 
 
@@ -617,9 +610,16 @@ int main(int argc, char *const argv[])
 	if (!config) {
 		exit(EXIT_FAILURE);
 	}
-	config->is_cw = 1;
+	config->has_feature_sound_system = true;
+	config->has_feature_speed = true;
+	config->has_feature_tone = true;
+	config->has_feature_volume = true;
+	config->has_feature_gap = true;
+	config->has_feature_weighting = true;
+	config->has_feature_infile = true;
+	config->has_feature_cw_specific = true;
 
-	if (!cw_process_argv(combined_argc, combined_argv, all_options, config)) {
+	if (CW_SUCCESS != cw_process_program_arguments(combined_argc, combined_argv, config)) {
 		fprintf(stderr, _("%s: failed to parse command line args\n"), config->program_name);
 		exit(EXIT_FAILURE);
 	}

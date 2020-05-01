@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
- * Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+ * Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,10 @@
 #define _CWCMDLINE_H
 
 #include <stdbool.h>
+#if defined(HAVE_GETOPT_H)
+# include <getopt.h>
+#endif
+
 #include "cw_common.h" /* cw_config_t */
 
 #if defined(__cplusplus)
@@ -28,17 +32,53 @@ extern "C" {
 #endif
 
 
+
+
 extern const char *cw_program_basename(const char *argv0);
 extern void combine_arguments(const char *env_variable,
 			      int argc, char *const argv[],
 			      int *new_argc, char **new_argv[]);
 
-extern int cw_process_argv(int argc, char *const argv[], const char *options, cw_config_t *config);
-extern bool has_longopts(void);
+
+
+
+/**
+   @brief Parse program's arguments
+
+   Parse arguments of a program. Usually these are combined program
+   arguments, i.e. those passed explicitly through command line
+   switches, and those that are stored in ENV variable.
+
+   The combination of the two argument lists into one list should be
+   done with combine_arguments() before calling this function.
+
+   Results of the parsing are stored in @param config.
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise
+*/
+extern int cw_process_program_arguments(int argc, char *const argv[], cw_config_t * config);
+
+
+
+
+/**
+   \brief Check if target system supports long form of command line options
+
+   \return true the system supports long options,
+   \return false otherwise
+*/
+extern bool cw_longopts_available(void);
+
+
+
+
 extern int get_option(int argc, char *const argv[],
-                       const char *descriptor,
-                       int *option, char **argument);
-extern int get_optind(void);
+                      const char *descriptor,
+                      int *option, char **argument);
+
+
+
 
 #if defined(__cplusplus)
 }
