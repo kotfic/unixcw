@@ -17,8 +17,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef _CWCMDLINE_H
-#define _CWCMDLINE_H
+#ifndef _CW_CMDLINE_H
+#define _CW_CMDLINE_H
 
 #include <stdbool.h>
 #if defined(HAVE_GETOPT_H)
@@ -88,4 +88,4 @@ extern int get_option(int argc, char *const argv[],
 #if defined(__cplusplus)
 }
 #endif
-#endif  /* _CWCMDLINE_H */
+#endif  /* _CW_CMDLINE_H */

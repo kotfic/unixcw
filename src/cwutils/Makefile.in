@@ -125,32 +125,34 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 lib_cw_a_AR = $(AR) $(ARFLAGS)
 lib_cw_a_LIBADD =
-am_lib_cw_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT)
+am_lib_cw_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
+	cw_cmdline.$(OBJEXT) cw_common.$(OBJEXT)
 lib_cw_a_OBJECTS = $(am_lib_cw_a_OBJECTS)
 lib_cwcp_a_AR = $(AR) $(ARFLAGS)
 lib_cwcp_a_LIBADD =
-am_lib_cwcp_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT) dictionary.$(OBJEXT)
+am_lib_cwcp_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
+	cw_cmdline.$(OBJEXT) cw_common.$(OBJEXT) dictionary.$(OBJEXT)
 lib_cwcp_a_OBJECTS = $(am_lib_cwcp_a_OBJECTS)
 lib_cwgen_a_AR = $(AR) $(ARFLAGS)
 lib_cwgen_a_LIBADD =
-am_lib_cwgen_a_OBJECTS = i18n.$(OBJEXT) cmdline.$(OBJEXT)
+am_lib_cwgen_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
+	cw_cmdline.$(OBJEXT)
 lib_cwgen_a_OBJECTS = $(am_lib_cwgen_a_OBJECTS)
 lib_libcw_tests_a_AR = $(AR) $(ARFLAGS)
 lib_libcw_tests_a_LIBADD =
-am_lib_libcw_tests_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT)
+am_lib_libcw_tests_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
+	cw_cmdline.$(OBJEXT) cw_common.$(OBJEXT)
 lib_libcw_tests_a_OBJECTS = $(am_lib_libcw_tests_a_OBJECTS)
 lib_xcwcp_a_AR = $(AR) $(ARFLAGS)
 lib_xcwcp_a_LIBADD =
-am_lib_xcwcp_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT) dictionary.$(OBJEXT)
+am_lib_xcwcp_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
+	cw_cmdline.$(OBJEXT) cw_common.$(OBJEXT) dictionary.$(OBJEXT)
 lib_xcwcp_a_OBJECTS = $(am_lib_xcwcp_a_OBJECTS)
 am_cw_dictionary_tests_OBJECTS =  \
 	cw_dictionary_tests-dictionary.$(OBJEXT) \
 	cw_dictionary_tests-memory.$(OBJEXT) \
 	cw_dictionary_tests-i18n.$(OBJEXT) \
+	cw_dictionary_tests-cw_config.$(OBJEXT) \
 	cw_dictionary_tests-cw_common.$(OBJEXT)
 cw_dictionary_tests_OBJECTS = $(am_cw_dictionary_tests_OBJECTS)
 cw_dictionary_tests_DEPENDENCIES =
@@ -572,7 +574,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # source code files used to build cw_dictionary_tests program
-cw_dictionary_tests_SOURCES = dictionary.c memory.c i18n.c cw_common.c
+cw_dictionary_tests_SOURCES = dictionary.c memory.c i18n.c cw_config.c cw_common.c
 
 # target-specific preprocessor flags (#defs and include dirs)
 cw_dictionary_tests_CPPFLAGS = $(AM_CPPFLAGS) -DCW_DICTIONARY_UNIT_TESTS
@@ -584,15 +586,15 @@ cw_dictionary_tests_LDADD = -L$(top_builddir)/src/libcw/.libs -lcw #-lm -lpthrea
 cw_dictionary_tests_CFLAGS = -rdynamic
 
 # no header from this dir should be installed
-# noinst_HEADERS = cmdline.h cw_copyright.h cw_common.h cw_words.h dictionary.h i18n.h
+# noinst_HEADERS = cw_cmdline.h cw_copyright.h cw_config.h cw_common.h cw_words.h dictionary.h i18n.h
 
 # convenience libraries
 noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a lib_libcw_tests.a
-lib_cw_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h
-lib_cwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h dictionary.c dictionary.h cw_words.h
-lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h                         cmdline.c cmdline.h
-lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h dictionary.c dictionary.h cw_words.h
-lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h
+lib_cw_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h
+lib_cwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
+lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
+lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h
+lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h
 
 # Test targets; no self-test, but make sure all is built.
 #check: all
@@ -685,9 +687,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmdline.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_cmdline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-cw_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-cw_config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-dictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-i18n.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-memory.Po@am__quote@
@@ -756,6 +760,20 @@ cw_dictionary_tests-i18n.obj: i18n.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='i18n.c' object='cw_dictionary_tests-i18n.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -c -o cw_dictionary_tests-i18n.obj `if test -f 'i18n.c'; then $(CYGPATH_W) 'i18n.c'; else $(CYGPATH_W) '$(srcdir)/i18n.c'; fi`
+
+cw_dictionary_tests-cw_config.o: cw_config.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -MT cw_dictionary_tests-cw_config.o -MD -MP -MF $(DEPDIR)/cw_dictionary_tests-cw_config.Tpo -c -o cw_dictionary_tests-cw_config.o `test -f 'cw_config.c' || echo '$(srcdir)/'`cw_config.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cw_dictionary_tests-cw_config.Tpo $(DEPDIR)/cw_dictionary_tests-cw_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_config.c' object='cw_dictionary_tests-cw_config.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -c -o cw_dictionary_tests-cw_config.o `test -f 'cw_config.c' || echo '$(srcdir)/'`cw_config.c
+
+cw_dictionary_tests-cw_config.obj: cw_config.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -MT cw_dictionary_tests-cw_config.obj -MD -MP -MF $(DEPDIR)/cw_dictionary_tests-cw_config.Tpo -c -o cw_dictionary_tests-cw_config.obj `if test -f 'cw_config.c'; then $(CYGPATH_W) 'cw_config.c'; else $(CYGPATH_W) '$(srcdir)/cw_config.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cw_dictionary_tests-cw_config.Tpo $(DEPDIR)/cw_dictionary_tests-cw_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_config.c' object='cw_dictionary_tests-cw_config.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -c -o cw_dictionary_tests-cw_config.obj `if test -f 'cw_config.c'; then $(CYGPATH_W) 'cw_config.c'; else $(CYGPATH_W) '$(srcdir)/cw_config.c'; fi`
 
 cw_dictionary_tests-cw_common.o: cw_common.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -MT cw_dictionary_tests-cw_common.o -MD -MP -MF $(DEPDIR)/cw_dictionary_tests-cw_common.Tpo -c -o cw_dictionary_tests-cw_common.o `test -f 'cw_common.c' || echo '$(srcdir)/'`cw_common.c

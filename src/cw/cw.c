@@ -48,7 +48,7 @@
 #include "cw.h"
 #include "libcw.h"
 #include "i18n.h"
-#include "cmdline.h"
+#include "cw_cmdline.h"
 #include "cw_copyright.h"
 #include "libcw_debug.h"
 

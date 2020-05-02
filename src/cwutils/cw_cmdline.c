@@ -32,7 +32,7 @@
 #endif
 
 #include "libcw.h"
-#include "cmdline.h"
+#include "cw_cmdline.h"
 #include "i18n.h"
 #include "cw_copyright.h"
 

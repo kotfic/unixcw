@@ -36,7 +36,7 @@
 #endif
 
 #include "i18n.h"
-#include "cmdline.h"
+#include "cw_cmdline.h"
 #include "cw_copyright.h"
 
 
