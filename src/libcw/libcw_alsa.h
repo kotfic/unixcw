@@ -19,7 +19,7 @@
 #include <alsa/asoundlib.h>
 
 typedef struct cw_alsa_data_struct {
-	snd_pcm_t *handle; /* Output handle for audio data. */
+	snd_pcm_t *handle; /* Output handle for sound data. */
 } cw_alsa_data_t;
 
 

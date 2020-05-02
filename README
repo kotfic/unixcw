@@ -77,7 +77,7 @@ following types of programs might also use libcw as their core:
  - a fully graphical CW send and receive station
  - a 'CWbiff' that announces incoming email sender in CW
  - an offline CW reader program, capable of decoding CW from MP3 or
-   other audio file formats
+   other sound file formats
  - a simple Iambic keyer for an external transmitter, using the mouse
    buttons as the keyer paddles
  - a more comprehensive CW tutor program

@@ -598,7 +598,7 @@ bool cw_key_ik_get_curtis_mode_b(const volatile cw_key_t *key)
 
    The function is also called in generator's thread function
    cw_generator_dequeue_and_generate_internal() each time a tone is
-   dequeued and pushed to audio system. I don't know why make the call
+   dequeued and pushed to sound system. I don't know why make the call
    in that place for iambic keyer, but not for straight key.
 
    \param key - iambic key

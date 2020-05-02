@@ -1191,7 +1191,7 @@ void cw_rec_test_vector_print(cw_test_executor_t * cte, cw_rec_test_vector * vec
 
 
 /**
-   Parameter getters are independent of audio system, so they can be
+   Parameter getters are independent of sound system, so they can be
    tested just with CW_AUDIO_NULL.
 
    @reviewed on 2019-10-26
@@ -1287,7 +1287,7 @@ int test_cw_rec_get_receive_parameters(cw_test_executor_t * cte)
 
 
 /**
-   Parameter getters and setters are independent of audio system, so
+   Parameter getters and setters are independent of sound system, so
    they can be tested just with CW_AUDIO_NULL.
 
    This function tests a single set of functions. This set is
@@ -1421,7 +1421,7 @@ int test_cw_rec_parameter_getters_setters_1(cw_test_executor_t * cte)
 
 
 /**
-   Parameter getters and setters are independent of audio system, so
+   Parameter getters and setters are independent of sound system, so
    they can be tested just with CW_AUDIO_NULL.
 
    This function tests a single set of functions. This set is

@@ -342,7 +342,7 @@ void cw_print_help(cw_config_t *config)
 		fprintf(stderr, "%s", _("Long format of options is not supported on your system\n\n"));
 	}
 
-	fprintf(stderr, "%s", _("Audio system options:\n"));
+	fprintf(stderr, "%s", _("Sound system options:\n"));
 	if (config->has_feature_libcw_test_specific) {
 		fprintf(stderr, "%s", _("  -S, --test_systems=SYSTEMS\n"));
 		fprintf(stderr, "%s", _("        test one or more of these sound systems:\n"));
@@ -353,7 +353,7 @@ void cw_print_help(cw_config_t *config)
 		fprintf(stderr, "%s", _("        p - PulseAudio\n"));
 	} else {
 		fprintf(stderr, "%s", _("  -s, --system=SYSTEM\n"));
-		fprintf(stderr, "%s", _("        generate sound using SYSTEM audio system\n"));
+		fprintf(stderr, "%s", _("        generate sound using SYSTEM sound system\n"));
 		fprintf(stderr, "%s", _("        SYSTEM: {null|console|oss|alsa|pulseaudio|soundcard}\n"));
 		fprintf(stderr, "%s", _("        'null': don't use any sound output\n"));
 		fprintf(stderr, "%s", _("        'console': use system console/buzzer\n"));
@@ -583,30 +583,30 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 		if (!strcmp(optarg, "null")
 		    || !strcmp(optarg, "n")) {
 
-			config->audio_system = CW_AUDIO_NULL;
+			config->sound_system = CW_AUDIO_NULL;
 		} else if (!strcmp(optarg, "alsa")
 		    || !strcmp(optarg, "a")) {
 
-			config->audio_system = CW_AUDIO_ALSA;
+			config->sound_system = CW_AUDIO_ALSA;
 		} else if (!strcmp(optarg, "oss")
 			   || !strcmp(optarg, "o")) {
 
-			config->audio_system = CW_AUDIO_OSS;
+			config->sound_system = CW_AUDIO_OSS;
 		} else if (!strcmp(optarg, "pulseaudio")
 			   || !strcmp(optarg, "p")) {
 
-			config->audio_system = CW_AUDIO_PA;
+			config->sound_system = CW_AUDIO_PA;
 		} else if (!strcmp(optarg, "console")
 			   || !strcmp(optarg, "c")) {
 
-			config->audio_system = CW_AUDIO_CONSOLE;
+			config->sound_system = CW_AUDIO_CONSOLE;
 
 		} else if (!strcmp(optarg, "soundcard")
 			   || !strcmp(optarg, "s")) {
 
-			config->audio_system = CW_AUDIO_SOUNDCARD;
+			config->sound_system = CW_AUDIO_SOUNDCARD;
 		} else {
-			fprintf(stderr, "%s: invalid audio system (option 's'): %s\n", config->program_name, optarg);
+			fprintf(stderr, "%s: invalid sound system (option 's'): %s\n", config->program_name, optarg);
 			return CW_FAILURE;
 		}
 		break;
@@ -614,7 +614,7 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 	case 'd':
 		// fprintf(stderr, "%s: d:%s\n", config->program_name, optarg);
 		if (optarg && strlen(optarg)) {
-			config->audio_device = strdup(optarg);
+			config->sound_device = strdup(optarg);
 		} else {
 			fprintf(stderr, "%s: no device specified for option -d\n", config->program_name);
 			return CW_FAILURE;

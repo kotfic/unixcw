@@ -330,11 +330,11 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
-	const int audio_system = cte->current_sound_system;
+	const cw_sound_system sound_system = cte->current_sound_system;
 
 	/* Test 0: test property of newly created generator. */
 	{
-		cw_gen_t * gen = cw_gen_new(audio_system, NULL);
+		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "set slope: 0: failed to initialize generator");
 
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, 0, "set slope: 0: initial shape (%d)", gen->tone_slope.shape);
@@ -353,7 +353,7 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   shape and larger than zero slope length. You just can't
 	   have rectangular slopes that have non-zero length." */
 	{
-		cw_gen_t * gen = cw_gen_new(audio_system, NULL);
+		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "set slope: A: failed to initialize generator");
 
 		const int cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RECTANGULAR, 10);
@@ -375,7 +375,7 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   returned.
 	*/
 	{
-		cw_gen_t * gen = cw_gen_new(audio_system, NULL);
+		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "set slope: B: failed to initialize generator");
 
 		const int shape_before = gen->tone_slope.shape;
@@ -400,7 +400,7 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   '-1'." */
 	{
 		int cwret;
-		cw_gen_t * gen = cw_gen_new(audio_system, NULL);
+		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "set slope: C1: failed to initialize generator");
 
 
@@ -453,7 +453,7 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   function will set generator's slope length to zero, even if
 	   value of \p slope_len is '-1'." */
 	{
-		cw_gen_t * gen = cw_gen_new(audio_system, NULL);
+		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "set slope: C2: failed to initialize generator");
 
 		int cwret;
@@ -500,7 +500,7 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   non-rectangular, but just unusually short." */
 	{
 		int cwret;
-		cw_gen_t * gen = cw_gen_new(audio_system, NULL);
+		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "set slope: D: failed to initialize generator");
 
 		const int expected_len = 0;
@@ -604,9 +604,9 @@ int test_cw_gen_forever_internal(cw_test_executor_t * cte)
 /**
    @reviewed on 2019-10-26
 */
-int test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds, int audio_system, const char *audio_device)
+int test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds, cw_sound_system sound_system, const char * sound_device)
 {
-	cw_gen_t * gen = cw_gen_new(audio_system, audio_device);
+	cw_gen_t * gen = cw_gen_new(sound_system, sound_device);
 	cte->assert2(cte, gen, "ERROR: failed to create generator\n");
 	cw_gen_start(gen);
 

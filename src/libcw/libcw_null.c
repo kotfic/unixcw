@@ -21,7 +21,7 @@
 /**
    \file libcw_null.c
 
-   \brief Null audio sink.
+   \brief Null sound sink.
 
    No sound is being played, but time periods necessary for generator
    to operate are being measured.
@@ -52,7 +52,7 @@ static void cw_null_close_device_internal(cw_gen_t *gen);
 
 
 /**
-   \brief Configure given generator to work with Null audio sink
+   \brief Configure given generator to work with Null sound sink
 
    \reviewed on 2017-02-04
 
@@ -65,8 +65,8 @@ int cw_null_configure(cw_gen_t *gen, const char *device)
 {
 	assert (gen);
 
-	gen->audio_system = CW_AUDIO_NULL;
-	cw_gen_set_audio_device_internal(gen, device);
+	gen->sound_system = CW_AUDIO_NULL;
+	cw_gen_set_sound_device_internal(gen, device);
 
 	gen->open_device  = cw_null_open_device_internal;
 	gen->close_device = cw_null_close_device_internal;
@@ -82,7 +82,7 @@ int cw_null_configure(cw_gen_t *gen, const char *device)
 
 
 /**
-   \brief Check if it is possible to open Null audio output
+   \brief Check if it is possible to open Null sound output
 
    \reviewed on 2017-02-04
 
@@ -99,7 +99,7 @@ bool cw_is_null_possible(__attribute__((unused)) const char *device)
 
 
 /**
-   \brief Open Null audio device associated with given generator
+   \brief Open Null sound device associated with given generator
 
    \param gen - generator
 
@@ -107,7 +107,7 @@ bool cw_is_null_possible(__attribute__((unused)) const char *device)
 */
 int cw_null_open_device_internal(cw_gen_t *gen)
 {
-	gen->audio_device_is_open = true;
+	gen->sound_device_is_open = true;
 	return CW_SUCCESS;
 }
 
@@ -115,7 +115,7 @@ int cw_null_open_device_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Close Null audio device associated with given generator
+   \brief Close Null sound device associated with given generator
 
    \param gen - generator
 
@@ -123,7 +123,7 @@ int cw_null_open_device_internal(cw_gen_t *gen)
 */
 void cw_null_close_device_internal(cw_gen_t *gen)
 {
-	gen->audio_device_is_open = false;
+	gen->sound_device_is_open = false;
 	return;
 }
 
@@ -131,11 +131,11 @@ void cw_null_close_device_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Write to Null audio sink configured and opened for generator
+   \brief Write to Null sound sink configured and opened for generator
 
    The function doesn't really write the samples anywhere, it just
    sleeps for period of time that would be necessary to write the
-   samples to a real audio device and play/sound them.
+   samples to a real sound device and play/sound them.
 
    \reviewed on 2017-02-04
 
@@ -147,7 +147,7 @@ void cw_null_close_device_internal(cw_gen_t *gen)
 void cw_null_write(__attribute__((unused)) cw_gen_t *gen, cw_tone_t *tone)
 {
 	assert (gen);
-	assert (gen->audio_system == CW_AUDIO_NULL);
+	assert (gen->sound_system == CW_AUDIO_NULL);
 	assert (tone->len >= 0); /* TODO: shouldn't the condition be "tone->len > 0"? */
 
 	struct timespec n = { .tv_sec = 0, .tv_nsec = 0 };

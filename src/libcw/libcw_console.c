@@ -21,7 +21,7 @@
 /**
    \file libcw_console.c
 
-   \brief Console buzzer audio sink.
+   \brief Console buzzer sound sink.
 */
 
 
@@ -168,7 +168,7 @@ bool cw_is_console_possible(const char *device)
    the client code must use cw_is_console_possible() instead, prior
    to calling this function.
 
-   You must use cw_gen_set_audio_device_internal() before calling
+   You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator \p gen won't know which device to open.
 
    \reviewed on 2017-02-04
@@ -180,17 +180,17 @@ bool cw_is_console_possible(const char *device)
 */
 int cw_console_open_device_internal(cw_gen_t *gen)
 {
-	assert (gen->audio_device);
+	assert (gen->sound_device);
 
-	if (gen->audio_device_is_open) {
+	if (gen->sound_device_is_open) {
 		/* Ignore the call if the console device is already open. */
 		return CW_SUCCESS;
 	}
 
-	int console = open(gen->audio_device, O_WRONLY);
+	int console = open(gen->sound_device, O_WRONLY);
 	if (console == -1) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open(%s): \"%s\"", gen->audio_device, strerror(errno));
+			      MSG_PREFIX "open(%s): \"%s\"", gen->sound_device, strerror(errno));
 		return CW_FAILURE;
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
@@ -201,8 +201,8 @@ int cw_console_open_device_internal(cw_gen_t *gen)
 	   on non-zero value of sample rate. */
 	gen->sample_rate = 44100;
 
-	gen->audio_sink = console;
-	gen->audio_device_is_open = true;
+	gen->sound_sink = console;
+	gen->sound_device_is_open = true;
 
 	return CW_SUCCESS;
 }
@@ -219,7 +219,7 @@ int cw_console_open_device_internal(cw_gen_t *gen)
 */
 void cw_console_silence(cw_gen_t *gen)
 {
-	ioctl(gen->audio_sink, KIOCSOUND, 0);
+	ioctl(gen->sound_sink, KIOCSOUND, 0);
 	return;
 }
 
@@ -233,9 +233,9 @@ void cw_console_silence(cw_gen_t *gen)
 */
 void cw_console_close_device_internal(cw_gen_t *gen)
 {
-	close(gen->audio_sink);
-	gen->audio_sink = -1;
-	gen->audio_device_is_open = false;
+	close(gen->sound_sink);
+	gen->sound_sink = -1;
+	gen->sound_device_is_open = false;
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "console closed");
@@ -247,7 +247,7 @@ void cw_console_close_device_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Write to Console audio sink configured and opened for generator
+   \brief Write to Console sound sink configured and opened for generator
 
    Function behaving like a device, to which one does a blocking write.
    It generates sound with parameters (frequency and duration) specified
@@ -264,7 +264,7 @@ void cw_console_close_device_internal(cw_gen_t *gen)
 int cw_console_write(cw_gen_t *gen, cw_tone_t *tone)
 {
 	assert (gen);
-	assert (gen->audio_system == CW_AUDIO_CONSOLE);
+	assert (gen->sound_system == CW_AUDIO_CONSOLE);
 	assert (tone->len >= 0); /* TODO: shouldn't the condition be "tone->len > 0"? */
 
 	struct timespec n = { .tv_sec = 0, .tv_nsec = 0 };
@@ -334,7 +334,7 @@ int cw_console_write_low_level_internal(cw_gen_t *gen, bool state)
 		      MSG_PREFIX "KIOCSOUND arg = %d (switch: %d, frequency: %d Hz, volume: %d %%)",
 		      argument, local_state, gen->frequency, gen->volume_percent);
 
-	if (ioctl(gen->audio_sink, KIOCSOUND, argument) == -1) {
+	if (ioctl(gen->sound_sink, KIOCSOUND, argument) == -1) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctl KIOCSOUND: '%s'", strerror(errno));
 		return CW_FAILURE;
@@ -347,7 +347,7 @@ int cw_console_write_low_level_internal(cw_gen_t *gen, bool state)
 
 
 /**
-   \brief Configure given generator to work with Console audio sink
+   \brief Configure given generator to work with Console sound sink
 
    \reviewed on 2017-02-04
 
@@ -360,8 +360,8 @@ int cw_console_configure(cw_gen_t *gen, const char *device)
 {
 	assert (gen);
 
-	gen->audio_system = CW_AUDIO_CONSOLE;
-	cw_gen_set_audio_device_internal(gen, device);
+	gen->sound_system = CW_AUDIO_CONSOLE;
+	cw_gen_set_sound_device_internal(gen, device);
 
 	gen->open_device  = cw_console_open_device_internal;
 	gen->close_device = cw_console_close_device_internal;
@@ -386,7 +386,7 @@ int cw_console_configure(cw_gen_t *gen, const char *device)
 bool cw_is_console_possible(__attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return false;
 }
 
@@ -396,7 +396,7 @@ bool cw_is_console_possible(__attribute__((unused)) const char *device)
 int cw_console_configure(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return CW_FAILURE;
 }
 

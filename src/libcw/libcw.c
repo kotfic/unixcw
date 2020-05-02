@@ -197,16 +197,16 @@ static volatile cw_key_t cw_key = {
    will return pointer to newly allocated generator, and then you
    could have as many of them as you want, but not yet.
 
-   \p audio_system can be one of following: NULL, console, OSS, ALSA,
+   \p sound_system can be one of following: NULL, console, OSS, ALSA,
    PulseAudio, soundcard. See "enum cw_audio_systems" in libcw.h for
    exact names of symbolic constants.
 
-   \param audio_system - audio system to be used by the generator
-   \param device - name of audio device to be used; if NULL then library will use default device.
+   \param sound_system - sound system to be used by the generator
+   \param device - name of sound device to be used; if NULL then library will use default device.
 */
-int cw_generator_new(int audio_system, const char *device)
+int cw_generator_new(int sound_system, const char *device)
 {
-	cw_generator = cw_gen_new(audio_system, device);
+	cw_generator = cw_gen_new(sound_system, device);
 	if (!cw_generator) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
 			      MSG_PREFIX "can't create generator");
@@ -684,7 +684,7 @@ int cw_send_representation_partial(const char *representation)
 
    errno is set to ENOENT if the given character \p c is not a valid
    Morse character.
-   errno is set to EBUSY if current audio sink or keying system is
+   errno is set to EBUSY if current sound sink or keying system is
    busy.
    errno is set to EAGAIN if the generator's tone queue is full, or if
    there is insufficient space to queue the tones for the character.
@@ -720,7 +720,7 @@ int cw_send_character(char c)
 
    errno is set to ENOENT if the given character \p c is not a valid
    Morse character.
-   errno is set to EBUSY if the audio sink or keying system is busy.
+   errno is set to EBUSY if the sound sink or keying system is busy.
    errno is set to EAGAIN if the tone queue is full, or if there is
    insufficient space to queue the tones for the character.
 
@@ -748,7 +748,7 @@ int cw_send_character_partial(char c)
    errno is set to ENOENT if any character in the string is not a
    valid Morse character.
 
-   errno is set to EBUSY if audio sink or keying system is busy.
+   errno is set to EBUSY if sound sink or keying system is busy.
 
    errno is set to EAGAIN if the tone queue is full or if the tone
    queue runs out of space part way through queueing the string.
@@ -811,7 +811,7 @@ void cw_reset_send_receive_parameters(void)
 */
 const char *cw_get_console_device(void)
 {
-	return cw_generator->audio_device;
+	return cw_generator->sound_device;
 }
 
 
@@ -827,7 +827,7 @@ const char *cw_get_console_device(void)
 */
 const char *cw_get_soundcard_device(void)
 {
-	return cw_generator->audio_device;
+	return cw_generator->sound_device;
 }
 
 
@@ -835,16 +835,16 @@ const char *cw_get_soundcard_device(void)
 
 
 /**
-   \brief Get a readable label of current audio system
+   \brief Get a readable label of current sound system
 
    The function returns one of following strings:
    None, Null, Console, OSS, ALSA, PulseAudio, Soundcard
 
-   \return audio system's label
+   \return sound system's label
 */
 const char *cw_generator_get_audio_system_label(void)
 {
-	return cw_get_audio_system_label(cw_generator->audio_system);
+	return cw_get_audio_system_label(cw_generator->sound_system);
 }
 
 

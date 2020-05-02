@@ -21,7 +21,7 @@
 /**
    \file libcw_oss.c
 
-   \brief OSS audio sink.
+   \brief OSS sound system.
 */
 
 
@@ -88,7 +88,6 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 extern const unsigned int cw_supported_sample_rates[];
-extern const char *default_audio_devices[];
 
 
 
@@ -97,7 +96,7 @@ extern const char *default_audio_devices[];
 #define CW_OSS_SET_FRAGMENT       1  /* ioctl(fd, SNDCTL_DSP_SETFRAGMENT, &param) */
 #define CW_OSS_SET_POLICY         0  /* ioctl(fd, SNDCTL_DSP_POLICY, &param) */
 
-/* Constants specific to OSS audio system configuration. */
+/* Constants specific to OSS sound system configuration. */
 static const int CW_OSS_SETFRAGMENT = 7;              /* Sound fragment size, 2^7 samples. */
 static const int CW_OSS_SAMPLE_FORMAT = AFMT_S16_NE;  /* Sound format AFMT_S16_NE = signed 16 bit, native endianess; LE = Little endianess. */
 
@@ -180,7 +179,7 @@ bool cw_is_oss_possible(const char *device)
 
 
 /**
-   \brief Configure given generator to work with OSS audio sink
+   \brief Configure given generator to work with OSS sound system
 
    \reviewed on 2017-02-05
 
@@ -193,8 +192,8 @@ int cw_oss_configure(cw_gen_t *gen, const char *device)
 {
 	assert (gen);
 
-	gen->audio_system = CW_AUDIO_OSS;
-	cw_gen_set_audio_device_internal(gen, device);
+	gen->sound_system = CW_AUDIO_OSS;
+	cw_gen_set_sound_device_internal(gen, device);
 
 	gen->open_device  = cw_oss_open_device_internal;
 	gen->close_device = cw_oss_close_device_internal;
@@ -207,7 +206,7 @@ int cw_oss_configure(cw_gen_t *gen, const char *device)
 
 
 /**
-   \brief Write generated samples to OSS audio sink configured and opened for generator
+   \brief Write generated samples to OSS sound system configured and opened for generator
 
 
    \param gen - generator
@@ -218,13 +217,13 @@ int cw_oss_configure(cw_gen_t *gen, const char *device)
 int cw_oss_write_internal(cw_gen_t *gen)
 {
 	assert (gen);
-	assert (gen->audio_system == CW_AUDIO_OSS);
+	assert (gen->sound_system == CW_AUDIO_OSS);
 
 	int n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
-	int rv = write(gen->audio_sink, gen->buffer, n_bytes);
+	int rv = write(gen->sound_sink, gen->buffer, n_bytes);
 	if (rv != n_bytes) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "write: audio write: %s", strerror(errno));
+			      MSG_PREFIX "write: %s", strerror(errno));
 		return CW_FAILURE;
 	}
 	// cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO, MSG_PREFIX "written %d samples", gen->buffer_n_samples);
@@ -238,7 +237,7 @@ int cw_oss_write_internal(cw_gen_t *gen)
 /**
    \brief Open OSS output, associate it with given generator
 
-   You must use cw_gen_set_audio_device_internal() before calling
+   You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator \p gen won't know which device to open.
 
    \reviewed on 2017-02-05
@@ -254,10 +253,10 @@ int cw_oss_open_device_internal(cw_gen_t *gen)
 	   cw_oss_open_device_internal() and is_possible() function. */
 
 	/* Open the given soundcard device file, for write only. */
-	int soundcard = open(gen->audio_device, O_WRONLY);
+	int soundcard = open(gen->sound_device, O_WRONLY);
 	if (soundcard == -1) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: open(%s): '%s'", gen->audio_device, strerror(errno));
+			      MSG_PREFIX "open: open(%s): '%s'", gen->sound_device, strerror(errno));
 		return CW_FAILURE;
 	}
 
@@ -297,9 +296,9 @@ int cw_oss_open_device_internal(cw_gen_t *gen)
 
 	cw_oss_get_version_internal(soundcard, &gen->oss_version.x, &gen->oss_version.y, &gen->oss_version.z);
 
-	/* Mark audio sink as now open for business. */
-	gen->audio_device_is_open = true;
-	gen->audio_sink = soundcard;
+	/* Mark sound sink as now open for business. */
+	gen->sound_device_is_open = true;
+	gen->sound_sink = soundcard;
 
 #if CW_DEV_RAW_SINK
 	gen->dev_raw_sink = open("/tmp/cw_file.oss.raw", O_WRONLY | O_TRUNC | O_NONBLOCK);
@@ -353,7 +352,7 @@ int cw_oss_open_device_ioctls_internal(int *fd, int *sample_rate)
 		return CW_FAILURE;
 	}
 #endif
-	/* Set the audio format. */
+	/* Set the sample format. */
 	parameter = CW_OSS_SAMPLE_FORMAT;
 	if (-1 == ioctl(*fd, (int) SNDCTL_DSP_SETFMT, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
@@ -363,7 +362,7 @@ int cw_oss_open_device_ioctls_internal(int *fd, int *sample_rate)
 	if (parameter != CW_OSS_SAMPLE_FORMAT) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: sample format not supported");
-		/* TODO: can't we try some other audio format? */
+		/* TODO: can't we try some other sample format? */
 		return CW_FAILURE;
 	}
 
@@ -495,9 +494,9 @@ int cw_oss_open_device_ioctls_internal(int *fd, int *sample_rate)
 */
 void cw_oss_close_device_internal(cw_gen_t *gen)
 {
-	close(gen->audio_sink);
-	gen->audio_sink = -1;
-	gen->audio_device_is_open = false;
+	close(gen->sound_sink);
+	gen->sound_sink = -1;
+	gen->sound_device_is_open = false;
 
 #if CW_DEV_RAW_SINK
 	if (gen->dev_raw_sink != -1) {
@@ -558,7 +557,7 @@ int cw_oss_get_version_internal(int fd, int *x, int *y, int *z)
 bool cw_is_oss_possible(__attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return false;
 }
 
@@ -568,7 +567,7 @@ bool cw_is_oss_possible(__attribute__((unused)) const char *device)
 int  cw_oss_configure(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return CW_FAILURE;
 }
 

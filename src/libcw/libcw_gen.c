@@ -22,15 +22,15 @@
    \file libcw_gen.c
 
    \brief Generate pcm samples according to tones from tone queue, and
-   send them to audio sink.
+   send them to sound sink.
 
    Functions operating on one of core elements of libcw: a generator.
 
-   Generator is an object that has access to audio sink (soundcard,
-   console buzzer, null audio device) and that can generate dots and
-   dashes using the audio sink.
+   Generator is an object that has access to sound sink (soundcard,
+   console buzzer, null sound device) and that can generate dots and
+   dashes using the sound sink.
 
-   You can request generator to produce audio by using *_enqeue_*()
+   You can request generator to produce sound by using *_enqeue_*()
    functions.
 
    The inner workings of the generator seem to be quite simple:
@@ -38,14 +38,14 @@
    2. recalculate tone length in microseconds into tone length in samples
    3. for every sample in tone, calculate sine wave sample and
       put it in generator's constant size buffer
-   4. if buffer is full of sine wave samples, push it to audio sink
+   4. if buffer is full of sine wave samples, push it to sound sink
    5. since buffer is shorter than (almost) any tone, you will
-      recalculate contents of the buffer and push it to audio sink
+      recalculate contents of the buffer and push it to sound sink
       multiple times per tone
    6. if you iterated over all samples in tone, but you still didn't
       fill up that last buffer, go to step #1
    7. if there are no more tones in queue, pad the buffer with silence,
-      and push the buffer to audio sink.
+      and push the buffer to sound sink.
 
    Looks simple, right? But it's the little details that ruin it all.
    One of the details is tone's slopes.
@@ -109,12 +109,12 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
-/* Most of audio systems (excluding console) should be configured to
-   have specific sample rate. Some audio systems (with connection with
+/* Most of sound systems (excluding console) should be configured to
+   have specific sample rate. Some sound systems (with connection with
    given hardware) can support several different sample rates. Values of
    supported sample rates are standardized. Here is a list of them to be
    used by this library.
-   When the library configures given audio system, it tries if the system
+   When the library configures given sound system, it tries if the system
    will accept a sample rate from the table, starting from the first one.
    If a sample rate is accepted, rest of sample rates is not tested anymore. */
 const unsigned int cw_supported_sample_rates[] = {
@@ -132,10 +132,10 @@ const unsigned int cw_supported_sample_rates[] = {
 
 
 
-/* Every audio system opens an audio device: a default device, or some
+/* Every sound system opens an sound device: a default device, or some
    other device. Default devices have their default names, and here is
    a list of them. It is indexed by values of "enum cw_audio_systems". */
-static const char *default_audio_devices[] = {
+static const char *default_sound_devices[] = {
 	(char *) NULL,          /* CW_AUDIO_NONE */
 	CW_DEFAULT_NULL_DEVICE, /* CW_AUDIO_NULL */
 	CW_DEFAULT_CONSOLE_DEVICE,
@@ -147,7 +147,7 @@ static const char *default_audio_devices[] = {
 
 
 
-/* Generic constants - common for all audio systems (or not used in some of systems). */
+/* Generic constants - common for all sound systems (or not used in some of systems). */
 
 static const long int CW_AUDIO_VOLUME_RANGE = (1 << 15);  /* 2^15 = 32768 */
 
@@ -163,9 +163,9 @@ static const int CW_AUDIO_QUANTUM_LEN_INITIAL = 100;  /* [us] */
 
 
 /**
-   \brief Get a copy of readable label of current audio system
+   \brief Get a copy of readable label of current sound system
 
-   Get a copy of human-readable string describing audio system
+   Get a copy of human-readable string describing sound system
    associated currently with given \p gen.
 
    The function returns newly allocated pointer to one of following
@@ -178,15 +178,15 @@ static const int CW_AUDIO_QUANTUM_LEN_INITIAL = 100;  /* [us] */
    string. cw_generator_get_audio_system_label() returns a pointer to
    static string owned by library.
 
-   \param gen - generator for which to check audio system label
+   \param gen - generator for which to check sound system label
 
-   \return audio system's label
+   \return sound system's label
 */
-char *cw_gen_get_audio_system_label_internal(cw_gen_t *gen)
+char * cw_gen_get_sound_system_label_internal(cw_gen_t *gen)
 {
-	char *s = strdup(cw_get_audio_system_label(gen->audio_system));
+	char *s = strdup(cw_get_audio_system_label(gen->sound_system)); /* TODO: replace with writing to buffer provided by caller. */
 	if (!s) {
-		cw_vdm ("failed to strdup() audio system label for audio system %d\n", gen->audio_system);
+		cw_vdm ("failed to strdup() sound system label for sound system %d\n", gen->sound_system);
 	}
 
 	return s;
@@ -216,16 +216,16 @@ int cw_gen_start(cw_gen_t * gen)
 	   Generator's 'dequeue and generate' function will be a separate thread. */
 	gen->client.thread_id = pthread_self();
 
-	if (gen->audio_system != CW_AUDIO_NULL
-	    && gen->audio_system != CW_AUDIO_CONSOLE
-	    && gen->audio_system != CW_AUDIO_OSS
-	    && gen->audio_system != CW_AUDIO_ALSA
-	    && gen->audio_system != CW_AUDIO_PA) {
+	if (gen->sound_system != CW_AUDIO_NULL
+	    && gen->sound_system != CW_AUDIO_CONSOLE
+	    && gen->sound_system != CW_AUDIO_OSS
+	    && gen->sound_system != CW_AUDIO_ALSA
+	    && gen->sound_system != CW_AUDIO_PA) {
 
 		gen->do_dequeue_and_generate = false;
 
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "unsupported audio system %d", gen->audio_system);
+			      MSG_PREFIX "unsupported sound system %d", gen->sound_system);
 		return CW_FAILURE;
 	}
 
@@ -240,7 +240,7 @@ int cw_gen_start(cw_gen_t * gen)
 		gen->do_dequeue_and_generate = false;
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-			      MSG_PREFIX "failed to create %s generator thread", cw_get_audio_system_label(gen->audio_system));
+			      MSG_PREFIX "failed to create %s generator thread", cw_get_audio_system_label(gen->sound_system));
 		return CW_FAILURE;
 	} else {
 		/* TODO: shouldn't we be doing it in generator's thread function? */
@@ -261,11 +261,11 @@ int cw_gen_start(cw_gen_t * gen)
 
 
 /**
-   \brief Set audio device name or path
+   \brief Set sound device name or path
 
-   Set path to audio device, or name of audio device. The path/name
+   Set path to sound device, or name of sound device. The path/name
    will be associated with given generator \p gen, and used when opening
-   audio device.
+   sound device.
 
    Use this function only when setting up a generator.
 
@@ -277,28 +277,28 @@ int cw_gen_start(cw_gen_t * gen)
    \return CW_SUCCESS on success
    \return CW_FAILURE on errors
 */
-int cw_gen_set_audio_device_internal(cw_gen_t *gen, const char *device)
+int cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device)
 {
 	/* This should be NULL, either because it has been
 	   initialized statically as NULL, or set to
 	   NULL by generator destructor */
-	cw_assert (NULL == gen->audio_device, MSG_PREFIX "audio device already set\n");
-	cw_assert (gen->audio_system != CW_AUDIO_NONE, MSG_PREFIX "audio system not set\n");
+	cw_assert (NULL == gen->sound_device, MSG_PREFIX "sound device already set\n");
+	cw_assert (gen->sound_system != CW_AUDIO_NONE, MSG_PREFIX "sound system not set\n");
 
-	if (gen->audio_system == CW_AUDIO_NONE) {
-		gen->audio_device = (char *) NULL;
+	if (gen->sound_system == CW_AUDIO_NONE) {
+		gen->sound_device = (char *) NULL;
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "no audio system specified");
+			      MSG_PREFIX "no sound system specified");
 		return CW_FAILURE;
 	}
 
 	if (device) {
-		gen->audio_device = strdup(device);
+		gen->sound_device = strdup(device);
 	} else {
-		gen->audio_device = strdup(default_audio_devices[gen->audio_system]);
+		gen->sound_device = strdup(default_sound_devices[gen->sound_system]);
 	}
 
-	if (!gen->audio_device) {
+	if (!gen->sound_device) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR, MSG_PREFIX "malloc()");
 		return CW_FAILURE;
 	} else {
@@ -312,21 +312,21 @@ int cw_gen_set_audio_device_internal(cw_gen_t *gen, const char *device)
 /**
    \brief Silence the generator
 
-   Force an audio sink currently used by generator \p gen to go
+   Force an sound sink currently used by generator \p gen to go
    silent.
 
    The function does not clear/flush tone queue, nor does it stop the
-   generator. It just makes sure that audio sink (console / OSS / ALSA
+   generator. It just makes sure that sound sink (console / OSS / ALSA
    / PulseAudio) does not produce a sound of any frequency and any
    volume.
 
    You probably want to call cw_tq_flush_internal(gen->tq) before
    calling this function.
 
-   \param gen - generator using an audio sink that should be silenced
+   \param gen - generator using an sound sink that should be silenced
 
    \return CW_SUCCESS on success
-   \return CW_FAILURE on failure to silence an audio sink
+   \return CW_FAILURE on failure to silence a sound sink
 */
 int cw_gen_silence_internal(cw_gen_t *gen)
 {
@@ -349,22 +349,22 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 	}
 
 	/* Somewhere there may be a key in "down" state and we need to
-	   make it go "up", regardless of audio sink (even for
-	   CDW_AUDIO_NULL, because that audio system can also be used with a key).
+	   make it go "up", regardless of sound sink (even for
+	   CDW_AUDIO_NULL, because that sound system can also be used with a key).
 	   Otherwise the key may stay in "down" state forever. */
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, gen->quantum_len, CW_SLOPE_MODE_NO_SLOPES);
 	int status = cw_tq_enqueue_internal(gen->tq, &tone);
 
-	if (gen->audio_system == CW_AUDIO_NULL
-	    || gen->audio_system == CW_AUDIO_OSS
-	    || gen->audio_system == CW_AUDIO_ALSA
-	    || gen->audio_system == CW_AUDIO_PA) {
+	if (gen->sound_system == CW_AUDIO_NULL
+	    || gen->sound_system == CW_AUDIO_OSS
+	    || gen->sound_system == CW_AUDIO_ALSA
+	    || gen->sound_system == CW_AUDIO_PA) {
 
 		/* Allow some time for playing the last tone. */
 		usleep(2 * gen->quantum_len); /* TODO: this should be usleep(2 * tone->len). */
 
-	} else if (gen->audio_system == CW_AUDIO_CONSOLE) {
+	} else if (gen->sound_system == CW_AUDIO_CONSOLE) {
 		/* Sine wave generation should have been stopped
 		   by a code generating dots/dashes, but
 		   just in case...
@@ -374,10 +374,10 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 		cw_console_silence(gen);
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_ERROR,
-			      MSG_PREFIX "called silence() function for generator without audio system specified");
+			      MSG_PREFIX "called silence() function for generator without sound system specified");
 	}
 
-	if (gen->audio_system == CW_AUDIO_ALSA) {
+	if (gen->sound_system == CW_AUDIO_ALSA) {
 		/* "Stop a PCM dropping pending frames. " */
 		cw_alsa_drop(gen);
 	}
@@ -396,13 +396,13 @@ int cw_gen_silence_internal(cw_gen_t *gen)
    \brief Create new generator
 
 */
-cw_gen_t * cw_gen_new(int audio_system, const char * device)
+cw_gen_t * cw_gen_new(int sound_system, const char * device)
 {
 #ifdef LIBCW_WITH_DEV
 	fprintf(stderr, "libcw build %s %s\n", __DATE__, __TIME__);
 #endif
 
-	cw_assert (audio_system != CW_AUDIO_NONE, MSG_PREFIX "can't create generator with audio system '%s'", cw_get_audio_system_label(audio_system));
+	cw_assert (sound_system != CW_AUDIO_NONE, MSG_PREFIX "can't create generator with sound system '%s'", cw_get_audio_system_label(sound_system));
 
 	cw_gen_t *gen = (cw_gen_t *) malloc(sizeof (cw_gen_t));
 	if (!gen) {
@@ -459,7 +459,7 @@ cw_gen_t * cw_gen_new(int audio_system, const char * device)
 
 	/* Misc fields. */
 	{
-		/* Audio buffer and related items. */
+		/* Sound buffer and related items. */
 		gen->buffer = NULL;
 		gen->buffer_n_samples = -1;
 		gen->buffer_sub_start = 0;
@@ -502,12 +502,12 @@ cw_gen_t * cw_gen_new(int audio_system, const char * device)
 	}
 
 
-	/* Audio system. */
+	/* Sound system. */
 	{
-		gen->audio_device = NULL;
-		gen->audio_sink = -1;
-		/* gen->audio_system = audio_system; */ /* We handle this field below. */
-		gen->audio_device_is_open = false;
+		gen->sound_device = NULL;
+		gen->sound_sink = -1;
+		/* gen->sound_system = sound_system; */ /* We handle this field below. */
+		gen->sound_device_is_open = false;
 		gen->dev_raw_sink = -1;
 
 		gen->open_device = NULL;
@@ -515,17 +515,17 @@ cw_gen_t * cw_gen_new(int audio_system, const char * device)
 		gen->write = NULL;
 
 
-		/* Audio system - OSS. */
+		/* Sound system - OSS. */
 		gen->oss_version.x = -1;
 		gen->oss_version.y = -1;
 		gen->oss_version.z = -1;
 
-		/* Audio system - ALSA. */
+		/* Sound system - ALSA. */
 #ifdef LIBCW_WITH_ALSA
 		gen->alsa_data.handle = NULL;
 #endif
 
-		/* Audio system - PulseAudio. */
+		/* Sound system - PulseAudio. */
 #ifdef LIBCW_WITH_PULSEAUDIO
 		gen->pa_data.s = NULL;
 
@@ -536,18 +536,18 @@ cw_gen_t * cw_gen_new(int audio_system, const char * device)
 		gen->pa_data.ba.fragsize  = (uint32_t) -1;
 #endif
 
-		int rv = cw_gen_new_open_internal(gen, audio_system, device);
+		int rv = cw_gen_new_open_internal(gen, sound_system, device);
 		if (rv == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-				      MSG_PREFIX "failed to open audio sink for audio system '%s' and device '%s'", cw_get_audio_system_label(audio_system), device);
+				      MSG_PREFIX "failed to open sound sink for sound system '%s' and device '%s'", cw_get_audio_system_label(sound_system), device);
 			cw_gen_delete(&gen);
 			return (cw_gen_t *) NULL;
 		}
 
-		if (audio_system == CW_AUDIO_NULL
-		    || audio_system == CW_AUDIO_CONSOLE) {
+		if (sound_system == CW_AUDIO_NULL
+		    || sound_system == CW_AUDIO_CONSOLE) {
 
-			; /* The two types of audio output don't require audio buffer. */
+			; /* The two types of sound output don't require audio buffer. */
 		} else {
 			gen->buffer = (cw_sample_t *) malloc(gen->buffer_n_samples * sizeof (cw_sample_t));
 			if (!gen->buffer) {
@@ -603,8 +603,8 @@ void cw_gen_delete(cw_gen_t **gen)
 	   with algorithm for calculating the value. */
 	usleep(500);
 
-	free((*gen)->audio_device);
-	(*gen)->audio_device = NULL;
+	free((*gen)->sound_device);
+	(*gen)->sound_device = NULL;
 
 	free((*gen)->buffer);
 	(*gen)->buffer = NULL;
@@ -625,7 +625,7 @@ void cw_gen_delete(cw_gen_t **gen)
 
 	cw_tq_delete_internal(&((*gen)->tq));
 
-	(*gen)->audio_system = CW_AUDIO_NONE;
+	(*gen)->sound_system = CW_AUDIO_NONE;
 
 	free(*gen);
 	*gen = NULL;
@@ -640,7 +640,7 @@ void cw_gen_delete(cw_gen_t **gen)
    \brief Stop a generator
 
    1. Empty generator's tone queue.
-   2. Silence generator's audio sink.
+   2. Silence generator's sound sink.
    3. Stop generator' "dequeue and generate" thread function.
    4. If the thread does not stop in one second, kill it.
 
@@ -648,7 +648,7 @@ void cw_gen_delete(cw_gen_t **gen)
    generate tones with the same generator again.
 
    The function may return CW_FAILURE only when silencing of
-   generator's audio sink fails.
+   generator's sound sink fails.
    Otherwise function returns CW_SUCCESS.
 
 
@@ -815,84 +815,84 @@ int cw_gen_join_thread_internal(cw_gen_t * gen)
 
 
 /**
-   \brief Open audio system
+   \brief Open sound system
 
-   A wrapper for code trying to open audio device specified by
-   \p audio_system.  Open audio system will be assigned to given
-   generator. Caller can also specify audio device to use instead
+   A wrapper for code trying to open sound device specified by
+   \p sound_system.  Open sound system will be assigned to given
+   generator. Caller can also specify sound device to use instead
    of a default one.
 
    \reviewed on 2017-01-26
 
    \param gen - freshly created generator
-   \param audio_system - audio system to open and assign to the generator
-   \param device - name of audio device to be used instead of a default one
+   \param sound_system - sound system to open and assign to the generator
+   \param device - name of sound device to be used instead of a default one
 
    \return CW_SUCCESS on success
    \return CW_FAILURE otherwise
 */
-int cw_gen_new_open_internal(cw_gen_t *gen, int audio_system, const char *device)
+int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device)
 {
 	/* FIXME: this functionality is partially duplicated in
 	   src/cwutils/cw_common.c/cw_gen_new_from_config() */
 
 	/* This function deliberately checks all possible values of
-	   audio system name in separate 'if' clauses before it gives
+	   sound system name in separate 'if' clauses before it gives
 	   up and returns CW_FAILURE. PA/OSS/ALSA are combined with
 	   SOUNDCARD, so I have to check all three of them (because \p
-	   audio_system may be set to SOUNDCARD). And since I check
+	   sound_system may be set to SOUNDCARD). And since I check
 	   the three in separate 'if' clauses, I can check all other
-	   values of audio system as well. */
+	   values of sound system as well. */
 
-	if (audio_system == CW_AUDIO_NULL) {
+	if (sound_system == CW_AUDIO_NULL) {
 
-		const char *dev = device ? device : default_audio_devices[CW_AUDIO_NULL];
+		const char *dev = device ? device : default_sound_devices[CW_AUDIO_NULL];
 		if (cw_is_null_possible(dev)) {
 			cw_null_configure(gen, dev);
 			return gen->open_device(gen);
 		}
 	}
 
-	if (audio_system == CW_AUDIO_PA
-	    || audio_system == CW_AUDIO_SOUNDCARD) {
+	if (sound_system == CW_AUDIO_PA
+	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device ? device : default_audio_devices[CW_AUDIO_PA];
+		const char *dev = device ? device : default_sound_devices[CW_AUDIO_PA];
 		if (cw_is_pa_possible(dev)) {
 			cw_pa_configure(gen, dev);
 			return gen->open_device(gen);
 		}
 	}
 
-	if (audio_system == CW_AUDIO_OSS
-	    || audio_system == CW_AUDIO_SOUNDCARD) {
+	if (sound_system == CW_AUDIO_OSS
+	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device ? device : default_audio_devices[CW_AUDIO_OSS];
+		const char *dev = device ? device : default_sound_devices[CW_AUDIO_OSS];
 		if (cw_is_oss_possible(dev)) {
 			cw_oss_configure(gen, dev);
 			return gen->open_device(gen);
 		}
 	}
 
-	if (audio_system == CW_AUDIO_ALSA
-	    || audio_system == CW_AUDIO_SOUNDCARD) {
+	if (sound_system == CW_AUDIO_ALSA
+	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device ? device : default_audio_devices[CW_AUDIO_ALSA];
+		const char *dev = device ? device : default_sound_devices[CW_AUDIO_ALSA];
 		if (cw_is_alsa_possible(dev)) {
 			cw_alsa_configure(gen, dev);
 			return gen->open_device(gen);
 		}
 	}
 
-	if (audio_system == CW_AUDIO_CONSOLE) {
+	if (sound_system == CW_AUDIO_CONSOLE) {
 
-		const char *dev = device ? device : default_audio_devices[CW_AUDIO_CONSOLE];
+		const char *dev = device ? device : default_sound_devices[CW_AUDIO_CONSOLE];
 		if (cw_is_console_possible(dev)) {
 			cw_console_configure(gen, dev);
 			return gen->open_device(gen);
 		}
 	}
 
-	/* There is no next audio system type to try. */
+	/* There is no next sound system type to try. */
 	return CW_FAILURE;
 }
 
@@ -900,16 +900,16 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int audio_system, const char *device
 
 
 /**
-   \brief Dequeue tones and push them to audio output
+   \brief Dequeue tones and push them to sound output
 
    This is a thread function.
 
    Function dequeues tones from tone queue associated with generator
-   and then sends them to preconfigured audio output (soundcard, NULL
+   and then sends them to preconfigured sound output (soundcard, NULL
    or console).
 
    Function dequeues tones (or waits for new tones in queue) and
-   pushes them to audio output as long as
+   pushes them to sound output as long as
    generator->do_dequeue_and_generate is true.
 
    The generator must be fully configured before creating thread with
@@ -1007,9 +1007,9 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 		cw_debug_ev (&cw_debug_object_ev, 0, tone.frequency ? CW_DEBUG_EVENT_TONE_HIGH : CW_DEBUG_EVENT_TONE_LOW);
 #endif
 
-		if (gen->audio_system == CW_AUDIO_NULL) {
+		if (gen->sound_system == CW_AUDIO_NULL) {
 			cw_null_write(gen, &tone);
-		} else if (gen->audio_system == CW_AUDIO_CONSOLE) {
+		} else if (gen->sound_system == CW_AUDIO_CONSOLE) {
 			cw_console_write(gen, &tone);
 		} else {
 			cw_gen_write_to_soundcard_internal(gen, &tone, is_empty_tone);
@@ -1526,7 +1526,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_e
 			/* There will be some tone samples left for
 			   next iteration of this loop.  But buffer in
 			   this iteration will be ready to be pushed
-			   to audio sink. */
+			   to sound sink. */
 			gen->buffer_sub_stop = gen->buffer_n_samples - 1;
 		} else if (samples_to_write == free_space) {
 			/* How nice, end of tone samples aligns with
@@ -1534,17 +1534,17 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_e
 			   placed in last cell of buffer).
 
 			   But the result is the same - a full buffer
-			   ready to be pushed to audio sink. */
+			   ready to be pushed to sound sink. */
 			gen->buffer_sub_stop = gen->buffer_n_samples - 1;
 		} else {
 			/* There will be too few samples to fill a
 			   buffer. We can't send an under-filled buffer to
-			   audio sink. We will have to get more
+			   sound sink. We will have to get more
 			   samples to fill the buffer completely. */
 			gen->buffer_sub_stop = gen->buffer_sub_start + samples_to_write - 1;
 		}
 
-		/* How many samples of audio buffer's subarea will be
+		/* How many samples of sound buffer's subarea will be
 		   calculated in a given cycle of "calculate sine
 		   wave" code, i.e. in current iteration of the 'while' loop? */
 		const int buffer_sub_n_samples = gen->buffer_sub_stop - gen->buffer_sub_start + 1;
@@ -1563,7 +1563,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_e
 		if (gen->buffer_sub_stop == gen->buffer_n_samples - 1) {
 
 			/* We have a buffer full of samples. The
-			   buffer is ready to be pushed to audio
+			   buffer is ready to be pushed to sound
 			   sink. */
 			gen->write(gen);
 #if CW_DEV_RAW_SINK
@@ -1632,7 +1632,7 @@ void cw_gen_empty_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_
 	   buffer (see #needmoresamples tag below).
 
 	   We need to fill the buffer until it is full and ready to be
-	   sent to audio sink.
+	   sent to sound sink.
 
 	   Since there are no new tones for which we could generate
 	   samples, we need to generate silence samples.
@@ -2405,7 +2405,7 @@ int cw_gen_enqueue_valid_character_internal(cw_gen_t *gen, char c)
    \errno ENOENT - the given character \p c is not a valid Morse
    character.
 
-   \errno EBUSY - generator's audio sink or keying system is busy.
+   \errno EBUSY - generator's sound sink or keying system is busy.
 
    \errno EAGAIN - generator's tone queue is full, or there is
    insufficient space to queue the tones for the character.
@@ -2463,7 +2463,7 @@ int cw_gen_enqueue_character(cw_gen_t * gen, char c)
    \errno ENOENT - given character \p c is not a valid Morse
    character.
 
-   \errno EBUSY - generator's audio sink or keying system is busy.
+   \errno EBUSY - generator's sound sink or keying system is busy.
 
    \errno EAGAIN - generator's tone queue is full, or there is
    insufficient space to queue the tones for the character.
@@ -2512,7 +2512,7 @@ int cw_gen_enqueue_character_partial(cw_gen_t *gen, char c)
    characters in the string is not a valid Morse character). No tones
    from such string are going to be enqueued.
 
-   \errno EBUSY  - generator's audio sink or keying system is busy
+   \errno EBUSY  - generator's sound sink or keying system is busy
 
    \errno EAGAIN - generator's tone queue is full or the tone queue
    is likely to run out of space part way through queueing the string.
@@ -2720,7 +2720,7 @@ int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 */
 int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
 {
-	if (gen->audio_system == CW_AUDIO_CONSOLE) {
+	if (gen->sound_system == CW_AUDIO_CONSOLE) {
 		/* FIXME: I think that enqueueing tone is not just a
 		   matter of generating it using generator, but also a
 		   matter of timing events using generator. Enqueueing
@@ -2866,7 +2866,7 @@ void cw_gen_flush_queue(cw_gen_t * gen)
 
 
 /**
-   \brief Return char string with generator's audio device path/name
+   \brief Return char string with generator's sound device path/name
 
    Returned pointer is owned by library.
 
@@ -2874,33 +2874,33 @@ void cw_gen_flush_queue(cw_gen_t * gen)
 
    \param gen
 
-   \return char string with generator's audio device path/name
+   \return char string with generator's sound device path/name
 */
-const char *cw_gen_get_audio_device(cw_gen_t const * gen)
+const char *cw_gen_get_sound_device(cw_gen_t const * gen)
 {
 	cw_assert (gen, MSG_PREFIX "generator is NULL");
-	return gen->audio_device;
+	return gen->sound_device;
 }
 
 
 
 
 /**
-   \brief Get id of audio system used by given generator (one of enum cw_audio_system values)
+   \brief Get id of sound system used by given generator (one of enum cw_audio_system values)
 
    You can use cw_get_audio_system_label() to get string corresponding
    to value returned by this function.
 
    \reviewed on 2017-01-20
 
-   \param gen - generator from which to get audio system
+   \param gen - generator from which to get sound system
 
-   \return audio system's id
+   \return sound system's id
 */
-int cw_gen_get_audio_system(cw_gen_t const * gen)
+int cw_gen_get_sound_system(cw_gen_t const * gen)
 {
 	cw_assert (gen, MSG_PREFIX "generator is NULL");
-	return gen->audio_system;
+	return gen->sound_system;
 }
 
 

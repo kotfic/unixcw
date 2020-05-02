@@ -66,7 +66,7 @@ namespace cw {
 		/* Handle key press and mouse button press events. */
 		void key_event(QKeyEvent *event);
 		void mouse_event(QMouseEvent *event);
-		void check_audio_system(cw_config_t *config);
+		void check_sound_system(cw_config_t * config);
 
 		void show_status(const QString &status);
 		void clear_status();

@@ -1126,13 +1126,13 @@ void Application::make_auxiliaries_end(void)
 
 
 
-void Application::check_audio_system(cw_config_t *config)
+void Application::check_sound_system(cw_config_t *config)
 {
-	if (config->audio_system == CW_AUDIO_ALSA
+	if (config->sound_system == CW_AUDIO_ALSA
 	    && cw_is_pa_possible(NULL)) {
 
 		QMessageBox msgBox;
-		QString message1 = _("Selected audio system is ALSA, but audio on your system is handled by PulseAudio.");
+		QString message1 = _("Selected sound system is ALSA, but sound on your system is handled by PulseAudio.");
 		QString message2 = _("Expect various problems.\n");
 		QString message3 = _("In this situation it is recommended to run %1 like this:\n" \
 				     "%2 -s p\n\n");

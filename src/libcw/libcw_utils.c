@@ -84,9 +84,9 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
-/* Human-readable labels of audio systems.
+/* Human-readable labels of sound systems.
    Indexed by values of "enum cw_audio_systems". */
-static const char *cw_audio_system_labels[] = {
+static const char * cw_sound_system_labels[] = {
 	"None",
 	"Null",
 	"Console",
@@ -200,7 +200,7 @@ void cw_license(void)
 
 
 /**
-   \brief Get a readable label of given audio system
+   \brief Get a readable label of given sound system
 
    The function returns one of following strings:
    None, Null, Console, OSS, ALSA, PulseAudio, Soundcard
@@ -211,13 +211,13 @@ void cw_license(void)
 
    \reviewed on 2017-02-04
 
-   \param audio_system - ID of audio system
+   \param sound_system - ID of sound system
 
-   \return audio system's label
+   \return sound system's label
 */
-const char *cw_get_audio_system_label(int audio_system)
+const char * cw_get_audio_system_label(int sound_system)
 {
-	return cw_audio_system_labels[audio_system];
+	return cw_sound_system_labels[sound_system];
 }
 
 

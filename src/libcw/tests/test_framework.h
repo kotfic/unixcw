@@ -73,7 +73,7 @@ typedef struct cw_test_executor_t {
 	/* This array holds stats for all distinct sound systems, and
 	   is indexed by cw_audio_systems enum. This means that first
 	   row will not be used (because CW_AUDIO_NONE==0 is not a
-	   distinct audio system). */
+	   distinct sound system). */
 	cw_test_stats_t all_stats[CW_SOUND_SYSTEM_LAST + 1][LIBCW_TEST_TOPIC_MAX];
 	cw_test_stats_t * stats; /* Pointer to current stats (one of members of ::all_stats[][]). */
 
@@ -312,7 +312,7 @@ typedef struct cw_test_executor_t {
 	   system (e.g. because a library is missing), such sound
 	   system is excluded from list of requested sound systems.
 	*/
-	bool (* sound_system_was_requested)(struct cw_test_executor_t * self, enum cw_audio_systems sound_system);
+	bool (* sound_system_was_requested)(struct cw_test_executor_t * self, cw_sound_system sound_system);
 
 
 
@@ -384,7 +384,7 @@ typedef struct cw_test_set_t {
 	/* Distinct sound systems that need to be configured to test
 	   given test set. This array is indexed from zero. End of
 	   this array is marked by guard element CW_AUDIO_NONE. */
-	enum cw_audio_systems tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1];
+	cw_sound_system tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1];
 
 	cw_test_function_wrapper_t test_functions[100]; /* Right now my test sets have only a few test functions. For now 100 is a safe limit. */
 } cw_test_set_t;

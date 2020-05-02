@@ -12,9 +12,9 @@ unixcw can be built and installed with standard set of commands:
 Depending on platform and software/files installed on build machine,
 build system will configure and compile following features:
  - support for console buzzer in libcw;
- - support for OSS audio backend in libcw;
- - support for ALSA audio backend in libcw;
- - support for PulseAudio audio backend in libcw;
+ - support for OSS sound system in libcw;
+ - support for ALSA sound system in libcw;
+ - support for PulseAudio sound system in libcw;
 If a support for a feature from this list is available in libcw, it
 will be available in rest of applications from unixcw package.
 
@@ -58,8 +58,8 @@ Build-time requirements for unixcw:
    you can override pkg-config settings for QT5 using environment
    variables, see output of "./configure --help" for details.
 
- - audio library development files for including support for OSS, ALSA
-   and PulseAudio audio sinks in libcw;
+ - sound system library development files for including support for
+   OSS, ALSA and PulseAudio sound sinks in libcw;
 
  - header file providing KIOCSOUND symbol for including support for
    console buzzer in libcw.

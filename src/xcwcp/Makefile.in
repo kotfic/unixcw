@@ -904,9 +904,9 @@ check:
 
 # This test target can be invoked manually.
 real_check: all
-	( echo "Trying with OSS audio output";				\
+	( echo "Trying with OSS sound system";				\
 	  LD_LIBRARY_PATH=../libcw:$$LD_LIBRARY_PATH ./xcwcp -so ) ||	\
-	( echo "Retrying with ALSA audio output";			\
+	( echo "Retrying with ALSA sound system";			\
 	  LD_LIBRARY_PATH=../libcw:$$LD_LIBRARY_PATH ./xcwcp -sa ) ||	\
 	( echo "Retrying the test in silent mode";			\
 	  LIBCW_DEBUG=1 						\

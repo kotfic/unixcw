@@ -151,11 +151,11 @@ AC_SUBST(LIBCW_VERSION)
 
 # Build support for console buzzer output? Yes by default.
 AC_ARG_ENABLE([console],
-    AS_HELP_STRING([--disable-console], [disable support for console buzzer audio output]),
+    AS_HELP_STRING([--disable-console], [disable support for console buzzer sound output]),
     [],
     [enable_console=yes])
 
-AC_MSG_CHECKING([whether to include console buzzer audio support])
+AC_MSG_CHECKING([whether to include console buzzer sound support])
 if test "$enable_console" = "yes" ; then
     AC_MSG_RESULT(yes)
 else
@@ -163,13 +163,13 @@ else
 fi
 
 
-# Build support for OSS audio system? Yes by default.
+# Build support for OSS sound system? Yes by default.
 AC_ARG_ENABLE([oss],
-    AS_HELP_STRING([--disable-oss], [disable support for OSS audio output]),
+    AS_HELP_STRING([--disable-oss], [disable support for OSS sound system output]),
     [],
     [enable_oss=yes])
 
-AC_MSG_CHECKING([whether to include OSS audio support])
+AC_MSG_CHECKING([whether to include OSS sound system support])
 if test "$enable_oss" = "yes" ; then
     AC_MSG_RESULT(yes)
 else
@@ -177,13 +177,13 @@ else
 fi
 
 
-# Build support for ALSA audio system? Yes by default.
+# Build support for ALSA sound system? Yes by default.
 AC_ARG_ENABLE([alsa],
-    AS_HELP_STRING([--disable-alsa], [disable support for ALSA audio output]),
+    AS_HELP_STRING([--disable-alsa], [disable support for ALSA sound system output]),
     [],
     [enable_alsa=yes])
 
-AC_MSG_CHECKING([whether to include ALSA audio support])
+AC_MSG_CHECKING([whether to include ALSA sound system support])
 if test "$enable_alsa" = "yes" ; then
     AC_MSG_RESULT(yes)
 else
@@ -191,13 +191,13 @@ else
 fi
 
 
-# Build support for PulseAudio audio system? Yes by default.
+# Build support for PulseAudio sound system? Yes by default.
 AC_ARG_ENABLE(pulseaudio,
-    AS_HELP_STRING([--disable-pulseaudio], [disable support for PulseAudio audio output]),
+    AS_HELP_STRING([--disable-pulseaudio], [disable support for PulseAudio sound system output]),
     [],
     [enable_pulseaudio=yes])
 
-AC_MSG_CHECKING([whether to include PulseAudio audio support])
+AC_MSG_CHECKING([whether to include PulseAudio sound system support])
 if test "$enable_pulseaudio" = "yes" ; then
     AC_MSG_RESULT(yes)
 else
@@ -271,7 +271,7 @@ else
 	&& test "$ac_cv_header_sys_kbio_h" = 'no' ; then
 
 	WITH_CONSOLE='no'
-	AC_MSG_WARN([Cannot find either sys/kd.h, sys/vtkd.h, or sys/kbio.h - support for console buzzer audio output will be disabled])
+	AC_MSG_WARN([Cannot find either sys/kd.h, sys/vtkd.h, or sys/kbio.h - support for console buzzer sound output will be disabled])
     else
 	WITH_CONSOLE='yes'
     fi
@@ -291,7 +291,7 @@ else
 	&& test "$ac_cv_header_sys_soundcard_h" = 'no' ; then
 
 	WITH_OSS='no'
-        AC_MSG_WARN([Cannot find either soundcard.h or sys/soundcard.h - support for OSS audio output will be disabled])
+        AC_MSG_WARN([Cannot find either soundcard.h or sys/soundcard.h - support for OSS sound system will be disabled])
     else
 	WITH_OSS='yes'
     fi
@@ -320,7 +320,7 @@ else
 	WITH_ALSA='yes'
     else
 	WITH_ALSA='no'
-	AC_MSG_WARN([Cannot find ALSA library files - support for ALSA audio output will be disabled])
+	AC_MSG_WARN([Cannot find ALSA library files - support for ALSA sound system will be disabled])
     fi
 fi
 
@@ -339,7 +339,7 @@ else
 	WITH_PULSEAUDIO='yes'
     else
 	WITH_PULSEAUDIO='no'
-	AC_MSG_WARN([Cannot find PulseAudio library files - support for PulseAudio audio output will be disabled])
+	AC_MSG_WARN([Cannot find PulseAudio library files - support for PulseAudio sound system will be disabled])
     fi
 fi
 

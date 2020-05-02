@@ -21,7 +21,7 @@
 /**
    \file libcw_pa.c
 
-   \brief PulseAudio audio sink.
+   \brief PulseAudio sound system.
 */
 
 
@@ -181,7 +181,7 @@ bool cw_is_pa_possible(const char *device)
 
 
 /**
-   \brief Configure given generator to work with PulseAudio audio sink
+   \brief Configure given generator to work with PulseAudio sound sink
 
    \reviewed on 2017-02-04
 
@@ -194,8 +194,8 @@ int cw_pa_configure(cw_gen_t *gen, const char *dev)
 {
 	assert (gen);
 
-	gen->audio_system = CW_AUDIO_PA;
-	cw_gen_set_audio_device_internal(gen, dev);
+	gen->sound_system = CW_AUDIO_PA;
+	cw_gen_set_sound_device_internal(gen, dev);
 
 	gen->open_device  = cw_pa_open_device_internal;
 	gen->close_device = cw_pa_close_device_internal;
@@ -208,7 +208,7 @@ int cw_pa_configure(cw_gen_t *gen, const char *dev)
 
 
 /**
-   \brief Write generated samples to PulseAudio audio sink configured and opened for generator
+   \brief Write generated samples to PulseAudio sound sink configured and opened for generator
 
    \reviewed on 2017-02-04
 
@@ -220,7 +220,7 @@ int cw_pa_configure(cw_gen_t *gen, const char *dev)
 int cw_pa_write_internal(cw_gen_t *gen)
 {
 	assert (gen);
-	assert (gen->audio_system == CW_AUDIO_PA);
+	assert (gen->sound_system == CW_AUDIO_PA);
 
 	int error = 0;
 	size_t n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
@@ -250,7 +250,7 @@ int cw_pa_write_internal(cw_gen_t *gen)
    writing (playback). The function tries to set up buffering parameters
    for minimal latency, but it doesn't try too hard.
 
-   The function *does not* set size of audio buffer in libcw's generator.
+   The function *does not* set size of sound buffer in libcw's generator.
 
    \reviewed on 2017-02-04
 
@@ -340,7 +340,7 @@ int cw_pa_dlsym_internal(void *handle)
 /**
    \brief Open PulseAudio output, associate it with given generator
 
-   You must use cw_gen_set_audio_device_internal() before calling
+   You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator \p gen won't know which device to open.
 
    \reviewed on 2017-02-04
@@ -354,8 +354,8 @@ int cw_pa_open_device_internal(cw_gen_t *gen)
 {
 	/* TODO: this piece of code is duplicated in cw_pa_simple_new_internal() */
 	const char *dev = (char *) NULL; /* NULL - let PulseAudio use default device. */
-	if (gen->audio_device && strcmp(gen->audio_device, CW_DEFAULT_PA_DEVICE)) {
-		dev = gen->audio_device; /* Non-default device. */
+	if (gen->sound_device && strcmp(gen->sound_device, CW_DEFAULT_PA_DEVICE)) {
+		dev = gen->sound_device; /* Non-default device. */
 	}
 
 	int error = 0;
@@ -446,7 +446,7 @@ void cw_pa_close_device_internal(cw_gen_t *gen)
 bool cw_is_pa_possible(__attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return false;
 }
 
@@ -456,7 +456,7 @@ bool cw_is_pa_possible(__attribute__((unused)) const char *device)
 int cw_pa_configure(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return CW_FAILURE;
 }
 

@@ -59,7 +59,7 @@
 
 #include "libcw.h"
 #include "libcw_debug.h"
-#include "cmdline.h"
+#include "cw_cmdline.h"
 
 #include "test_framework.h"
 #include "test_framework_tools.h"
@@ -94,7 +94,7 @@ static int cw_test_fill_default_sound_systems_and_topics(cw_test_executor_t * se
 static void cw_test_print_test_options(cw_test_executor_t * self);
 
 static bool cw_test_test_topic_was_requested(cw_test_executor_t * self, int libcw_test_topic);
-static bool cw_test_sound_system_was_requested(cw_test_executor_t * self, enum cw_audio_systems sound_system);
+static bool cw_test_sound_system_was_requested(cw_test_executor_t * self, cw_sound_system sound_system);
 
 static const char * cw_test_get_current_topic_label(cw_test_executor_t * self);
 static const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self);
@@ -108,11 +108,11 @@ static void cw_test_log_info_cont(struct cw_test_executor_t * self, const char *
 static void cw_test_flush_info(struct cw_test_executor_t * self);
 static void cw_test_log_error(struct cw_test_executor_t * self, const char * fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
-static void cw_test_print_sound_systems(cw_test_executor_t * self, enum cw_audio_systems * sound_systems, int max);
+static void cw_test_print_sound_systems(cw_test_executor_t * self, cw_sound_system * sound_systems, int max);
 static void cw_test_print_topics(cw_test_executor_t * self, int * topics, int max);
 
 static bool cw_test_test_topic_is_member(cw_test_executor_t * cte, int topic, int * topics, int max);
-static bool cw_test_sound_system_is_member(cw_test_executor_t * cte, enum cw_audio_systems sound_system, enum cw_audio_systems * sound_systems, int max);
+static bool cw_test_sound_system_is_member(cw_test_executor_t * cte, cw_sound_system sound_system, cw_sound_system * sound_systems, int max);
 
 static int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets);
 
@@ -631,7 +631,7 @@ bool cw_test_test_topic_was_requested(cw_test_executor_t * self, int libcw_test_
 
 
 
-bool cw_test_sound_system_was_requested(cw_test_executor_t * self, enum cw_audio_systems sound_system)
+bool cw_test_sound_system_was_requested(cw_test_executor_t * self, cw_sound_system sound_system)
 {
 	const int n = sizeof (self->config->tested_sound_systems) / sizeof (self->config->tested_sound_systems[0]);
 
@@ -1007,7 +1007,7 @@ void cw_test_log_error(struct cw_test_executor_t * self, const char * fmt, ...)
    (without printing label for the guard element) - whichever comes
    first.
 */
-void cw_test_print_sound_systems(cw_test_executor_t * self, enum cw_audio_systems * sound_systems, int max)
+void cw_test_print_sound_systems(cw_test_executor_t * self, cw_sound_system * sound_systems, int max)
 {
 	for (int i = 0; i < max; i++) {
 		if (CW_AUDIO_NONE == sound_systems[i]) {
@@ -1141,7 +1141,7 @@ bool cw_test_test_topic_is_member(__attribute__((unused)) cw_test_executor_t * c
 
    The size of @param sound_system is specified by @param max.
 */
-bool cw_test_sound_system_is_member(__attribute__((unused)) cw_test_executor_t * cte, enum cw_audio_systems sound_system, enum cw_audio_systems * sound_systems, int max)
+bool cw_test_sound_system_is_member(__attribute__((unused)) cw_test_executor_t * cte, cw_sound_system sound_system, cw_sound_system * sound_systems, int max)
 {
 	for (int i = 0; i < max; i++) {
 		if (CW_AUDIO_NONE == sound_systems[i]) {
@@ -1178,7 +1178,7 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 			}
 
 
-			for (enum cw_audio_systems sound_system = CW_SOUND_SYSTEM_FIRST; sound_system <= CW_SOUND_SYSTEM_LAST; sound_system++) {
+			for (cw_sound_system sound_system = CW_SOUND_SYSTEM_FIRST; sound_system <= CW_SOUND_SYSTEM_LAST; sound_system++) {
 				if (!cte->sound_system_was_requested(cte, sound_system)) {
 					continue;
 				}

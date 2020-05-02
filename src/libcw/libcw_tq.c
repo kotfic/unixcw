@@ -22,7 +22,7 @@
    \file libcw_tq.c
 
    \brief Queue of tones to be converted by generator to pcm data and
-   sent to audio sink.
+   sent to sound sink.
 
    Tone queue - a circular list of tone durations and frequencies
    pending, with a pair of indexes: tail (enqueue) and head (dequeue).

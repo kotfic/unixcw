@@ -68,10 +68,15 @@ enum {
 
 
 
+typedef enum cw_audio_systems cw_sound_system; /* Someday it will go into libcw.h. */
+
+
+
+
 typedef struct cw_config_t {
 	char * program_name;
-	int audio_system;
-	char * audio_device;
+	cw_sound_system sound_system;
+	char * sound_device;
 	int send_speed;
 	int frequency;
 	int volume;
@@ -114,7 +119,7 @@ typedef struct cw_config_t {
 
 
 	/* These fields are used in libcw tests only. */
-	enum cw_audio_systems tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1]; /* List of distinct sound systems, indexed from zero. End of values is marked by CW_AUDIO_NONE guard. */
+	cw_sound_system tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1]; /* List of distinct sound systems, indexed from zero. End of values is marked by CW_AUDIO_NONE guard. */
 	int tested_areas[LIBCW_TEST_TOPIC_MAX + 1];
 	char test_function_name[128];  /* Execute only a test function with this name. */
 	int test_repetitions; /* How many times a single test function should be repeated? */
@@ -156,11 +161,11 @@ extern void cw_config_delete(cw_config_t ** config);
 
    Check consistency and correctness of configuration.
 
-   Currently the function only checks if "audio device" command line
+   Currently the function only checks if "sound device" command line
    argument has been specified at the same time when "soundcard"
-   has been specified as audio system. This is an inconsistency as
-   you can specify audio device only for specific audio system ("soundcard"
-   is just a general audio system).
+   has been specified as sound system. This is an inconsistency as
+   you can specify sound device only for specific sound system ("soundcard"
+   is just a general sound system).
 
    \param config - configuration to validate
 

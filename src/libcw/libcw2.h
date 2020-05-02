@@ -31,7 +31,7 @@ cw_ret cw_get_package_version(int * major, int * minor, int * maintenance);
 
 
 /* Basic generator functions. */
-cw_gen_t * cw_gen_new(int audio_system, const char * device);
+cw_gen_t * cw_gen_new(int sound_system, const char * device);
 void       cw_gen_delete(cw_gen_t ** gen);
 int        cw_gen_stop(cw_gen_t * gen);
 int        cw_gen_start(cw_gen_t * gen);
@@ -58,8 +58,8 @@ int cw_gen_enqueue_string(cw_gen_t * gen, const char * string);
 int cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level);
 
 void cw_gen_flush_queue(cw_gen_t * gen);
-const char *cw_gen_get_audio_device(cw_gen_t const * gen);
-int cw_gen_get_audio_system(cw_gen_t const * gen);
+const char *cw_gen_get_sound_device(cw_gen_t const * gen);
+int cw_gen_get_sound_system(cw_gen_t const * gen);
 size_t cw_gen_get_queue_length(cw_gen_t const * gen);
 int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level);
 int cw_gen_wait_for_tone(cw_gen_t * gen);

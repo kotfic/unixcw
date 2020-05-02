@@ -36,13 +36,13 @@ int test_cw_gen_enqueue_string(cw_test_executor_t * cte);
 /*
    "forever" feature is not a part of public api, so in theory it
    shouldn't be tested in libcw_test_public, but the libcw_test_public
-   is able to perform tests with different audio sinks, whereas
-   libcw_test_internal only uses NULL audio sink. TODO: fix this.
+   is able to perform tests with different sound sinks, whereas
+   libcw_test_internal only uses NULL sound sink. TODO: fix this.
 
    So libcw_test_internal does basic tests ("does it work at all?"),
    and libcw_test_public does full test.
 */
-int test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds, int audio_system, const char *audio_device);
+int test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds, cw_sound_system sound_system, const char * sound_device);
 
 
 

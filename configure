@@ -1454,10 +1454,10 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --disable-console       disable support for console buzzer audio output
-  --disable-oss           disable support for OSS audio output
-  --disable-alsa          disable support for ALSA audio output
-  --disable-pulseaudio    disable support for PulseAudio audio output
+  --disable-console       disable support for console buzzer sound output
+  --disable-oss           disable support for OSS sound system output
+  --disable-alsa          disable support for ALSA sound system output
+  --disable-pulseaudio    disable support for PulseAudio sound system output
   --disable-cwcp          do not build cwcp (application with curses user
                           interface)
   --disable-xcwcp         do not build xcwcp (application with Qt5 user
@@ -17112,8 +17112,8 @@ else
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include console buzzer audio support" >&5
-$as_echo_n "checking whether to include console buzzer audio support... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include console buzzer sound support" >&5
+$as_echo_n "checking whether to include console buzzer sound support... " >&6; }
 if test "$enable_console" = "yes" ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -17123,7 +17123,7 @@ $as_echo "no" >&6; }
 fi
 
 
-# Build support for OSS audio system? Yes by default.
+# Build support for OSS sound system? Yes by default.
 # Check whether --enable-oss was given.
 if test "${enable_oss+set}" = set; then :
   enableval=$enable_oss;
@@ -17132,8 +17132,8 @@ else
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include OSS audio support" >&5
-$as_echo_n "checking whether to include OSS audio support... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include OSS sound system support" >&5
+$as_echo_n "checking whether to include OSS sound system support... " >&6; }
 if test "$enable_oss" = "yes" ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -17143,7 +17143,7 @@ $as_echo "no" >&6; }
 fi
 
 
-# Build support for ALSA audio system? Yes by default.
+# Build support for ALSA sound system? Yes by default.
 # Check whether --enable-alsa was given.
 if test "${enable_alsa+set}" = set; then :
   enableval=$enable_alsa;
@@ -17152,8 +17152,8 @@ else
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include ALSA audio support" >&5
-$as_echo_n "checking whether to include ALSA audio support... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include ALSA sound system support" >&5
+$as_echo_n "checking whether to include ALSA sound system support... " >&6; }
 if test "$enable_alsa" = "yes" ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -17163,7 +17163,7 @@ $as_echo "no" >&6; }
 fi
 
 
-# Build support for PulseAudio audio system? Yes by default.
+# Build support for PulseAudio sound system? Yes by default.
 # Check whether --enable-pulseaudio was given.
 if test "${enable_pulseaudio+set}" = set; then :
   enableval=$enable_pulseaudio;
@@ -17172,8 +17172,8 @@ else
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include PulseAudio audio support" >&5
-$as_echo_n "checking whether to include PulseAudio audio support... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include PulseAudio sound system support" >&5
+$as_echo_n "checking whether to include PulseAudio sound system support... " >&6; }
 if test "$enable_pulseaudio" = "yes" ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -17279,8 +17279,8 @@ done
 	&& test "$ac_cv_header_sys_kbio_h" = 'no' ; then
 
 	WITH_CONSOLE='no'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find either sys/kd.h, sys/vtkd.h, or sys/kbio.h - support for console buzzer audio output will be disabled" >&5
-$as_echo "$as_me: WARNING: Cannot find either sys/kd.h, sys/vtkd.h, or sys/kbio.h - support for console buzzer audio output will be disabled" >&2;}
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find either sys/kd.h, sys/vtkd.h, or sys/kbio.h - support for console buzzer sound output will be disabled" >&5
+$as_echo "$as_me: WARNING: Cannot find either sys/kd.h, sys/vtkd.h, or sys/kbio.h - support for console buzzer sound output will be disabled" >&2;}
     else
 	WITH_CONSOLE='yes'
     fi
@@ -17314,8 +17314,8 @@ done
 	&& test "$ac_cv_header_sys_soundcard_h" = 'no' ; then
 
 	WITH_OSS='no'
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find either soundcard.h or sys/soundcard.h - support for OSS audio output will be disabled" >&5
-$as_echo "$as_me: WARNING: Cannot find either soundcard.h or sys/soundcard.h - support for OSS audio output will be disabled" >&2;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find either soundcard.h or sys/soundcard.h - support for OSS sound system will be disabled" >&5
+$as_echo "$as_me: WARNING: Cannot find either soundcard.h or sys/soundcard.h - support for OSS sound system will be disabled" >&2;}
     else
 	WITH_OSS='yes'
     fi
@@ -17401,8 +17401,8 @@ done
 	WITH_ALSA='yes'
     else
 	WITH_ALSA='no'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find ALSA library files - support for ALSA audio output will be disabled" >&5
-$as_echo "$as_me: WARNING: Cannot find ALSA library files - support for ALSA audio output will be disabled" >&2;}
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find ALSA library files - support for ALSA sound system will be disabled" >&5
+$as_echo "$as_me: WARNING: Cannot find ALSA library files - support for ALSA sound system will be disabled" >&2;}
     fi
 fi
 
@@ -17467,8 +17467,8 @@ fi
 	WITH_PULSEAUDIO='yes'
     else
 	WITH_PULSEAUDIO='no'
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find PulseAudio library files - support for PulseAudio audio output will be disabled" >&5
-$as_echo "$as_me: WARNING: Cannot find PulseAudio library files - support for PulseAudio audio output will be disabled" >&2;}
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Cannot find PulseAudio library files - support for PulseAudio sound system will be disabled" >&5
+$as_echo "$as_me: WARNING: Cannot find PulseAudio library files - support for PulseAudio sound system will be disabled" >&2;}
     fi
 fi
 

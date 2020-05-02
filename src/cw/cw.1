@@ -451,7 +451,7 @@ the system sound card.  This is generally the correct device to use,
 but for systems with special requirements, or those with multiple sound
 cards, the option \fI-d\fP or \fI\-\-device\fP, combined with
 \fI-s\fP or \fI\-\-system\fP can be used to specify the device
-and audio system for sound card access.  If the sound card device
+and sound system for sound card access.  If the sound card device
 cannot be set up, \fBcw\fP prints the error message
 .IP
 cannot set up soundcard sound
@@ -486,24 +486,24 @@ the console speaker.
 .\"
 .\"
 .\"
-.SS AUDIO OUTPUT \- DEFAULTS AND SELECTION
+.SS Sound OUTPUT \- DEFAULTS AND SELECTION
 .\"
 \fBcw\fP first tries to access sound card using PulseAudio sound system,
-using default device name, unless user specifies other audio device with
+using default device name, unless user specifies other sound device with
 option \fI-d\fP or \fI\-\-device\fP.
 .PP
-\fBcw\fP then tries to access sound card using OSS audio system
-and default OSS audio device name ('/dev/audio'), unless user
-specifies other audio device with option \fI-d\fP or \fI\-\-device\fP.
+\fBcw\fP then tries to access sound card using OSS sound system
+and default OSS sound device name ('/dev/audio'), unless user
+specifies other sound device with option \fI-d\fP or \fI\-\-device\fP.
 .PP
 If opening soundcard through OSS fails, \fBcw\fP tries to access
-the sound card using ALSA audio system, and default ALSA audio device
-name ('default'), unless user specifies other audio device with option
+the sound card using ALSA sound system, and default ALSA sound device
+name ('default'), unless user specifies other sound device with option
 \fI-d\fP or \fI\-\-device\fP.
 .PP
 If opening soundcard through ALSA also fails, \fBcw\fP tries to access
 system console buzzer using default buzzer device '/dev/console',
-unless user specifies other audio device with option \fI-d\fP or
+unless user specifies other sound device with option \fI-d\fP or
 \fI\-\-device\fP.
 .PP
 It is very common that in order to access the console buzzer device

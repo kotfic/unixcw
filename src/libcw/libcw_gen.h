@@ -44,7 +44,7 @@ enum { CW_SYMBOL_SPACE = ' ' };
 
 /* This is used in libcw_gen and libcw_debug. */
 #ifdef LIBCW_WITH_DEV
-#define CW_DEV_RAW_SINK           1  /* Create and use /tmp/cw_file.<audio system>.raw file with audio samples written as raw data. */
+#define CW_DEV_RAW_SINK           1  /* Create and use /tmp/cw_file.<sound system>.raw file with sound samples written as raw data. */
 #define CW_DEV_RAW_SINK_MARKERS   0  /* Put markers in raw data saved to raw sink. */
 #else
 #define CW_DEV_RAW_SINK           0
@@ -136,33 +136,33 @@ struct cw_gen_struct {
 
 	/* Misc fields. */
 
-	/* Audio buffer and related items. */
+	/* Sound buffer and related items. */
 	/* Buffer storing sine wave that is calculated in "calculate sine
-	   wave" cycles and sent to audio system (OSS, ALSA, PulseAudio).
+	   wave" cycles and sent to sound system (OSS, ALSA, PulseAudio).
 
 	   The buffer should be always filled with valid data before sending
-	   it to audio system (to avoid hearing garbage).
+	   it to sound system (to avoid hearing garbage).
 
-	   We should also send exactly buffer_n_samples samples to audio
-	   system, in order to avoid situation when audio system waits for
+	   We should also send exactly buffer_n_samples samples to sound
+	   system, in order to avoid situation when sound system waits for
 	   filling its buffer too long - this would result in errors and
 	   probably audible clicks. */
 	cw_sample_t *buffer;
 
 	/* Size of data buffer, in samples.
 
-	   The size may be restricted (min,max) by current audio system
-	   (OSS, ALSA, PulseAudio); the audio system may also accept only
+	   The size may be restricted (min,max) by current sound system
+	   (OSS, ALSA, PulseAudio); the sound system may also accept only
 	   specific values of the size.
 
-	   Audio libraries may provide functions that can be used to query
-	   for allowed audio buffer sizes.
+	   Sound system libraries may provide functions that can be
+	   used to query for allowed sound buffer sizes.
 
 	   The smaller the buffer, the more often you have to call function
-	   writing data to audio system, which increases CPU usage.
+	   writing data to sound system, which increases CPU usage.
 
 	   The larger the buffer, the less responsive an application may
-	   be to changes of audio data parameters (depending on application
+	   be to changes of sound data parameters (depending on application
 	   type). */
 	int buffer_n_samples;
 
@@ -279,7 +279,7 @@ struct cw_gen_struct {
 	/* pthread */
 
 	/* Properties of generator's thread function is that is used
-	   to generate sine wave and write the wave to audio sink
+	   to generate sine wave and write the wave to sound sink
 	   (cw_gen_dequeue_and_generate_internal()). */
 	struct {
 		pthread_t      id;
@@ -311,21 +311,21 @@ struct cw_gen_struct {
 
 
 
-	/* Audio system. */
+	/* Sound system. */
 
 	/* Path to console file, or path to OSS soundcard file,
 	   or ALSA sound device name, or PulseAudio device name
 	   (it may be unused for PulseAudio) */
-	char *audio_device;
+	char * sound_device;
 
 	/* Output file descriptor for debug data (console, OSS, ALSA,
 	   PulseAudio). */
-	int audio_sink;
+	int sound_sink;
 
 	/* none/null/console/OSS/ALSA/PulseAudio */
-	int audio_system;
+	int sound_system;
 
-	bool audio_device_is_open;
+	bool sound_device_is_open;
 
 	/* Output file descriptor for debug data (console, OSS, ALSA,
 	   PulseAudio). */
@@ -336,7 +336,7 @@ struct cw_gen_struct {
 	int  (* write)(cw_gen_t *gen);
 
 
-	/* Audio system - OSS. */
+	/* Sound system - OSS. */
 	struct {
 		int x;
 		int y;
@@ -387,9 +387,9 @@ int cw_gen_enqueue_character_partial(cw_gen_t * gen, char c);
 
 
 
-int   cw_gen_set_audio_device_internal(cw_gen_t *gen, const char *device);
+int   cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device);
 int   cw_gen_silence_internal(cw_gen_t *gen);
-char *cw_gen_get_audio_system_label_internal(cw_gen_t *gen);
+char *cw_gen_get_sound_system_label_internal(cw_gen_t *gen);
 
 void cw_generator_delete_internal(void);
 

@@ -265,16 +265,16 @@ bool cw_debug_has_flag(cw_debug_t *debug_object, uint32_t flag)
 */
 void cw_dev_debug_print_generator_setup(const cw_gen_t *gen)
 {
-	fprintf(stderr, "audio system:         %s\n",     cw_get_audio_system_label(gen->audio_system));
-	if (gen->audio_system == CW_AUDIO_OSS) {
+	fprintf(stderr, "sound system:         %s\n",     cw_get_audio_system_label(gen->sound_system));
+	if (gen->sound_system == CW_AUDIO_OSS) {
 		fprintf(stderr, "OSS version           %X.%X.%X\n",
 			gen->oss_version.x, gen->oss_version.y, gen->oss_version.z);
 	}
-	fprintf(stderr, "audio device:         \"%s\"\n",  gen->audio_device);
+	fprintf(stderr, "sound device:         \"%s\"\n",  gen->sound_device);
 	fprintf(stderr, "sample rate:          %d Hz\n",  gen->sample_rate);
 
 #ifdef LIBCW_WITH_PULSEAUDIO
-	if (gen->audio_system == CW_AUDIO_PA) {
+	if (gen->sound_system == CW_AUDIO_PA) {
 		fprintf(stderr, "PulseAudio latency:   %llu us\n", (unsigned long long int) gen->pa_data.latency_usecs);
 
 		if (gen->pa_data.ba.prebuf == (uint32_t) -1) {
@@ -315,7 +315,7 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t *gen)
 	fprintf(stderr, "send speed:           %d wpm\n", gen->send_speed);
 	fprintf(stderr, "volume:               %d %%\n",  gen->volume_percent);
 	fprintf(stderr, "frequency:            %d Hz\n",  gen->frequency);
-	fprintf(stderr, "audio buffer size:    %d\n",     gen->buffer_n_samples);
+	fprintf(stderr, "sound buffer size:    %d\n",     gen->buffer_n_samples);
 
 	fprintf(stderr, "debug sink file:      %s\n", gen->dev_raw_sink != -1 ? "yes" : "no");
 
@@ -329,8 +329,8 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t *gen)
    \brief Write generator's samples to debug file
 
    This function does any actual writing only for generators
-   configured to use OSS, Alsa and PulseAudio audio sinks. Using the
-   function on generators configured with other audio sinks doesn't
+   configured to use OSS, Alsa and PulseAudio sound sinks. Using the
+   function on generators configured with other sound sinks doesn't
    produce any output and the function always returns CW_SUCCESS.
 
    \param gen - generator
@@ -340,9 +340,9 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t *gen)
 */
 int cw_dev_debug_raw_sink_write_internal(cw_gen_t *gen)
 {
-	if (gen->audio_system == CW_AUDIO_NONE
-	    || gen->audio_system == CW_AUDIO_NULL
-	    || gen->audio_system == CW_AUDIO_CONSOLE) {
+	if (gen->sound_system == CW_AUDIO_NONE
+	    || gen->sound_system == CW_AUDIO_NULL
+	    || gen->sound_system == CW_AUDIO_CONSOLE) {
 
 		return CW_SUCCESS;
 	}

@@ -21,7 +21,7 @@
 /**
    \file libcw_alsa.c
 
-   \brief ALSA audio sink.
+   \brief ALSA sound system.
 */
 
 
@@ -79,7 +79,7 @@ extern const unsigned int cw_supported_sample_rates[];
 
 
 
-/* Constants specific to ALSA audio system configuration */
+/* Constants specific to ALSA sound system configuration */
 static const snd_pcm_format_t CW_ALSA_SAMPLE_FORMAT = SND_PCM_FORMAT_S16; /* "Signed 16 bit CPU endian"; I'm guessing that "CPU endian" == "native endianess" */
 
 
@@ -315,7 +315,7 @@ bool cw_is_alsa_possible(const char *device)
 
 
 /**
-   \brief Configure given generator to work with ALSA audio sink
+   \brief Configure given generator to work with ALSA sound sink
 
    \reviewed on 2017-02-05
 
@@ -326,8 +326,8 @@ bool cw_is_alsa_possible(const char *device)
 */
 int cw_alsa_configure(cw_gen_t *gen, const char *device)
 {
-	gen->audio_system = CW_AUDIO_ALSA;
-	cw_gen_set_audio_device_internal(gen, device);
+	gen->sound_system = CW_AUDIO_ALSA;
+	cw_gen_set_sound_device_internal(gen, device);
 
 	gen->open_device  = cw_alsa_open_device_internal;
 	gen->close_device = cw_alsa_close_device_internal;
@@ -340,7 +340,7 @@ int cw_alsa_configure(cw_gen_t *gen, const char *device)
 
 
 /**
-   \brief Write generated samples to ALSA audio sink configured and opened for generator
+   \brief Write generated samples to ALSA sound sink configured and opened for generator
 
    \reviewed on 2017-02-05
 
@@ -352,9 +352,9 @@ int cw_alsa_configure(cw_gen_t *gen, const char *device)
 int cw_alsa_write_internal(cw_gen_t *gen)
 {
 	assert (gen);
-	assert (gen->audio_system == CW_AUDIO_ALSA);
+	assert (gen->sound_system == CW_AUDIO_ALSA);
 
-	/* Send audio buffer to ALSA.
+	/* Send sound buffer to ALSA.
 	   Size of correct and current data in the buffer is the same as
 	   ALSA's period, so there should be no underruns */
 	int rv = cw_alsa.snd_pcm_writei(gen->alsa_data.handle, gen->buffer, gen->buffer_n_samples);
@@ -372,7 +372,7 @@ int cw_alsa_write_internal(cw_gen_t *gen)
 /**
    \brief Open ALSA output, associate it with given generator
 
-   You must use cw_gen_set_audio_device_internal() before calling
+   You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator \p gen won't know which device to open.
 
    \reviewed on 2017-02-05
@@ -385,12 +385,12 @@ int cw_alsa_write_internal(cw_gen_t *gen)
 int cw_alsa_open_device_internal(cw_gen_t *gen)
 {
 	int rv = cw_alsa.snd_pcm_open(&gen->alsa_data.handle,
-				      gen->audio_device,       /* name */
+				      gen->sound_device,       /* name */
 				      SND_PCM_STREAM_PLAYBACK, /* stream (playback/capture) */
 				      0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
 	if (rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: can't open ALSA device '%s'", gen->audio_device);
+			      MSG_PREFIX "open: can't open ALSA device '%s'", gen->sound_device);
 		return CW_FAILURE;
 	}
 	/*
@@ -475,7 +475,7 @@ void cw_alsa_close_device_internal(cw_gen_t *gen)
 	cw_alsa.snd_pcm_drop(gen->alsa_data.handle);
 	cw_alsa.snd_pcm_close(gen->alsa_data.handle);
 
-	gen->audio_device_is_open = false;
+	gen->sound_device_is_open = false;
 
 	if (cw_alsa.handle) {
 		dlclose(cw_alsa.handle);
@@ -496,7 +496,7 @@ void cw_alsa_close_device_internal(cw_gen_t *gen)
 /**
    \brief Handle value returned by ALSA's write function (snd_pcm_writei)
 
-   If specific errors occurred during write, audio sink is reset by this function.
+   If specific errors occurred during write, sound sink is reset by this function.
 
    \reviewed on 2017-02-05
 
@@ -511,12 +511,12 @@ int cw_alsa_debug_evaluate_write_internal(cw_gen_t *gen, int rv)
 	if (rv == -EPIPE) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
 			      MSG_PREFIX "write: underrun");
-		cw_alsa.snd_pcm_prepare(gen->alsa_data.handle); /* Reset audio sink. */
+		cw_alsa.snd_pcm_prepare(gen->alsa_data.handle); /* Reset sound sink. */
 
 	} else if (rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
 			      MSG_PREFIX "write: writei: %s", cw_alsa.snd_strerror(rv));
-		cw_alsa.snd_pcm_prepare(gen->alsa_data.handle);  /* Reset audio sink. */
+		cw_alsa.snd_pcm_prepare(gen->alsa_data.handle);  /* Reset sound sink. */
 
 	} else if (rv != gen->buffer_n_samples) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
@@ -585,7 +585,7 @@ int cw_alsa_set_hw_params_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params
 	   exercise. See comment from this article, starting
 	   with "This is my soundcard initialization function":
 	   http://stackoverflow.com/questions/3345083/correctly-sizing-alsa-buffers-weird-api
-	   Poster sets basic audio playback parameters (channels, sampling
+	   Poster sets basic sound playback parameters (channels, sampling
 	   rate, sample format), saves the config (with snd_pcm_hw_params()),
 	   and then only queries ALSA handle for period size and period
 	   time.
@@ -595,7 +595,7 @@ int cw_alsa_set_hw_params_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params
 
 	   Period size seems to be the most important, and most useful
 	   data that I need from configured ALSA handle - this is the
-	   size of audio buffer which I can fill with my data and send
+	   size of sound buffer which I can fill with my data and send
 	   it down to ALSA internals (possibly without worrying about
 	   underruns; if I understand correctly - if I send to ALSA
 	   chunks of data of proper size then I don't have to worry
@@ -1116,7 +1116,7 @@ void cw_alsa_drop(cw_gen_t *gen)
 bool cw_is_alsa_possible(__attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return false;
 }
 
@@ -1126,7 +1126,7 @@ bool cw_is_alsa_possible(__attribute__((unused)) const char *device)
 int cw_alsa_configure(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) const char *device)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "This audio system has been disabled during compilation");
+		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return CW_FAILURE;
 }
 

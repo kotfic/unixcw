@@ -42,10 +42,10 @@ check:
 
 # This test target can be invoked manually.
 real_check: all
-	( echo "Trying with OSS audio output";				\
+	( echo "Trying with OSS sound system";				\
 	  LD_LIBRARY_PATH=../libcw:$$LD_LIBRARY_PATH ./cwcp -so ) ||	\
-	( echo "Retrying with ALSA audio output";			\
+	( echo "Retrying with ALSA sound system";			\
 	  LD_LIBRARY_PATH=../libcw:$$LD_LIBRARY_PATH ./cwcp -sa ) ||	\
-	( echo "Retrying with console audio output";			\
+	( echo "Retrying with console sound output";			\
 	  LIBCW_DEBUG=1 						\
 	  LD_LIBRARY_PATH=../libcw:$$LD_LIBRARY_PATH ./cwcp -sc )

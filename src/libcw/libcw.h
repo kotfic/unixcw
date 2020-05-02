@@ -40,7 +40,7 @@ enum cw_return_values {
 	CW_FAILURE = false,
 	CW_SUCCESS = true };
 
-/* supported audio sound systems */
+/* Supported sound systems. */
 enum cw_audio_systems {
 	CW_AUDIO_NONE = 0,  /* initial value; this is not the same as CW_AUDIO_NULL */
 	CW_AUDIO_NULL,      /* empty audio output (no sound, just timing); this is not the same as CW_AUDIO_NONE */
@@ -65,7 +65,7 @@ typedef int16_t cw_sample_t;
 
 
 
-/* Default outputs for audio systems. Used by libcw unless
+/* Default outputs for sound systems. Used by libcw unless
    client code decides otherwise. */
 #define CW_DEFAULT_NULL_DEVICE      ""
 #define CW_DEFAULT_CONSOLE_DEVICE   "/dev/console"
@@ -119,7 +119,7 @@ enum {
 	CW_DEBUG_KEYING               = 1 << 1,
 
 	/* Print out information related to main object generating
-	   audio (i.e. the generator). */
+	   sound (i.e. the generator). */
 	CW_DEBUG_GENERATOR            = 1 << 2,
 
 	/* Print out tone queue data. */
@@ -145,7 +145,7 @@ enum {
 
 	/* Print out information related to calls to standard library
 	   functions.  This does not include calls that are directly
-	   related to configuring audio devices (e.g. calling open()
+	   related to configuring sound devices (e.g. calling open()
 	   to open OSS device).
 
 	   Printing debug information about problems with malloc()
@@ -153,11 +153,11 @@ enum {
 	CW_DEBUG_STDLIB               = 1 << 10,
 
 	/* Print out any events directly related to sound systems: to
-	   opening audio device, configuring it, writing to it, and
+	   opening sound device, configuring it, writing to it, and
 	   closing it.  In case of e.g. OSS sound system, this may
 	   also include information about libc's open(), write() and
 	   ioctl() calls, as they are directly related to
-	   opening/configuring/writing to audio device. */
+	   opening/configuring/writing to sound device. */
 	CW_DEBUG_SOUND_SYSTEM         = 1 << 11,
 
 	/* Print out information related to internal states / errors /
@@ -205,12 +205,12 @@ typedef struct cw_gen_struct cw_gen_t;
 /* Functions handling library meta data */
 extern int  cw_version(void);
 extern void cw_license(void);
-extern const char *cw_get_audio_system_label(int audio_system);
+extern const char *cw_get_audio_system_label(int sound_system);
 
 
 
 /* Functions handling 'generator' */
-extern int  cw_generator_new(int audio_system, const char *device);
+extern int  cw_generator_new(int sound_system, const char *device);
 extern void cw_generator_delete(void);
 extern int  cw_generator_start(void);
 extern void cw_generator_stop(void);
