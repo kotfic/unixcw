@@ -150,7 +150,6 @@ am_lib_xcwcp_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
 lib_xcwcp_a_OBJECTS = $(am_lib_xcwcp_a_OBJECTS)
 am_cw_dictionary_tests_OBJECTS =  \
 	cw_dictionary_tests-dictionary.$(OBJEXT) \
-	cw_dictionary_tests-memory.$(OBJEXT) \
 	cw_dictionary_tests-i18n.$(OBJEXT) \
 	cw_dictionary_tests-cw_config.$(OBJEXT) \
 	cw_dictionary_tests-cw_common.$(OBJEXT)
@@ -574,7 +573,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # source code files used to build cw_dictionary_tests program
-cw_dictionary_tests_SOURCES = dictionary.c memory.c i18n.c cw_config.c cw_common.c
+cw_dictionary_tests_SOURCES = dictionary.c i18n.c cw_config.c cw_common.c
 
 # target-specific preprocessor flags (#defs and include dirs)
 cw_dictionary_tests_CPPFLAGS = $(AM_CPPFLAGS) -DCW_DICTIONARY_UNIT_TESTS
@@ -694,7 +693,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-cw_config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-dictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-i18n.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i18n.Po@am__quote@
 
@@ -732,20 +730,6 @@ cw_dictionary_tests-dictionary.obj: dictionary.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dictionary.c' object='cw_dictionary_tests-dictionary.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -c -o cw_dictionary_tests-dictionary.obj `if test -f 'dictionary.c'; then $(CYGPATH_W) 'dictionary.c'; else $(CYGPATH_W) '$(srcdir)/dictionary.c'; fi`
-
-cw_dictionary_tests-memory.o: memory.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -MT cw_dictionary_tests-memory.o -MD -MP -MF $(DEPDIR)/cw_dictionary_tests-memory.Tpo -c -o cw_dictionary_tests-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cw_dictionary_tests-memory.Tpo $(DEPDIR)/cw_dictionary_tests-memory.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='memory.c' object='cw_dictionary_tests-memory.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -c -o cw_dictionary_tests-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
-
-cw_dictionary_tests-memory.obj: memory.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -MT cw_dictionary_tests-memory.obj -MD -MP -MF $(DEPDIR)/cw_dictionary_tests-memory.Tpo -c -o cw_dictionary_tests-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cw_dictionary_tests-memory.Tpo $(DEPDIR)/cw_dictionary_tests-memory.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='memory.c' object='cw_dictionary_tests-memory.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -c -o cw_dictionary_tests-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
 
 cw_dictionary_tests-i18n.o: i18n.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -MT cw_dictionary_tests-i18n.o -MD -MP -MF $(DEPDIR)/cw_dictionary_tests-i18n.Tpo -c -o cw_dictionary_tests-i18n.o `test -f 'i18n.c' || echo '$(srcdir)/'`i18n.c
