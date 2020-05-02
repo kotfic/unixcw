@@ -34,7 +34,6 @@
 #include "libcw.h"
 #include "cmdline.h"
 #include "i18n.h"
-#include "memory.h"
 #include "cw_copyright.h"
 
 
@@ -110,33 +109,49 @@ const char *cw_program_basename(const char *argv0)
    \param new_argc - combined argc
    \param new_argv[] - combined argv
 */
-void combine_arguments(const char *env_variable,
-		       int argc, char *const argv[],
-		       /* out */ int *new_argc, /* out */ char **new_argv[])
+int combine_arguments(const char *env_variable,
+		      int argc, char *const argv[],
+		      /* out */ int *new_argc, /* out */ char **new_argv[])
 {
 	/* Begin with argv[0], which stays in place. */
-	char **local_argv = safe_malloc(sizeof (*local_argv));
+	char **local_argv = malloc(sizeof (*local_argv));
+	if (NULL == local_argv) {
+		fprintf(stderr, "malloc() failure\n"); /* TODO: better error handling. */
+		return CW_FAILURE;
+	}
 	int local_argc = 0;
 	local_argv[local_argc++] = argv[0];
 
 	/* If options are given in an environment variable, add these next. */
 	char *env_options = getenv(env_variable);
 	if (env_options) {
-		char *options = safe_strdup(env_options);
+		char *options = strdup(env_options);
+		if (NULL == options) {
+			fprintf(stderr, "strdup() failure\n"); /* TODO: better error handling. */
+			return CW_FAILURE;
+		}
+
 		for (char *option = strtok(options, " \t");
 		     option;
 		     option = strtok(NULL, " \t")) {
 
-			local_argv = safe_realloc(local_argv,
-						  sizeof (*local_argv) * (local_argc + 1));
+			local_argv = realloc(local_argv, sizeof (*local_argv) * (local_argc + 1));
+			if (NULL == local_argv) {
+				fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+				return CW_FAILURE;
+			}
 			local_argv[local_argc++] = option;
 		}
 	}
 
 	/* Append the options given on the command line itself. */
 	for (int arg = 1; arg < argc; arg++) {
-		local_argv = safe_realloc(local_argv,
-					  sizeof (*local_argv) * (local_argc + 1));
+		local_argv = realloc(local_argv,
+				     sizeof (*local_argv) * (local_argc + 1));
+		if (NULL == local_argv) {
+			fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+			return CW_FAILURE;
+		}
 		local_argv[local_argc++] = argv[arg];
 	}
 
@@ -144,7 +159,7 @@ void combine_arguments(const char *env_variable,
 	*new_argc = local_argc;
 	*new_argv = local_argv;
 
-	return;
+	return CW_SUCCESS;
 }
 
 
@@ -204,10 +219,18 @@ int get_option(int argc, char *const argv[],
 	   matching set of long options.  */
 	if (!option_string) {
 		/* Begin with an empty short options string. */
-		option_string = safe_strdup("");
+		option_string = strdup("");
+		if (NULL == option_string) {
+			fprintf(stderr, "strdup() failure\n"); /* TODO: better error handling. */
+			return false;
+		}
 
 		/* Break the descriptor into comma-separated elements. */
-		char *options = safe_strdup(descriptor);
+		char *options = strdup(descriptor);
+		if (NULL == options) {
+			fprintf(stderr, "strdup() failure\n"); /* TODO: better error handling. */
+			return false;
+		}
 		for (char *element = strtok(options, ",");
 		     element;
 		     element = strtok(NULL, ",")) {
@@ -219,8 +242,11 @@ int get_option(int argc, char *const argv[],
 			   if present, to the short options string.
 			   For simplicity in reallocating, assume that
 			   the ':' is always there. */
-			option_string = safe_realloc(option_string,
-						      strlen(option_string) + 3);
+			option_string = realloc(option_string, strlen(option_string) + 3);
+			if (NULL == option_string) {
+				fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+				return false;
+			}
 			strncat(option_string, element, needs_arg ? 2 : 1);
 
 #if defined(HAVE_GETOPT_LONG)
@@ -228,13 +254,25 @@ int get_option(int argc, char *const argv[],
 			   a retained array.  Because struct option
 			   makes name a const char*, we can't just
 			   store it in there and then free later. */
-			long_names = safe_realloc(long_names,
+			long_names = realloc(long_names,
 						  sizeof (*long_names) * (long_count + 1));
-			long_names[long_count] = safe_strdup(element + (needs_arg ? 3 : 2));
+			if (NULL == long_names) {
+				fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+				return false;
+			}
+			long_names[long_count] = strdup(element + (needs_arg ? 3 : 2));
+			if (NULL == long_names[long_count]) {
+				fprintf(stderr, "strdup() failure\n"); /* TODO: better error handling. */
+				return false;
+			}
 
 			/* Add a new entry to the long options array. */
-			long_options = safe_realloc(long_options,
-						     sizeof (*long_options) * (long_count + 2));
+			long_options = realloc(long_options,
+					       sizeof (*long_options) * (long_count + 2));
+			if (NULL == long_options) {
+				fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+				return false;
+			}
 			long_options[long_count].name = long_names[long_count];
 			long_options[long_count].has_arg = needs_arg;
 			long_options[long_count].flag = NULL;

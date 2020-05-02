@@ -38,8 +38,6 @@
 #include "i18n.h"
 #include "cmdline.h"
 #include "cw_copyright.h"
-#include "memory.h"
-
 
 
 
@@ -362,8 +360,11 @@ int main(int argc, char **argv)
 	i18n_initialize();
 
 	/* Parse combined environment and command line arguments. */
-	combine_arguments(_("CWGEN_OPTIONS"),
-			  argc, argv, &combined_argc, &combined_argv);
+	if (CW_SUCCESS != combine_arguments(_("CWGEN_OPTIONS"), argc, argv, &combined_argc, &combined_argv)) {
+		fprintf(stderr, _("%s: failed to combine command line arguments with arguments stored in ENV\n"), cw_program_basename(argv[0]));
+		exit(EXIT_FAILURE);
+	}
+
 	cwgen_parse_command_line(combined_argc, combined_argv, &g_config);
 
 	if (!g_config.charset) {

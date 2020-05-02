@@ -44,7 +44,6 @@
 #include "cmdline.h"
 #include "cw_copyright.h"
 #include "dictionary.h"
-#include "memory.h"
 #include "libcw_debug.h"
 
 
@@ -106,7 +105,7 @@ static void gap_update(void);
 
 typedef enum { M_DICTIONARY, M_KEYBOARD, M_EXIT } mode_type_t;
 
-static void mode_initialize(void);
+static int mode_initialize(void);
 static void mode_clean(void);
 static bool mode_change_to_next(void);
 static bool mode_change_to_previous(void);
@@ -683,7 +682,7 @@ void timer_window_update(int elapsed, int total)
    Build up the modes from the known dictionaries, then add non-dictionary
    modes.
 */
-void mode_initialize(void)
+int mode_initialize(void)
 {
 	if (modes) {
 		/* Dispose of any pre-existing modes -- unlikely. */
@@ -697,14 +696,22 @@ void mode_initialize(void)
 	     dict;
 	     dict = cw_dictionaries_iterate(dict)) {
 
-		modes = safe_realloc(modes, sizeof (*modes) * (count + 1));
+		modes = realloc(modes, sizeof (*modes) * (count + 1));
+		if (NULL == modes) {
+			fprintf(stderr, "realloc() failure\n"); /* TODO: better error handling. */
+			return CW_FAILURE;
+		}
 		modes[count].description = cw_dictionary_get_description(dict);
 		modes[count].type = M_DICTIONARY;
 		modes[count++].dict = dict;
 	}
 
 	/* Add keyboard, exit, and null sentinel. */
-	modes = safe_realloc(modes, sizeof (*modes) * (count + 3));
+	modes = realloc(modes, sizeof (*modes) * (count + 3));
+	if (NULL == modes) {
+		fprintf(stderr, "realloc() failure\n"); /* TODO: better error handling. */
+		return CW_FAILURE;
+	}
 	modes[count].description = _("Keyboard");
 	modes[count].type = M_KEYBOARD;
 	modes[count++].dict = NULL;
@@ -719,7 +726,7 @@ void mode_initialize(void)
 	g_current_mode = modes;
 	modes_count = count;
 
-	return;
+	return CW_SUCCESS;
 }
 
 
@@ -1694,11 +1701,14 @@ int main(int argc, char **argv)
 	char **combined_argv;
 
 	/* Parse combined environment and command line arguments. */
-	combine_arguments(_("CWCP_OPTIONS"), argc, argv, &combined_argc, &combined_argv);
+	if (CW_SUCCESS != combine_arguments(_("CWCP_OPTIONS"), argc, argv, &combined_argc, &combined_argv)) {
+		fprintf(stderr, _("%s: failed to combine command line arguments with arguments stored in ENV\n"), cw_program_basename(argv[0]));
+		exit(EXIT_FAILURE);
+	}
 
 	config = cw_config_new(cw_program_basename(argv[0]));
 	if (!config) {
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 
 	config->has_feature_sound_system = true;

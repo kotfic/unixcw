@@ -96,13 +96,16 @@ int main(int argc, char **argv)
 		// Parse combined environment and command line arguments.  Arguments
 		// are passed to QApplication() first to allow it to extract any Qt
 		// or X11 options.
-		combine_arguments("XCWCP_OPTIONS", argc, argv, &combined_argc, &combined_argv);
+		if (CW_SUCCESS != combine_arguments("XCWCP_OPTIONS", argc, argv, &combined_argc, &combined_argv)) {
+			fprintf(stderr, _("%s: failed to combine command line arguments with arguments stored in ENV\n"), cw_program_basename(argv[0]));
+			exit(EXIT_FAILURE);
+		}
 
 		QApplication q_application (combined_argc, combined_argv);
 
 		config = cw_config_new(cw_program_basename(argv[0]));
 		if (!config) {
-			return EXIT_FAILURE;
+			exit(EXIT_FAILURE);
 		}
 
 		config->has_feature_sound_system = true;

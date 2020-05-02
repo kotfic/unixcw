@@ -604,7 +604,10 @@ int main(int argc, char *const argv[])
 	/* Parse combined environment and command line arguments. */
 	int combined_argc;
 	char **combined_argv;
-	combine_arguments("CW_OPTIONS", argc, argv, &combined_argc, &combined_argv);
+	if (CW_SUCCESS != combine_arguments("CW_OPTIONS", argc, argv, &combined_argc, &combined_argv)) {
+		fprintf(stderr, _("%s: failed to combine command line arguments with arguments stored in ENV\n"), cw_program_basename(argv[0]));
+		exit(EXIT_FAILURE);
+	}
 
 	config = cw_config_new(cw_program_basename(argv[0]));
 	if (!config) {

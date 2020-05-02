@@ -126,27 +126,26 @@ am__v_AR_1 =
 lib_cw_a_AR = $(AR) $(ARFLAGS)
 lib_cw_a_LIBADD =
 am_lib_cw_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT) memory.$(OBJEXT)
+	cmdline.$(OBJEXT)
 lib_cw_a_OBJECTS = $(am_lib_cw_a_OBJECTS)
 lib_cwcp_a_AR = $(AR) $(ARFLAGS)
 lib_cwcp_a_LIBADD =
 am_lib_cwcp_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT) memory.$(OBJEXT) dictionary.$(OBJEXT)
+	cmdline.$(OBJEXT) dictionary.$(OBJEXT)
 lib_cwcp_a_OBJECTS = $(am_lib_cwcp_a_OBJECTS)
 lib_cwgen_a_AR = $(AR) $(ARFLAGS)
 lib_cwgen_a_LIBADD =
-am_lib_cwgen_a_OBJECTS = i18n.$(OBJEXT) cmdline.$(OBJEXT) \
-	memory.$(OBJEXT)
+am_lib_cwgen_a_OBJECTS = i18n.$(OBJEXT) cmdline.$(OBJEXT)
 lib_cwgen_a_OBJECTS = $(am_lib_cwgen_a_OBJECTS)
 lib_libcw_tests_a_AR = $(AR) $(ARFLAGS)
 lib_libcw_tests_a_LIBADD =
 am_lib_libcw_tests_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT) memory.$(OBJEXT)
+	cmdline.$(OBJEXT)
 lib_libcw_tests_a_OBJECTS = $(am_lib_libcw_tests_a_OBJECTS)
 lib_xcwcp_a_AR = $(AR) $(ARFLAGS)
 lib_xcwcp_a_LIBADD =
 am_lib_xcwcp_a_OBJECTS = i18n.$(OBJEXT) cw_common.$(OBJEXT) \
-	cmdline.$(OBJEXT) memory.$(OBJEXT) dictionary.$(OBJEXT)
+	cmdline.$(OBJEXT) dictionary.$(OBJEXT)
 lib_xcwcp_a_OBJECTS = $(am_lib_xcwcp_a_OBJECTS)
 am_cw_dictionary_tests_OBJECTS =  \
 	cw_dictionary_tests-dictionary.$(OBJEXT) \
@@ -585,15 +584,15 @@ cw_dictionary_tests_LDADD = -L$(top_builddir)/src/libcw/.libs -lcw #-lm -lpthrea
 cw_dictionary_tests_CFLAGS = -rdynamic
 
 # no header from this dir should be installed
-# noinst_HEADERS = cmdline.h cw_copyright.h cw_common.h cw_words.h dictionary.h i18n.h memory.h
+# noinst_HEADERS = cmdline.h cw_copyright.h cw_common.h cw_words.h dictionary.h i18n.h
 
 # convenience libraries
 noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a lib_libcw_tests.a
-lib_cw_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h
-lib_cwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
-lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h                         cmdline.c cmdline.h memory.c memory.h
-lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h dictionary.c dictionary.h cw_words.h
-lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h memory.c memory.h
+lib_cw_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h
+lib_cwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h dictionary.c dictionary.h cw_words.h
+lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h                         cmdline.c cmdline.h
+lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h dictionary.c dictionary.h cw_words.h
+lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_common.c cw_common.h cmdline.c cmdline.h
 
 # Test targets; no self-test, but make sure all is built.
 #check: all
@@ -694,7 +693,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i18n.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

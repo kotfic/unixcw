@@ -38,7 +38,6 @@
 #include "dictionary.h"
 #include "cw_words.h"
 #include "cw_common.h"
-#include "memory.h"
 #include "i18n.h"
 
 
@@ -169,7 +168,11 @@ static dictionary *dictionary_new(dictionary *tail,
 	/* Create a new dictionary and fill in the main fields.  Group
 	   size is set to one for multicharacter word lists, five
 	   otherwise. */
-	dictionary *dict = safe_malloc(sizeof (*dict));
+	dictionary *dict = malloc(sizeof (*dict));
+	if (NULL == dict) {
+		fprintf(stderr, "malloc() failure\n"); /* TODO: better error handling. */
+		return NULL;
+	}
 	dict->description = description;
 	dict->wordlist = wordlist;
 	dict->wordlist_length = words;
@@ -308,12 +311,20 @@ bool cw_dictionary_parse_is_comment(const char *line)
 */
 bool cw_dictionary_parse_is_section(const char *line, char **name_ptr)
 {
-	char *name = safe_malloc(strlen(line) + 1);
+	char *name = malloc(strlen(line) + 1);
+	if (NULL == name) {
+		fprintf(stderr, "malloc() failure\n"); /* TODO: better error handling. */
+		return false;
+	}
 
 	char dummy;
 	int count = sscanf(line, " [ %[^]] ] %c", name, &dummy);
 	if (count == 1) {
-		*name_ptr = safe_realloc(name, strlen(name) + 1);
+		*name_ptr = realloc(name, strlen(name) + 1);
+		if (NULL == name_ptr) {
+			fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+			return false;
+		}
 		return true;
 	}
 
@@ -345,7 +356,11 @@ dictionary_build_wordlist (char *wordlist_data)
       if (size == allocation)
         {
           allocation = allocation == 0 ? 1 : allocation << 1;
-          wordlist = safe_realloc (wordlist, sizeof (*wordlist) * allocation);
+          wordlist = realloc (wordlist, sizeof (*wordlist) * allocation);
+	  if (NULL == wordlist) {
+		  fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+		  return NULL;
+	  }
         }
 
       wordlist[size++] = word;
@@ -355,7 +370,11 @@ dictionary_build_wordlist (char *wordlist_data)
   if (size == allocation)
     {
       allocation++;
-      wordlist = safe_realloc (wordlist, sizeof (*wordlist) * allocation);
+      wordlist = realloc (wordlist, sizeof (*wordlist) * allocation);
+      if (NULL == wordlist) {
+	      fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+	      return NULL;
+      }
     }
   wordlist[size++] = NULL;
 
@@ -463,7 +482,11 @@ cw_dictionary_t *cw_dictionaries_create_from_stream(FILE *stream, const char *fi
 	const char **wordlist;
 
 	/* Clear the variables used to accumulate stream data. */
-	char *line = safe_malloc(MAX_LINE);
+	char *line = malloc(MAX_LINE);
+	if (NULL == line) {
+		fprintf(stderr, "malloc() failure\n"); /* TODO: better error handling. */
+		return NULL;
+	}
 	int line_number = 0;
 	char *name = NULL;
 	char *content = NULL;
@@ -507,12 +530,18 @@ cw_dictionary_t *cw_dictionaries_create_from_stream(FILE *stream, const char *fi
 			/* Accumulate this line into the current content. */
 			cw_dictionary_trim(line);
 			if (content) {
-				content = safe_realloc(content,
-						       strlen(content) + strlen(line) + 2);
+				content = realloc(content, strlen(content) + strlen(line) + 2);
+				if (NULL == content) {
+					fprintf(stderr, "realloc() error\n"); /* TODO: better error handling. */
+					return NULL;
+				}
 				strcat(content, " ");
 				strcat(content, line);
 			} else {
-				content = safe_malloc(strlen(line) + 1);
+				content = malloc(strlen(line) + 1);
+				if (NULL == content) {
+					fprintf(stderr, "malloc() failure\n"); /* TODO: better error handling. */
+				}
 				strcpy(content, line);
 			}
 		} else {
