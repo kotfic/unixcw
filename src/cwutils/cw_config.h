@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
- * Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+ * Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +20,9 @@
 
 #ifndef H_CW_CONFIG
 #define H_CW_CONFIG
+
+
+
 
 #if defined(__cplusplus)
 extern "C" {
@@ -65,18 +68,18 @@ enum {
 
 
 
-typedef struct {
-	char *program_name;
+typedef struct cw_config_t {
+	char * program_name;
 	int audio_system;
-	char *audio_device;
+	char * audio_device;
 	int send_speed;
 	int frequency;
 	int volume;
 	int gap;
 	int weighting;
 	int practice_time;
-	char *input_file;
-	char *output_file;
+	char * input_file;
+	char * output_file;
 
 	bool has_feature_sound_system;  /* Does the program have sound system output, for which we can specify sound system type and device? */
 	bool has_feature_speed;         /* Generator speed. */
@@ -103,11 +106,11 @@ typedef struct {
 	 *
 	 * These fields are used only in cw.
 	 */
-	int do_echo;           /* Echo characters */
-	int do_errors;         /* Print error messages to stderr */
-	int do_commands;       /* Execute embedded commands */
-	int do_combinations;   /* Execute [...] combinations */
-	int do_comments;       /* Allow {...} as comments */
+	bool do_echo;           /* Echo characters */
+	bool do_errors;         /* Print error messages to stderr */
+	bool do_commands;       /* Execute embedded commands */
+	bool do_combinations;   /* Execute [...] combinations */
+	bool do_comments;       /* Allow {...} as comments */
 
 
 	/* These fields are used in libcw tests only. */
@@ -120,9 +123,52 @@ typedef struct {
 
 
 
-extern cw_config_t *cw_config_new(const char *program_name);
-extern void         cw_config_delete(cw_config_t **config);
-extern int          cw_config_is_valid(cw_config_t *config);
+/**
+   Create new configuration with default values
+
+   Function returns pointer to config variable, with fields
+   of config initialized to valid default values.
+
+   \param program_name - human-readable name of application calling the function
+
+   \return pointer to config on success
+   \return NULL on failure
+*/
+extern cw_config_t * cw_config_new(const char * program_name);
+
+
+
+
+/**
+   \brief Delete configuration variable
+
+   Deallocate given configuration, assign NULL to \p config
+
+   \param config - configuration variable to deallocate
+*/
+extern void cw_config_delete(cw_config_t ** config);
+
+
+
+
+/**
+   \brief Validate configuration
+
+   Check consistency and correctness of configuration.
+
+   Currently the function only checks if "audio device" command line
+   argument has been specified at the same time when "soundcard"
+   has been specified as audio system. This is an inconsistency as
+   you can specify audio device only for specific audio system ("soundcard"
+   is just a general audio system).
+
+   \param config - configuration to validate
+
+   \return true if configuration is valid
+   \return false if configuration is invalid
+*/
+extern int cw_config_is_valid(cw_config_t * config);
+
 
 
 

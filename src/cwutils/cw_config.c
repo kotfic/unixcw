@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
- * Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+ * Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,25 +40,14 @@
 #endif
 
 
-#include "libcw.h"
+
+#include "cw_common.h"
 #include "cw_config.h"
 
 
 
 
-
-/**
-   Create new configuration with default values
-
-   Function returns pointer to config variable, with fields
-   of config initialized to valid default values.
-
-   \param program_name - human-readable name of application calling the function
-
-   \return pointer to config on success
-   \return NULL on failure
-*/
-cw_config_t *cw_config_new(const char *program_name)
+cw_config_t * cw_config_new(const char * program_name)
 {
 	cw_config_t *config = (cw_config_t *) malloc(sizeof (cw_config_t));
 	if (!config) {
@@ -101,14 +90,7 @@ cw_config_t *cw_config_new(const char *program_name)
 
 
 
-/**
-   \brief Delete configuration variable
-
-   Deallocate given configuration, assign NULL to \p config
-
-   \param config - configuration variable to deallocate
-*/
-void cw_config_delete(cw_config_t **config)
+void cw_config_delete(cw_config_t ** config)
 {
 	if (*config) {
 		if ((*config)->program_name) {
@@ -138,23 +120,7 @@ void cw_config_delete(cw_config_t **config)
 
 
 
-/**
-   \brief Validate configuration
-
-   Check consistency and correctness of configuration.
-
-   Currently the function only checks if "audio device" command line
-   argument has been specified at the same time when "soundcard"
-   has been specified as audio system. This is an inconsistency as
-   you can specify audio device only for specific audio system ("soundcard"
-   is just a general audio system).
-
-   \param config - configuration to validate
-
-   \return true if configuration is valid
-   \return false if configuration is invalid
-*/
-int cw_config_is_valid(cw_config_t *config)
+int cw_config_is_valid(cw_config_t * config)
 {
 	/* Deal with odd argument combinations. */
 	if (config->audio_device) {
