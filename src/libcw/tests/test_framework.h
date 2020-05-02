@@ -78,16 +78,6 @@ typedef struct cw_test_executor_t {
 	cw_test_stats_t * stats; /* Pointer to current stats (one of members of ::all_stats[][]). */
 
 
-	/* TODO: these two options should be removed, and respective
-	   fields from cw_test_executor_t::config should be used
-	   instead. */
-	/* Whether there should be many test repetitions leading to
-	   longer overall test execution. */
-	bool long_test;
-	/* Generator speed, in wpm. */
-	int gen_speed;
-
-
 
 	/**
 	   Verify that operator @param operator is satisfied for

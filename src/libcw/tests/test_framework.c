@@ -212,11 +212,7 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 
 static int cw_test_get_repetitions_count(cw_test_executor_t * self)
 {
-	if (self->long_test) {
-		return (rand() % 40) + 30;
-	} else {
-		return 5;
-	}
+	return self->config->test_repetitions;
 }
 
 

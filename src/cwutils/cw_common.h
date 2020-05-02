@@ -112,7 +112,7 @@ typedef struct {
 	enum cw_audio_systems tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1]; /* List of distinct sound systems, indexed from zero. End of values is marked by CW_AUDIO_NONE guard. */
 	int tested_areas[LIBCW_TEST_TOPIC_MAX + 1];
 	char test_function_name[128];  /* Execute only a test function with this name. */
-	unsigned int test_repetitions; /* How many times a single test function should be repeated? */
+	int test_repetitions; /* How many times a single test function should be repeated? */
 } cw_config_t;
 
 

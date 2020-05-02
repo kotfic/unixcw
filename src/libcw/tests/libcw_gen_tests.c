@@ -69,7 +69,7 @@ static int gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen)
 
 	cw_gen_reset_parameters_internal(*gen);
 	cw_gen_sync_parameters_internal(*gen);
-	cw_gen_set_speed(*gen, cte->gen_speed);
+	cw_gen_set_speed(*gen, cte->config->send_speed);
 
 	return 0;
 }
