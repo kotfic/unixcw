@@ -115,6 +115,7 @@ static bool cw_test_test_topic_is_member(cw_test_executor_t * cte, int topic, in
 static bool cw_test_sound_system_is_member(cw_test_executor_t * cte, cw_sound_system sound_system, cw_sound_system * sound_systems, int max);
 
 static int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets);
+static unsigned int cw_test_get_total_errors_count(cw_test_executor_t * cte);
 
 
 
@@ -893,6 +894,7 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 	self->log_error = cw_test_log_error;
 
 	self->main_test_loop = cw_test_main_test_loop;
+	self->get_total_errors_count = cw_test_get_total_errors_count;
 
 
 
@@ -1214,4 +1216,18 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 	resource_meas_stop(&cte->resource_meas);
 
 	return 0;
+}
+
+
+
+
+unsigned int cw_test_get_total_errors_count(cw_test_executor_t * cte)
+{
+	unsigned int result = 0;
+	for (cw_sound_system sound_system = CW_AUDIO_NULL; sound_system <= CW_AUDIO_PA; sound_system++) {
+		for (int topic = 0; topic < LIBCW_TEST_TOPIC_MAX; topic++) {
+			result += cte->all_stats[sound_system][topic].failures;
+		}
+	}
+	return result;
 }

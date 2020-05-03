@@ -22,7 +22,6 @@ SUBDIRS=tests
 
 # targets to be built in this directory
 lib_LTLIBRARIES=libcw.la libcw_test.la
-check_PROGRAMS = # libcw_test_internal
 man_MANS=libcw.3 cw.7
 pkgconfig_DATA=libcw.pc
 
@@ -128,25 +127,8 @@ pkgconfigdir = $(libdir)/pkgconfig
 
 # CLEANFILES extends list of files that need to be removed when
 # calling "make clean"
-CLEANFILES = libcw_test_internal.sh libcw.3
+CLEANFILES = libcw.3
 
 
 
 
-TESTS = $(check_SCRIPTS)
-
-# run test programs
-check_SCRIPTS = libcw_test_internal.sh ./tests/libcw_test_tq_short_space.sh
-libcw_test_internal.sh:
-	echo './libcw_test_internal | grep "test result: success"' > libcw_test_internal.sh
-	chmod +x libcw_test_internal.sh
-./tests/libcw_test_tq_short_space.sh:
-	echo './tests/libcw_test_tq_short_space | grep "test result: success"' > ./tests/libcw_test_tq_short_space.sh
-	chmod +x ./tests/libcw_test_tq_short_space.sh
-
-
-
-# sources, references
-#
-# source of snippet related to "check_SCRIPTS" and related sh script:
-# http://www.freesoftwaremagazine.com/books/agaal/automatically_writing_makefiles_with_autotools

@@ -39,6 +39,7 @@
 
 
 typedef struct {
+	/* TODO: these should be unsigned. */
 	int successes;
 	int failures;
 } cw_test_stats_t;
@@ -323,6 +324,17 @@ typedef struct cw_test_executor_t {
 	   @param test_sets
 	*/
 	int (* main_test_loop)(struct cw_test_executor_t * cte, struct cw_test_set_t * test_sets);
+
+	/**
+	   @brief Get total count of errors after main_test_loop() has returned
+
+	   The function can be used to check if there were any errors
+	   reported by tested functions.
+
+	   @return 0 if no errors were reported by test functions
+	   @return some positive value otherwise
+	*/
+	unsigned int (* get_total_errors_count)(struct cw_test_executor_t * cte);
 
 } cw_test_executor_t;
 

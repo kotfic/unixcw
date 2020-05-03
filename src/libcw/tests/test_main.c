@@ -107,12 +107,23 @@ int main(int argc, char * const argv[])
 	register_signal_handler();
 
 	const int rv = cte->main_test_loop(cte, cw_test_sets);
+	if (0 != rv) {
+		cte->log_error(cte, "Test loop returned with error\n");
+		exit(EXIT_FAILURE);
+	}
+
+	const unsigned int errors_count = cte->get_total_errors_count(cte);
+	if (0 != errors_count) {
+		cte->log_error(cte, "Non-zero errors count: %u\n", errors_count);
+		exit(EXIT_FAILURE);
+	}
+	cte->log_info(cte, "Total errors count: %u\n", errors_count);
 
 	/* "make check" facility requires this message to be
 	   printed on stdout; don't localize it */
 	cte->log_info(cte, "Test result: success\n\n");
 
-	return rv == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+	exit(EXIT_SUCCESS);
 }
 
 

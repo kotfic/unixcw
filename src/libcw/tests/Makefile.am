@@ -117,6 +117,15 @@ libcw_test_all_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test $(top_buildd
 
 
 
-# CLEANFILES extends list of files that need to be removed when
-# calling "make clean"
-CLEANFILES = libcw_test_tq_short_space.sh
+TESTS = $(check_SCRIPTS)
+
+# run test programs
+check_SCRIPTS = libcw_test_legacy_api.sh libcw_test_all.sh
+
+
+
+
+# sources, references
+#
+# source of snippet related to "check_SCRIPTS" and related sh script:
+# http://www.freesoftwaremagazine.com/books/agaal/automatically_writing_makefiles_with_autotools

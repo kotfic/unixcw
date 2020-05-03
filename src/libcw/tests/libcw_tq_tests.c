@@ -1037,11 +1037,13 @@ int test_cw_tq_enqueue_internal_B(cw_test_executor_t * cte)
    operations, so that cw_tq_wait_for_level_internal() can detect
    expected level.
 
-   @reviewed on 2019-10-08
+   @reviewed on
 */
 int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
+	/* +1 for cases where repetition count is 1.
+	   In such cases modulo operation in the loop would fail. */
+	const int max = cte->get_repetitions_count(cte) + 1;
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
 	cw_tone_t tone;
@@ -1063,7 +1065,8 @@ int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 		}
 
 		/* Notice that level is always smaller than number of
-		   items added to queue. */
+		   items added to queue. TODO: reconsider if we want
+		   to randomize this value. */
 		const int level = rand() % (int) (floor((0.7 * max)));
 		const int cwret = LIBCW_TEST_FUT(cw_tq_wait_for_level_internal)(gen->tq, level);
 		if (!cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, 1, "wait for level = %d, tone queue items count = %d", level, max)) {
@@ -1115,11 +1118,13 @@ int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 
    Ensure we can generate a few simple tones, and wait for them to end.
 
-   @reviewed on 2019-10-05
+   @reviewed on
 */
 int test_cw_tq_gen_operations_A(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
+	/* +1 for cases where repetition count is 1.  In such cases
+	   division operation in the loop would fail. */
+	const int max = cte->get_repetitions_count(cte) + 1;
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
 	cw_gen_t * gen = NULL;
