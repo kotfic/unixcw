@@ -1396,8 +1396,8 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 		cw_usecs_to_timespec_internal(&t, usecs);
 
 		const int key_states[] = { CW_KEY_STATE_OPEN, CW_KEY_STATE_CLOSED };
-		const int first = rand() % 5;
-		const int last = first + 10 + (rand() % 30);
+		const int first = 1 + (rand() % 2);
+		const int last = first + cte->get_repetitions_count(cte) + (1 + (rand() % 2));
 		cte->log_info(cte, "Randomized key indices range: from %d to %d\n", first, last);
 
 		/* Alternate between open and closed. */

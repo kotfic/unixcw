@@ -57,9 +57,6 @@ modern_api_test_files = \
 other_test_files = \
 	$(LIBCW_BUG_TEST_FILES)
 
-EXTRA_DIST = $(test_framework_files) $(legacy_api_test_files) $(modern_api_test_files) $(other_test_files)
-
-
 
 
 
@@ -122,6 +119,15 @@ TESTS = $(check_SCRIPTS)
 # run test programs
 check_SCRIPTS = libcw_test_legacy_api.sh libcw_test_all.sh
 
+libcw_test_legacy_api.sh:
+# empty
+
+libcw_test_all.sh:
+# empty
+
+
+
+EXTRA_DIST = $(test_framework_files) $(legacy_api_test_files) $(modern_api_test_files) $(other_test_files) $(check_SCRIPTS)
 
 
 
