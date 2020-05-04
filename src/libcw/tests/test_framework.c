@@ -67,6 +67,16 @@
 
 
 
+/* Make pause between tests.
+
+   Let the resources measurement tool go back to zero, so that
+   e.g. high CPU usage in test N is visible only in that test, but not
+   in test N+1 that will be executed right after test N. */
+#define LIBCW_TEST_INTER_TEST_PAUSE_MSECS (2 * LIBCW_TEST_MEAS_CPU_MEAS_INTERVAL_MSECS)
+
+
+
+
 static bool cw_test_expect_op_int(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, bool errors_only, const char * fmt, ...) __attribute__ ((format (printf, 6, 7)));
 static bool cw_test_expect_op_int2(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, bool errors_only, const char * va_buf);
 static bool cw_test_expect_op_double(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, bool errors_only, const char * fmt, ...) __attribute__ ((format (printf, 6, 7)));
@@ -1162,9 +1172,6 @@ bool cw_test_sound_system_is_member(__attribute__((unused)) cw_test_executor_t *
 
 int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 {
-	resource_meas_start(&cte->resource_meas);
-
-
 	int set = 0;
 	while (LIBCW_TEST_SET_VALID == test_sets[set].set_valid) {
 
@@ -1200,10 +1207,31 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 					}
 
 					if (execute) {
+						/* Starting and stopping resource measurements
+						   only when the measurements are needed.
+
+						   Also starting measurements resets old results
+						   from previous measurement. This is significant
+						   when we want to reset 'max resources' value - we
+						   want to measure the 'max resources' value only
+						   per test function, not per whole test set. */
+						resource_meas_start(&cte->resource_meas, LIBCW_TEST_MEAS_CPU_MEAS_INTERVAL_MSECS);
+
 						cw_test_set_current_topic_and_sound_system(cte, topic, sound_system);
 						//fprintf(stderr, "+++ %s +++\n", test_set->test_functions[f].name);
 						(*test_set->test_functions[f].fn)(cte);
-						fprintf(stderr, "CPU usage = %6.2f%%\n", resource_meas_get_cpu_usage(&cte->resource_meas));
+
+						const double current_cpu_usage = resource_meas_get_current_cpu_usage(&cte->resource_meas);
+						const double max_cpu_usage = resource_meas_get_maximal_cpu_usage(&cte->resource_meas);
+						cte->log_info(cte, "CPU usage: last = %6.2f%%, max = %6.2f%%\n", current_cpu_usage, max_cpu_usage);
+						if (max_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
+							cte->stats->failures++;
+							cte->log_error(cte, "Registered high CPU usage %6.2f%% during execution of '%s'\n",
+								       max_cpu_usage, test_set->test_functions[f].name);
+						}
+						usleep(1000 * LIBCW_TEST_INTER_TEST_PAUSE_MSECS);
+
+						resource_meas_stop(&cte->resource_meas);
 					}
 
 					f++;
@@ -1212,8 +1240,6 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 		}
 		set++;
 	}
-
-	resource_meas_stop(&cte->resource_meas);
 
 	return 0;
 }

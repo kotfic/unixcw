@@ -28,6 +28,8 @@
 
 
 #include "test_framework_tools.h"
+#include "test_framework.h"
+
 
 
 
@@ -41,7 +43,7 @@ void * resouce_meas_thread(void * arg)
 	resource_meas * meas = (resource_meas *) arg;
 	while (1) {
 		resource_meas_do_measurement(meas);
-		usleep(200 * 1000);
+		usleep(1000 * meas->meas_interval_msecs);
 	}
 
 	return NULL;
@@ -50,9 +52,11 @@ void * resouce_meas_thread(void * arg)
 
 
 
-void resource_meas_start(resource_meas * meas)
+void resource_meas_start(resource_meas * meas, int meas_interval_msecs)
 {
 	memset(meas, 0, sizeof (*meas));
+	meas->meas_interval_msecs = meas_interval_msecs;
+
 	pthread_mutex_init(&meas->mutex, NULL);
 	pthread_attr_init(&meas->thread_attr);
 	pthread_create(&meas->thread_id, &meas->thread_attr, resouce_meas_thread, meas);
@@ -75,10 +79,21 @@ void resource_meas_stop(resource_meas * meas)
 
 
 
-double resource_meas_get_cpu_usage(resource_meas * meas)
+double resource_meas_get_current_cpu_usage(resource_meas * meas)
 {
 	pthread_mutex_lock(&meas->mutex);
-	double cpu_usage = meas->cpu_usage;
+	double cpu_usage = meas->current_cpu_usage;
+	pthread_mutex_unlock(&meas->mutex);
+	return cpu_usage;
+}
+
+
+
+
+double resource_meas_get_maximal_cpu_usage(resource_meas * meas)
+{
+	pthread_mutex_lock(&meas->mutex);
+	double cpu_usage = meas->maximal_cpu_usage;
 	pthread_mutex_unlock(&meas->mutex);
 	return cpu_usage;
 }
@@ -106,7 +121,17 @@ void resource_meas_do_measurement(resource_meas * meas)
 	meas->timestamp_prev = meas->timestamp_curr;
 
 	pthread_mutex_lock(&meas->mutex);
-	meas->cpu_usage = meas->resource_usage * 100.0 / meas->meas_duration;
+	{
+		meas->current_cpu_usage = meas->resource_usage * 100.0 / meas->meas_duration;
+		if (meas->current_cpu_usage > meas->maximal_cpu_usage) {
+			meas->maximal_cpu_usage = meas->current_cpu_usage;
+		}
+		/* Log the error "live" during test execution. This
+		   will allow to pinpoint the faulty code faster. */
+		if (meas->maximal_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
+			fprintf(stderr, "[EE] High CPU usage: %6.2f%%\n", meas->maximal_cpu_usage);
+		}
+	}
 	pthread_mutex_unlock(&meas->mutex);
 
 #if 0
