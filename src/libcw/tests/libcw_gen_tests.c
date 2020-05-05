@@ -846,57 +846,45 @@ int test_cw_gen_parameter_getters_setters(cw_test_executor_t * cte)
 
 
 /**
-   \brief Test control of volume
+   \brief Test control of generator's volume
 
-   Fill tone queue with short tones, then check that we can move the
-   volume through its entire range.  Flush the queue when complete.
+   Check that we can set the volume through its entire range.
 
-   @reviewed on 2019-10-10
+   @reviewed on 2020-05-05
 */
 int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
-	int volume_min = -1;
-	int volume_max = -1;
-
-	const int slope_mode = CW_SLOPE_MODE_NO_SLOPES; // CW_SLOPE_MODE_STANDARD_SLOPES;
-	const int tone_duration = 100000; /* Duration can't be too short, because the loops will run too fast. */
+	const int volume_delta = 1; /* [%] volume change in percent. */
+	const int tone_freq = 440; /* [Hz] */
+	const int tone_duration = 70000; /* [microseconds] Duration can't be too short, because the loops will run too fast. */
 
 	cw_gen_t * gen = cw_gen_new(cte->current_sound_system, NULL);
 
 
+
+
 	/* Test: get range of allowed volumes. */
+	int volume_min = -1;
+	int volume_max = -1;
 	{
 		LIBCW_TEST_FUT(cw_get_volume_limits)(&volume_min, &volume_max);
-
-		const bool failure = volume_min != CW_VOLUME_MIN
-			|| volume_max != CW_VOLUME_MAX;
-
+		const bool failure = volume_min != CW_VOLUME_MIN || volume_max != CW_VOLUME_MAX;
 		cte->expect_op_int(cte, false, "==", failure, 0, "get volume limits: %d, %d", volume_min, volume_max);
 	}
 
 
-	const int volume_delta = 1;
-	/*
-	  There are more tones to be enqueued than there will be loop
-	  iterators, because I don't want to run out of tones in queue
-	  before I iterate over all volumes. When a queue is emptied
-	  too quickly, then cw_gen_wait_for_tone(gen) used in the loop
-	  will wait forever.
 
-	  FIXME: should the cw_gen_wait_for_tone(gen) wait forever on
-	  empty queue?
-	*/
-	const int n_enqueued = 3 * (volume_max - volume_min) / volume_delta;
 
 
 	/* Test: decrease volume from max to low. */
 	{
-		/* Add a bunch of tones to tone queue. */
-		for (int i = 0; i < n_enqueued; i++) {
+		/* Few initial tones to make tone queue non-empty. */
+		for (int i = 0; i < 3; i++) {
 			cw_tone_t tone;
-			CW_TONE_INIT(&tone, 440, tone_duration, slope_mode);
+			const int slope_mode = i == 0 ? CW_SLOPE_MODE_RISING_SLOPE : CW_SLOPE_MODE_NO_SLOPES; /* Rising slope only in first tone in series of tones. */
+			CW_TONE_INIT(&tone, tone_freq, tone_duration, slope_mode);
 			cw_tq_enqueue_internal(gen->tq, &tone);
 		}
 
@@ -906,6 +894,12 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 		cw_gen_start(gen);
 
 		for (int vol = volume_max; vol >= volume_min; vol -= volume_delta) {
+
+			cw_tone_t tone;
+			const int slope_mode = vol == volume_min ? CW_SLOPE_MODE_FALLING_SLOPE : CW_SLOPE_MODE_NO_SLOPES; /* No slopes in the middle - keep each level of tone constant at the beginning and end. */
+			CW_TONE_INIT(&tone, tone_freq, tone_duration, slope_mode);
+			cw_tq_enqueue_internal(gen->tq, &tone);
+
 			const int cwret = LIBCW_TEST_FUT(cw_gen_set_volume)(gen, vol);
 			if (!cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, 0, "set volume (down, vol = %d)", vol)) {
 				set_failure = true;
@@ -917,11 +911,13 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 				get_failure = true;
 				break;
 			}
+			//fprintf(stderr, "len = %zd\n", cw_gen_get_queue_length(gen));
 
-			cw_gen_wait_for_tone(gen);
+			cw_gen_wait_for_queue_level(gen, 1);
 		}
 
 		cw_gen_wait_for_queue_level(gen, 0);
+		usleep(2 * tone_duration);
 		cw_gen_stop(gen);
 
 		cte->expect_op_int(cte, false, "==", set_failure, 0, "set volume (down)");
@@ -933,10 +929,11 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 
 	/* Test: increase volume from zero to high. */
 	{
-		/* Add a bunch of tones to tone queue. */
-		for (int i = 0; i < n_enqueued; i++) {
+		/* Few initial tones to make tone queue non-empty. */
+		for (int i = 0; i < 3; i++) {
 			cw_tone_t tone;
-			CW_TONE_INIT(&tone, 440, tone_duration, slope_mode);
+			const int slope_mode = i == 0 ? CW_SLOPE_MODE_RISING_SLOPE : CW_SLOPE_MODE_NO_SLOPES; /* Rising slope only in first tone in series of tones. */
+			CW_TONE_INIT(&tone, tone_freq, tone_duration, slope_mode);
 			cw_tq_enqueue_internal(gen->tq, &tone);
 		}
 
@@ -946,6 +943,12 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 		cw_gen_start(gen);
 
 		for (int vol = volume_min; vol <= volume_max; vol += volume_delta) {
+
+			cw_tone_t tone;
+			const int slope_mode = vol == volume_max ? CW_SLOPE_MODE_FALLING_SLOPE : CW_SLOPE_MODE_NO_SLOPES; /* No slopes in the middle - keep each level of tone constant at the beginning and end. */
+			CW_TONE_INIT(&tone, tone_freq, tone_duration, slope_mode);
+			cw_tq_enqueue_internal(gen->tq, &tone);
+
 			const int cwret = LIBCW_TEST_FUT(cw_gen_set_volume)(gen, vol);
 			if (!cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, 0, "set volume (up, vol = %d)", vol)) {
 				set_failure = true;
@@ -957,12 +960,13 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 				get_failure = true;
 				break;
 			}
-			fprintf(stderr, "len = %zd\n", cw_gen_get_queue_length(gen));
+			//fprintf(stderr, "len = %zd\n", cw_gen_get_queue_length(gen));
 
-			cw_gen_wait_for_tone(gen);
+			cw_gen_wait_for_queue_level(gen, 1);
 		}
 
 		cw_gen_wait_for_queue_level(gen, 0);
+		usleep(2 * tone_duration);
 		cw_gen_stop(gen);
 
 		cte->expect_op_int(cte, false, "==", set_failure, 0, "set volume (up)");
@@ -971,14 +975,17 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 
 #if 0
 	/*
-	  FIXME: this is a second call to the function in a row
-	  (second was after 'for' loop). This wait hangs the test
-	  program, as if the function waited for the queue to go to
-	  zero.
+	  FIXME: check behaviour of these function for empty tone
+	  queue, particularly if each of the functions is called one
+	  after another, like this:
+	  cw_gen_wait_for_tone(gen);
+	  cw_gen_wait_for_tone(gen);
 
-	  Calling "cw_gen_wait_for_queue_level(gen, 0)" on an empty
-	  queue should return immediately. */
+	  or this:
+	  cw_gen_wait_for_queue_level(gen, 0);
+	  cw_gen_wait_for_queue_level(gen, 0);
 	*/
+	cw_gen_wait_for_tone(gen);
 	cw_gen_wait_for_queue_level(gen, 0);
 #endif
 
