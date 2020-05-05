@@ -20,7 +20,6 @@
 
 
 
-#define _XOPEN_SOURCE 600 /* signaction() + SA_RESTART */
 #include "config.h"
 
 

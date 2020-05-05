@@ -25,7 +25,8 @@
    Wrappers for some libcw functions, that probably don't belong to libcw.c.
 */
 
-#define _BSD_SOURCE /* strdup() */
+
+
 
 #include "config.h"
 

@@ -24,7 +24,8 @@
    Functions handling cw_config_t structure.
 */
 
-#define _BSD_SOURCE /* strdup() */
+
+
 
 #include "config.h"
 

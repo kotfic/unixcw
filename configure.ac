@@ -492,6 +492,9 @@ GCC_C_WARNINGS="$GCC_C_WARNINGS -Wjump-misses-init"
 # then similarly, though less so, for g++ and icpc.
 if test "`basename $CC`" = "gcc" ; then
   CFLAGS="$CFLAGS -std=gnu99"
+  # SUSv3
+  # CFLAGS="$CFLAGS -D_XOPEN_SOURCE=600"
+  CFLAGS="$CFLAGS -D_GNU_SOURCE"
   CFLAGS="$CFLAGS $GCC_WARNINGS $GCC_C_WARNINGS -pedantic -Wfloat-equal -Wpointer-arith"
   CFLAGS="$CFLAGS -Wcast-qual -Wwrite-strings -Wmissing-prototypes"
   CFLAGS="$CFLAGS -Wstrict-prototypes -Wmissing-declarations -Wredundant-decls"
