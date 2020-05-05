@@ -23,9 +23,6 @@
 
 
 
-#define _XOPEN_SOURCE 600 /* signaction() + SA_RESTART */
-
-
 #include <stdlib.h>
 #include <sys/time.h>
 #include <signal.h>
