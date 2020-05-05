@@ -326,6 +326,7 @@ int test_straight_key(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, false, "==", busy_failure, 0, "cw_straight_key_busy(<key open/closed>)");
 	}
 
+	sleep(1); /* Don't go immediately to key_destroy(), because this will cut the sound of the last dot short. TODO: shouldn't this be some kind of wait()? */
 	key_destroy(&key, &gen);
 
 	cte->print_test_footer(cte, __func__);
