@@ -128,8 +128,8 @@ void resource_meas_do_measurement(resource_meas * meas)
 		}
 		/* Log the error "live" during test execution. This
 		   will allow to pinpoint the faulty code faster. */
-		if (meas->maximal_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
-			fprintf(stderr, "[EE] High CPU usage: %6.2f%%\n", meas->maximal_cpu_usage);
+		if (meas->current_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
+			fprintf(stderr, "[EE] High current CPU usage: %6.2f%%\n", meas->current_cpu_usage);
 		}
 	}
 	pthread_mutex_unlock(&meas->mutex);
