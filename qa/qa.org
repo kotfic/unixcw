@@ -1,0 +1,21 @@
+Testing tools and tips&tricks
+
+* performance
+
+** callgring + kcachegrind
+
+export LD_LIBRARY_PATH="/home/acerion/tmp/unixcw/unixcw/src/libcw/.libs"
+valgrind --tool=callgrind   ./src/libcw/tests/.libs/libcw_test_all -A k -S a -N test_straight_key
+callgrind_annotate --auto=yes callgrind.out.<PID>
+kcachegrind
+
+
+** perf
+
+http://www.brendangregg.com/perf.html
+
+export LD_LIBRARY_PATH="/home/acerion/tmp/unixcw/unixcw/src/libcw/.libs"
+perf record --call-graph dwarf -F 200  -g  ./src/libcw/tests/.libs/libcw_test_all -A k -S a -N test_straight_key
+# Show data stored in ./perf.data
+perf report --stdio
+perf report
