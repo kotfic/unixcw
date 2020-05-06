@@ -84,38 +84,50 @@ typedef struct cw_test_executor_t {
 	   Verify that operator @param operator is satisfied for
 	   @param received_value and @param expected_value
 
-	   Use the function to verify that a successful behaviour has
-	   occurred and @param operator applied to value of
-	   calculation (@param received_value) and expected value
-	   (@param expected_value) returns true.
+	   Use the function to verify that a result of libcw function
+	   or of other operation (@param received_value) is in proper
+	   relation to expected value (@param expected_value).
 
-	   Print log specified by @param fmt and following args
-	   regardless of results of the verification or (if @param
-	   errors_only is true) only if the application of operator
+	   expect_op_X(): print log specified by @param fmt and
+	   following args regardless of results of the
+	   verification. Include test result (success or failure) of
+	   the test in statistics.
+
+	   expect_op_X_errors_only(): print log specified by @param
+	   fmt and following args only if the application of operator
 	   has shown that the values DON'T satisfy the operator, which
 	   is regarded as failure of expectation, i.e. an error.
+	   Include test result in statistics only if the result was an
+	   error.
 
 	   @return true if this comparison shows that the values satisfy the operator
 	   @return false otherwise
 	*/
-	bool (* expect_op_int)(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, bool errors_only, const char * fmt, ...) __attribute__ ((format (printf, 6, 7)));
-	bool (* expect_op_double)(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, bool errors_only, const char * fmt, ...) __attribute__ ((format (printf, 6, 7)));
+	bool (* expect_op_int)(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
+	bool (* expect_op_int_errors_only)(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
+	bool (* expect_op_double)(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
+	bool (* expect_op_double_errors_only)(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
 
 	/**
 	   Verify that @param received_value is between @param
 	   expected_lower and @param expect_higher (inclusive)
 
-	   Use the function to verify that a successful behaviour has
-	   occurred and some result of calculation (@param
-	   received_value) is larger than or equal to @param
-	   expected_lower, and at the same time is smaller than or
-	   equal to @param expected_higher
+	   Use the function to verify that a result of libcw function
+	   or of other operation (@param received_value) is larger
+	   than or equal to @param expected_lower, and at the same
+	   time is smaller than or equal to @param expected_higher.
 
-	   Print log specified by @param fmt and following args
-	   regardless of results of the verification or (in case of
-	   _errors_only() variant) only if the comparison has shown
-	   that the tested value is NOT within specified range, which
+	   expect_op_X(): print log specified by @param fmt and
+	   following args regardless of results of the
+	   verification. Include test result (success or failure) of
+	   the test in statistics.
+
+	   expect_op_X_errors_only(): print log specified by @param
+	   fmt and following args only if the application of operator
+	   has shown that the values DON'T satisfy the operator, which
 	   is regarded as failure of expectation, i.e. an error.
+	   Include test result in statistics only if the result was an
+	   error.
 
 	   @return true if this comparison shows that the given value is within specified range
 	   @return false otherwise
@@ -126,11 +138,15 @@ typedef struct cw_test_executor_t {
 	/**
 	   Verify that @param pointer is NULL pointer
 
-	   Print log specified by @param fmt and following args
-	   regardless of results of the verification or (in case of
-	   _errors_only() variant) only if the check has shown that
-	   pointer is *NOT* NULL pointer, which is regarded as failure
-	   of expectation, i.e. an error.
+	   expect_op_X(): print log specified by @param fmt and
+	   following args regardless of results of the
+	   verification. Include test result (success or failure) of
+	   the test in statistics.
+
+	   expect_op_X_errors_only(): print log specified by @param
+	   fmt and following args only if verification was negative.
+	   Include test result in statistics only if the result was an
+	   error.
 
 	   @return true if this comparison shows that the pointer is truly a NULL pointer
 	   @return false otherwise

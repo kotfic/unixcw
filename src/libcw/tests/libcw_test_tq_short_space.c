@@ -106,7 +106,7 @@ int legacy_api_test_tq_short_space(cw_test_executor_t * cte)
 		}
 	}
 
-	cte->expect_op_int(cte, true, "==", success, 0, "Testing dequeuing short space");
+	cte->expect_op_int(cte, true, "==", success, "Testing dequeuing short space");
 
 	cte->print_test_footer(cte, __func__);
 
@@ -168,11 +168,11 @@ bool single_test_over_speed_range(struct tq_short_space_data * data, int i, int 
 			   n_expected_callback_executions, data->n_actual_callback_executions);
 
 
-	const bool success = data->cte->expect_op_int(data->cte,
-						      n_expected_callback_executions,
-						      "==",
-						      data->n_actual_callback_executions,
-						      1, "test execution %d out of %d", i + 1, n);
+	const bool success = data->cte->expect_op_int_errors_only(data->cte,
+								  n_expected_callback_executions,
+								  "==",
+								  data->n_actual_callback_executions,
+								  "test execution %d out of %d", i + 1, n);
 	return success;
 }
 
