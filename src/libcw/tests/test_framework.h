@@ -46,6 +46,16 @@ typedef struct {
 
 
 
+
+/* Test function return values. */
+typedef enum {
+	cwt_retv_err = -1,
+	cwt_retv_ok = 0,
+} cwt_retv;
+
+
+
+
 struct cw_test_set_t;
 
 

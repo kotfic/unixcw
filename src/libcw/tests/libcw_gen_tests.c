@@ -47,38 +47,47 @@ extern const char * test_invalid_representations[];
 
 
 
-static int gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen);
+static cwt_retv gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen);
 static void gen_destroy(cw_gen_t ** gen);
+static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, const char * function_name, bool do_new, bool do_start, bool do_stop, bool do_delete);
 
 
 
 
 /**
-
    \brief Prepare new generator, possibly with parameter values passed through command line
 
-   @reviewed on 2020-04-27
+   Test helper function.
+
+   @reviewed on 2020-05-07
+
+   @return cwt_retv_ok on success
+   @return cwt_retv_err on failure
 */
-static int gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen)
+static cwt_retv gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen)
 {
 	*gen = cw_gen_new(cte->current_sound_system, NULL);
 	if (!*gen) {
-		cte->log_error(cte, "Can't create gen, stopping the test\n");
-		return -1;
+		cte->log_error(cte, "Can't create generator, stopping the test\n");
+		return cwt_retv_err;
 	}
 
 	cw_gen_reset_parameters_internal(*gen);
 	cw_gen_sync_parameters_internal(*gen);
 	cw_gen_set_speed(*gen, cte->config->send_speed);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 
 
 
 /**
-   @reviewed on 2020-04-27
+   @brief Delete @param gen, set the pointer to NULL
+
+   Test helper function.
+
+   @reviewed on 2020-05-07
 */
 void gen_destroy(cw_gen_t ** gen)
 {
@@ -93,173 +102,77 @@ void gen_destroy(cw_gen_t ** gen)
 
 
 /**
-   @reviewed on 2019-10-08
+   @brief Test creating and deleting a generator (without trying to
+   start or stop it)
+
+   @reviewed on 2020-05-07
 */
-int test_cw_gen_new_delete(cw_test_executor_t * cte)
+cwt_retv test_cw_gen_new_delete(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
-
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
-
-	bool failure = false;
-	cw_gen_t * gen = NULL;
-
-	/* new() + delete() */
-	for (int i = 0; i < max; i++) {
-		gen = LIBCW_TEST_FUT(cw_gen_new)(cte->current_sound_system, NULL);
-		if (!cte->expect_valid_pointer_errors_only(cte, gen, "new/delete: failed to initialize generator (loop #%d)", i)) {
-			failure = true;
-			break;
-		}
-
-		/* Try to access some fields in cw_gen_t just to be sure that the gen has been allocated properly. */
-		if (!cte->expect_op_int_errors_only(cte, 0, "==", gen->buffer_sub_start, "new/delete: buffer_sub_start in new generator is not at zero")) {
-			failure = true;
-			break;
-		}
-		gen->buffer_sub_stop = gen->buffer_sub_start + 10;
-		if (!cte->expect_op_int_errors_only(cte, 10, "==", gen->buffer_sub_stop, "new/delete: buffer_sub_stop didn't store correct new value")) {
-			failure = true;
-			break;
-		}
-
-		if (!cte->expect_null_pointer_errors_only(cte, gen->client.name, "new/delete: initial value of generator's client name is not NULL")) {
-			failure = true;
-			break;
-		}
-
-		if (!cte->expect_valid_pointer_errors_only(cte, gen->tq, "new/delete: tone queue is NULL")) {
-			failure = true;
-			break;
-		}
-
-		LIBCW_TEST_FUT(cw_gen_delete)(&gen);
-		if (!cte->expect_null_pointer_errors_only(cte, gen, "new/delete: delete() didn't set the pointer to NULL (loop #%d)", i)) {
-			failure = true;
-			break;
-		}
-	}
-	cte->expect_op_int(cte, false, "==", failure, "new/delete");
-
-	/* Clean up after (possibly) failed test. */
-	if (gen) {
-		cw_gen_delete(&gen);
-	}
-
-	cte->print_test_footer(cte, __func__);
-
-	return 0;
+	return test_cw_gen_new_start_stop_delete_sub(cte, __func__, true, false, false, true);
 }
 
 
 
 
 /**
-   @reviewed on 2019-10-08
+   @brief Test creating, starting and deleting a generator (without
+   trying to stop it)
+
+   @reviewed on 2020-05-07
 */
-int test_cw_gen_new_start_delete(cw_test_executor_t * cte)
+cwt_retv test_cw_gen_new_start_delete(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
-
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
-
-	bool failure = false;
-	cw_gen_t * gen = NULL;
-
-	/* new() + start() + delete() (skipping stop() on purpose). */
-	for (int i = 0; i < max; i++) {
-		gen = LIBCW_TEST_FUT(cw_gen_new)(cte->current_sound_system, NULL);
-		if (!cte->expect_valid_pointer_errors_only(cte, gen, "new/start/delete: new (loop #%d)", i)) {
-			failure = true;
-			break;
-		}
-
-		const int cwret = LIBCW_TEST_FUT(cw_gen_start)(gen);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "new/start/delete: start (loop #%d)", i)) {
-			failure = true;
-			break;
-		}
-
-		LIBCW_TEST_FUT(cw_gen_delete)(&gen);
-		if (!cte->expect_null_pointer_errors_only(cte, gen, "new/start/delete: delete (loop #%d)", i)) {
-			failure = true;
-			break;
-		}
-	}
-	cte->expect_op_int(cte, false, "==", failure, "new/start/delete");
-
-	/* Clean up after (possibly) failed test. */
-	if (gen) {
-		cw_gen_delete(&gen);
-	}
-
-	cte->print_test_footer(cte, __func__);
-
-	return 0;
+	return test_cw_gen_new_start_stop_delete_sub(cte, __func__, true, true, false, true);
 }
 
 
 
 
 /**
-   @reviewed on 2019-10-08
+   @brief Test creating, stopping and deleting a generator (without
+   trying to start it)
+
+   @reviewed on 2020-05-07
 */
-int test_cw_gen_new_stop_delete(cw_test_executor_t * cte)
+cwt_retv test_cw_gen_new_stop_delete(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
-
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
-
-	bool new_failure = false;
-	bool stop_failure = false;
-	bool delete_failure = false;
-	cw_gen_t * gen = NULL;
-
-	/* new() + stop() + delete() (skipping start() on purpose). */
-	for (int i = 0; i < max; i++) {
-		gen = LIBCW_TEST_FUT(cw_gen_new)(cte->current_sound_system, NULL);
-		if (!cte->expect_valid_pointer_errors_only(cte, gen, "new/stop/delete: new (loop #%d)", i)) {
-			new_failure = true;
-			break;
-		}
-
-		const int cwret = LIBCW_TEST_FUT(cw_gen_stop)(gen);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "new/stop/delete: stop (loop #%d)", i)) {
-			stop_failure = true;
-			break;
-		}
-
-		LIBCW_TEST_FUT(cw_gen_delete)(&gen);
-		if (!cte->expect_null_pointer_errors_only(cte, gen, "new/stop/delete: delete (loop #%d)", i)) {
-			delete_failure = true;
-			break;
-		}
-	}
-	cte->expect_op_int(cte, false, "==", new_failure, "new/stop/delete: new");
-	cte->expect_op_int(cte, false, "==", stop_failure, "new/stop/delete: stop");
-	cte->expect_op_int(cte, false, "==", delete_failure, "new/stop/delete: delete");
-
-	/* Clean up after (possibly) failed test. */
-	if (gen) {
-		cw_gen_delete(&gen);
-	}
-
-	cte->print_test_footer(cte, __func__);
-
-	return 0;
+	return test_cw_gen_new_start_stop_delete_sub(cte, __func__, true, false, true, true);
 }
 
 
 
 
 /**
-   @reviewed on 2019-10-08
-*/
-int test_cw_gen_new_start_stop_delete(cw_test_executor_t * cte)
-{
-	const int max = cte->get_repetitions_count(cte);
+   @brief Test creating, starting, stopping and deleting a generator
 
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+   @reviewed on 2020-05-07
+*/
+cwt_retv test_cw_gen_new_start_stop_delete(cw_test_executor_t * cte)
+{
+	return test_cw_gen_new_start_stop_delete_sub(cte, __func__, true, true, true, true);
+}
+
+
+
+
+/**
+   @brief Test creating, starting, stopping and deleting a generator -
+   test helper function
+
+   The operations (creating, starting, stopping and deleting) are
+   executed depending on value of corresponding argument of the
+   function.
+
+   @param function_name is name of function that called this subroutine
+
+   @reviewed on 2020-05-07
+*/
+static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, const char * function_name, bool do_new, bool do_start, bool do_stop, bool do_delete)
+{
+	const int repetitions = cte->get_repetitions_count(cte);
+
+	cte->print_test_header(cte, "%s (%d)", function_name, repetitions);
 
 	bool new_failure = false;
 	bool start_failure = false;
@@ -267,52 +180,111 @@ int test_cw_gen_new_start_stop_delete(cw_test_executor_t * cte)
 	bool delete_failure = false;
 	cw_gen_t * gen = NULL;
 
-	/* new() + start() + stop() + delete() */
-	for (int i = 0; i < max; i++) {
-		gen = LIBCW_TEST_FUT(cw_gen_new)(cte->current_sound_system, NULL);
-		if (!cte->expect_valid_pointer_errors_only(cte, gen, "new/start/stop/delete: new (loop #%d)", i)) {
-			new_failure = true;
-			break;
-		}
-
-		/* Starting/stopping a generator may be a common pattern. */
-		const int sub_max = max;
-		for (int j = 0; j < sub_max; j++) {
-			int cwret;
-
-			cwret = LIBCW_TEST_FUT(cw_gen_start)(gen);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "new/start/stop/delete: start (loop #%d-%d)", i, j)) {
-				start_failure = true;
+	for (int i = 0; i < repetitions; i++) {
+		if (do_new) {
+			gen = LIBCW_TEST_FUT(cw_gen_new)(cte->current_sound_system, NULL);
+			if (!cte->expect_valid_pointer_errors_only(cte, gen, "new() (loop #%d/%d)", i + 1, repetitions)) {
+				new_failure = true;
 				break;
 			}
 
-			cwret = LIBCW_TEST_FUT(cw_gen_stop)(gen);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "new/start/stop/delete: stop (loop #%d-%d)", i, j)) {
-				stop_failure = true;
+
+			/* Try to access some fields in cw_gen_t just to be sure that the gen has been allocated properly. */
+			if (!cte->expect_op_int_errors_only(cte, 0, "==", gen->buffer_sub_start, "buffer_sub_start in new generator is not at zero")) {
+				new_failure = true;
+				break;
+			}
+			gen->buffer_sub_stop = gen->buffer_sub_start + 10;
+			if (!cte->expect_op_int_errors_only(cte, 10, "==", gen->buffer_sub_stop, "buffer_sub_stop didn't store correct new value")) {
+				new_failure = true;
+				break;
+			}
+			if (!cte->expect_null_pointer_errors_only(cte, gen->client.name, "initial value of generator's client name is not NULL")) {
+				new_failure = true;
+				break;
+			}
+			if (!cte->expect_valid_pointer_errors_only(cte, gen->tq, "tone queue is NULL")) {
+				new_failure = true;
 				break;
 			}
 		}
-		if (start_failure || stop_failure) {
-			break;
+
+
+
+		if (do_start || do_stop) {
+			/* I expect that a common pattern will be that
+			   generator will be created once, then
+			   started/stopped multiple times, and then deleted
+			   once. So do start/stop in inner loop here. */
+			int repetitions_inner = repetitions;
+
+			if (do_start && (!do_stop)) {
+				/* FIXME: there is a problem:
+
+				   if client code will call cw_gen_start() multiple times,
+				   without calling cw_gen_stop() after each start(), then we will have a
+				   problem: the final delete() call in this test function (which internally
+				   calls stop()) will have problem with stopping a generator thread with
+				   "pthread_join(gen->thread.id, NULL);" because there were several
+				   start() calls and several threads were created in single
+				   generator. So for now, if this subroutine was called to do several
+				   starts but no stops, limit number of inner repetitions.
+
+				   The solution can be that start() function looks at state of thread,
+				   and doesn't create new one if a generator thread is already running.
+				*/
+				repetitions_inner = 1;
+			}
+
+			for (int j = 0; j < repetitions_inner; j++) {
+				if (do_start) {
+					int cwret = LIBCW_TEST_FUT(cw_gen_start)(gen);
+					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "start() (loop #%d/%d - %d/%d)", i + 1, repetitions, j + 1, repetitions_inner)) {
+						start_failure = true;
+						break;
+					}
+				}
+
+				if (do_stop) {
+					int cwret = LIBCW_TEST_FUT(cw_gen_stop)(gen);
+					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "stop() (loop #%d/%d - %d/%d)", i + 1, repetitions_inner, j + 1, repetitions_inner)) {
+						stop_failure = true;
+						break;
+					}
+				}
+			}
+			if (start_failure || stop_failure) {
+				break;
+			}
 		}
 
-		LIBCW_TEST_FUT(cw_gen_delete)(&gen);
-		if (!cte->expect_null_pointer_errors_only(cte, gen, "new/start/stop/delete: delete (loop #%d)", i)) {
-			delete_failure = true;
-			break;
+		if (do_delete) {
+			LIBCW_TEST_FUT(cw_gen_delete)(&gen);
+			if (!cte->expect_null_pointer_errors_only(cte, gen, "delete() (loop #%d/%d)", i + 1, repetitions)) {
+				delete_failure = true;
+				break;
+			}
 		}
 	}
-	cte->expect_op_int(cte, false, "==", new_failure, "new/start/stop/delete: new");
-	cte->expect_op_int(cte, false, "==", start_failure, "new/start/stop/delete: start");
-	cte->expect_op_int(cte, false, "==", stop_failure, "new/start/stop/delete: stop");
-	cte->expect_op_int(cte, false, "==", delete_failure, "new/start/stop/delete: delete");
+	if (do_new) {
+		cte->expect_op_int(cte, false, "==", new_failure, "%s(): new()", function_name);
+	}
+	if (do_start) {
+		cte->expect_op_int(cte, false, "==", start_failure, "%s(): start()", function_name);
+	}
+	if (do_stop) {
+		cte->expect_op_int(cte, false, "==", stop_failure, "%s(): stop()", function_name);
+	}
+	if (do_delete) {
+		cte->expect_op_int(cte, false, "==", delete_failure, "%s(): delete()", function_name);
+	}
 
-	/* Clean up after (possibly) failed test. */
+	/* If test fails to delete generator, do it here. */
 	if (gen) {
 		cw_gen_delete(&gen);
 	}
 
-	cte->print_test_footer(cte, __func__);
+	cte->print_test_footer(cte, function_name);
 
 	return 0;
 }
@@ -334,10 +306,10 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	/* Test 0: test property of newly created generator. */
 	{
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
-		cte->assert2(cte, gen, "set slope: 0: failed to initialize generator");
+		cte->assert2(cte, gen, "test 0: failed to initialize generator");
 
-		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, "set slope: 0: initial shape (%d)", gen->tone_slope.shape);
-		cte->expect_op_int(cte, CW_AUDIO_SLOPE_LEN, "==", gen->tone_slope.len, "set slope: 0: initial length (%d)", gen->tone_slope.len);
+		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, "test 0: initial shape (%d)", gen->tone_slope.shape);
+		cte->expect_op_int(cte, CW_AUDIO_SLOPE_LEN, "==", gen->tone_slope.len, "test 0: initial length (%d)", gen->tone_slope.len);
 
 		cw_gen_delete(&gen);
 	}
@@ -353,10 +325,10 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   have rectangular slopes that have non-zero length." */
 	{
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
-		cte->assert2(cte, gen, "set slope: A: failed to initialize generator");
+		cte->assert2(cte, gen, "test A: failed to initialize generator");
 
 		const int cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RECTANGULAR, 10);
-		cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "set slope: A: conflicting arguments");
+		cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "test A: conflicting arguments");
 
 		cw_gen_delete(&gen);
 	}
@@ -375,16 +347,16 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	*/
 	{
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
-		cte->assert2(cte, gen, "set slope: B: failed to initialize generator");
+		cte->assert2(cte, gen, "test B: failed to initialize generator");
 
 		const int shape_before = gen->tone_slope.shape;
 		const int len_before = gen->tone_slope.len;
 
 		const int cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, -1, -1);
 
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: B: set tone slope <-1 -1> (cwret) ");
-		cte->expect_op_int(cte, shape_before, "==", gen->tone_slope.shape, "set slope: B: <-1 -1> (shape)");
-		cte->expect_op_int(cte, len_before, "==", gen->tone_slope.len, "set slope: B: <-1 -1> (len)");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                   "test B: set tone slope <-1 -1> (cwret) ");
+		cte->expect_op_int(cte, shape_before, "==", gen->tone_slope.shape, "test B: <-1 -1> (shape)");
+		cte->expect_op_int(cte, len_before, "==", gen->tone_slope.len,     "test B: <-1 -1> (len)");
 
 		cw_gen_delete(&gen);
 	}
@@ -400,7 +372,7 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	{
 		int cwret;
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
-		cte->assert2(cte, gen, "set slope: C1: failed to initialize generator");
+		cte->assert2(cte, gen, "test C1: failed to initialize generator");
 
 
 		/* At the beginning of test these values are
@@ -413,19 +385,19 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 
 		/* At this point generator should have initial values
 		   of its parameters (yes, that's test zero again). */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "set slope: C1: <x -1>: initial shape");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: C1: <x -1>: initial length");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "test C1: <x -1>: initial shape");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,     "test C1: <x -1>: initial length");
 
 
 
 		/* Set only new slope shape. */
 		expected_shape = CW_TONE_SLOPE_SHAPE_LINEAR;
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, expected_shape, -1);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: C1: <x -1>: set");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "test C1: <x -1>: set");
 
 		/* At this point only slope shape should be updated. */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "set slope: C1: <x -1>: get");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: C1: <x -1>: preserved length");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "test C1: <x -1>: get");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,     "test C1: <x -1>: preserved length");
 
 
 
@@ -436,8 +408,8 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 
 		/* At this point only slope length should be updated
 		   (compared to previous function call). */
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: C1: <-1 x>: get");
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "set slope: C1: <-1 x>: preserved shape");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,     "test C1: <-1 x>: get");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "test C1: <-1 x>: preserved shape");
 
 
 
@@ -453,7 +425,7 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   value of \p slope_len is '-1'." */
 	{
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
-		cte->assert2(cte, gen, "set slope: C2: failed to initialize generator");
+		cte->assert2(cte, gen, "test C2: failed to initialize generator");
 
 		int cwret;
 
@@ -467,8 +439,8 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 
 		/* At this point generator should have initial values
 		   of its parameters (yes, that's test zero again). */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "set slope: C2: initial shape");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: C2: initial length");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "test C2: initial shape");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,     "test C2: initial length");
 
 
 
@@ -476,15 +448,15 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		expected_shape = CW_TONE_SLOPE_SHAPE_RECTANGULAR;
 		expected_len = 0; /* Even though we won't pass this to function, this is what we expect to get after this call: we request rectangular slope, which by its nature has zero length. */
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, expected_shape, -1);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: C2: set rectangular");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "test: C2: set rectangular");
 
 
 
 		/* At this point slope shape AND slope length should
 		   be updated (slope length is updated only because of
 		   requested rectangular slope shape). */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "set slope: C2: set rectangular: shape");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: C2: set rectangular: length");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape, "test C2: set rectangular: shape");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,     "test C2: set rectangular: length");
 
 
 		cw_gen_delete(&gen);
@@ -500,39 +472,39 @@ int test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	{
 		int cwret;
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
-		cte->assert2(cte, gen, "set slope: D: failed to initialize generator");
+		cte->assert2(cte, gen, "test D: failed to initialize generator");
 
 		const int expected_len = 0;
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_LINEAR, expected_len);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: D: <LINEAR/0>: set");
-		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_LINEAR, "==", gen->tone_slope.shape, "set slope: D: <LINEAR/0>: get");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: D: <LINEAR/0>");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                 "test D: <LINEAR/0>: set");
+		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_LINEAR, "==", gen->tone_slope.shape, "test D: <LINEAR/0>: get");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,                 "test D: <LINEAR/0>");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, 0);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: D: <RAISED_COSINE/0>: set");
-		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, "set slope: D: <RAISED_COSINE/0>: get");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: D: <RAISED_COSINE/0>");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                        "test D: <RAISED_COSINE/0>: set");
+		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, "test D: <RAISED_COSINE/0>: get");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,                        "test D: <RAISED_COSINE/0>");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_SINE, 0);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: D: <SINE/0>: set");
-		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_SINE, "==", gen->tone_slope.shape, "set slope: D: <SINE/0>: get");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: D: <SINE/0>");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                               "test D: <SINE/0>: set");
+		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_SINE, "==", gen->tone_slope.shape, "test D: <SINE/0>: get");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,               "test D: <SINE/0>");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RECTANGULAR, 0);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: D: <RECTANGULAR/0>: set");
-		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RECTANGULAR, "==", gen->tone_slope.shape, "set slope: D: <RECTANGULAR/0>: get");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: D: <RECTANGULAR/0>");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                      "test D: <RECTANGULAR/0>: set");
+		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RECTANGULAR, "==", gen->tone_slope.shape, "test D: <RECTANGULAR/0>: get");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,                      "test D: <RECTANGULAR/0>");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_LINEAR, 0);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set slope: D: <LINEAR/0>: set");
-		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_LINEAR, "==", gen->tone_slope.shape, "set slope: D: <LINEAR/0>: get");
-		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len, "set slope: D: <LINEAR/0>");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                 "test D: <LINEAR/0>: set");
+		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_LINEAR, "==", gen->tone_slope.shape, "test D: <LINEAR/0>: get");
+		cte->expect_op_int(cte, expected_len, "==", gen->tone_slope.len,                 "test D: <LINEAR/0>");
 
 
 		cw_gen_delete(&gen);
@@ -1003,14 +975,17 @@ int test_cw_gen_volume_functions(cw_test_executor_t * cte)
 
    @reviewed on 2019-10-10
 */
-int test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
+cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 {
 	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
 
 	cw_gen_t * gen = NULL;
-	gen_setup(cte, &gen);
+	if (cwt_retv_ok != gen_setup(cte, &gen)) {
+		cte->log_error(cte, "%s:%d: Failed to create generator\n", __func__, __LINE__);
+		return cwt_retv_err;
+	}
 	cw_gen_start(gen);
 
 	/* Test: sending dot. */
@@ -1102,7 +1077,10 @@ int test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	   character. */
 
 	cw_gen_t * gen = NULL;
-	gen_setup(cte, &gen);
+	if (cwt_retv_ok != gen_setup(cte, &gen)) {
+		cte->log_error(cte, "%s:%d: Failed to create generator\n", __func__, __LINE__);
+		return cwt_retv_err;
+	}
 	cw_gen_start(gen);
 
 	/* Test: sending valid representations. */
@@ -1162,7 +1140,10 @@ int test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 	cte->print_test_header(cte, __func__);
 
 	cw_gen_t * gen = NULL;
-	gen_setup(cte, &gen);
+	if (cwt_retv_ok != gen_setup(cte, &gen)) {
+		cte->log_error(cte, "%s:%d: Failed to create generator\n", __func__, __LINE__);
+		return cwt_retv_err;
+	}
 	cw_gen_start(gen);
 
 	/* Test: sending all supported characters as individual characters. */
@@ -1228,7 +1209,10 @@ int test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 	cte->print_test_header(cte, __func__);
 
 	cw_gen_t * gen = NULL;
-	gen_setup(cte, &gen);
+	if (cwt_retv_ok != gen_setup(cte, &gen)) {
+		cte->log_error(cte, "%s:%d: Failed to create generator\n", __func__, __LINE__);
+		return cwt_retv_err;
+	}
 	cw_gen_start(gen);
 
 	/* Test: sending all supported characters as single string. */
