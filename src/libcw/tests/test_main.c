@@ -91,6 +91,7 @@ int main(int argc, char * const argv[])
 	cte->config->has_feature_test_repetitions = true;
 	cte->config->has_feature_test_name = true;
 	cte->config->has_feature_speed = true;
+	cte->config->has_feature_tone = true;
 	cte->config->test_repetitions = 5;
 
 	/* May cause exit on errors or "-h" option. */
