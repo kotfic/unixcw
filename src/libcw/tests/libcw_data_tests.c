@@ -659,7 +659,7 @@ int test_validate_representation_internal(cw_test_executor_t * cte)
 		while (test_valid_representations[i]) {
 			const int cwret = LIBCW_TEST_FUT(cw_representation_is_valid)(test_valid_representations[i]);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "valid representations (i = %d)", i)) {
-				failure = false;
+				failure = true;
 				break;
 			}
 			i++;
@@ -675,7 +675,7 @@ int test_validate_representation_internal(cw_test_executor_t * cte)
 		while (test_invalid_representations[i]) {
 			const int cwret = LIBCW_TEST_FUT(cw_representation_is_valid)(test_invalid_representations[i]);
 			if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "invalid representations (i = %d)", i)) {
-				failure = false;
+				failure = true;
 				break;
 			}
 			i++;
