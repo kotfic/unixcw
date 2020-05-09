@@ -56,7 +56,7 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds);
 
 
 /**
-   \brief Prepare new generator, possibly with parameter values passed through command line
+   @brief Prepare new generator, possibly with parameter values passed through command line
 
    Test helper function.
 
@@ -173,7 +173,6 @@ cwt_retv test_cw_gen_new_start_stop_delete(cw_test_executor_t * cte)
 static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, const char * function_name, bool do_new, bool do_start, bool do_stop, bool do_delete)
 {
 	const int repetitions = cte->get_repetitions_count(cte);
-
 	cte->print_test_header(cte, "%s (%d)", function_name, repetitions);
 
 	bool new_failure = false;
@@ -295,7 +294,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 
 
 /**
-   Test setting tone slope shape and duration
+   @brief Test setting tone slope shape and duration
 
    @reviewed on 2020-05-08
 */
@@ -519,9 +518,8 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 
 
 
-
 /**
-   Test some assertions about CW_TONE_SLOPE_SHAPE_*
+   @brief Test some assertions about CW_TONE_SLOPE_SHAPE_*
 
    Test code in this file depends on the fact that these values are
    different than -1. I'm testing these values to be sure that when I
@@ -686,7 +684,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 
 
 /**
-   \brief Test setting and getting of some basic parameters
+   @brief Test setting and getting of some basic parameters
 
    @reviewed on 2020-05-07
 */
@@ -825,7 +823,7 @@ cwt_retv test_cw_gen_parameter_getters_setters(cw_test_executor_t * cte)
 
 
 /**
-   \brief Test control of generator's volume
+   @brief Test control of generator's volume
 
    Check that we can set the volume through its entire range.
 
@@ -978,15 +976,15 @@ cwt_retv test_cw_gen_volume_functions(cw_test_executor_t * cte)
 
 
 /**
-   \brief Test enqueueing and playing most basic elements of Morse code
+   @brief Test enqueueing and playing most basic elements of Morse code
 
-   @reviewed on 2019-10-10
+   @reviewed on 2020-05-09
 */
 cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
+	const int repetitions = cte->get_repetitions_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
 
 	cw_gen_t * gen = NULL;
 	if (cwt_retv_ok != gen_setup(cte, &gen)) {
@@ -995,10 +993,10 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	}
 	cw_gen_start(gen);
 
-	/* Test: sending dot. */
+	/* Test: playing dots. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < repetitions; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DOT_REPRESENTATION, false);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue mark internal(CW_DOT_REPRESENTATION) (i = %d)", i)) {
 				failure = true;
@@ -1012,10 +1010,10 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 
 
 
-	/* Test: sending dash. */
+	/* Test: playing dashes. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < repetitions; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DASH_REPRESENTATION, false);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue mark internal(CW_DASH_REPRESENTATION) (i = %d)", i)) {
 				failure = true;
@@ -1028,10 +1026,10 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	}
 
 
-	/* Test: sending inter-character space. */
+	/* Test: playing inter-character spaces. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < repetitions; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eoc_space_internal)(gen);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue eoc space internal() (i = %d)", i)) {
 				failure = true;
@@ -1044,10 +1042,10 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	}
 
 
-	/* Test: sending inter-word space. */
+	/* Test: playing inter-word spaces. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < repetitions; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eow_space_internal)(gen);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue eow space internal() (i = %d)", i)) {
 				failure = true;
@@ -1063,20 +1061,22 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 
 
 
 /**
-   \brief Test playing representations of characters
+   @brief Test playing representations of characters
 
-   @reviewed on 2019-10-11
+   @reviewed on 2020-05-09
 */
-int test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
+cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 {
-	cte->print_test_header(cte, __func__);
+	const int repetitions = cte->get_repetitions_count(cte);
+
+	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
 
 	/* Representation is valid when it contains dots and dashes
 	   only.  cw_gen_enqueue_representation_partial_internal()
@@ -1090,40 +1090,53 @@ int test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	}
 	cw_gen_start(gen);
 
-	/* Test: sending valid representations. */
+	/* Test: playing valid representations. */
 	{
 		bool failure = false;
-		int i = 0;
-		while (NULL != test_valid_representations[i]) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_partial_internal)(gen, test_valid_representations[i]);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue representation internal(<valid>) (%d)", i)) {
-				failure = true;
+		for (int rep = 0; rep < repetitions; rep++) {
+			int i = 0;
+			while (NULL != test_valid_representations[i]) {
+				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_partial_internal)(gen, test_valid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue representation internal(<valid>) (%d)", i)) {
+					failure = true;
+					break;
+				}
+				i++;
+			}
+			if (failure) {
 				break;
 			}
-			i++;
 		}
 		cw_gen_wait_for_queue_level(gen, 0);
 		cte->expect_op_int(cte, false, "==", failure, "enqueue representation internal(<valid>)");
 	}
 
 
-	/* Test: sending invalid representations. */
+	/* Test: trying to play invalid representations. */
 	{
 		bool failure = false;
-		int i = 0;
-		while (NULL != test_invalid_representations[i]) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_partial_internal)(gen, test_invalid_representations[i]);
-			if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue representation internal(<invalid>) (%d)", i)) {
-				failure = true;
+		for (int rep = 0; rep < repetitions; rep++) {
+			int i = 0;
+			while (NULL != test_invalid_representations[i]) {
+				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_partial_internal)(gen, test_invalid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue representation internal(<invalid>) (%d)", i)) {
+					failure = true;
+					break;
+				}
+				i++;
+			}
+			if (failure) {
 				break;
 			}
-			i++;
 		}
 		cw_gen_wait_for_queue_level(gen, 0);
 		cte->expect_op_int(cte, false, "==", failure, "enqueue representation internal(<invalid>)");
 	}
 
 #if 0
+	/* TODO: remove this. We wait here for generator's queue to
+	   drain completely, and this should be done in some other
+	   way. */
 	struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
 	cw_nanosleep_internal(&req);
 #endif
@@ -1131,20 +1144,22 @@ int test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 
 
 
 /**
-   Send all supported characters as individual characters
+   @brief Play all supported characters as individual characters
 
-   @reviewed on 2019-10-08
+   @reviewed on 2020-05-09
 */
-int test_cw_gen_enqueue_character(cw_test_executor_t * cte)
+cwt_retv test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 {
-	cte->print_test_header(cte, __func__);
+	const int repetitions = cte->get_repetitions_count(cte);
+
+	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
 
 	cw_gen_t * gen = NULL;
 	if (cwt_retv_ok != gen_setup(cte, &gen)) {
@@ -1153,12 +1168,12 @@ int test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 	}
 	cw_gen_start(gen);
 
-	/* Test: sending all supported characters as individual characters. */
+	/* Test: play all supported characters as individual characters. */
 	{
-		char charlist[UCHAR_MAX + 1];
+		char charlist[UCHAR_MAX + 1] = { 0 };
 		bool failure = false;
 
-		/* Send all the characters from the charlist individually. */
+		/* Enqueue all the characters from the charlist individually. */
 		cw_list_characters(charlist);
 		cte->log_info(cte,
 			      "enqueue character(<valid>):\n"
@@ -1180,16 +1195,22 @@ int test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 	}
 
 
-	/* Test: sending invalid character. */
+	/* Test: trying to play invalid characters. */
 	{
-		const char invalid_characters[] = { 0x00, 0x01 }; /* List of invalid characters to be expanded. */
-		const int n = sizeof (invalid_characters) / sizeof (invalid_characters[0]);
 		bool failure = false;
+		for (int rep = 0; rep < repetitions; rep++) {
+			const char invalid_characters[] = { 0x00, 0x01 }; /* List of invalid characters to be enqueued. */
+			const int n = sizeof (invalid_characters) / sizeof (invalid_characters[0]);
 
-		for (int i = 0; i < n; i++) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_character)(gen, invalid_characters[i]);
-			if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue character(<invalid>) (i = %d)", i)) {
-				failure = false;
+			for (int i = 0; i < n; i++) {
+				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_character)(gen, invalid_characters[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue character(<invalid>) (i = %d)", i)) {
+					failure = true;
+					break;
+				}
+			}
+			if (failure) {
+				break;
 			}
 		}
 		cte->expect_op_int(cte, false, "==", failure, "enqueue character(<invalid>)");
@@ -1200,20 +1221,22 @@ int test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 
 
 
 /**
-   Send all supported characters as a string.
+   @brief Enqueue all supported characters as a single string
 
-   @reviewed on 2019-10-08
+   @reviewed on 2020-05-09
 */
-int test_cw_gen_enqueue_string(cw_test_executor_t * cte)
+cwt_retv test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 {
-	cte->print_test_header(cte, __func__);
+	const int repetitions = cte->get_repetitions_count(cte);
+
+	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
 
 	cw_gen_t * gen = NULL;
 	if (cwt_retv_ok != gen_setup(cte, &gen)) {
@@ -1222,17 +1245,17 @@ int test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 	}
 	cw_gen_start(gen);
 
-	/* Test: sending all supported characters as single string. */
+	/* Test: playing all supported characters as single string. */
 	{
-		char charlist[UCHAR_MAX + 1];
+		char charlist[UCHAR_MAX + 1] = { 0 };
 		cw_list_characters(charlist);
 
-		/* Send the complete charlist as a single string. */
+		/* Enqueue the complete charlist as a single string. */
 		cte->log_info(cte,
 			      "enqueue string(<valid>):\n"
 			      "       %s\n", charlist);
-		const int enqueue_cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, charlist);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", enqueue_cwret, "enqueue string(<valid>)");
+		const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, charlist);
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "enqueue string(<valid>)");
 
 
 		while (cw_gen_get_queue_length(gen) > 0) {
@@ -1246,16 +1269,22 @@ int test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 	}
 
 
-	/* Test: sending invalid string. */
+	/* Test: trying to enqueue invalid strings. */
 	{
-		const char * invalid_strings[] = { "%INVALID%" }; /* List of invalid strings to be expanded. */
-		const int n = sizeof (invalid_strings) / sizeof (invalid_strings[0]);
 		bool failure = false;
+		for (int rep = 0; rep < repetitions; rep++) {
+			const char * invalid_strings[] = { "%INVALID%" }; /* List of invalid strings to be enqueued. */
+			const int n = sizeof (invalid_strings) / sizeof (invalid_strings[0]);
 
-		for (int i = 0; i < n; i++) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, invalid_strings[i]);
-			if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue string(<invalid>) (i = %d)", i)) {
-				failure = false;
+			for (int i = 0; i < n; i++) {
+				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, invalid_strings[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue string(<invalid>) (i = %d)", i)) {
+					failure = true;
+					break;
+				}
+			}
+			if (failure) {
+				break;
 			}
 		}
 		cte->expect_op_int(cte, false, "==", failure, "enqueue string(<invalid>)");
@@ -1265,5 +1294,5 @@ int test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
