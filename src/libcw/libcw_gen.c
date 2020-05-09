@@ -35,7 +35,7 @@
 
    The inner workings of the generator seem to be quite simple:
    1. dequeue tone from tone queue
-   2. recalculate tone length in microseconds into tone length in samples
+   2. recalculate tone duration in microseconds into tone length in samples
    3. for every sample in tone, calculate sine wave sample and
       put it in generator's constant size buffer
    4. if buffer is full of sine wave samples, push it to sound sink
@@ -151,13 +151,13 @@ static const char *default_sound_devices[] = {
 
 static const long int CW_AUDIO_VOLUME_RANGE = (1 << 15);  /* 2^15 = 32768 */
 
-/* Shortest length of time (in microseconds) that is used by libcw for
+/* Shortest duration of time (in microseconds) that is used by libcw for
    idle waiting and idle loops. If a libcw function needs to wait for
    something, or make an idle loop, it should call
-   usleep(N * gen->quantum_len)
+   usleep(N * gen->quantum_duration)
 
-   This is also length of a single "forever" tone. */
-static const int CW_AUDIO_QUANTUM_LEN_INITIAL = 100;  /* [us] */
+   This is also duration of a single "forever" tone. */
+static const int CW_AUDIO_QUANTUM_DURATION_INITIAL = 100;  /* [us] */
 
 
 
@@ -353,7 +353,7 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 	   CDW_AUDIO_NULL, because that sound system can also be used with a key).
 	   Otherwise the key may stay in "down" state forever. */
 	cw_tone_t tone;
-	CW_TONE_INIT(&tone, 0, gen->quantum_len, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	int status = cw_tq_enqueue_internal(gen->tq, &tone);
 
 	if (gen->sound_system == CW_AUDIO_NULL
@@ -362,7 +362,7 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 	    || gen->sound_system == CW_AUDIO_PA) {
 
 		/* Allow some time for playing the last tone. */
-		usleep(2 * gen->quantum_len); /* TODO: this should be usleep(2 * tone->len). */
+		usleep(2 * gen->quantum_duration); /* TODO: this should be usleep(2 * tone->duration). */
 
 	} else if (gen->sound_system == CW_AUDIO_CONSOLE) {
 		/* Sine wave generation should have been stopped
@@ -438,18 +438,18 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 
 		/* Generator's timing parameters. */
-		gen->dot_len = 0;
-		gen->dash_len = 0;
-		gen->eom_space_len = 0;
-		gen->eoc_space_len = 0;
-		gen->eow_space_len = 0;
+		gen->dot_duration = 0;
+		gen->dash_duration = 0;
+		gen->eom_space_duration = 0;
+		gen->eoc_space_duration = 0;
+		gen->eow_space_duration = 0;
 
-		gen->additional_space_len = 0;
-		gen->adjustment_space_len = 0;
+		gen->additional_space_duration = 0;
+		gen->adjustment_space_duration = 0;
 
 
 		/* Generator's misc parameters. */
-		gen->quantum_len = CW_AUDIO_QUANTUM_LEN_INITIAL;
+		gen->quantum_duration = CW_AUDIO_QUANTUM_DURATION_INITIAL;
 
 
 		gen->parameters_in_sync = false;
@@ -470,7 +470,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 
 		/* Tone parameters. */
-		gen->tone_slope.len = CW_AUDIO_SLOPE_LEN;
+		gen->tone_slope.duration = CW_AUDIO_SLOPE_DURATION;
 		gen->tone_slope.shape = CW_TONE_SLOPE_SHAPE_RAISED_COSINE;
 		gen->tone_slope.amplitudes = NULL;
 		gen->tone_slope.n_amplitudes = 0;
@@ -561,7 +561,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 		/* Set slope that late, because it uses value of sample rate.
 		   The sample rate value is set in
 		   cw_gen_new_open_internal(). */
-		rv = cw_gen_set_tone_slope(gen, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, CW_AUDIO_SLOPE_LEN);
+		rv = cw_gen_set_tone_slope(gen, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, CW_AUDIO_SLOPE_DURATION);
 		if (rv == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_ERROR,
 				      MSG_PREFIX "failed to set slope");
@@ -998,7 +998,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 			cw_key_tk_set_value_internal(gen->key, state);
 
 
-			cw_key_ik_increment_timer_internal(gen->key, tone.len);
+			cw_key_ik_increment_timer_internal(gen->key, tone.duration);
 		}
 		dequeued_prev = dequeued_now;
 
@@ -1040,13 +1040,13 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 #endif
 
 		/* Generator may be used by iambic keyer to measure
-		   periods of time (lengths of Mark and Space) - this
+		   periods of time (durations of Mark and Space) - this
 		   is achieved by enqueueing Marks and Spaces by keyer
 		   in generator. A soundcard playing samples is
 		   surprisingly good at measuring time intervals.
 
 		   At this point the generator has finished generating
-		   a tone of specified length. A duration of Mark or
+		   a tone of specified duration. A duration of Mark or
 		   Space has elapsed. Inform iambic keyer that the
 		   tone it has enqueued has elapsed. The keyer may
 		   want to change its state.
@@ -1209,7 +1209,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t *gen, cw_tone_t *tone)
 
    A generator stores some of information needed to get an amplitude
    of every sample in a sine wave - this is why we have \p gen.  If
-   tone's slopes are non-rectangular, the length of slopes is defined
+   tone's slopes are non-rectangular, the duration of slopes is defined
    in generator. If a tone is non-silent, the volume is also defined
    in generator.
 
@@ -1301,24 +1301,24 @@ int cw_gen_calculate_amplitude_internal(cw_gen_t *gen, const cw_tone_t *tone)
 
 
    A: If you pass to function conflicting values of \p slope_shape and
-   \p slope_len, the function will return CW_FAILURE. These
+   \p slope_duration, the function will return CW_FAILURE. These
    conflicting values are rectangular slope shape and larger than zero
    slope length. You just can't have rectangular slopes that have
    non-zero length.
 
 
    B: If you pass to function '-1' as value of both \p slope_shape and
-   \p slope_len, the function won't change any of the related two
+   \p slope_duration, the function won't change any of the related two
    generator's parameters.
 
 
    C1: If you pass to function '-1' as value of either \p slope_shape
-   or \p slope_len, the function will attempt to set only this
+   or \p slope_duration, the function will attempt to set only this
    generator's parameter that is different than '-1'.
 
    C2: However, if selected slope shape is rectangular, function will
    set generator's slope length to zero, even if value of \p
-   slope_len is '-1'.
+   slope_duration is '-1'.
 
 
    D: Notice that the function allows non-rectangular slope shape with
@@ -1330,7 +1330,7 @@ int cw_gen_calculate_amplitude_internal(cw_gen_t *gen, const cw_tone_t *tone)
    parameters change:
 
    \li shape of slope,
-   \li length of slope,
+   \li duration of slope,
    \li generator's sample rate,
    \li generator's volume.
 
@@ -1347,29 +1347,29 @@ int cw_gen_calculate_amplitude_internal(cw_gen_t *gen, const cw_tone_t *tone)
 
    \param gen - generator for which to set tone slope parameters
    \param slope_shape - shape of slope: linear, raised cosine, sine, rectangular
-   \param slope_usecs - duration of slope [microseconds]
+   \param slope_duration - duration of slope [microseconds]
 
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
-int cw_generator_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_usecs)
+int cw_generator_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
 {
-	return cw_gen_set_tone_slope(gen, slope_shape, slope_usecs);
+	return cw_gen_set_tone_slope(gen, slope_shape, slope_duration);
 }
 
 
 
 
-int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_len)
+int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
 {
 	assert (gen);
 
 	/* Handle conflicting values of arguments. */
 	if (slope_shape == CW_TONE_SLOPE_SHAPE_RECTANGULAR
-	    && slope_len > 0) {
+	    && slope_duration > 0) {
 
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_ERROR,
-			      MSG_PREFIX "requested a rectangular slope shape, but also requested slope len > 0");
+			      MSG_PREFIX "requested a rectangular slope shape, but also requested slope duration > 0");
 
 		return CW_FAILURE;
 	}
@@ -1378,18 +1378,18 @@ int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_len)
 	if (slope_shape != -1) {
 		gen->tone_slope.shape = slope_shape;
 	}
-	if (slope_len != -1) {
-		gen->tone_slope.len = slope_len;
+	if (slope_duration != -1) {
+		gen->tone_slope.duration = slope_duration;
 	}
 
 
-	/* Override of slope length. */
+	/* Override of slope duration. */
 	if (slope_shape == CW_TONE_SLOPE_SHAPE_RECTANGULAR) {
-		gen->tone_slope.len = 0;
+		gen->tone_slope.duration = 0;
 	}
 
 
-	int slope_n_samples = ((gen->sample_rate / 100) * gen->tone_slope.len) / 10000;
+	int slope_n_samples = ((gen->sample_rate / 100) * gen->tone_slope.duration) / 10000;
 	cw_assert (slope_n_samples >= 0, MSG_PREFIX "negative slope_n_samples: %d", slope_n_samples);
 
 
@@ -1406,8 +1406,8 @@ int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_len)
 		 /* Remember that slope_n_samples may be zero. In that
 		    case realloc() would equal to free(). We don't
 		    want to have NULL ->amplitudes, so don't modify
-		    ->amplitudes for zero-length slopes.  Since with
-		    zero-length slopes we won't be referring to
+		    ->amplitudes for zero-duration slopes.  Since with
+		    zero-duration slopes we won't be referring to
 		    ->amplitudes[], it is ok that the table will not
 		    be up-to-date. */
 
@@ -1518,7 +1518,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_e
 
 #endif
 
-	// cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "%lld samples, %d us, %d Hz", tone->n_samples, tone->len, gen->frequency);
+	// cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "%lld samples, %d us, %d Hz", tone->n_samples, tone->duration, gen->frequency);
 	while (samples_to_write > 0) {
 
 		int64_t free_space = gen->buffer_n_samples - gen->buffer_sub_start;
@@ -1612,7 +1612,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_e
    are set in a way that allows filling remainder of generator's
    buffer with silence.
 
-   After this point tone length should not be used - it's the samples count that is correct.
+   After this point tone duration should not be used - it's the samples count that is correct.
 
    \reviewed on 2017-01-22
 
@@ -1652,7 +1652,7 @@ void cw_gen_empty_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_
 	   subarea to end of buffer. */
 	tone->n_samples = gen->buffer_n_samples - (gen->buffer_sub_stop + 1);;
 
-	tone->len = 0;         /* This value matters no more, because now we only deal with samples. */
+	tone->duration = 0;    /* This value matters no more, because now we only deal with samples. */
 	tone->frequency = 0;   /* This fake tone is a piece of silence. */
 
 	/* The silence tone used for padding doesn't require any
@@ -1678,7 +1678,7 @@ void cw_gen_empty_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_
    The function sets tone->..._n_samples fields of non-empty \p tone
    based on other information from \p tone and from \p gen.
 
-   After this point tone length should not be used - it's the samples count that is correct.
+   After this point tone duration should not be used - it's the samples count that is correct.
 
    \reviewed on 2017-01-22
 
@@ -1690,14 +1690,14 @@ void cw_gen_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_tone_t
 
 	/* 100 * 10000 = 1.000.000 usecs per second. */
 	tone->n_samples = gen->sample_rate / 100;
-	tone->n_samples *= tone->len;
+	tone->n_samples *= tone->duration;
 	tone->n_samples /= 10000;
 
 	//fprintf(stderr, MSG_PREFIX "length of regular tone = %d [samples]\n", tone->n_samples);
 
 	/* Length of a single slope (rising or falling). */
 	int slope_n_samples = gen->sample_rate / 100;
-	slope_n_samples *= gen->tone_slope.len;
+	slope_n_samples *= gen->tone_slope.duration;
 	slope_n_samples /= 10000;
 
 	if (tone->slope_mode == CW_SLOPE_MODE_RISING_SLOPE) {
@@ -2018,33 +2018,33 @@ int cw_gen_get_weighting(const cw_gen_t * gen)
    \reviewed on 2017-01-21
 
    \param gen
-   \param dot_len
-   \param dash_len
-   \param eom_space_len
-   \param eoc_space_len
-   \param eow_space_len
-   \param additional_space_len
-   \param adjustment_space_len
+   \param dot_duration
+   \param dash_duration
+   \param eom_space_duration
+   \param eoc_space_duration
+   \param eow_space_duration
+   \param additional_space_duration
+   \param adjustment_space_duration
 */
 void cw_gen_get_timing_parameters_internal(cw_gen_t *gen,
-					   int *dot_len,
-					   int *dash_len,
-					   int *eom_space_len,
-					   int *eoc_space_len,
-					   int *eow_space_len,
-					   int *additional_space_len, int *adjustment_space_len)
+					   int *dot_duration,
+					   int *dash_duration,
+					   int *eom_space_duration,
+					   int *eoc_space_duration,
+					   int *eow_space_duration,
+					   int *additional_space_duration, int *adjustment_space_duration)
 {
 	cw_gen_sync_parameters_internal(gen);
 
-	if (dot_len)   { *dot_len = gen->dot_len; }
-	if (dash_len)  { *dash_len = gen->dash_len; }
+	if (dot_duration)   { *dot_duration = gen->dot_duration; }
+	if (dash_duration)  { *dash_duration = gen->dash_duration; }
 
-	if (eom_space_len)   { *eom_space_len = gen->eom_space_len; }
-	if (eoc_space_len)   { *eoc_space_len = gen->eoc_space_len; }
-	if (eow_space_len)   { *eow_space_len = gen->eow_space_len; }
+	if (eom_space_duration)   { *eom_space_duration = gen->eom_space_duration; }
+	if (eoc_space_duration)   { *eoc_space_duration = gen->eoc_space_duration; }
+	if (eow_space_duration)   { *eow_space_duration = gen->eow_space_duration; }
 
-	if (additional_space_len)    { *additional_space_len = gen->additional_space_len; }
-	if (adjustment_space_len)    { *adjustment_space_len = gen->adjustment_space_len; }
+	if (additional_space_duration)    { *additional_space_duration = gen->additional_space_duration; }
+	if (adjustment_space_duration)    { *adjustment_space_duration = gen->adjustment_space_duration; }
 
 	return;
 }
@@ -2082,12 +2082,12 @@ int cw_gen_enqueue_mark_internal(cw_gen_t *gen, char mark, bool is_first)
 	/* Send either a dot or a dash mark, depending on representation. */
 	if (mark == CW_DOT_REPRESENTATION) {
 		cw_tone_t tone;
-		CW_TONE_INIT(&tone, gen->frequency, gen->dot_len, CW_SLOPE_MODE_STANDARD_SLOPES);
+		CW_TONE_INIT(&tone, gen->frequency, gen->dot_duration, CW_SLOPE_MODE_STANDARD_SLOPES);
 		tone.is_first = is_first;
 		status = cw_tq_enqueue_internal(gen->tq, &tone);
 	} else if (mark == CW_DASH_REPRESENTATION) {
 		cw_tone_t tone;
-		CW_TONE_INIT(&tone, gen->frequency, gen->dash_len, CW_SLOPE_MODE_STANDARD_SLOPES);
+		CW_TONE_INIT(&tone, gen->frequency, gen->dash_duration, CW_SLOPE_MODE_STANDARD_SLOPES);
 		tone.is_first = is_first;
 		status = cw_tq_enqueue_internal(gen->tq, &tone);
 	} else {
@@ -2101,7 +2101,7 @@ int cw_gen_enqueue_mark_internal(cw_gen_t *gen, char mark, bool is_first)
 
 	/* Send the inter-mark space. */
 	cw_tone_t tone;
-	CW_TONE_INIT(&tone, 0, gen->eom_space_len, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, 0, gen->eom_space_duration, CW_SLOPE_MODE_NO_SLOPES);
 	if (CW_SUCCESS != cw_tq_enqueue_internal(gen->tq, &tone)) {
 		return CW_FAILURE;
 	} else {
@@ -2136,7 +2136,7 @@ int cw_gen_enqueue_eoc_space_internal(cw_gen_t *gen)
 
 	/* Enqueue standard inter-character space, plus any additional inter-character gap. */
 	cw_tone_t tone;
-	CW_TONE_INIT(&tone, 0, gen->eoc_space_len + gen->additional_space_len, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, 0, gen->eoc_space_duration + gen->additional_space_duration, CW_SLOPE_MODE_NO_SLOPES);
 	return cw_tq_enqueue_internal(gen->tq, &tone);
 }
 
@@ -2204,7 +2204,7 @@ int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen)
 	   level threshold == 1 can correctly work when enqueueing
 	   spaces.
 
-	   At 60 wpm length of gen->eow_space_len is 100000 [us], so
+	   At 60 wpm duration of gen->eow_space_duration is 100000 [us], so
 	   it's large enough to safely divide it by small integer
 	   value. */
 
@@ -2221,7 +2221,7 @@ int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen)
 #else
 	const int n = 2; /* "small integer value" - used to have more tones per eow space. */
 #endif
-	CW_TONE_INIT(&tone, 0, gen->eow_space_len / n, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, 0, gen->eow_space_duration / n, CW_SLOPE_MODE_NO_SLOPES);
 	for (int i = 0; i < n; i++) {
 		if (CW_SUCCESS != cw_tq_enqueue_internal(gen->tq, &tone)) {
 			return CW_FAILURE;
@@ -2229,7 +2229,7 @@ int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen)
 		enqueued++;
 	}
 
-	CW_TONE_INIT(&tone, 0, gen->adjustment_space_len, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, 0, gen->adjustment_space_duration, CW_SLOPE_MODE_NO_SLOPES);
 	if (CW_SUCCESS != cw_tq_enqueue_internal(gen->tq, &tone)) {
 		return CW_FAILURE;
 	}
@@ -2594,8 +2594,8 @@ void cw_gen_sync_parameters_internal(cw_gen_t *gen)
 	   length based on 50 % as a neutral weighting. */
 	int unit_length = CW_DOT_CALIBRATION / gen->send_speed;
 	int weighting_length = (2 * (gen->weighting - 50) * unit_length) / 100;
-	gen->dot_len = unit_length + weighting_length;
-	gen->dash_len = 3 * gen->dot_len;
+	gen->dot_duration = unit_length + weighting_length;
+	gen->dash_duration = 3 * gen->dot_duration;
 
 	/* End-of-mark space length is one Unit, perhaps adjusted.
 	   End-of-character space length is three Units total.
@@ -2616,10 +2616,10 @@ void cw_gen_sync_parameters_internal(cw_gen_t *gen)
 	   timed (PARIS has 22 full units, and 28 empty ones).
 	   End-of-mark and end of character delays take
 	   weightings into account. */
-	gen->eom_space_len = unit_length - (28 * weighting_length) / 22;  /* End-of-mark space, a.k.a. regular inter-mark space. */
-	gen->eoc_space_len = 3 * unit_length - gen->eom_space_len;
-	gen->eow_space_len = 7 * unit_length - gen->eoc_space_len;
-	gen->additional_space_len = gen->gap * unit_length;
+	gen->eom_space_duration = unit_length - (28 * weighting_length) / 22;  /* End-of-mark space, a.k.a. regular inter-mark space. */
+	gen->eoc_space_duration = 3 * unit_length - gen->eom_space_duration;
+	gen->eow_space_duration = 7 * unit_length - gen->eoc_space_duration;
+	gen->additional_space_duration = gen->gap * unit_length;
 
 	/* For "Farnsworth", there also needs to be an adjustment
 	   delay added to the end of words, otherwise the rhythm is
@@ -2630,13 +2630,13 @@ void cw_gen_sync_parameters_internal(cw_gen_t *gen)
 
 	   Thanks to Michael D. Ivey <ivey@gweezlebur.com> for
 	   identifying this in earlier versions of libcw. */
-	gen->adjustment_space_len = (7 * gen->additional_space_len) / 3;
+	gen->adjustment_space_duration = (7 * gen->additional_space_duration) / 3;
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_PARAMETERS, CW_DEBUG_INFO,
 		      MSG_PREFIX "send usec timings <%d [wpm]>: dot: %d, dash: %d, %d, %d, %d, %d, %d",
-		      gen->send_speed, gen->dot_len, gen->dash_len,
-		      gen->eom_space_len, gen->eoc_space_len,
-		      gen->eow_space_len, gen->additional_space_len, gen->adjustment_space_len);
+		      gen->send_speed, gen->dot_duration, gen->dash_duration,
+		      gen->eom_space_duration, gen->eoc_space_duration,
+		      gen->eow_space_duration, gen->additional_space_duration, gen->adjustment_space_duration);
 
 	/* Generator parameters are now in sync. */
 	gen->parameters_in_sync = true;
@@ -2673,7 +2673,7 @@ int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 	   until key goes into CW_KEY_STATE_OPEN state. */
 
 	cw_tone_t tone;
-	CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.len, CW_SLOPE_MODE_RISING_SLOPE);
+	CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.duration, CW_SLOPE_MODE_RISING_SLOPE);
 	int rv = cw_tq_enqueue_internal(gen->tq, &tone);
 
 	if (rv != CW_SUCCESS) {
@@ -2685,7 +2685,7 @@ int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 	   mark, assume that it was a transient error, and proceed to
 	   enqueueing forever tone. Only after we fail to enqueue the
 	   "main" tone, we are allowed to return failure to caller. */
-	CW_TONE_INIT(&tone, gen->frequency, gen->quantum_len, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, gen->frequency, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	tone.is_forever = true;
 	rv = cw_tq_enqueue_internal(gen->tq, &tone);
 
@@ -2732,13 +2732,13 @@ int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
 		/* Generate just a bit of silence, just to switch
 		   buzzer from generating a sound to being silent. */
 		cw_tone_t tone;
-		CW_TONE_INIT(&tone, 0, gen->quantum_len, CW_SLOPE_MODE_NO_SLOPES);
+		CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 		return cw_tq_enqueue_internal(gen->tq, &tone);
 	} else {
 		/* For soundcards a falling slope with volume from max
 		   to zero should be enough, but... */
 		cw_tone_t tone;
-		CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.len, CW_SLOPE_MODE_FALLING_SLOPE);
+		CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.duration, CW_SLOPE_MODE_FALLING_SLOPE);
 		int rv = cw_tq_enqueue_internal(gen->tq, &tone);
 
 		if (rv == CW_SUCCESS) {
@@ -2756,7 +2756,7 @@ int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
 			   tone. Silence after the last falling slope
 			   would simply last on itself until there is
 			   new tone in queue to dequeue. */
-			CW_TONE_INIT(&tone, 0, gen->quantum_len, CW_SLOPE_MODE_NO_SLOPES);
+			CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 			tone.is_forever = true;
 			rv = cw_tq_enqueue_internal(gen->tq, &tone);
 		}
@@ -2793,13 +2793,13 @@ int cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol)
 	cw_tone_t tone = { 0 };
 
 	if (symbol == CW_DOT_REPRESENTATION) {
-		CW_TONE_INIT(&tone, gen->frequency, gen->dot_len, CW_SLOPE_MODE_STANDARD_SLOPES);
+		CW_TONE_INIT(&tone, gen->frequency, gen->dot_duration, CW_SLOPE_MODE_STANDARD_SLOPES);
 
 	} else if (symbol == CW_DASH_REPRESENTATION) {
-		CW_TONE_INIT(&tone, gen->frequency, gen->dash_len, CW_SLOPE_MODE_STANDARD_SLOPES);
+		CW_TONE_INIT(&tone, gen->frequency, gen->dash_duration, CW_SLOPE_MODE_STANDARD_SLOPES);
 
 	} else if (symbol == CW_SYMBOL_SPACE) {
-		CW_TONE_INIT(&tone, 0, gen->eom_space_len, CW_SLOPE_MODE_NO_SLOPES);
+		CW_TONE_INIT(&tone, 0, gen->eom_space_duration, CW_SLOPE_MODE_NO_SLOPES);
 
 	} else {
 		cw_assert (0, MSG_PREFIX "unknown key symbol '%d'", symbol);

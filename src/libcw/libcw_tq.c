@@ -44,13 +44,13 @@
    dequeuing "forever" tone and proceeding to newly added tone.
    Adding the new "non-forever" tone ends generation of "forever" tone.
 
-   The "forever" tone is useful for generating tones of length unknown
+   The "forever" tone is useful for generating tones of duration unknown
    in advance.
 
    dequeue() function recognizes the "forever" tone and acts as
    described above; there is no visible difference between dequeuing N
-   separate "non-forever" tones of length L [us], and dequeuing a
-   "forever" tone of length L [us] N times in a row.
+   separate "non-forever" tones of duration D [us], and dequeuing a
+   "forever" tone of duration D [us] N times in a row.
 
    Because of some corner cases related to "forever" tones it is very
    strongly advised to set "low water mark" level to no less than 2
@@ -600,7 +600,7 @@ bool cw_tq_dequeue_sub_internal(cw_tone_queue_t * tq, /* out */ cw_tone_t * tone
 #if 0   /* Disabled because these debug messages produce lots of output
 	   to console. Enable only when necessary. */
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_DEBUG,
-		      MSG_PREFIX "dequeue sub: dequeue tone %d us, %d Hz", tone->len, tone->frequency);
+		      MSG_PREFIX "dequeue sub: dequeue tone %d us, %d Hz", tone->duration, tone->frequency);
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_DEBUG,
 		      MSG_PREFIX "dequeue sub: head = %zu, tail = %zu, length = %zu -> %zu",
 		      tq->head, tq->tail, tq_len_before, tq->len);
@@ -640,10 +640,10 @@ bool cw_tq_dequeue_sub_internal(cw_tone_queue_t * tq, /* out */ cw_tone_t * tone
    The function does not accept tones with frequency outside of
    CW_FREQUENCY_MIN-CW_FREQUENCY_MAX range.
 
-   If length of a tone (tone->len) is zero, the function does not
+   If duration of a tone (tone->duration) is zero, the function does not
    add it to tone queue and returns CW_SUCCESS.
 
-   The function does not accept tones with negative values of len.
+   The function does not accept tones with negative values of duration.
 
    \errno EINVAL - invalid values of \p tone
    \errno EAGAIN - tone not enqueued because tone queue is full
@@ -667,20 +667,20 @@ int cw_tq_enqueue_internal(cw_tone_queue_t *tq, cw_tone_t *tone)
 		return CW_FAILURE;
 	}
 
-	if (tone->len < 0) {
+	if (tone->duration < 0) {
 
 		errno = EINVAL;
 		return CW_FAILURE;
 	}
 
-	if (tone->len == 0) {
+	if (tone->duration == 0) {
 		/* Drop empty tone. It won't be played anyway, and for
 		   now there are no other good reasons to enqueue
 		   it. While it may happen in higher-level code to
 		   create such tone, but there is no need to spend
 		   time on it here. */
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_INFO,
-			      MSG_PREFIX "enqueue: ignoring tone with len == 0");
+			      MSG_PREFIX "enqueue: ignoring tone with duration == 0");
 		return CW_SUCCESS;
 	}
 
@@ -701,7 +701,7 @@ int cw_tq_enqueue_internal(cw_tone_queue_t *tq, cw_tone_t *tone)
 	}
 
 
-	// cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_DEBUG, MSG_PREFIX "enqueue: enqueue tone %d us, %d Hz", tone->len, tone->frequency);
+	// cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_DEBUG, MSG_PREFIX "enqueue: enqueue tone %d us, %d Hz", tone->duration, tone->frequency);
 
 	/* Enqueue the new tone.
 

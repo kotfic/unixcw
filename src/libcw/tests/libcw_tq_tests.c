@@ -993,18 +993,18 @@ int test_cw_tq_enqueue_internal_B(cw_test_executor_t * cte)
 	cw_get_frequency_limits(&freq_min, &freq_max);
 
 
-	/* Test 1: invalid length of tone. */
+	/* Test 1: invalid duration of tone. */
 	errno = 0;
-	tone.len = -1;               /* Invalid length. */
+	tone.duration = -1;          /* Invalid duration. */
 	tone.frequency = freq_min;   /* Valid frequency. */
 	cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
-	cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "enqueued tone with invalid length (cwret)");
-	cte->expect_op_int(cte, EINVAL, "==", errno, "enqueued tone with invalid length (cwret)");
+	cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "enqueued tone with invalid duration (cwret)");
+	cte->expect_op_int(cte, EINVAL, "==", errno, "enqueued tone with invalid duration (cwret)");
 
 
 	/* Test 2: tone's frequency too low. */
 	errno = 0;
-	tone.len = 100;                   /* Valid length. */
+	tone.duration = 100;              /* Valid duration. */
 	tone.frequency = freq_min - 1;    /* Invalid frequency. */
 	cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
 	cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "enqueued tone with too low frequency (cwret)");
@@ -1013,7 +1013,7 @@ int test_cw_tq_enqueue_internal_B(cw_test_executor_t * cte)
 
 	/* Test 3: tone's frequency too high. */
 	errno = 0;
-	tone.len = 100;                   /* Valid length. */
+	tone.duration = 100;              /* Valid duration. */
 	tone.frequency = freq_max + 1;    /* Invalid frequency. */
 	cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
 	cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "enqueued tone with too high frequency (cwret)");

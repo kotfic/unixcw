@@ -36,7 +36,7 @@ void       cw_gen_delete(cw_gen_t ** gen);
 int        cw_gen_stop(cw_gen_t * gen);
 int        cw_gen_start(cw_gen_t * gen);
 
-int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_len);
+int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration);
 
 /* Setters of generator's basic parameters. */
 int cw_gen_set_speed(cw_gen_t * gen, int new_value);

@@ -75,8 +75,8 @@ typedef struct {
 	/* Frequency of a tone. */
 	int frequency;
 
-	/* Length of a tone, in microseconds. */
-	int len;
+	/* Duration of a tone, in microseconds. */
+	int duration;
 
 	/* Is this "forever" tone? See libcw_tq.c for more info about
 	   "forever" tones. */
@@ -90,10 +90,10 @@ typedef struct {
 	int slope_mode;
 
 	/* Duration of a tone, in samples.
-	   This is a derived value, a function of lenght and sample rate. */
+	   This is a derived value, a function of duration and sample rate. */
 
 	/* TODO: come up with thought-out, consistent type system for
-	   samples and tone length. The type system should take into
+	   samples count and tone duration. The type system should take into
 	   consideration very long duration of tones in QRSS. */
 	int64_t n_samples;
 
@@ -112,7 +112,7 @@ typedef struct {
 	   most simple one is just a linear slope;
 
 	   slope area should be integral part of a tone, i.e. it shouldn't
-	   make the tone longer than len/n_samples;
+	   make the tone longer than duration/n_samples;
 
 	   a tone with rising and falling slope should have this length
 	   (in samples):
@@ -145,9 +145,9 @@ typedef struct {
    cw_tone_t my_tone;
    CW_TONE_INIT(&tone, 200, 5000, CW_SLOPE_MODE_STANDARD_SLOPES);
  */
-#define CW_TONE_INIT(m_tone, m_frequency, m_len, m_slope_mode) {	\
+#define CW_TONE_INIT(m_tone, m_frequency, m_duration, m_slope_mode) {	\
 		(m_tone)->frequency               = m_frequency;	\
-		(m_tone)->len                     = m_len;		\
+		(m_tone)->duration                = m_duration;		\
 		(m_tone)->slope_mode              = m_slope_mode;	\
 		(m_tone)->is_forever              = false;		\
 		(m_tone)->is_first                = false;		\
@@ -163,7 +163,7 @@ typedef struct {
    arguments. */
 #define CW_TONE_COPY(m_dest, m_source) {				\
 		(m_dest)->frequency               = (m_source)->frequency; \
-		(m_dest)->len                     = (m_source)->len;	\
+		(m_dest)->duration                = (m_source)->duration; \
 		(m_dest)->slope_mode              = (m_source)->slope_mode; \
 		(m_dest)->is_forever              = (m_source)->is_forever; \
 		(m_dest)->is_first                = (m_source)->is_first; \

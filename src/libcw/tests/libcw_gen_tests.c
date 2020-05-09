@@ -310,7 +310,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		cte->assert2(cte, gen, "test 0: failed to create generator");
 
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, "test 0: initial slope shape (%d)", gen->tone_slope.shape);
-		cte->expect_op_int(cte, CW_AUDIO_SLOPE_LEN, "==", gen->tone_slope.len,                  "test 0: initial slope duration (%d)", gen->tone_slope.len);
+		cte->expect_op_int(cte, CW_AUDIO_SLOPE_DURATION, "==", gen->tone_slope.duration,        "test 0: initial slope duration (%d)", gen->tone_slope.duration);
 
 		cw_gen_delete(&gen);
 	}
@@ -320,10 +320,10 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	/* Test A: pass conflicting arguments.
 
 	   "A: If you pass to function conflicting values of \p
-	   slope_shape and \p slope_len, the function will return
+	   slope_shape and \p slope_duration, the function will return
 	   CW_FAILURE. These conflicting values are rectangular slope
-	   shape and larger than zero slope length. You just can't
-	   have rectangular slopes that have non-zero length." */
+	   shape and larger than zero slope duration. You just can't
+	   have rectangular slopes that have non-zero duration." */
 	{
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "test A: failed to create generator");
@@ -340,7 +340,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	/* Test B: pass '-1' as both arguments.
 
 	   "B: If you pass to function '-1' as value of both \p
-	   slope_shape and \p slope_len, the function won't change
+	   slope_shape and \p slope_duration, the function won't change
 	   any of the related two generator's parameters."
 
 	   TODO: add to function description an explicit information
@@ -352,13 +352,13 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		cte->assert2(cte, gen, "test B: failed to create generator");
 
 		const int shape_before = gen->tone_slope.shape;
-		const int duration_before = gen->tone_slope.len;
+		const int duration_before = gen->tone_slope.duration;
 
 		const int cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, -1, -1);
 
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                    "test B: set tone slope <-1 -1> (cwret) ");
-		cte->expect_op_int(cte, shape_before, "==", gen->tone_slope.shape,  "test B: <-1 -1> (slope shape)");
-		cte->expect_op_int(cte, duration_before, "==", gen->tone_slope.len, "test B: <-1 -1> (slope duration)");
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                         "test B: set tone slope <-1 -1> (cwret) ");
+		cte->expect_op_int(cte, shape_before, "==", gen->tone_slope.shape,       "test B: <-1 -1> (slope shape)");
+		cte->expect_op_int(cte, duration_before, "==", gen->tone_slope.duration, "test B: <-1 -1> (slope duration)");
 
 		cw_gen_delete(&gen);
 	}
@@ -368,7 +368,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	/* Test C1
 
 	   "C1: If you pass to function '-1' as value of either \p
-	   slope_shape or \p slope_len, the function will attempt to
+	   slope_shape or \p slope_duration, the function will attempt to
 	   set only this generator's parameter that is different than
 	   '-1'." */
 	{
@@ -382,13 +382,13 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		   some other values will be expected after successful
 		   calls to tested function. */
 		int expected_shape = CW_TONE_SLOPE_SHAPE_RAISED_COSINE;
-		int expected_duration = CW_AUDIO_SLOPE_LEN;
+		int expected_duration = CW_AUDIO_SLOPE_DURATION;
 
 
 		/* At this point generator should have initial values
 		   of its parameters (yes, that's test zero again). */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,  "test C1: <x -1>: initial slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len, "test C1: <x -1>: initial slope duration");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,       "test C1: <x -1>: initial slope shape");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration, "test C1: <x -1>: initial slope duration");
 
 
 
@@ -398,8 +398,8 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "test C1: <x -1>: set");
 
 		/* At this point only slope shape should be updated. */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,  "test C1: <x -1>: get");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len, "test C1: <x -1>: preserved slope duration");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,       "test C1: <x -1>: get");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration, "test C1: <x -1>: preserved slope duration");
 
 
 
@@ -410,8 +410,8 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 
 		/* At this point only slope duration should be updated
 		   (compared to previous function call). */
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len, "test C1: <-1 x>: get");
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,  "test C1: <-1 x>: preserved slope shape");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration, "test C1: <-1 x>: get");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,       "test C1: <-1 x>: preserved slope shape");
 
 
 
@@ -424,7 +424,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 
 	   "C2: However, if selected slope shape is rectangular,
 	   function will set generator's slope duration to zero, even if
-	   value of \p slope_len is '-1'." */
+	   value of \p slope_duration is '-1'." */
 	{
 		cw_gen_t * gen = cw_gen_new(sound_system, NULL);
 		cte->assert2(cte, gen, "test C2: failed to create generator");
@@ -436,13 +436,13 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		   some other values will be expected after successful
 		   calls to tested function. */
 		int expected_shape = CW_TONE_SLOPE_SHAPE_RAISED_COSINE;
-		int expected_duration = CW_AUDIO_SLOPE_LEN;
+		int expected_duration = CW_AUDIO_SLOPE_DURATION;
 
 
 		/* At this point generator should have initial values
 		   of its parameters (yes, that's test zero again). */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,  "test C2: initial slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len, "test C2: initial slope duration");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,       "test C2: initial slope shape");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration, "test C2: initial slope duration");
 
 
 
@@ -457,8 +457,8 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		/* At this point slope shape AND slope duration should
 		   be updated (slope duration is updated only because of
 		   requested rectangular slope shape). */
-		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,  "test C2: set rectangular: slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len, "test C2: set rectangular: slope duration");
+		cte->expect_op_int(cte, expected_shape, "==", gen->tone_slope.shape,       "test C2: set rectangular: slope shape");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration, "test C2: set rectangular: slope duration");
 
 
 		cw_gen_delete(&gen);
@@ -480,31 +480,31 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_LINEAR, expected_duration);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                 "test D: <LINEAR/0>: cwret");
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_LINEAR, "==", gen->tone_slope.shape, "test D: <LINEAR/0>: slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len,            "test D: <LINEAR/0>: slope duration");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration,       "test D: <LINEAR/0>: slope duration");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, 0);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                        "test D: <RAISED_COSINE/0>: cwret");
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, "test D: <RAISED_COSINE/0>: slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len,                   "test D: <RAISED_COSINE/0>: slope duration");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration,              "test D: <RAISED_COSINE/0>: slope duration");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_SINE, 0);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                               "test D: <SINE/0>: cwret");
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_SINE, "==", gen->tone_slope.shape, "test D: <SINE/0>: slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len,          "test D: <SINE/0>: slope duration");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration,     "test D: <SINE/0>: slope duration");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RECTANGULAR, 0);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                      "test D: <RECTANGULAR/0>: cwret");
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RECTANGULAR, "==", gen->tone_slope.shape, "test D: <RECTANGULAR/0>: slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len,                 "test D: <RECTANGULAR/0>: slope duration");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration,            "test D: <RECTANGULAR/0>: slope duration");
 
 
 		cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_LINEAR, 0);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                                 "test D: <LINEAR/0>: cwret");
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_LINEAR, "==", gen->tone_slope.shape, "test D: <LINEAR/0>: slope shape");
-		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.len,            "test D: <LINEAR/0>: slope duration");
+		cte->expect_op_int(cte, expected_duration, "==", gen->tone_slope.duration,       "test D: <LINEAR/0>: slope duration");
 
 
 		cw_gen_delete(&gen);
@@ -594,7 +594,7 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds)
 	const int cwret1 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret1, "enqueue first tone"); /* Use "errors only" here because this is not a core part of test. */
 
-	CW_TONE_INIT(&tone, freq, gen->quantum_len, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, freq, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	tone.is_forever = true;
 	const int cwret2 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret2, "enqueue forever tone");
@@ -638,13 +638,13 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 
 	int initial = -5;
 
-	int dot_len = initial;
-	int dash_len = initial;
-	int eom_space_len = initial;
-	int eoc_space_len = initial;
-	int eow_space_len = initial;
-	int additional_space_len = initial;
-	int adjustment_space_len = initial;
+	int dot_duration = initial;
+	int dash_duration = initial;
+	int eom_space_duration = initial;
+	int eoc_space_duration = initial;
+	int eow_space_duration = initial;
+	int additional_space_duration = initial;
+	int adjustment_space_duration = initial;
 
 	cw_gen_t * gen = cw_gen_new(cte->current_sound_system, NULL);
 	cw_gen_start(gen);
@@ -656,21 +656,21 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 
 
 	LIBCW_TEST_FUT(cw_gen_get_timing_parameters_internal)(gen,
-							      &dot_len,
-							      &dash_len,
-							      &eom_space_len,
-							      &eoc_space_len,
-							      &eow_space_len,
-							      &additional_space_len,
-							      &adjustment_space_len);
+							      &dot_duration,
+							      &dash_duration,
+							      &eom_space_duration,
+							      &eoc_space_duration,
+							      &eow_space_duration,
+							      &additional_space_duration,
+							      &adjustment_space_duration);
 
-	bool failure = (dot_len == initial)
-		|| (dash_len == initial)
-		|| (eom_space_len == initial)
-		|| (eoc_space_len == initial)
-		|| (eow_space_len == initial)
-		|| (additional_space_len == initial)
-		|| (adjustment_space_len == initial);
+	bool failure = (dot_duration == initial)
+		|| (dash_duration == initial)
+		|| (eom_space_duration == initial)
+		|| (eoc_space_duration == initial)
+		|| (eow_space_duration == initial)
+		|| (additional_space_duration == initial)
+		|| (adjustment_space_duration == initial);
 	cte->expect_op_int(cte, false, "==", failure, "get timing parameters");
 
 	cw_gen_delete(&gen);
