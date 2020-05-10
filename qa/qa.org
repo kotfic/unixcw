@@ -19,3 +19,9 @@ perf record --call-graph dwarf -F 200  -g  ./src/libcw/tests/.libs/libcw_test_al
 # Show data stored in ./perf.data
 perf report --stdio
 perf report
+
+
+
+* gdb
+
+export LD_LIBRARY_PATH=/full/path/unixcw/git_repo/unixcw/src/libcw/.libs  && gdb --args ./.libs/libcw_test_legacy_api -n legacy_api_test_low_level_gen_parameters
