@@ -370,6 +370,13 @@ else
     PKG_CHECK_MODULES(QT5, [Qt5Widgets Qt5Gui Qt5Core >= 5.0.0], [
 			   AC_PATH_PROGS(MOC, [moc-qt5 moc], moc,`eval $PKG_CONFIG --variable=host_bins Qt5Core`)
 
+			   # https://stackoverflow.com/questions/11663702/how-to-suppress-warnings-for-file-included-from-header
+			   QT_INCLUDE_DIR=`pkg-config --variable=includedir Qt5Core`
+			   QT5_CFLAGS="-isystem $QT_INCLUDE_DIR"
+			   QT5_CFLAGS+=" -isystem $QT_INCLUDE_DIR/QtWidgets"
+			   QT5_CFLAGS+=" -isystem $QT_INCLUDE_DIR/QtGui"
+			   QT5_CFLAGS+=" -isystem $QT_INCLUDE_DIR/QtCore"
+
 			   AC_MSG_RESULT([QT5 CLFAGS is $QT5_CFLAGS])
 			   AC_MSG_RESULT([QT5 LIBS is $QT5_LIBS])
 
@@ -491,7 +498,7 @@ GCC_C_WARNINGS="$GCC_C_WARNINGS -Wjump-misses-init"
 # flags, and -Wall to with a few suppressions to icc command flags,
 # then similarly, though less so, for g++ and icpc.
 if test "`basename $CC`" = "gcc" ; then
-  CFLAGS="$CFLAGS -std=gnu99"
+  CFLAGS="$CFLAGS -std=c99"
   # SUSv3
   # CFLAGS="$CFLAGS -D_XOPEN_SOURCE=600"
   CFLAGS="$CFLAGS -D_GNU_SOURCE"
