@@ -909,10 +909,10 @@ void Application::make_mode_combo()
 	/* Append each mode represented in the modes set to the combo
 	   box's contents, then synchronize the current mode. */
 	for (int index = 0; index < modeset.get_count(); index++) {
-		const QVariant data(index);
+		const QVariant mode_data(index);
 		const Mode *mode = modeset.get(index);
 		const QString string = QString::fromUtf8(mode->get_description().c_str());
-		mode_combo->addItem(string, data);
+		mode_combo->addItem(string, mode_data);
 	}
 	modeset.set_current(mode_combo->currentIndex());
 
@@ -977,49 +977,49 @@ void Application::make_program_menu(void)
 
 void Application::make_settings_menu(void)
 {
-	QMenu *settings = new QMenu(_("&Settings"), this);
-	QMainWindow::menuBar()->addMenu(settings);
+	QMenu *my_settings_menu = new QMenu(_("&Settings"), this);
+	QMainWindow::menuBar()->addMenu(my_settings_menu);
 
 
 	reverse_paddles_action = new QAction(_("&Reverse Paddles"), this);
 	reverse_paddles_action->setCheckable(true);
 	reverse_paddles_action->setChecked(false);
-	settings->addAction(reverse_paddles_action);
+	my_settings_menu->addAction(reverse_paddles_action);
 
 
 	curtis_mode_b_action = new QAction(_("&Curtis Mode B Timing"), this);
 	curtis_mode_b_action->setCheckable(true);
 	curtis_mode_b_action->setChecked(false);
 	connect(curtis_mode_b_action, SIGNAL (toggled(bool)), SLOT (change_curtis_mode_b()));
-	settings->addAction(curtis_mode_b_action);
+	my_settings_menu->addAction(curtis_mode_b_action);
 
 
 	adaptive_receive_action = new QAction(_("&Adaptive CW Receive Speed"), this);
 	adaptive_receive_action->setCheckable(true);
 	adaptive_receive_action->setChecked(true);
 	connect(adaptive_receive_action, SIGNAL (toggled(bool)), SLOT (change_adaptive_receive()));
-	settings->addAction(adaptive_receive_action);
+	my_settings_menu->addAction(adaptive_receive_action);
 
 
-	settings->addSeparator();
+	my_settings_menu->addSeparator();
 
 
 	font_settings_action = new QAction(_("&Text font..."), this);
 	connect(font_settings_action, SIGNAL (triggered(bool)), SLOT (fonts()));
-	settings->addAction(font_settings_action);
+	my_settings_menu->addAction(font_settings_action);
 
 
 	color_settings_action = new QAction(_("&Text color..."), this);
 	connect(color_settings_action, SIGNAL (triggered(bool)), SLOT (colors()));
-	settings->addAction(color_settings_action);
+	my_settings_menu->addAction(color_settings_action);
 
 
-	settings->addSeparator();
+	my_settings_menu->addSeparator();
 
 
 	toolbar_visibility_action = new QAction(_("Hide toolbar"), this);
 	connect(toolbar_visibility_action, SIGNAL (triggered(bool)), SLOT (toggle_toolbar()));
-	settings->addAction(toolbar_visibility_action);
+	my_settings_menu->addAction(toolbar_visibility_action);
 
 	return;
 }
