@@ -1388,9 +1388,7 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 		bool state_failure = false;
 		bool busy_failure = false;
 
-		struct timespec t;
-		int usecs = CW_USECS_PER_SEC;
-		cw_usecs_to_timespec_internal(&t, usecs);
+		const int usecs = CW_USECS_PER_SEC;
 
 		const int key_states[] = { CW_KEY_STATE_OPEN, CW_KEY_STATE_CLOSED };
 		const int first = 1 + (rand() % 2);
@@ -1426,10 +1424,12 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 			cte->flush_info(cte);
 #ifdef __FreeBSD__
 			/* There is a problem with nanosleep() and
-			   signals on FreeBSD. */
+			   signals on FreeBSD. TODO: see if the
+			   problem still persists after moving from
+			   signals to conditional variables. */
 			sleep(1);
 #else
-			cw_nanosleep_internal(&t);
+			cw_usleep_internal(usecs);
 #endif
 		}
 

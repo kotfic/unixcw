@@ -16,11 +16,8 @@
 
 
 
-/* Microseconds in a second, for struct timeval handling. */
+/* Microseconds in a second. */
 enum { CW_USECS_PER_SEC = 1000000 };
-
-/* Nanoseconds in a second, for struct timespec. */
-enum { CW_NSECS_PER_SEC = 1000000000 };
 
 
 
@@ -28,7 +25,28 @@ enum { CW_NSECS_PER_SEC = 1000000000 };
 int cw_timestamp_compare_internal(const struct timeval *earlier, const struct timeval *later);
 int cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp);
 void cw_usecs_to_timespec_internal(struct timespec *t, int usecs);
-void cw_nanosleep_internal(const struct timespec *n);
+
+
+
+
+/**
+   @brief Sleep for given amount of microseconds
+
+   The function uses nanosleep(), and can handle incoming SIGALRM
+   signals that cause regular nanosleep() to return. The function
+   calls nanosleep() until all time specified by @param usecs has
+   elapsed.
+
+   The function may sleep a little longer than specified by @param
+   usecs if it needs to spend some time handling SIGALRM signal. Other
+   restrictions from nanosleep()'s man page also apply.
+
+   @reviewed-on 2020-05-10
+*/
+void cw_usleep_internal(int usecs);
+
+
+
 
 #if (defined(LIBCW_WITH_ALSA) || defined(LIBCW_WITH_PULSEAUDIO))
 #include <stdbool.h>

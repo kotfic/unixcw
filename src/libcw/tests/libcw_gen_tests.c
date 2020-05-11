@@ -572,7 +572,7 @@ cwt_retv test_cw_gen_forever_internal(cw_test_executor_t * cte)
 
 
 /**
-   @reviewed on 2020-05-07
+   @reviewed on 2020-05-10
 */
 static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds)
 {
@@ -586,11 +586,11 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds)
 
 	//sleep(1);
 
-	const int duration = 10000; /* [us] duration of slope that should be 'pleasing' to ear. */
+	const int slope_duration = 10000; /* [us] duration of slope that should be 'pleasing' to ear. */
 	const int freq = cte->config->frequency;
 
 	cw_tone_t tone;
-	CW_TONE_INIT(&tone, freq, duration, CW_SLOPE_MODE_RISING_SLOPE);
+	CW_TONE_INIT(&tone, freq, slope_duration, CW_SLOPE_MODE_RISING_SLOPE);
 	const int cwret1 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret1, "enqueue first tone"); /* Use "errors only" here because this is not a core part of test. */
 
@@ -604,22 +604,22 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds)
 	   badly interfere with value returned through second arg to
 	   nanolseep().  Try to run the section in #else under FreeBSD
 	   to see what happens - value returned by nanosleep() through
-	   "rem" will be increasing. */
+	   "rem" will be increasing.  TODO: see if the problem still
+	   persists after moving from signals to conditional
+	   variables. */
 	fprintf(stderr, "enter any character to end \"forever\" tone\n");
 	char c;
 	scanf("%c", &c);
 #else
-	struct timespec t;
-	cw_usecs_to_timespec_internal(&t, seconds * CW_USECS_PER_SEC);
-	cw_nanosleep_internal(&t);
+	cw_usleep_internal(seconds * CW_USECS_PER_SEC);
 #endif
 
 	/* Silence the generator. */
-	CW_TONE_INIT(&tone, 0, duration, CW_SLOPE_MODE_FALLING_SLOPE);
+	CW_TONE_INIT(&tone, 0, slope_duration, CW_SLOPE_MODE_FALLING_SLOPE);
 	const int cwret3 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret3, "silence the generator");
 
-	usleep(10 * duration); /* Don't stop generator immediately, because the sound will be distorted. TODO: shouldn't we use some gen_wait() function for that? */
+	usleep(10 * slope_duration); /* Don't stop generator immediately, because the sound will be distorted. TODO: shouldn't we use some gen_wait() function for that? */
 	cw_gen_stop(gen);
 	cw_gen_delete(&gen);
 
@@ -1137,8 +1137,7 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	/* TODO: remove this. We wait here for generator's queue to
 	   drain completely, and this should be done in some other
 	   way. */
-	struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
-	cw_nanosleep_internal(&req);
+	cw_usleep_internal(1 * CW_USECS_PER_SEC);
 #endif
 	gen_destroy(&gen);
 

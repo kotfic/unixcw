@@ -278,10 +278,7 @@ int test_straight_key(cw_test_executor_t * cte)
 		bool state_failure = false;
 		bool busy_failure = false;
 
-		struct timespec t;
-		int usecs = CW_USECS_PER_SEC;
-		cw_usecs_to_timespec_internal(&t, usecs);
-
+		const int usecs = CW_USECS_PER_SEC;
 
 		/* Alternate between open and closed. */
 		for (int i = 0; i < max; i++) {
@@ -313,7 +310,7 @@ int test_straight_key(cw_test_executor_t * cte)
 			   signals to conditional variables. */
 			sleep(1);
 #else
-			cw_nanosleep_internal(&t);
+			cw_usleep_internal(usecs);
 #endif
 		}
 		cte->log_info_cont(cte, "\n");

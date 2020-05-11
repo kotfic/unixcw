@@ -267,11 +267,8 @@ int cw_console_write(cw_gen_t *gen, cw_tone_t *tone)
 	assert (gen->sound_system == CW_AUDIO_CONSOLE);
 	assert (tone->duration >= 0); /* TODO: shouldn't the condition be "tone->duration > 0"? */
 
-	struct timespec n = { .tv_sec = 0, .tv_nsec = 0 };
-	cw_usecs_to_timespec_internal(&n, tone->duration);
-
 	int rv = cw_console_write_low_level_internal(gen, (bool) tone->frequency);
-	cw_nanosleep_internal(&n);
+	cw_usleep_internal(tone->duration);
 
 	if (tone->slope_mode == CW_SLOPE_MODE_FALLING_SLOPE) {
 		/* Falling slope causes the console to produce sound, so at

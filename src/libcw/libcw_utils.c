@@ -254,35 +254,18 @@ void cw_usecs_to_timespec_internal(struct timespec *t, int usecs)
 
 
 
-/**
-   \brief Sleep for period of time specified by given timespec
-
-   Function sleeps for given amount of seconds and nanoseconds, as
-   specified by \p n.
-
-   The function uses nanosleep(), and can handle incoming SIGALRM signals
-   that cause regular nanosleep() to return. The function calls nanosleep()
-   until all time specified by \p n has elapsed.
-
-   The function may sleep a little longer than specified by \p n if it needs
-   to spend some time handling SIGALRM signal. Other restrictions from
-   nanosleep()'s man page also apply.
-
-   \reviewed on 2017-02-04
-
-   \param n - period of time to sleep
-*/
-void cw_nanosleep_internal(const struct timespec *n)
+void cw_usleep_internal(int usecs)
 {
-	struct timespec rem = { .tv_sec = n->tv_sec, .tv_nsec = n->tv_nsec };
+	struct timespec remaining = { 0 };
+	cw_usecs_to_timespec_internal(&remaining, usecs);
 
 	int rv = 0;
 	do {
-		struct timespec req = { .tv_sec = rem.tv_sec, .tv_nsec = rem.tv_nsec };
+		struct timespec req = { .tv_sec = remaining.tv_sec, .tv_nsec = remaining.tv_nsec };
 		//fprintf(stderr, " -- sleeping for %ld s, %ld ns\n", req.tv_sec, req.tv_nsec);
-		rv = nanosleep(&req, &rem);
+		rv = nanosleep(&req, &remaining);
 		if (rv) {
-			//fprintf(stderr, " -- remains %ld s, %ld ns\n", rem.tv_sec, rem.tv_nsec);
+			//fprintf(stderr, " -- remains %ld s, %ld ns\n", remaining.tv_sec, remaining.tv_nsec);
 		}
 	} while (rv);
 

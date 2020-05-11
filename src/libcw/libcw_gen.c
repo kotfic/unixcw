@@ -781,8 +781,7 @@ int cw_gen_join_thread_internal(cw_gen_t * gen)
 	   generating tone (or for tone queue to get out of CW_TQ_IDLE
 	   state) and exit before we resort to killing generator
 	   function thread. */
-	struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
-	cw_nanosleep_internal(&req);
+	cw_usleep_internal(1 * CW_USECS_PER_SEC);
 
 
 #define CW_DEBUG_TIMING_JOIN 1
@@ -1087,8 +1086,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 
 	   TODO: this is one of most mysterious comments in this code
 	   base. What was I thinking? */
-	struct timespec req = { .tv_sec = 0, .tv_nsec = CW_NSECS_PER_SEC / 2 };
-	cw_nanosleep_internal(&req);
+	cw_usleep_internal(CW_USECS_PER_SEC / 2);
 
 	pthread_mutex_lock(&gen->tq->wait_mutex);
 	/* There may be many listeners, so use broadcast(). */
