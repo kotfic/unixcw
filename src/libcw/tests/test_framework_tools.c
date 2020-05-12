@@ -103,42 +103,43 @@ double resource_meas_get_maximal_cpu_usage(resource_meas * meas)
 
 void resource_meas_do_measurement(resource_meas * meas)
 {
-	getrusage(RUSAGE_SELF, &meas->r_curr);
+	getrusage(RUSAGE_SELF, &meas->rusage_curr);
 
-	timersub(&meas->r_curr.ru_utime, &meas->r_prev.ru_utime, &meas->u_diff);
-	timersub(&meas->r_curr.ru_stime, &meas->r_prev.ru_stime, &meas->s_diff);
-	timeradd(&meas->u_diff, &meas->s_diff, &meas->sum);
+	timersub(&meas->rusage_curr.ru_utime, &meas->rusage_prev.ru_utime, &meas->user_cpu_diff);
+	timersub(&meas->rusage_curr.ru_stime, &meas->rusage_prev.ru_stime, &meas->sys_cpu_diff);
+	timeradd(&meas->user_cpu_diff, &meas->sys_cpu_diff, &meas->summary_cpu_usage);
 
 
 	gettimeofday(&meas->timestamp_curr, NULL);
 	timersub(&meas->timestamp_curr, &meas->timestamp_prev, &meas->timestamp_diff);
 
 
-	meas->resource_usage = meas->sum.tv_sec * 1000000 + meas->sum.tv_usec;
+	meas->resource_usage = meas->summary_cpu_usage.tv_sec * 1000000 + meas->summary_cpu_usage.tv_usec;
 	meas->meas_duration = meas->timestamp_diff.tv_sec * 1000000 + meas->timestamp_diff.tv_usec;
 
-	meas->r_prev = meas->r_curr;
+	meas->rusage_prev = meas->rusage_curr;
 	meas->timestamp_prev = meas->timestamp_curr;
 
 	pthread_mutex_lock(&meas->mutex);
 	{
-		meas->current_cpu_usage = meas->resource_usage * 100.0 / meas->meas_duration;
+		meas->current_cpu_usage = meas->resource_usage * 100.0 / (meas->meas_duration * 1.0);
+		// fprintf(stderr, "Curr = %06.4f, usage = %04ld, duration = %ld\n", meas->current_cpu_usage, meas->resource_usage, meas->meas_duration);
 		if (meas->current_cpu_usage > meas->maximal_cpu_usage) {
 			meas->maximal_cpu_usage = meas->current_cpu_usage;
 		}
 		/* Log the error "live" during test execution. This
 		   will allow to pinpoint the faulty code faster. */
 		if (meas->current_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
-			fprintf(stderr, "[EE] High current CPU usage: %6.2f%%\n", meas->current_cpu_usage);
+			fprintf(stderr, "[EE] High current CPU usage: "CWTEST_CPU_FMT"\n", meas->current_cpu_usage);
 		}
 	}
 	pthread_mutex_unlock(&meas->mutex);
 
 #if 0
 	fprintf(stderr, "user = %d.%d, system = %d.%d, total = %d.%d\n",
-		u_diff.tv_sec, u_diff.tv_usec,
-		s_diff.tv_sec, s_diff.tv_usec,
-		sum.tv_sec, sum.tv_usec);
+		user_cpu_diff.tv_sec, user_cpu_diff.tv_usec,
+		sys_cpu_diff.tv_sec, sys_cpu_diff.tv_usec,
+		summary_cpu_usage.tv_sec, summary_cpu_usage.tv_usec);
 #endif
 
 	return;

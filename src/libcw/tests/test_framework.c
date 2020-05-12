@@ -1266,10 +1266,10 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 
 						const double current_cpu_usage = resource_meas_get_current_cpu_usage(&cte->resource_meas);
 						const double max_cpu_usage = resource_meas_get_maximal_cpu_usage(&cte->resource_meas);
-						cte->log_info(cte, "CPU usage: last = %6.2f%%, max = %6.2f%%\n", current_cpu_usage, max_cpu_usage);
+						cte->log_info(cte, "CPU usage: last = "CWTEST_CPU_FMT", max = "CWTEST_CPU_FMT"\n", current_cpu_usage, max_cpu_usage);
 						if (max_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
 							cte->stats->failures++;
-							cte->log_error(cte, "Registered high CPU usage %6.2f%% during execution of '%s'\n",
+							cte->log_error(cte, "Registered high CPU usage "CWTEST_CPU_FMT" during execution of '%s'\n",
 								       max_cpu_usage, test_set->test_functions[f].name);
 						}
 						usleep(1000 * LIBCW_TEST_INTER_TEST_PAUSE_MSECS);

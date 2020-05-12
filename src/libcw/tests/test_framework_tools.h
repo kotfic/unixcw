@@ -16,6 +16,10 @@
 
 
 
+/* Format to be used when printing CPU usage with printf(). */
+#define CWTEST_CPU_FMT "%8.4f%%"
+
+
 
 
 typedef struct {
@@ -23,15 +27,15 @@ typedef struct {
 	/* At what intervals the measurement should be taken. */
 	int meas_interval_msecs;
 
-	struct rusage r_prev;
-	struct rusage r_curr;
+	struct rusage rusage_prev;
+	struct rusage rusage_curr;
 
 	struct timeval timestamp_prev;
 	struct timeval timestamp_curr;
 
-	struct timeval u_diff;
-	struct timeval s_diff;
-	struct timeval sum;
+	struct timeval user_cpu_diff; /* User CPU time used. */
+	struct timeval sys_cpu_diff;  /* System CPU time used. */
+	struct timeval summary_cpu_usage; /* User + System CPU time used. */
 
 	struct timeval timestamp_diff;
 
