@@ -133,6 +133,13 @@ static unsigned int cw_test_get_total_errors_count(cw_test_executor_t * cte);
 
 
 
+static cwt_retv iterate_over_topics(cw_test_executor_t * cte, cw_test_set_t * test_set);
+static cwt_retv iterate_over_sound_systems(cw_test_executor_t * cte, cw_test_set_t * test_set, int topic);
+static cwt_retv iterate_over_test_objects(cw_test_executor_t * cte, cw_test_object_t * test_objects, int topic, cw_sound_system sound_system);
+
+
+
+
 /**
    \brief Set default contents of
    cw_test_executor_t::config::tested_sound_systems[] and
@@ -908,6 +915,8 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 	self->stdout = stdout;
 	self->stderr = stderr;
 
+	self->use_resource_meas = true;
+
 	self->expect_op_int = cw_test_expect_op_int;
 	self->expect_op_int_errors_only = cw_test_expect_op_int_errors_only;
 	self->expect_op_double = cw_test_expect_op_double;
@@ -1217,74 +1226,122 @@ int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 {
 	int set = 0;
 	while (LIBCW_TEST_SET_VALID == test_sets[set].set_valid) {
-
 		cw_test_set_t * test_set = &test_sets[set];
-
-		for (int topic = LIBCW_TEST_TOPIC_TQ; topic < LIBCW_TEST_TOPIC_MAX; topic++) {
-			if (!cte->test_topic_was_requested(cte, topic)) {
-				continue;
-			}
-			const int topics_max = sizeof (test_set->tested_areas) / sizeof (test_set->tested_areas[0]);
-			if (!cw_test_test_topic_is_member(cte, topic, test_set->tested_areas, topics_max)) {
-				continue;
-			}
-
-
-			for (cw_sound_system sound_system = CW_SOUND_SYSTEM_FIRST; sound_system <= CW_SOUND_SYSTEM_LAST; sound_system++) {
-				if (!cte->sound_system_was_requested(cte, sound_system)) {
-					continue;
-				}
-				const int systems_max = sizeof (test_set->tested_sound_systems) / sizeof (test_set->tested_sound_systems[0]);
-				if (!cw_test_sound_system_is_member(cte, sound_system, test_set->tested_sound_systems, systems_max)) {
-					continue;
-				}
-
-
-				int f = 0;
-				while (test_set->test_functions[f].fn) {
-					bool execute = true;
-					if (0 != strlen(cte->config->test_function_name)) {
-						if (0 != strcmp(cte->config->test_function_name, test_set->test_functions[f].name)) {
-							execute = false;
-						}
-					}
-
-					if (execute) {
-						/* Starting and stopping resource measurements
-						   only when the measurements are needed.
-
-						   Also starting measurements resets old results
-						   from previous measurement. This is significant
-						   when we want to reset 'max resources' value - we
-						   want to measure the 'max resources' value only
-						   per test function, not per whole test set. */
-						resource_meas_start(&cte->resource_meas, LIBCW_TEST_MEAS_CPU_MEAS_INTERVAL_MSECS);
-
-						cw_test_set_current_topic_and_sound_system(cte, topic, sound_system);
-						//fprintf(stderr, "+++ %s +++\n", test_set->test_functions[f].name);
-						(*test_set->test_functions[f].fn)(cte);
-
-						const double current_cpu_usage = resource_meas_get_current_cpu_usage(&cte->resource_meas);
-						const double max_cpu_usage = resource_meas_get_maximal_cpu_usage(&cte->resource_meas);
-						cte->log_info(cte, "CPU usage: last = "CWTEST_CPU_FMT", max = "CWTEST_CPU_FMT"\n", current_cpu_usage, max_cpu_usage);
-						if (max_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
-							cte->stats->failures++;
-							cte->log_error(cte, "Registered high CPU usage "CWTEST_CPU_FMT" during execution of '%s'\n",
-								       max_cpu_usage, test_set->test_functions[f].name);
-						}
-						usleep(1000 * LIBCW_TEST_INTER_TEST_PAUSE_MSECS);
-
-						resource_meas_stop(&cte->resource_meas);
-					}
-
-					f++;
-				}
-			}
-		}
+		iterate_over_topics(cte, test_set);
 		set++;
 	}
 
 	return 0;
+}
+
+
+
+
+static cwt_retv iterate_over_topics(cw_test_executor_t * cte, cw_test_set_t * test_set)
+{
+	for (int topic = LIBCW_TEST_TOPIC_TQ; topic < LIBCW_TEST_TOPIC_MAX; topic++) {
+		if (!cte->test_topic_was_requested(cte, topic)) {
+			continue;
+		}
+		const int topics_max = sizeof (test_set->tested_areas) / sizeof (test_set->tested_areas[0]);
+		if (!cw_test_test_topic_is_member(cte, topic, test_set->tested_areas, topics_max)) {
+			continue;
+		}
+
+		if (cwt_retv_ok != iterate_over_sound_systems(cte, test_set, topic)) {
+			cte->log_error(cte, "Test framework failed for topic %d\n", topic);
+			return cwt_retv_err;
+		}
+	}
+
+	return cwt_retv_ok;
+}
+
+
+
+
+static cwt_retv iterate_over_sound_systems(cw_test_executor_t * cte, cw_test_set_t * test_set, int topic)
+{
+	for (cw_sound_system sound_system = CW_SOUND_SYSTEM_FIRST; sound_system <= CW_SOUND_SYSTEM_LAST; sound_system++) {
+		if (!cte->sound_system_was_requested(cte, sound_system)) {
+			continue;
+		}
+		const int systems_max = sizeof (test_set->tested_sound_systems) / sizeof (test_set->tested_sound_systems[0]);
+		if (!cw_test_sound_system_is_member(cte, sound_system, test_set->tested_sound_systems, systems_max)) {
+			continue;
+		}
+
+		if (cwt_retv_ok != iterate_over_test_objects(cte, test_set->test_objects, topic, sound_system)) {
+			cte->log_error(cte, "Test framework failed for topic %d, sound system %d\n", topic, sound_system);
+			return cwt_retv_err;
+		}
+	}
+
+	return cwt_retv_ok;
+}
+
+
+
+
+static cwt_retv iterate_over_test_objects(cw_test_executor_t * cte, cw_test_object_t * test_objects, int topic, cw_sound_system sound_system)
+{
+	for (cw_test_object_t * test_obj = test_objects; NULL != test_obj->test_function; test_obj++) {
+		bool execute = true;
+		if (0 != strlen(cte->config->test_function_name)) {
+			if (0 != strcmp(cte->config->test_function_name, test_obj->name)) {
+				execute = false;
+			}
+		}
+
+		if (!execute) {
+			continue;
+		}
+
+		if (cte->use_resource_meas) {
+			/* Starting measurement right before it has
+			   something to measure.
+
+			   Starting measurements resets old results from
+			   previous measurement. This is significant when we
+			   want to reset 'max resources' value - we want to
+			   measure the 'max resources' value only per test
+			   object, not per whole test set. */
+			resource_meas_start(&cte->resource_meas, LIBCW_TEST_MEAS_CPU_MEAS_INTERVAL_MSECS);
+		}
+
+		cw_test_set_current_topic_and_sound_system(cte, topic, sound_system);
+		//fprintf(stderr, "+++ %s +++\n", test_obj->name);
+		const cwt_retv retv = test_obj->test_function(cte);
+
+
+		if (cte->use_resource_meas) {
+			usleep(1000 * LIBCW_TEST_INTER_TEST_PAUSE_MSECS);
+			/*
+			  First stop the test, then display CPU usage summary.
+
+			  Otherwise it may happen that the summary will say that max
+			  CPU usage during test was zero, but then the meas object
+			  will take the last measurement, detect high CPU usage, and will
+			  display the high CPU usage information *after* the summary.
+			*/
+			resource_meas_stop(&cte->resource_meas);
+
+			const double current_cpu_usage = resource_meas_get_current_cpu_usage(&cte->resource_meas);
+			const double max_cpu_usage = resource_meas_get_maximal_cpu_usage(&cte->resource_meas);
+			cte->log_info(cte, "CPU usage: last = "CWTEST_CPU_FMT", max = "CWTEST_CPU_FMT"\n", current_cpu_usage, max_cpu_usage);
+			if (max_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
+				cte->stats->failures++;
+				cte->log_error(cte, "Registered high CPU usage "CWTEST_CPU_FMT" during execution of '%s'\n",
+					       max_cpu_usage, test_obj->name);
+			}
+		}
+
+		if (cwt_retv_ok != retv) {
+			return cwt_retv_err;
+		}
+	}
+
+	return cwt_retv_ok;
 }
 
 

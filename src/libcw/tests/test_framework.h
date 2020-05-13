@@ -47,7 +47,15 @@ typedef struct {
 
 
 
-/* Test function return values. */
+/*
+  Test framework function return values.
+
+  The values indicate success/failure of test framework functions, not
+  of tests themselves.  Success/failure of tests is recorded in
+  cw_test_stats_t variables in cw test executor. Failure of test
+  framework function may happen e.g. because some malloc() fails, or
+  because some helper function fails.
+*/
 typedef enum {
 	cwt_retv_err = -1,
 	cwt_retv_ok = 0,
@@ -57,6 +65,7 @@ typedef enum {
 
 
 struct cw_test_set_t;
+
 
 
 
@@ -70,6 +79,7 @@ typedef struct cw_test_executor_t {
 	FILE * stderr;
 
 	resource_meas resource_meas;
+	bool use_resource_meas;
 
 	suseconds_t random_seed;
 
@@ -86,7 +96,7 @@ typedef struct cw_test_executor_t {
 	   row will not be used (because CW_AUDIO_NONE==0 is not a
 	   distinct sound system). */
 	cw_test_stats_t all_stats[CW_SOUND_SYSTEM_LAST + 1][LIBCW_TEST_TOPIC_MAX];
-	cw_test_stats_t * stats; /* Pointer to current stats (one of members of ::all_stats[][]). */
+	cw_test_stats_t * stats; /* Pointer to current stats (one of fields of ::all_stats[][]). */
 
 
 
@@ -389,7 +399,11 @@ void cw_test_deinit(cw_test_executor_t * self);
 
 
 
-typedef int (* cw_test_function_t)(cw_test_executor_t * cte);
+/**
+   @return cwt_retv_ok if test framework managed to successfully run the test (regardless of results of the test itself)
+   @return cwt_retv_err if test framework failed to run the test (the test didn't manage to test production code)
+*/
+typedef cwt_retv (* cw_test_function_t)(cw_test_executor_t * cte);
 
 typedef enum cw_test_set_valid {
 	LIBCW_TEST_SET_INVALID,
@@ -404,10 +418,10 @@ typedef enum cw_test_api_tested {
 
 
 
-typedef	struct cw_test_function_wrapper_t {
-	cw_test_function_t fn;
+typedef	struct cw_test_object_t {
+	cw_test_function_t test_function;
 	const char * name; /* Unique label/name of test function, used to execute only one test function from whole set. Can be empty/NULL. */
-} cw_test_function_wrapper_t;
+} cw_test_object_t;
 
 
 
@@ -424,7 +438,7 @@ typedef struct cw_test_set_t {
 	   this array is marked by guard element CW_AUDIO_NONE. */
 	cw_sound_system tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1];
 
-	cw_test_function_wrapper_t test_functions[100]; /* Right now my test sets have only a few test functions. For now 100 is a safe limit. */
+	cw_test_object_t test_objects[100]; /* Right now my test sets have only a few test functions. For now 100 is a safe limit. */
 } cw_test_set_t;
 
 
@@ -432,7 +446,7 @@ typedef struct cw_test_set_t {
 
 #define LIBCW_TEST_STRINGIFY(x) #x
 #define LIBCW_TEST_TOSTRING(x) LIBCW_TEST_STRINGIFY(x)
-#define LIBCW_TEST_FUNCTION_INSERT(function_pointer) { .fn = (function_pointer), .name = LIBCW_TEST_TOSTRING(function_pointer) }
+#define LIBCW_TEST_FUNCTION_INSERT(function_pointer) { .test_function = (function_pointer), .name = LIBCW_TEST_TOSTRING(function_pointer) }
 
 /* FUT = "Function under test". A function from libcw library that is
    the subject of a test. */
