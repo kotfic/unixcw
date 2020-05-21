@@ -77,6 +77,22 @@ namespace cw {
 		/* Clear out queued data on stop, mode change, etc. */
 		void clear();
 
+#ifdef REC_TEST_CODE
+		void start_test_code();
+		void stop_test_code();
+		pthread_t receiver_test_code_thread_id;
+
+		char test_input_string[REC_TEST_BUFFER_SIZE] = { 0 };
+
+		/* Array large enough to contain characters received
+		   (polled) correctly and possible additional
+		   characters received incorrectly. */
+		char test_received_string[10 * REC_TEST_BUFFER_SIZE] = { 0 };
+
+		 /* Iterator to the array above. */
+		int test_received_string_i = 0;
+#endif
+
 		/* Timer for measuring length of dots and dashes.
 
 		   Initial value of the timestamp is created by
@@ -85,7 +101,7 @@ namespace cw {
 		   on specific time intervals. The intervals are a
 		   function of keyboard key presses or mouse button
 		   presses recorded by xcwcp. */
-		struct timeval timer;
+		struct timeval main_timer;
 
 	private:
 		Application *app;

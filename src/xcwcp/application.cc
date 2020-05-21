@@ -306,6 +306,9 @@ void Application::start()
 
 	sender->clear();
 	receiver->clear();
+#ifdef REC_TEST_CODE
+	receiver->start_test_code();
+#endif
 
 	/* Accessing proper action through this->startstop should also
 	   work. */
@@ -348,6 +351,9 @@ void Application::stop()
 	poll_timer->stop();
 	sender->clear();
 	receiver->clear();
+#ifdef REC_TEST_CODE
+	receiver->stop_test_code();
+#endif
 
 	/* Saving speed for restore on next start. */
 	saved_receive_speed = cw_get_receive_speed();
@@ -1100,19 +1106,19 @@ void Application::make_auxiliaries_end(void)
 	   paddles are pressed, but (since it doesn't receive timing
 	   parameters) it won't be able to identify entered Morse
 	   code. */
-	cw_register_keying_callback(libcw_keying_event_static, &(receiver->timer));
+	cw_register_keying_callback(libcw_keying_event_static, &receiver->main_timer);
 
 #if 0   /* FIXME: enable. */
-	/* The call above registered receiver->timer as a generic
+	/* The call above registered receiver->main_timer as a generic
 	   argument to a callback. However, libcw needs to know when
 	   the argument happens to be of type 'struct timeval'. This
 	   is why we have this second call, explicitly passing
 	   receiver's timer to libcw. */
-	cw_iambic_keyer_register_timer(&receiver->timer);
+	cw_iambic_keyer_register_timer(&receiver->main_timer);
 #endif
 
-	gettimeofday(&(receiver->timer), NULL);
-	//fprintf(stderr, "time on aux config: %10ld : %10ld\n", receiver->timer.tv_sec, receiver->timer.tv_usec);
+	gettimeofday(&(receiver->main_timer), NULL);
+	//fprintf(stderr, "time on aux config: %10ld : %10ld\n", receiver->main_timer.tv_sec, receiver->main_timer.tv_usec);
 
 	QString label("Output: ");
 	label += cw_generator_get_audio_system_label();

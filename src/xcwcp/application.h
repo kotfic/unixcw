@@ -31,15 +31,19 @@
 #include <string>
 #include <deque>
 
+#include "libcw.h"
 #include "modeset.h"
 #include "cw_common.h"
 
 
+#define REC_TEST_CODE
 
+/* Used to determine size of input data and of buffer for received
+  (polled from receiver) characters. */
+#define REC_TEST_BUFFER_SIZE 4096
 
 
 namespace cw {
-
 
 
 
@@ -179,7 +183,6 @@ namespace cw {
 		   the relevant instance version, based on which
 		   instance is the current registered libcw user. */
 		static void libcw_keying_event_static(void *, int key_state);
-		void libcw_keying_event(int key_state);
 
 		/* Wrappers for creating UI. */
 		void make_central_widget(void);

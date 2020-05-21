@@ -1,5 +1,5 @@
 // Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
-// Copyright (C) 2011-201  Kamil Ignacak (acerion@wp.pl)
+// Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -22,7 +22,9 @@
 #include <cstdlib>
 #include <string>
 #include <cerrno>
+#include <cctype>
 #include <sstream>
+#include <unistd.h>
 
 
 #include "application.h"
@@ -31,6 +33,12 @@
 #include "modeset.h"
 
 #include "libcw.h"
+#include "libcw2.h"
+#include "../libcw/libcw_key.h"
+#include "../libcw/libcw_gen.h"
+#include "../libcw/libcw_rec.h"
+#include "../libcw/libcw_tq.h"
+#include "../libcw/libcw_utils.h"
 
 #include "i18n.h"
 
@@ -206,8 +214,8 @@ void Receiver::sk_event(bool is_down)
 	   how straight key does not. Apparently the timer is used to
 	   recognize and distinguish dots from dashes. Maybe straight
 	   key could have such timer as well? */
-	gettimeofday(&timer, NULL);
-	//fprintf(stderr, "time on Skey down:  %10ld : %10ld\n", timer.tv_sec, timer.tv_usec);
+	gettimeofday(&this->main_timer, NULL);
+	//fprintf(stderr, "time on Skey down:  %10ld : %10ld\n", this->main_timer.tv_sec, this->main_timer.tv_usec);
 
 	cw_notify_straight_key_event(is_down);
 
@@ -239,8 +247,8 @@ void Receiver::ik_left_event(bool is_down, bool is_reverse_paddles)
 
 		   TODO: why libcw can't create such timestamp for
 		   first event for us? */
-		gettimeofday(&timer, NULL);
-		//fprintf(stderr, "time on Lkey down:  %10ld : %10ld\n", timer.tv_sec, timer.tv_usec);
+		gettimeofday(&this->main_timer, NULL);
+		//fprintf(stderr, "time on Lkey down:  %10ld : %10ld\n", this->main_timer.tv_sec, this->main_timer.tv_usec);
 	}
 
 	/* Inform libcw about state of left paddle regardless of state
@@ -274,8 +282,8 @@ void Receiver::ik_right_event(bool is_down, bool is_reverse_paddles)
 		   In case of iambic keyer the timestamps for every
 		   next (non-initial) "paddle up" or "paddle down"
 		   event in a character will be created by libcw. */
-		gettimeofday(&timer, NULL);
-		//fprintf(stderr, "time on Rkey down:  %10ld : %10ld\n", timer.tv_sec, timer.tv_usec);
+		gettimeofday(&this->main_timer, NULL);
+		//fprintf(stderr, "time on Rkey down:  %10ld : %10ld\n", this->main_timer.tv_sec, this->main_timer.tv_usec);
 	}
 
 	/* Inform libcw about state of left paddle regardless of state
@@ -431,22 +439,61 @@ void Receiver::poll_report_error()
 */
 void Receiver::poll_character()
 {
-	char c;
-
-	/* Don't use receiver.timer - it is used exclusively for
+	/* Don't use receiver.main_timer - it is used exclusively for
 	   marking initial "key down" events. Use local throw-away
-	   timer2.
+	   local_timer.
 
-	   Additionally using reveiver.timer here would mess up time
-	   intervals measured by receiver.timer, and that would
+	   Additionally using reveiver.main_timer here would mess up time
+	   intervals measured by receiver.main_timer, and that would
 	   interfere with recognizing dots and dashes. */
-	struct timeval timer2;
-	gettimeofday(&timer2, NULL);
-	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
-	if (cw_receive_character(&timer2, &c, NULL, NULL)) {
+	struct timeval local_timer;
+	gettimeofday(&local_timer, NULL);
+	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
+
+	char c = 0;
+	bool is_end_of_word_c;
+	if (cw_receive_character(&local_timer, &c, &is_end_of_word_c, NULL)) {
 		/* Receiver stores full, well formed
 		   character. Display it. */
 		textarea->append(c);
+
+#ifdef REC_TEST_CODE
+		fprintf(stderr, "[II] Character: '%c'\n", c);
+
+		this->test_received_string[this->test_received_string_i++] = c;
+
+		bool is_end_of_word_r = false;
+		bool is_error_r = false;
+		char representation[20] = { 0 };
+		int cw_ret = cw_receive_representation(&local_timer, representation, &is_end_of_word_r, &is_error_r);
+		if (CW_SUCCESS != cw_ret) {
+			fprintf(stderr, "[EE] Character: failed to get representation\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if (is_end_of_word_r != is_end_of_word_c) {
+			fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, is_end_of_word_c);
+			exit(EXIT_FAILURE);
+		}
+
+		if (is_end_of_word_r) {
+			fprintf(stderr, "[EE] Character: 'is end of word' marker is unexpectedly 'true'\n");
+			exit(EXIT_FAILURE);
+		}
+
+		const char looked_up = cw_representation_to_character(representation);
+		if (0 == looked_up) {
+			fprintf(stderr, "[EE] Character: Failed to look up character for representation\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if (looked_up != c) {
+			fprintf(stderr, "[EE] Character: Looked up character is different than received: %c != %c\n", looked_up, c);
+		}
+
+		fprintf(stderr, "[II] Character: Representation: %c -> '%s'\n", c, representation);
+#endif
+
 
 		/* A full character has been received. Directly after
 		   it comes a space. Either a short inter-character
@@ -511,7 +558,7 @@ void Receiver::poll_character()
 void Receiver::poll_space()
 {
 	/* Recheck the receive buffer for end of word. */
-	bool is_end_of_word;
+
 
 	/* We expect the receiver to contain a character, but we don't
 	   ask for it this time. The receiver should also store
@@ -520,16 +567,58 @@ void Receiver::poll_space()
 	   will treat it as inter-word space, and communicate it over
 	   is_end_of_word.
 
-	   Don't use receiver.timer - it is used eclusively for
+	   Don't use receiver.main_timer - it is used eclusively for
 	   marking initial "key down" events. Use local throw-away
-	   timer2. */
-	struct timeval timer2;
-	gettimeofday(&timer2, NULL);
-	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
-	cw_receive_character(&timer2, NULL, &is_end_of_word, NULL);
-	if (is_end_of_word) {
-		//fprintf(stderr, "End of word\n\n");
+	   local_timer. */
+	struct timeval local_timer;
+	gettimeofday(&local_timer, NULL);
+	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
+
+	char c = 0;
+	bool is_end_of_word_c;
+	cw_receive_character(&local_timer, &c, &is_end_of_word_c, NULL);
+	if (is_end_of_word_c) {
+		//fprintf(stderr, "End of word '%c'\n\n", c);
 		textarea->append(' ');
+
+#ifdef REC_TEST_CODE
+		fprintf(stderr, "[II] Space:\n");
+
+		/* cw_receive_character() will return through 'c'
+		   variable the last character that was polled before
+		   space.
+
+		   Maybe this is good, maybe this is bad, but this is
+		   the legacy behaviour that we will keep
+		   supporting. */
+		if (' ' == c) {
+			fprintf(stderr, "[EE] Space: returned character should not be space\n");
+			exit(EXIT_FAILURE);
+		}
+
+
+		this->test_received_string[this->test_received_string_i++] = ' ';
+
+		bool is_end_of_word_r = false;
+		bool is_error_r = false;
+		char representation[20] = { 0 };
+		int cw_ret = cw_receive_representation(&local_timer, representation, &is_end_of_word_r, &is_error_r);
+		if (CW_SUCCESS != cw_ret) {
+			fprintf(stderr, "[EE] Space: Failed to get representation\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if (is_end_of_word_r != is_end_of_word_c) {
+			fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, is_end_of_word_c);
+			exit(EXIT_FAILURE);
+		}
+
+		if (!is_end_of_word_r) {
+			fprintf(stderr, "[EE] Space: 'is end of word' marker is unexpectedly 'false'\n");
+			exit(EXIT_FAILURE);
+		}
+#endif
+
 		cw_clear_receive_buffer();
 		is_pending_inter_word_space = false;
 	} else {
@@ -548,5 +637,158 @@ void Receiver::poll_space()
 
 	return;
 }
+
+
+
+
+#ifdef REC_TEST_CODE
+
+
+
+
+void prepare_input_text_buffer(Receiver * xcwcp_receiver)
+{
+#if 1
+	const char input[REC_TEST_BUFFER_SIZE] =
+		"the quick brown fox jumps over the lazy dog. 01234567890 "     /* Simple test. */
+		"abcdefghijklmnopqrstuvwxyz0123456789\"'$()+,-./:;=?_@<>!&^~ "  /* Almost all characters. */
+		"one two three four five six seven eight nine ten eleven";      /* Words and spaces. */
+#else
+	/* Short test for occasions where I need a quick test. */
+	const char input[REC_TEST_BUFFER_SIZE] = "one two";
+	//const char input[REC_TEST_BUFFER_SIZE] = "the quick brown fox jumps over the lazy dog. 01234567890";
+#endif
+	snprintf(xcwcp_receiver->test_input_string, sizeof (xcwcp_receiver->test_input_string), "%s", input);
+
+	return;
+}
+
+
+
+
+/* Compare buffers with text that was sent to test generator and text
+   that was received from tested production receiver.
+
+   Compare input text with what the receiver received. */
+void compare_text_buffers(Receiver * xcwcp_receiver)
+{
+	/* Luckily for us the text enqueued in test generator and
+	   played at ~12WPM is recognized by xcwcp receiver from the
+	   beginning without any problems, so we will be able to do
+	   simple strcmp(). */
+
+	fprintf(stderr, "[II] Sent:     '%s'\n", xcwcp_receiver->test_input_string);
+	fprintf(stderr, "[II] Received: '%s'\n", xcwcp_receiver->test_received_string);
+
+	/* Normalize received string. */
+	{
+		const size_t len = strlen(xcwcp_receiver->test_received_string);
+		for (size_t i = 0; i < len; i++) {
+			xcwcp_receiver->test_received_string[i] = tolower(xcwcp_receiver->test_received_string[i]);
+		}
+		if (xcwcp_receiver->test_received_string[len - 1] == ' ') {
+			xcwcp_receiver->test_received_string[len - 1] = '\0';
+		}
+	}
+
+
+	const int compare_result = strcmp(xcwcp_receiver->test_input_string, xcwcp_receiver->test_received_string);
+	if (0 == compare_result) {
+		fprintf(stderr, "[II] Test result: success\n");
+	} else {
+		fprintf(stderr, "[EE] Test result: failure\n");
+		fprintf(stderr, "[EE] '%s' != '%s'\n", xcwcp_receiver->test_input_string, xcwcp_receiver->test_received_string);
+	}
+
+	return;
+}
+
+
+
+
+void test_callback_func(volatile timeval * timer, int key_state, void * arg)
+{
+	/* Inform xcwcp receiver (which will inform libcw receiver)
+	   about new state of straight key ("sk").
+
+	   libcw receiver will process the new state and we will later
+	   try to poll a character or space from it. */
+
+	Receiver * xcwcp_receiver = (Receiver *) arg;
+	//fprintf(stderr, "Callback function, key state = %d\n", key_state);
+	xcwcp_receiver->sk_event(key_state);
+}
+
+
+
+
+/*
+  Code that generates info about timing of input events for receiver.
+
+  We could generate the info and the events using a big array of
+  timestamps and a call to usleep(), but instead we are using a new
+  generator that can inform us when marks/spaces start.
+*/
+void * receiver_input_generator_fn(void * arg)
+{
+	Receiver * xcwcp_receiver = (Receiver *) arg;
+
+
+	prepare_input_text_buffer(xcwcp_receiver);
+
+
+	/* Using Null sound system because this generator is only used
+	   to enqueue text and control key. Sound will be played by
+	   main generator used by xcwcp */
+	cw_gen_t * gen = cw_gen_new(CW_AUDIO_NULL, NULL);
+	cw_rec_t * rec = cw_rec_new();
+	cw_key_t key;
+
+	cw_key_register_generator(&key, gen);
+	cw_key_register_receiver(&key, rec);
+	cw_key_register_keying_callback(&key, test_callback_func, arg);
+
+	/* Start sending the test string. Registered callback will be
+	   called on every mark/space. */
+	cw_gen_start(gen);
+	cw_gen_enqueue_string(gen, xcwcp_receiver->test_input_string);
+
+	/* Wait for all characters to be played out. */
+	cw_tq_wait_for_level_internal(gen->tq, 0);
+	cw_usleep_internal(1000 * 000);
+
+	cw_gen_delete(&gen);
+	cw_rec_delete(&rec);
+
+
+	compare_text_buffers(xcwcp_receiver);
+
+
+	return NULL;
+}
+
+
+
+
+void Receiver::start_test_code()
+{
+	pthread_create(&this->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, this);
+}
+
+
+
+
+void Receiver::stop_test_code()
+{
+	pthread_cancel(this->receiver_test_code_thread_id);
+}
+
+
+
+
+#endif
+
+
+
 
 }  /* namespace cw */

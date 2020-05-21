@@ -47,6 +47,7 @@
 
 
 extern cw_debug_t cw_debug_object;
+extern cw_debug_t cw_debug_object_dev;
 
 void xcwcp_atexit(void);
 
@@ -127,6 +128,17 @@ int main(int argc, char **argv)
 		   objects: right after processing command-line arguments. */
 		cw_debug_set_flags(&cw_debug_object, CW_DEBUG_KEYING | CW_DEBUG_GENERATOR | CW_DEBUG_TONE_QUEUE | CW_DEBUG_RECEIVE_STATES | CW_DEBUG_KEYER_STATES | CW_DEBUG_INTERNAL| CW_DEBUG_PARAMETERS | CW_DEBUG_SOUND_SYSTEM);
 		cw_debug_object.level = CW_DEBUG_DEBUG;
+
+		if (1) {
+			/* This should be a default debug config for most of
+			   the time (unless a specific feature is being
+			   debugged): show all warnings an errors. */
+			cw_debug_set_flags(&cw_debug_object, CW_DEBUG_MASK);
+			cw_debug_object.level = CW_DEBUG_WARNING;
+
+			cw_debug_set_flags(&cw_debug_object_dev, CW_DEBUG_MASK);
+			cw_debug_object_dev.level = CW_DEBUG_WARNING;
+		}
 
 		if (!cw_config_is_valid(config)) {
 			fprintf(stderr, _("%s: inconsistent arguments\n"), config->program_name);
