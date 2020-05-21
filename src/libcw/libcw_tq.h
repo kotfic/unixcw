@@ -9,6 +9,13 @@
 
 
 
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+
+
 
 #include "config.h"
 
@@ -251,6 +258,13 @@ void cw_tq_reset_internal(cw_tone_queue_t *tq);
 bool cw_tq_is_full_internal(const cw_tone_queue_t *tq);
 
 void cw_tq_handle_backspace_internal(cw_tone_queue_t *tq);
+
+
+
+
+#if defined(__cplusplus)
+}
+#endif
 
 
 

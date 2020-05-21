@@ -9,6 +9,14 @@
 
 
 
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+
+
+
 #include "config.h"
 
 #include <sys/time.h>
@@ -62,6 +70,13 @@ void cw_finalization_cancel_internal(void);
 #define CW_STATIC_FUNC
 #else
 #define CW_STATIC_FUNC static
+#endif
+
+
+
+
+#if defined(__cplusplus)
+}
 #endif
 
 

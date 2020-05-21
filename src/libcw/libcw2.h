@@ -4,6 +4,14 @@
 
 
 
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+
+
+
 #include "libcw_gen.h"
 
 
@@ -129,6 +137,13 @@ int  cw_rec_poll_representation(cw_rec_t * rec, const struct timeval * timestamp
 void cw_rec_enable_adaptive_mode(cw_rec_t * rec);
 void cw_rec_disable_adaptive_mode(cw_rec_t * rec);
 bool cw_rec_poll_is_pending_inter_word_space(cw_rec_t const * rec);
+
+
+
+
+#if defined(__cplusplus)
+}
+#endif
 
 
 
