@@ -283,13 +283,18 @@ const char *cw_character_to_representation_internal(int c)
 	   if it's not assigned to in the above loop. */
 	const cw_entry_t *cw_entry = lookup[(unsigned char) c];
 
+	/* Lookups code may be called frequently, so first do a rough
+	   test with cw_debug_has_flag(). */
 	if (cw_debug_has_flag((&cw_debug_object), CW_DEBUG_LOOKUPS)) {
 		if (cw_entry) {
-			fprintf(stderr, MSG_PREFIX "char to representation: '%c' -> '%c'/'%s'\n", c, cw_entry->character, cw_entry->representation);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "char to representation: '%c' -> '%c'/'%s'\n", c, cw_entry->character, cw_entry->representation);
 		} else if (isprint(c)) {
-			fprintf(stderr, MSG_PREFIX "char to representation: '%c' -> NOTHING\n", c);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "char to representation: '%c' -> NOTHING\n", c);
 		} else {
-			fprintf(stderr, MSG_PREFIX "char to representation: '0x%02x' -> NOTHING\n", (unsigned char) c);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "char to representation: '0x%02x' -> NOTHING\n", (unsigned char) c);
 		}
 	}
 
@@ -523,14 +528,19 @@ int cw_representation_to_character_internal(const char *representation)
 		}
 	}
 
+
+	/* Lookups code may be called frequently, so first do a rough
+	   test with cw_debug_has_flag(). */
 	if (cw_debug_has_flag((&cw_debug_object), CW_DEBUG_LOOKUPS)) {
 		if (cw_entry) {
-			fprintf(stderr, MSG_PREFIX "lookup [0x%02x]'%s' returned <'%c':\"%s\">\n",
-				hash, representation,
-				cw_entry->character, cw_entry->representation);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "lookup [0x%02x]'%s' returned <'%c':\"%s\">\n",
+				      hash, representation,
+				      cw_entry->character, cw_entry->representation);
 		} else {
-			fprintf(stderr, MSG_PREFIX "lookup [0x%02x]'%s' found nothing\n",
-				hash, representation);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "lookup [0x%02x]'%s' found nothing\n",
+				      hash, representation);
 		}
 	}
 
@@ -982,15 +992,20 @@ const char *cw_lookup_procedural_character_internal(int c, bool *is_usually_expa
 	   need to use any uppercase coercion here. */
 	const cw_prosign_entry_t *cw_prosign = lookup[(unsigned char) c];
 
+	/* Lookups code may be called frequently, so first do a rough
+	   test with cw_debug_has_flag(). */
 	if (cw_debug_has_flag((&cw_debug_object), CW_DEBUG_LOOKUPS)) {
 		if (cw_prosign) {
-			fprintf(stderr, MSG_PREFIX "prosign lookup '%c' -> '%c'/'%s'/%d\n",
-				c, cw_prosign->character,
-				cw_prosign->expansion, cw_prosign->is_usually_expanded);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "prosign lookup '%c' -> '%c'/'%s'/%d\n",
+				      c, cw_prosign->character,
+				      cw_prosign->expansion, cw_prosign->is_usually_expanded);
 		} else if (isprint(c)) {
-			fprintf(stderr, MSG_PREFIX "prosign lookup '%c' -> NOTHING\n", c);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "prosign lookup '%c' -> NOTHING\n", c);
 		} else {
-			fprintf(stderr, MSG_PREFIX "prosign lookup '0x%02x' -> NOTHING\n", (unsigned char) c);
+			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "prosign lookup '0x%02x' -> NOTHING\n", (unsigned char) c);
 		}
 	}
 
