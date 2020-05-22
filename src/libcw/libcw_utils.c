@@ -140,7 +140,7 @@ int cw_version(void)
    revision, \p age. These three properties are described here:
    http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 */
-cw_ret cw_get_lib_version(int * current, int * revision, int * age)
+cw_ret_t cw_get_lib_version(int * current, int * revision, int * age)
 {
 	char *endptr = NULL;
 
@@ -170,7 +170,7 @@ cw_ret cw_get_lib_version(int * current, int * revision, int * age)
 
 
 
-cw_ret cw_get_package_version(__attribute__((unused)) int * major, __attribute__((unused)) int * minor, __attribute__((unused)) int * maintenance)
+cw_ret_t cw_get_package_version(__attribute__((unused)) int * major, __attribute__((unused)) int * minor, __attribute__((unused)) int * maintenance)
 {
 	/* TODO: implement. */
 	return CW_FAILURE;

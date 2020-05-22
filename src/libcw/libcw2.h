@@ -17,7 +17,7 @@ extern "C"
 
 
 
-typedef int cw_ret;
+typedef int cw_ret_t;
 
 
 
@@ -25,7 +25,7 @@ typedef int cw_ret;
 /**
    @brief Get version of libcw shared library
 */
-cw_ret cw_get_lib_version(int * current, int * revision, int * age);
+cw_ret_t cw_get_lib_version(int * current, int * revision, int * age);
 
 
 
@@ -33,7 +33,7 @@ cw_ret cw_get_lib_version(int * current, int * revision, int * age);
 /**
    @brief Get version of unixcw package
 */
-cw_ret cw_get_package_version(int * major, int * minor, int * maintenance);
+cw_ret_t cw_get_package_version(int * major, int * minor, int * maintenance);
 
 
 
