@@ -21,6 +21,7 @@
 
 
 #include "libcw_legacy_api_tests.h"
+#include "libcw_legacy_api_tests_rec_poll.h"
 #include "libcw_test_tq_short_space.h"
 
 

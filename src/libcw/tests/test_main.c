@@ -78,11 +78,16 @@ int main(int argc, char * const argv[])
 {
 	fprintf(stderr, "%s\n\n", argv[0]);
 
-	//cw_debug_set_flags(&cw_debug_object, CW_DEBUG_RECEIVE_STATES | CW_DEBUG_TONE_QUEUE | CW_DEBUG_GENERATOR | CW_DEBUG_KEYING);
-	//cw_debug_object.level = CW_DEBUG_ERROR;
+	if (1) {
+		/* This should be a default debug config for most of
+		   the time (unless a specific feature is being
+		   debugged): show all warnings an errors. */
+		cw_debug_set_flags(&cw_debug_object, CW_DEBUG_MASK);
+		cw_debug_object.level = CW_DEBUG_WARNING;
 
-	//cw_debug_set_flags(&cw_debug_object_dev, CW_DEBUG_RECEIVE_STATES | CW_DEBUG_TONE_QUEUE | CW_DEBUG_GENERATOR | CW_DEBUG_KEYING);
-	//cw_debug_object_dev.level = CW_DEBUG_DEBUG;
+		cw_debug_set_flags(&cw_debug_object_dev, CW_DEBUG_MASK);
+		cw_debug_object_dev.level = CW_DEBUG_WARNING;
+	}
 
 	cw_test_executor_t * cte = &g_tests_executor;
 	cw_test_init(cte, stdout, stderr, "libcw/tests");

@@ -35,6 +35,8 @@ test_framework_files = \
 legacy_api_test_files = \
 	libcw_legacy_api_tests.c \
 	libcw_legacy_api_tests.h \
+	libcw_legacy_api_tests_rec_poll.c \
+	libcw_legacy_api_tests_rec_poll.h \
 	libcw_legacy_api_sets.c \
 	libcw_legacy_api_sets.inc
 
@@ -69,6 +71,8 @@ other_test_files = \
 libcw_test_legacy_api_SOURCES = \
 	libcw_legacy_api_tests.c \
 	libcw_legacy_api_sets.c \
+	libcw_legacy_api_tests_rec_poll.c \
+	libcw_legacy_api_tests_rec_poll.h \
 	$(LIBCW_BUG_TEST_FILES) \
 	test_framework.c \
 	test_framework_tools.c \
@@ -104,6 +108,7 @@ libcw_test_all_SOURCES = \
 	libcw_key_tests.c \
 	libcw_rec_tests.c \
 	libcw_legacy_api_tests.c \
+	libcw_legacy_api_tests_rec_poll.c \
 	$(LIBCW_BUG_TEST_FILES)
 
 libcw_test_all_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
