@@ -216,6 +216,7 @@ struct cw_rec_struct {
 	   space on a later poll. */
 	bool is_pending_inter_word_space;
 
+	char label[16]; /* TODO: use LIBCW_INSTANCE_LABEL_SIZE from libcw2.h */
 };
 
 

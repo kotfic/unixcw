@@ -507,6 +507,7 @@ void * receiver_input_generator_fn(void * arg)
 	   main generator used by xcwcp */
 	cw_gen_t * gen = cw_gen_new(CW_AUDIO_NULL, NULL);
 	cw_rec_t * rec = cw_rec_new();
+	cw_rec_set_label(rec, "input gener. rec");
 	cw_key_t key;
 
 	cw_key_register_generator(&key, gen);

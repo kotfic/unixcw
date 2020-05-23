@@ -164,8 +164,13 @@ enum {
 	   inconsistencies of libcw library. */
 	CW_DEBUG_INTERNAL             = 1 << 12,
 
+	/* Errors made by client code (code calling libcw functions):
+	   NULL function arguments, function arguments out of range,
+	   etc. */
+	CW_DEBUG_CLIENT_CODE          = 1 << 13,
+
 	/* Bit mask of all defined debug bits. */
-	CW_DEBUG_MASK                 = (1 << 13) - 1
+	CW_DEBUG_MASK                 = (1 << 14) - 1
 };
 
 

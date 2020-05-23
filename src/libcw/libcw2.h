@@ -12,6 +12,16 @@ extern "C"
 
 
 
+/* Instances of cw_gen_t, cw_rec_t, cw_key_t and cw_tq_t types have
+   ::label[LIBCW_INSTANCE_LABEL_SIZE] field. The field can be used by
+   client code to distinguish instances of the same type.
+
+   This size includes space for terminating NUL. */
+#define LIBCW_INSTANCE_LABEL_SIZE 16
+
+
+
+
 #include "libcw_gen.h"
 
 
@@ -100,9 +110,74 @@ int  cw_key_sk_notify_event(volatile cw_key_t * key, int key_state);
 
 
 
+/* **************** Receiver **************** */
+
+
+
+
 /* Creator and destructor. */
 cw_rec_t * cw_rec_new(void);
 void       cw_rec_delete(cw_rec_t ** rec);
+
+
+
+
+/**
+   @brief Set label (name) of given receiver instance
+
+   The label can be used by client code to distinguish different
+   instances of receivers. The label is used in library's debug
+   messages.
+
+   @p rec can't be NULL.
+
+   @p label can't be NULL.
+
+   @p label can be an empty string: receiver's label will become empty
+   string.
+
+   @p label longer than (`LIBCW_INSTANCE_LABEL_SIZE`-1) characters will
+   be truncated and
+   `cw_debug_object:CW_DEBUG_CLIENT_CODE:CW_DEBUG_WARNING` will be
+   logged. This is not treated as error: function will not return
+   `CW_FAILURE` because of that.
+
+   @param[in] rec receiver for which to set label
+   @param[in] label new label to set for given @p rec
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise (e.g. @p rec or @p label is NULL)
+*/
+int cw_rec_set_label(cw_rec_t * rec, const char * label);
+
+
+
+
+/**
+   @brief Get label (name) of given receiver instance
+
+   @p rec and @p label can't be NULL.
+
+   @p label should be a buffer of size at least
+   `LIBCW_INSTANCE_LABEL_SIZE`.
+
+   @p size should have value equal to size of @p label char buffer.
+
+   @p size is not validated: it could be smaller than
+   `LIBCW_INSTANCE_LABEL_SIZE`, it could be zero. Function's caller
+   will get only as many characters of receiver's label as he asked
+   for.
+
+   @param[in] rec receiver from which to get label
+   @param[in] label output buffer
+   @param[out] size total size of output buffer @p label
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure (e.g. @p rec or @p label is NULL)
+*/
+int cw_rec_get_label(const cw_rec_t * rec, char * label, size_t size);
+
+
 
 
 /* Helper receive functions. */

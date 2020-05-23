@@ -86,12 +86,12 @@
 
 #include "libcw_utils.h"
 #include "libcw.h"
+#include "libcw2.h"
 #include "libcw_rec.h"
 #include "libcw_rec_internal.h"
 #include "libcw_key.h"
 #include "libcw_data.h"
 #include "libcw_debug.h"
-#include "libcw2.h"
 
 
 
@@ -147,7 +147,7 @@ cw_rec_t * cw_rec_new(void)
 	cw_rec_t *rec = (cw_rec_t *) malloc(sizeof (cw_rec_t));
 	if (!rec) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-			      MSG_PREFIX "new: malloc()");
+			      MSG_PREFIX "new(): malloc()");
 		return (cw_rec_t *) NULL;
 	}
 
@@ -813,7 +813,8 @@ void cw_rec_reset_statistics(cw_rec_t * rec)
 	{								\
 		cw_debug_msg ((m_debug_object),				\
 			      CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,	\
-			      MSG_PREFIX "state: %s -> %s @ %s:%d",	\
+			      MSG_PREFIX "'%s': state: %s -> %s @ %s:%d", \
+			      (m_rec)->label,				\
 			      cw_receiver_states[(m_rec)->state], cw_receiver_states[(m_new_state)], __func__, __LINE__); \
 		(m_rec)->state = (m_new_state);				\
 	}
@@ -949,7 +950,9 @@ int cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * timestamp)
 		   or in inter-mark-space of a current character. */
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "mark_begin: receive state not idle and not inter-mark-space: %s", cw_receiver_states[rec->state]);
+			      MSG_PREFIX "'%s': mark_begin: receive state not idle and not inter-mark-space: %s",
+			      rec->label,
+			      cw_receiver_states[rec->state]);
 
 		/*
 		  ->state should be RS_IDLE at the beginning of new character;
@@ -960,7 +963,7 @@ int cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * timestamp)
 		return CW_FAILURE;
 	}
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "mark_begin: receive state: %s", cw_receiver_states[rec->state]);
+		      MSG_PREFIX "'%s': mark_begin: receive state: %s", rec->label, cw_receiver_states[rec->state]);
 
 	/* Validate and save the timestamp, or get one and then save
 	   it.  This is a beginning of mark. */
@@ -1015,12 +1018,12 @@ int cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp)
 	/* The receive state is expected to be inside of a mark. */
 	if (rec->state != RS_MARK) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "mark_end: receive state not RS_MARK: %s", cw_receiver_states[rec->state]);
+			      MSG_PREFIX "'%s': mark_end: receive state not RS_MARK: %s", rec->label, cw_receiver_states[rec->state]);
 		errno = ERANGE;
 		return CW_FAILURE;
 	}
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "mark_end: receive state: %s", cw_receiver_states[rec->state]);
+		      MSG_PREFIX "'%s': mark_end: receive state: %s", rec->label, cw_receiver_states[rec->state]);
 
 	/* Take a safe copy of the current end timestamp, in case we need
 	   to put it back if we decide this mark is really just noise. */
@@ -1066,7 +1069,8 @@ int cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp)
 		rec->mark_end = saved_end_timestamp;
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "mark_end: '%d [us]' mark identified as spike noise (threshold = '%d [us]')",
+			      MSG_PREFIX "'%s': mark_end: '%d [us]' mark identified as spike noise (threshold = '%d [us]')",
+			      rec->label,
 			      mark_len, rec->noise_spike_threshold);
 
 		errno = ECANCELED;
@@ -1115,7 +1119,7 @@ int cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp)
 	/* Add the mark to the receiver's representation buffer. */
 	rec->representation[rec->representation_ind++] = mark;
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "mark_end: recognized representation is '%s'", rec->representation);
+		      MSG_PREFIX "'%s': mark_end: recognized representation is '%s'", rec->label, rec->representation);
 
 	/* We just added a mark to the receive buffer.  If it's full,
 	   then we have to do something, even though it's unlikely.
@@ -1127,7 +1131,7 @@ int cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp)
 		CW_REC_SET_STATE (rec, RS_EOC_GAP_ERR, (&cw_debug_object));
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "mark_end: receiver's representation buffer is full");
+			      MSG_PREFIX "'%s': mark_end: receiver's representation buffer is full", rec->label);
 
 		errno = ENOMEM;
 		return CW_FAILURE;
@@ -1182,7 +1186,9 @@ int cw_rec_identify_mark_internal(cw_rec_t *rec, int mark_len, /* out */ char * 
 	if (mark_len >= rec->dot_len_min
 	    && mark_len <= rec->dot_len_max) {
 
-		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO, MSG_PREFIX "identify: mark '%d [us]' recognized as DOT (limits: %d - %d [us])", mark_len, rec->dot_len_min, rec->dot_len_max);
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
+			      MSG_PREFIX "'%s': identify: mark '%d [us]' recognized as DOT (limits: %d - %d [us])",
+			      rec->label, mark_len, rec->dot_len_min, rec->dot_len_max);
 
 		*mark = CW_DOT_REPRESENTATION;
 		return CW_SUCCESS;
@@ -1192,7 +1198,9 @@ int cw_rec_identify_mark_internal(cw_rec_t *rec, int mark_len, /* out */ char * 
 	if (mark_len >= rec->dash_len_min
 	    && mark_len <= rec->dash_len_max) {
 
-		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO, MSG_PREFIX "identify: mark '%d [us]' recognized as DASH (limits: %d - %d [us])", mark_len, rec->dash_len_min, rec->dash_len_max);
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
+			      MSG_PREFIX "'%s': identify: mark '%d [us]' recognized as DASH (limits: %d - %d [us])",
+			      rec->label, mark_len, rec->dash_len_min, rec->dash_len_max);
 
 		*mark = CW_DASH_REPRESENTATION;
 		return CW_SUCCESS;
@@ -1201,11 +1209,11 @@ int cw_rec_identify_mark_internal(cw_rec_t *rec, int mark_len, /* out */ char * 
 	/* This mark is not a Dot or a Dash, so we have an error
 	   case. */
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-		      MSG_PREFIX "identify: unrecognized mark, len = %d [us]", mark_len);
+		      MSG_PREFIX "'%s': identify: unrecognized mark, len = %d [us]", rec->label, mark_len);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-		      MSG_PREFIX "identify: dot limits: %d - %d [us]", rec->dot_len_min, rec->dot_len_max);
+		      MSG_PREFIX "'%s': identify: dot limits: %d - %d [us]", rec->label, rec->dot_len_min, rec->dot_len_max);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-		      MSG_PREFIX "identify: dash limits: %d - %d [us]", rec->dash_len_min, rec->dash_len_max);
+		      MSG_PREFIX "'%s': identify: dash limits: %d - %d [us]", rec->label, rec->dash_len_min, rec->dash_len_max);
 
 	/* We should never reach here when in adaptive timing receive
 	   mode - a mark should be always recognized as Dot or Dash,
@@ -1213,10 +1221,10 @@ int cw_rec_identify_mark_internal(cw_rec_t *rec, int mark_len, /* out */ char * 
 	   point. */
 	if (rec->is_adaptive_receive_mode) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "identify: unrecognized mark in adaptive receive");
+			      MSG_PREFIX "'%s': identify: unrecognized mark in adaptive receive", rec->label);
 	} else {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "identify: unrecognized mark in non-adaptive receive");
+			      MSG_PREFIX "'%s': identify: unrecognized mark in non-adaptive receive", rec->label);
 	}
 
 
@@ -1268,7 +1276,7 @@ void cw_rec_update_averages_internal(cw_rec_t *rec, int mark_len, char mark)
 	/* We are not going to tolerate being called in fixed speed mode. */
 	if (!rec->is_adaptive_receive_mode) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_WARNING,
-			      MSG_PREFIX "called 'adaptive' function when receiver is not in adaptive mode\n");
+			      MSG_PREFIX "'%s': called 'adaptive' function when receiver is not in adaptive mode\n", rec->label);
 		return;
 	}
 
@@ -1279,7 +1287,7 @@ void cw_rec_update_averages_internal(cw_rec_t *rec, int mark_len, char mark)
 		cw_rec_update_average_internal(&rec->dash_averaging, mark_len);
 	} else {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "unknown mark '%c' / '0x%x'\n", mark, mark);
+			      MSG_PREFIX "'%s': unknown mark '%c' / '0x%x'\n", rec->label, mark, mark);
 		return;
 	}
 
@@ -1391,7 +1399,7 @@ int cw_rec_add_mark(cw_rec_t * rec, const volatile struct timeval * timestamp, c
 		CW_REC_SET_STATE (rec, RS_EOC_GAP_ERR, (&cw_debug_object));
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "add_mark: receiver's representation buffer is full");
+			      MSG_PREFIX "'%s': add_mark: receiver's representation buffer is full", rec->label);
 
 		errno = ENOMEM;
 		return CW_FAILURE;
@@ -1490,7 +1498,7 @@ int cw_rec_poll_representation(cw_rec_t * rec,
 	int space_len = cw_timestamp_compare_internal(&rec->mark_end, &now_timestamp);
 	if (space_len == INT_MAX) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "poll: space len == INT_MAX");
+			      MSG_PREFIX "'%s': poll: space len == INT_MAX", rec->label);
 
 		errno = EINVAL;
 		return CW_FAILURE;
@@ -1582,7 +1590,8 @@ void cw_rec_poll_representation_eoc_internal(cw_rec_t *rec, int space_len,
 		/* We are already in RS_EOC_GAP or RS_EOC_GAP_ERR, so nothing to do. */
 	}
 
-	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO, MSG_PREFIX "poll eoc: state: %s", cw_receiver_states[rec->state]);
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
+		      MSG_PREFIX "'%s': poll eoc: state: %s", rec->label, cw_receiver_states[rec->state]);
 
 	/* Return receiver's state. */
 	if (is_end_of_word) {
@@ -1639,7 +1648,8 @@ void cw_rec_poll_representation_eow_internal(cw_rec_t *rec,
 		cw_assert (0, MSG_PREFIX "poll eow: unexpected receiver state %d / %s", rec->state, cw_receiver_states[rec->state]);
 	}
 
-	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO, MSG_PREFIX "poll eow: state: %s", cw_receiver_states[rec->state]);
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
+		      MSG_PREFIX "'%s': poll eow: state: %s", rec->label, cw_receiver_states[rec->state]);
 
 	/* Return receiver's state. */
 	if (is_end_of_word) {
@@ -1927,7 +1937,8 @@ void cw_rec_sync_parameters_internal(cw_rec_t *rec)
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_PARAMETERS, CW_DEBUG_INFO,
-		      MSG_PREFIX "sync parameters: receive usec timings <%.2f [wpm]>: dot: %d-%d [ms], dash: %d-%d [ms], %d-%d[%d], %d-%d[%d], thres: %d [us]",
+		      MSG_PREFIX "'%s': sync parameters: receive usec timings <%.2f [wpm]>: dot: %d-%d [ms], dash: %d-%d [ms], %d-%d[%d], %d-%d[%d], thres: %d [us]",
+		      rec->label,
 		      (double) rec->speed, /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
 		      rec->dot_len_min, rec->dot_len_max,
 		      rec->dash_len_min, rec->dash_len_max,
@@ -1969,3 +1980,55 @@ void cw_rec_register_push_callback(cw_rec_t * rec, cw_rec_push_callback_t * call
 }
 
 #endif
+
+
+
+
+int cw_rec_set_label(cw_rec_t * rec, const char * label)
+{
+	if (NULL == rec) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'rec' argument is NULL");
+		return CW_FAILURE;
+	}
+	if (NULL == label) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'%s': 'label' argument is NULL", rec->label);
+		return CW_FAILURE;
+	}
+	if (strlen(label) > (LIBCW_INSTANCE_LABEL_SIZE - 1)) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_WARNING,
+			      MSG_PREFIX "'%s': new label '%s' too long, truncating", rec->label, label);
+		/* Not an error, just log warning. New label will be truncated. */
+	}
+
+	/* Notice that empty label is acceptable. In such case we will
+	   erase old label. */
+
+	snprintf(rec->label, sizeof (rec->label), "%s", label);
+
+	return CW_SUCCESS;
+}
+
+
+
+
+int cw_rec_get_label(const cw_rec_t * rec, char * label, size_t size)
+{
+	if (NULL == rec) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'rec' argument is NULL");
+		return CW_FAILURE;
+	}
+	if (NULL == label) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'%s': 'label' argument is NULL", rec->label);
+		return CW_FAILURE;
+	}
+
+	/* Notice that we don't care if size is zero. */
+
+	snprintf(label, size, "%s", rec->label);
+
+	return CW_SUCCESS;
+}
