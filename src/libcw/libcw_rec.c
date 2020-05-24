@@ -1984,6 +1984,9 @@ void cw_rec_register_push_callback(cw_rec_t * rec, cw_rec_push_callback_t * call
 
 
 
+/**
+   @reviewed-on 2020-05-23
+*/
 int cw_rec_set_label(cw_rec_t * rec, const char * label)
 {
 	if (NULL == rec) {
@@ -2013,6 +2016,9 @@ int cw_rec_set_label(cw_rec_t * rec, const char * label)
 
 
 
+/**
+   @reviewed-on 2020-05-23
+*/
 int cw_rec_get_label(const cw_rec_t * rec, char * label, size_t size)
 {
 	if (NULL == rec) {
@@ -2032,3 +2038,4 @@ int cw_rec_get_label(const cw_rec_t * rec, char * label, size_t size)
 
 	return CW_SUCCESS;
 }
+

@@ -343,6 +343,8 @@ struct cw_gen_struct {
 		int z;
 	} oss_version;
 
+	char label[16]; /* TODO: use LIBCW_INSTANCE_LABEL_SIZE from libcw2.h */
+
 #ifdef LIBCW_WITH_ALSA
 	/* Data used by ALSA. */
 	cw_alsa_data_t alsa_data;

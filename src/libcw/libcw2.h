@@ -48,11 +48,77 @@ cw_ret_t cw_get_package_version(int * major, int * minor, int * maintenance);
 
 
 
+/* **************** Generator **************** */
+
+
+
+
 /* Basic generator functions. */
 cw_gen_t * cw_gen_new(int sound_system, const char * device);
 void       cw_gen_delete(cw_gen_t ** gen);
 int        cw_gen_stop(cw_gen_t * gen);
 int        cw_gen_start(cw_gen_t * gen);
+
+
+
+
+/**
+   @brief Set label (name) of given generator instance
+
+   The label can be used by client code to distinguish different
+   instances of generators. The label is used in library's debug
+   messages.
+
+   @p gen can't be NULL.
+
+   @p label can't be NULL.
+
+   @p label can be an empty string: generator's label will become empty
+   string.
+
+   @p label longer than (`LIBCW_INSTANCE_LABEL_SIZE`-1) characters will
+   be truncated and
+   `cw_debug_object:CW_DEBUG_CLIENT_CODE:CW_DEBUG_WARNING` will be
+   logged. This is not treated as error: function will not return
+   `CW_FAILURE` because of that.
+
+   @param[in] gen generator for which to set label
+   @param[in] label new label to set for given @p gen
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise (e.g. @p gen or @p label is NULL)
+*/
+int cw_gen_set_label(cw_gen_t * gen, const char * label);
+
+
+
+
+/**
+   @brief Get label (name) of given generator instance
+
+   @p gen and @p label can't be NULL.
+
+   @p label should be a buffer of size at least
+   `LIBCW_INSTANCE_LABEL_SIZE`.
+
+   @p size should have value equal to size of @p label char buffer.
+
+   @p size is not validated: it could be smaller than
+   `LIBCW_INSTANCE_LABEL_SIZE`, it could be zero. Function's caller
+   will get only as many characters of generator's label as he asked
+   for.
+
+   @param[in] gen generator from which to get label
+   @param[in] label output buffer
+   @param[out] size total size of output buffer @p label
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure (e.g. @p gen or @p label is NULL)
+*/
+int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size);
+
+
+
 
 int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration);
 
@@ -86,8 +152,74 @@ bool cw_gen_is_queue_full(cw_gen_t const * gen);
 
 
 
+/* **************** Key **************** */
+
+
+
+
 cw_key_t * cw_key_new(void);
 void cw_key_delete(cw_key_t ** key);
+
+
+
+
+/**
+   @brief Set label (name) of given key instance
+
+   The label can be used by client code to distinguish different
+   instances of keys. The label is used in library's debug
+   messages.
+
+   @p key can't be NULL.
+
+   @p label can't be NULL.
+
+   @p label can be an empty string: key's label will become empty
+   string.
+
+   @p label longer than (`LIBCW_INSTANCE_LABEL_SIZE`-1) characters will
+   be truncated and
+   `cw_debug_object:CW_DEBUG_CLIENT_CODE:CW_DEBUG_WARNING` will be
+   logged. This is not treated as error: function will not return
+   `CW_FAILURE` because of that.
+
+   @param[in] key key for which to set label
+   @param[in] label new label to set for given @p key
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise (e.g. @p key or @p label is NULL)
+*/
+int cw_key_set_label(cw_key_t * key, const char * label);
+
+
+
+
+/**
+   @brief Get label (name) of given key instance
+
+   @p key and @p label can't be NULL.
+
+   @p label should be a buffer of size at least
+   `LIBCW_INSTANCE_LABEL_SIZE`.
+
+   @p size should have value equal to size of @p label char buffer.
+
+   @p size is not validated: it could be smaller than
+   `LIBCW_INSTANCE_LABEL_SIZE`, it could be zero. Function's caller
+   will get only as many characters of key's label as he asked
+   for.
+
+   @param[in] key key from which to get label
+   @param[in] label output buffer
+   @param[out] size total size of output buffer @p label
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure (e.g. @p key or @p label is NULL)
+*/
+int cw_key_get_label(const cw_key_t * key, char * label, size_t size);
+
+
+
 
 void cw_key_register_keying_callback(volatile cw_key_t * key, cw_key_callback_t callback_func, void * callback_arg);
 void cw_key_register_generator(volatile cw_key_t * key, cw_gen_t * gen);

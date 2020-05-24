@@ -170,7 +170,10 @@ static volatile cw_key_t cw_key = {
 
 	.tk = {
 		.key_value = CW_KEY_STATE_OPEN
-	}
+	},
+
+
+	.label = "global key", /* Single global key visible after loading libcw library. */
 };
 
 
@@ -214,6 +217,8 @@ int cw_generator_new(int sound_system, const char *device)
 			      MSG_PREFIX "can't create generator");
 		return CW_FAILURE;
 	} else {
+		cw_gen_set_label(cw_generator, "global gen"); /* Single global generator. */
+
 		/* For some (all?) applications a key needs to have
 		   some generator associated with it. */
 		cw_key_register_generator(&cw_key, cw_generator);

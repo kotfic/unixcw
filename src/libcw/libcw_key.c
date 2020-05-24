@@ -1445,3 +1445,62 @@ void cw_key_delete(cw_key_t ** key)
 
 	return;
 }
+
+
+
+
+/**
+   @reviewed-on 2020-05-23
+*/
+int cw_key_set_label(cw_key_t * key, const char * label)
+{
+	if (NULL == key) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'key' argument is NULL");
+		return CW_FAILURE;
+	}
+	if (NULL == label) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'%s': 'label' argument is NULL", key->label);
+		return CW_FAILURE;
+	}
+	if (strlen(label) > (LIBCW_INSTANCE_LABEL_SIZE - 1)) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_WARNING,
+			      MSG_PREFIX "'%s': new label '%s' too long, truncating", key->label, label);
+		/* Not an error, just log warning. New label will be truncated. */
+	}
+
+	/* Notice that empty label is acceptable. In such case we will
+	   erase old label. */
+
+	snprintf(key->label, sizeof (key->label), "%s", label);
+
+	return CW_SUCCESS;
+}
+
+
+
+
+/**
+   @reviewed-on 2020-05-23
+*/
+int cw_key_get_label(const cw_key_t * key, char * label, size_t size)
+{
+	if (NULL == key) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'key' argument is NULL");
+		return CW_FAILURE;
+	}
+	if (NULL == label) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'%s': 'label' argument is NULL", key->label);
+		return CW_FAILURE;
+	}
+
+	/* Notice that we don't care if size is zero. */
+
+	snprintf(label, size, "%s", key->label);
+
+	return CW_SUCCESS;
+}
+

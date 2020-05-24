@@ -134,6 +134,8 @@ struct cw_key_struct {
 
 	/* Every key event needs to have a timestamp. */
 	struct timeval timer;
+
+	char label[16]; /* TODO: use LIBCW_INSTANCE_LABEL_SIZE from libcw2.h */
 };
 
 

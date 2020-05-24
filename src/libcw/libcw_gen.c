@@ -2941,3 +2941,73 @@ bool cw_gen_is_queue_full(cw_gen_t const * gen)
 {
 	return cw_tq_is_full_internal(gen->tq);
 }
+
+
+
+
+/**
+   @reviewed-on 2020-05-23
+*/
+int cw_gen_set_label(cw_gen_t * gen, const char * label)
+{
+	if (NULL == gen) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'gen' argument is NULL");
+		return CW_FAILURE;
+	}
+	if (NULL == label) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'%s': 'label' argument is NULL", gen->label);
+		return CW_FAILURE;
+	}
+	if (strlen(label) > (LIBCW_INSTANCE_LABEL_SIZE - 1)) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_WARNING,
+			      MSG_PREFIX "'%s': new label '%s' too long, truncating", gen->label, label);
+		/* Not an error, just log warning. New label will be truncated. */
+	}
+
+	/* Notice that empty label is acceptable. In such case we will
+	   erase old label. */
+
+	snprintf(gen->label, sizeof (gen->label), "%s", label);
+
+	/* Generator's tone queue is not publicly available, but we
+	   have to set some label for the queue as well. */
+	if (NULL == gen->tq) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_INTERNAL, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'%s': tq is NULL, not setting label for it", gen->label);
+		/* This is not a good place to investigate why tq is
+		   NULL, so simply continue. */
+	} else {
+		snprintf(gen->tq->label, sizeof (gen->tq->label), "%s", label);
+	}
+
+	return CW_SUCCESS;
+}
+
+
+
+
+/**
+   @reviewed-on 2020-05-23
+*/
+int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
+{
+	if (NULL == gen) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'gen' argument is NULL");
+		return CW_FAILURE;
+	}
+	if (NULL == label) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "'%s': 'label' argument is NULL", gen->label);
+		return CW_FAILURE;
+	}
+
+	/* Notice that we don't care if size is zero. */
+
+	snprintf(label, size, "%s", gen->label);
+
+	return CW_SUCCESS;
+}
+

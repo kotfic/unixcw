@@ -236,6 +236,8 @@ typedef struct {
 
 	/* Generator associated with a tone queue. */
 	struct cw_gen_struct *gen;
+
+	char label[16]; /* TODO: use LIBCW_INSTANCE_LABEL_SIZE from libcw2.h */
 } cw_tone_queue_t;
 
 
