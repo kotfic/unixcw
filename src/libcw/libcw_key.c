@@ -78,14 +78,11 @@ extern cw_debug_t cw_debug_object_dev;
    of key: straight key, cootie key, iambic key. All that matters is
    state of contacts (open/closed).
 
-   The concept of "key" is extended to a software generator (provided
-   by this library) that generates Morse code wave from text input.
-   This means that key is closed when a tone (element) is generated,
-   and key is open when there is inter-tone (inter-element) space.
-
-   Client code can register - using cw_register_keying_callback() -
-   a client callback function. The function will be called every time the
-   state of a key changes. */
+   Client code can register - using cw_register_keying_callback() - a
+   client callback function. The function will be called every time a
+   generator associated with the key changes state, i.e. each time
+   state of key will lead to (will be reflected by) change of state of
+   the generator. */
 
 
 
@@ -195,112 +192,6 @@ void cw_key_register_keying_callback(volatile cw_key_t * key, cw_key_callback_t 
 
 
 /**
-   \brief Register external callback function for keying
-
-   Function to be used in implementation of legacy API.
-
-   Register a \p callback_func function that should be called when a
-   state of a \p key changes from "key open" to "key closed", or
-   vice-versa.
-
-   The first argument passed to the registered callback function is
-   the supplied \p callback_arg, if any.
-
-   The second argument passed to registered callback function is the
-   key state: CW_KEY_STATE_CLOSED (one/true) for "key closed", and
-   CW_KEY_STATE_OPEN (zero/false) for "key open".
-
-   Calling this routine with a NULL function address disables keying
-   callbacks.
-
-   \param key
-   \param callback_func - callback function to be called on key state changes
-   \param callback_arg - first argument to callback_func
-*/
-void cw_key_register_legacy_keying_callback_internal(volatile cw_key_t * key, cw_key_legacy_callback_t callback_func, void * callback_arg)
-{
-	key->key_legacy_callback_func = callback_func;
-	key->key_legacy_callback_arg = callback_arg;
-
-	return;
-}
-
-
-
-
-/**
-   \brief Set new value of key
-
-   Set new value of a key. Filter successive key-down or key-up
-   actions into a single action (successive calls with the same value
-   of \p key_state don't change internally registered value of key).
-
-   If and only if the function registers change of key value, an
-   external callback function for keying (if configured) is called.
-
-   Notice that the function is used only in
-   cw_tq_dequeue_internal(). A generator which owns a tone
-   queue is treated as a key, and dequeued tones are treated as key
-   values. Dequeueing tones is treated as manipulating a key.
-
-   \param key - key to use
-   \param key_state - key state to be set
-*/
-void cw_key_tk_set_value_internal(volatile cw_key_t *key, int key_state)
-{
-	cw_assert (key, MSG_PREFIX "tk set value: key is NULL");
-
-	if (key->tk.key_value == key_state) {
-		/* This is not an error. This may happen when
-		   dequeueing 'forever' tone multiple times in a
-		   row. */
-		return;
-	}
-
-	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-		      MSG_PREFIX "tk set value: %d->%d", key->tk.key_value, key_state);
-
-	/* Remember the new key value. */
-	key->tk.key_value = key_state;
-
-	/* In theory client code should register either a receiver (so
-	   events from key are passed to receiver directly), or a
-	   callback (so events from key are passed to receiver through
-	   callback).
-
-	   So *in theory* only one of these "if" blocks will be
-	   executed. */
-
-	if (key->rec) {
-		if (key->tk.key_value) {
-			/* Key down. */
-			cw_rec_mark_begin(key->rec, &key->timer);
-		} else {
-			/* Key up. */
-			cw_rec_mark_end(key->rec, &key->timer);
-		}
-	}
-
-	if (key->key_callback_func) {
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "tk set value: about to call callback, key state = %d\n", key->tk.key_value);
-
-		(*key->key_callback_func)(&key->timer, key->tk.key_value, key->key_callback_arg);
-	}
-	if (key->key_legacy_callback_func) {
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "tk set value: about to call legacy callback, key state = %d\n", key->tk.key_value);
-
-		(*key->key_legacy_callback_func)(key->key_legacy_callback_arg, key->tk.key_value);
-	}
-
-	return;
-}
-
-
-
-
-/**
    Comment for key used as iambic keyer:
    Iambic keyer cannot function without an associated generator. A
    keyer has to have some generator to function correctly. Generator
@@ -318,7 +209,6 @@ void cw_key_tk_set_value_internal(volatile cw_key_t *key, int key_state)
 */
 void cw_key_register_generator(volatile cw_key_t * key, cw_gen_t * gen)
 {
-	/* General key. */
 	key->gen = gen;
 	gen->key = key;
 
@@ -371,6 +261,8 @@ void cw_key_register_receiver(volatile cw_key_t * key, cw_rec_t * rec)
 
    If and only if the function registers change of key value, an
    external callback function for keying (if configured) is called.
+   TODO: this is not entirely precise. The callback will be called
+   from generator, after generator notices change of its state.
 
    If and only if the function registers change of key value, a state
    of related generator \p gen is changed accordingly (a tone is
@@ -411,12 +303,17 @@ int cw_key_sk_set_value_internal(volatile cw_key_t *key, int key_state)
 
 		(*key->key_callback_func)(&key->timer, key->sk.key_value, key->key_callback_arg);
 	}
-	if (key->key_legacy_callback_func) {
+#ifdef KAMIL
+	if (key->gen->state_tracking.state_tracking_callback_func) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
 			      MSG_PREFIX "sk set value: about to call legacy callback, key state = %d\n", key->sk.key_value);
 
-		(*key->key_legacy_callback_func)(key->key_legacy_callback_arg, key->sk.key_value);
+		(*key->gen->state_tracking.state_tracking_callback_func)(gen->state_tracking.state_tracking_callback_arg, key->sk.key_value);
+		fprintf(stderr, "%s:%d legacy callback called for sk\n", __func__, __LINE__);
+	} else {
+		fprintf(stderr, "%s:%d no legacy callback registered for sk\n", __func__, __LINE__);
 	}
+#endif
 
 	int rv;
 	if (key->sk.key_value == CW_KEY_STATE_CLOSED) {
@@ -471,6 +368,8 @@ int cw_key_sk_set_value_internal(volatile cw_key_t *key, int key_state)
    is passed to the callback as argument. Callback is called by this
    function only when there is a change of key value - this function
    filters successive key-down or key-up actions into a single action.
+   TODO: this is not entirely precise. The callback will be called
+   from generator, after generator notices change of its state.
 
    TODO: explain difference and relation between key's value and
    keyer's graph state.
@@ -507,12 +406,17 @@ int cw_key_ik_set_value_internal(volatile cw_key_t *key, int key_state, char sym
 
 		(*key->key_callback_func)(&key->timer, key->ik.key_value, key->key_callback_arg);
 	}
-	if (key->key_legacy_callback_func) {
+#ifdef KAMIL
+	if (key->gen->state_tracking.state_tracking_callback_func) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
 			      MSG_PREFIX "ik set value: about to call legacy callback, key state = %d\n", key->ik.key_value);
 
-		(*key->key_legacy_callback_func)(key->key_legacy_callback_arg, key->ik.key_value);
+		(*key->gen->state_tracking.state_tracking_callback_func)(key->gen->state_tracking.state_tracking_callback_arg, key->ik.key_value);
+		fprintf(stderr, "%s:%d legacy callback called for for ik\n", __func__, __LINE__);
+	} else {
+		fprintf(stderr, "%s:%d no legacy callback registered for ik\n", __func__, __LINE__);
 	}
+#endif
 
 	/* 'Partial' means without any end-of-mark spaces. */
 	int rv = cw_gen_enqueue_partial_symbol_internal(key->gen, symbol);
@@ -1389,8 +1293,6 @@ cw_key_t * cw_key_new(void)
 
 	key->key_callback_func = NULL;
 	key->key_callback_arg = NULL;
-	key->key_legacy_callback_func = NULL;
-	key->key_legacy_callback_arg = NULL;
 
 	key->sk.key_value = CW_KEY_STATE_OPEN;
 
@@ -1406,8 +1308,6 @@ cw_key_t * cw_key_new(void)
 	key->ik.curtis_b_latch = false;
 
 	key->ik.lock = false;
-
-	key->tk.key_value = CW_KEY_STATE_OPEN;
 
 	key->timer.tv_sec = 0;
 	key->timer.tv_usec = 0;

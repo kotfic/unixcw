@@ -39,8 +39,6 @@ enum {
 
 /* For modern API. */
 typedef void (* cw_key_callback_t)(volatile struct timeval * timestamp, int key_state, void * callback_arg);
-/* For legacy API. */
-typedef void (* cw_key_legacy_callback_t)(void * callback_arg, int key_state);
 
 
 struct cw_key_struct {
@@ -77,7 +75,9 @@ struct cw_key_struct {
 	   receiver: iambic keyer mechanism may be used to ensure a
 	   functioning iambic keyer, but there may be a
 	   different/external/3-rd party receiver that is
-	   controlled/fed by cw_key_t->key_callback_func function. */
+	   controlled/fed by cw_key_t::key_callback_func
+	   function. TODO: verify that the callback still exists in
+	   cw_key_t. */
 	cw_rec_t * rec;
 
 	/* External "on key state change" callback function and its
@@ -90,10 +90,6 @@ struct cw_key_struct {
 	   argument for it. */
 	cw_key_callback_t key_callback_func;
 	void * key_callback_arg;
-
-	cw_key_legacy_callback_t key_legacy_callback_func;
-	void * key_legacy_callback_arg;
-
 
 	/* Straight key. */
 	struct {
@@ -127,11 +123,6 @@ struct cw_key_struct {
 	} ik;
 
 
-	/* Tone-queue key. */
-	struct {
-		int key_value;    /* Open/Closed, Space/Mark, NoSound/Sound. */
-	} tk;
-
 	/* Every key event needs to have a timestamp. */
 	struct timeval timer;
 
@@ -146,10 +137,6 @@ typedef struct cw_key_struct cw_key_t;
 
 
 
-
-void cw_key_register_legacy_keying_callback_internal(volatile cw_key_t * key, cw_key_legacy_callback_t callback_func, void * callback_arg);
-
-void cw_key_tk_set_value_internal(volatile cw_key_t * key, int key_state);
 
 int  cw_key_ik_update_graph_state_internal(volatile cw_key_t * key);
 void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs);

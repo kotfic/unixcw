@@ -54,6 +54,11 @@ enum { CW_SYMBOL_SPACE = ' ' };
 
 
 
+typedef void (* cw_gen_state_tracking_callback_t)(void * callback_arg, int state);
+
+
+
+
 struct cw_gen_struct {
 
 	/* Tone queue. */
@@ -268,9 +273,11 @@ struct cw_gen_struct {
 
 	   Standalone generator will have this set to NULL. But
 	   generator that is used by a key will have this set to
-	   non-NULL value with
-	   cw_key_register_generator(). Remember that the key
-	   needs to have a generator, not the other way around. */
+	   non-NULL value with cw_key_register_generator().
+
+	   Remember that the key needs to have a generator, not the
+	   other way around. TODO: explain why key requires a
+	   generator. */
 	volatile struct cw_key_struct *key;
 
 
@@ -336,6 +343,26 @@ struct cw_gen_struct {
 	int  (* write)(cw_gen_t *gen);
 
 
+	/*
+	  Current state of generator, as dictated by value of the tone
+	  that has been most recently dequeued. State tracking
+	  mechanism filters out consecutive tones with the same on/off
+	  value, providing a consistent 'current' state.
+
+	  The state is down/up; closed/open; generating/silent;
+	  on/off; mark/space; sound/no-sound.
+
+	  We also have a callback pointer. Callback can be registered
+	  by client code, and generator will call it each time the
+	  state changes.
+	*/
+	struct state_tracking {
+		int state;
+
+		cw_gen_state_tracking_callback_t state_tracking_callback_func;
+		void * state_tracking_callback_arg;
+	} state_tracking;
+
 	/* Sound system - OSS. */
 	struct {
 		int x;
@@ -373,7 +400,7 @@ int cw_gen_enqueue_eoc_space_internal(cw_gen_t *gen);
 int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen);
 
 /* These are also 'enqueue' primitives, but are intended to be used on
-   hardware key events. 'key' is a verb here. */
+   hardware keying events. */
 int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen);
 int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen);
 int cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol);
@@ -397,6 +424,9 @@ void cw_generator_delete_internal(void);
 
 void cw_gen_reset_parameters_internal(cw_gen_t *gen);
 void cw_gen_sync_parameters_internal(cw_gen_t *gen);
+
+
+void cw_gen_register_state_tracking_callback_internal(cw_gen_t * gen, cw_gen_state_tracking_callback_t callback_func, void * callback_arg);
 
 
 

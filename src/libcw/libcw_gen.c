@@ -131,6 +131,11 @@ const unsigned int cw_supported_sample_rates[] = {
 
 
 
+static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, int dequeued_now, int dequeued_prev);
+static void cw_key_tk_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, int key_state);
+
+
+
 
 /* Every sound system opens an sound device: a default device, or some
    other device. Default devices have their default names, and here is
@@ -570,6 +575,13 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 		}
 	}
 
+	/* State tracking. */
+	{
+		gen->state_tracking.state = CW_KEY_STATE_OPEN;
+		gen->state_tracking.state_tracking_callback_func = NULL;
+		gen->state_tracking.state_tracking_callback_arg = NULL;
+	}
+
 	cw_sigalrm_install_top_level_handler_internal(); /* TODO: still needed? */
 	return gen;
 }
@@ -967,36 +979,11 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 			continue;
 		}
 
-		bool is_empty_tone = !dequeued_now && dequeued_prev;
+		const bool is_empty_tone = !dequeued_now && dequeued_prev;
+
+		cw_gen_state_tracking_internal(gen, &tone, dequeued_now, dequeued_prev);
 
 		if (gen->key) {
-			int state = CW_KEY_STATE_OPEN;
-
-			if ((dequeued_now && dequeued_prev) || (dequeued_now && !dequeued_prev)) {
-				/* Flag combinations 1 and 2.
-				   A valid tone has been dequeued just now. */
-				state = tone.frequency ? CW_KEY_STATE_CLOSED : CW_KEY_STATE_OPEN;
-
-			} else if (!dequeued_now && dequeued_prev) {
-				/* Flag combination 3.
-				   Tone queue just went empty. No tone == no sound. */
-				state = CW_KEY_STATE_OPEN;
-
-			} else {
-				/* !dequeued_now && !dequeued_prev */
-				/* Flag combination 4.
-				   Tone queue continues to be empty.
-				   This combination was handled right
-				   after cw_tq_dequeue_internal(), we
-				   should be waiting there for kick
-				   from tone queue.  Us being here is
-				   an error. */
-				cw_assert (0, MSG_PREFIX "uncaught combination of flags: dequeued_now = %d, dequeued_prev = %d",
-					   dequeued_now, dequeued_prev);
-			}
-			cw_key_tk_set_value_internal(gen->key, state);
-
-
 			cw_key_ik_increment_timer_internal(gen->key, tone.duration);
 		}
 		dequeued_prev = dequeued_now;
@@ -3011,3 +2998,143 @@ int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
 	return CW_SUCCESS;
 }
 
+
+
+
+static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, int dequeued_now, int dequeued_prev)
+{
+	int state = CW_KEY_STATE_OPEN;
+
+	if ((dequeued_now && dequeued_prev) || (dequeued_now && !dequeued_prev)) {
+		/* Flag combinations 1 and 2.
+		   A valid tone has been dequeued just now. */
+		state = tone->frequency ? CW_KEY_STATE_CLOSED : CW_KEY_STATE_OPEN;
+
+	} else if (!dequeued_now && dequeued_prev) {
+		/* Flag combination 3.
+		   Tone queue just went empty. No tone == no sound. */
+		state = CW_KEY_STATE_OPEN;
+	} else {
+		/* !dequeued_now && !dequeued_prev */
+		/* Flag combination 4.
+		   Tone queue continues to be empty.
+		   This combination was handled right
+		   after cw_tq_dequeue_internal(), we
+		   should be waiting there for kick
+		   from tone queue.  Us being here is
+		   an error. */
+		cw_assert (0, MSG_PREFIX "uncaught combination of flags: dequeued_now = %d, dequeued_prev = %d",
+			   dequeued_now, dequeued_prev);
+	}
+	cw_key_tk_set_value_internal(gen, gen->key, state);
+
+	return CW_SUCCESS;
+}
+
+
+
+
+/**
+   \brief Set new state of generator
+
+   Filter successive state-off or state-on actions into a single
+   action (successive calls with the same value of \p state don't
+   change internally registered state of generator).
+
+   If and only if the function registers change of generator state, an
+   external callback function (if configured) is called.
+
+   \param gen generator for which to set new state
+   \param state state of generator to be set
+*/
+void cw_key_tk_set_value_internal(cw_gen_t * gen, volatile cw_key_t *key, int state)
+{
+	cw_assert (key, MSG_PREFIX "tk set value: key is NULL");
+
+	if (gen->state_tracking.state == state) {
+		/* This is not an error. This may happen when
+		   dequeueing 'forever' tone multiple times in a
+		   row. */
+		// fprintf(stderr, "gen: dropping the same state %d -> %d\n", gen->state_tracking.state, state); // TODO: uncomment this and see how often it's called for straight key actions in xcwcp
+		return;
+	}
+
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
+		      MSG_PREFIX "tk set value: %d->%d", gen->state_tracking.state, state);
+
+	/* Remember the new generator state. */
+	gen->state_tracking.state = state;
+
+	/*
+	  In theory client code should register either a receiver (so
+	  events from key are passed to receiver directly), or a
+	  callback (so events from key are passed to receiver through
+	  callback).
+
+	  See comment for cw_key_register_receiver() in libcw_key.c:
+
+	  "Receiver should somehow receive key events from physical or
+	  logical key. This can be done in one of two ways:"
+
+	  These two ways are represented by the two 'if' blocks
+	  below. So *in theory* only one of these "if" blocks will be
+	  executed.
+	*/
+
+	if (false && key->rec) {
+		if (gen->state_tracking.state) {
+			/* Key down. */
+			cw_rec_mark_begin(key->rec, &key->timer);
+		} else {
+			/* Key up. */
+			cw_rec_mark_end(key->rec, &key->timer);
+		}
+	}
+//#ifdef KAMIL
+	if (key && key->key_callback_func) {
+		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
+			      MSG_PREFIX "set gen state: about to call callback, key state = %d\n", gen->state_tracking.state);
+
+		(*key->key_callback_func)(&key->timer, gen->state_tracking.state, key->key_callback_arg);
+	}
+//#endif
+
+	if (gen->state_tracking.state_tracking_callback_func) {
+		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
+			      MSG_PREFIX "set gen state: about to call state tracking callback, generator state = %d\n", gen->state_tracking.state);
+
+		(*gen->state_tracking.state_tracking_callback_func)(gen->state_tracking.state_tracking_callback_arg, gen->state_tracking.state);
+	}
+
+	return;
+}
+
+
+
+
+/**
+   \brief Register external callback function for tracking state of generator
+
+   Register a \p callback_func function that should be called when a
+   state of a \p gen changes from "on" to "off", or vice-versa.
+
+   The first argument passed to the registered callback function is
+   the supplied \p callback_arg, if any.
+
+   The second argument passed to registered callback function is the
+   generator state: "on" (one/true), and "off" (zero/false).
+
+   Calling this routine with a NULL function address removes
+   previously registered callback.
+
+   \param gen
+   \param callback_func - callback function to be called on generator state changes
+   \param callback_arg - first argument to callback_func
+*/
+void cw_gen_register_state_tracking_callback_internal(cw_gen_t * gen, cw_gen_state_tracking_callback_t callback_func, void * callback_arg)
+{
+	gen->state_tracking.state_tracking_callback_func = callback_func;
+	gen->state_tracking.state_tracking_callback_arg = callback_arg;
+
+	return;
+}
