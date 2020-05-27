@@ -26,9 +26,6 @@
 
 #include "libcw.h"
 #include "libcw2.h"
-//#include "../../libcw/libcw_key.h"
-//#include "../../libcw/libcw_gen.h"
-//#include "../../libcw/libcw_rec.h"
 #include "../../libcw/libcw_utils.h"
 #include "test_framework.h"
 
@@ -508,14 +505,10 @@ void * receiver_input_generator_fn(void * arg)
 	cw_gen_t * gen = cw_gen_new(CW_AUDIO_NULL, NULL);
 	cw_gen_set_label(gen, "input gener. gen");
 
-	cw_rec_t * rec = cw_rec_new();
-	cw_rec_set_label(rec, "input gener. rec");
-
 	cw_key_t key;
 	cw_key_set_label(&key, "input gener. key");
 
 	cw_key_register_generator(&key, gen);
-	cw_key_register_receiver(&key, rec);
 	cw_key_register_keying_callback(&key, test_callback_func, arg);
 
 
@@ -529,7 +522,6 @@ void * receiver_input_generator_fn(void * arg)
 	cw_usleep_internal(1000 * 1000);
 
 	cw_gen_delete(&gen);
-	cw_rec_delete(&rec);
 	xcwcp_receiver->generating_in_progress = false;
 
 
@@ -561,7 +553,7 @@ void receiver_stop_test_code(Receiver * xcwcp_receiver)
 
 void prepare_input_text_buffer(Receiver * xcwcp_receiver)
 {
-#if 1
+#if 0
 	const char input[REC_TEST_BUFFER_SIZE] =
 		"the quick brown fox jumps over the lazy dog. 01234567890 "     /* Simple test. */
 		"abcdefghijklmnopqrstuvwxyz0123456789\"'$()+,-./:;=?_@<>!&^~ "  /* Almost all characters. */

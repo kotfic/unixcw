@@ -36,7 +36,6 @@
 #include "libcw2.h"
 #include "../libcw/libcw_key.h"
 #include "../libcw/libcw_gen.h"
-#include "../libcw/libcw_rec.h"
 #include "../libcw/libcw_tq.h"
 #include "../libcw/libcw_utils.h"
 
@@ -648,7 +647,7 @@ void Receiver::poll_space()
 
 void prepare_input_text_buffer(Receiver * xcwcp_receiver)
 {
-#if 1
+#if 0
 	const char input[REC_TEST_BUFFER_SIZE] =
 		"the quick brown fox jumps over the lazy dog. 01234567890 "     /* Simple test. */
 		"abcdefghijklmnopqrstuvwxyz0123456789\"'$()+,-./:;=?_@<>!&^~ "  /* Almost all characters. */
@@ -741,11 +740,9 @@ void * receiver_input_generator_fn(void * arg)
 	   to enqueue text and control key. Sound will be played by
 	   main generator used by xcwcp */
 	cw_gen_t * gen = cw_gen_new(CW_AUDIO_NULL, NULL);
-	cw_rec_t * rec = cw_rec_new();
 	cw_key_t key;
 
 	cw_key_register_generator(&key, gen);
-	cw_key_register_receiver(&key, rec);
 	cw_key_register_keying_callback(&key, test_callback_func, arg);
 
 	/* Start sending the test string. Registered callback will be
@@ -755,10 +752,9 @@ void * receiver_input_generator_fn(void * arg)
 
 	/* Wait for all characters to be played out. */
 	cw_tq_wait_for_level_internal(gen->tq, 0);
-	cw_usleep_internal(1000 * 000);
+	cw_usleep_internal(1000 * 1000);
 
 	cw_gen_delete(&gen);
-	cw_rec_delete(&rec);
 
 
 	compare_text_buffers(xcwcp_receiver);
