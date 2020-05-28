@@ -28,6 +28,7 @@
 #include "libcw2.h"
 #include "../../libcw/libcw_utils.h"
 #include "test_framework.h"
+#include "cw_common.h"
 
 
 
@@ -59,24 +60,35 @@
 
 
 
-
-typedef struct Receiver {
-	char test_input_string[REC_TEST_BUFFER_SIZE];
-
-	/* Array large enough to contain characters received (polled)
-	   correctly and possible additional characters received
-	   incorrectly. */
-	char test_received_string[10 * REC_TEST_BUFFER_SIZE];
-
-	 /* Iterator to the array above. */
-	int test_received_string_i;
-
-	pthread_t receiver_test_code_thread_id;
+typedef struct tester_t {
 
 	/* Whether generating timed events for receiver by test code
 	   is in progress. */
 	bool generating_in_progress;
 
+	pthread_t receiver_test_code_thread_id;
+
+	char input_string[REC_TEST_BUFFER_SIZE];
+
+	/* Iterator to the array above. */
+	size_t input_string_i;
+
+	/* Array large enough to contain characters received (polled)
+	   correctly and possible additional characters received
+	   incorrectly. */
+	char received_string[10 * REC_TEST_BUFFER_SIZE];
+
+	/* Iterator to the array above. */
+	size_t received_string_i;
+
+	cw_gen_t * gen;
+	cw_key_t key;
+} tester_t;
+
+static tester_t g_tester;
+
+
+typedef struct Receiver {
 	cw_test_executor_t * cte;
 
 
@@ -116,6 +128,7 @@ static Receiver g_xcwcp_receiver;
 
 /* Callback. */
 void xcwcp_handle_libcw_keying_event(void * timer, int key_state);
+void low_tone_queue_callback(void * arg);
 
 int legacy_api_test_rec_poll(cw_test_executor_t * cte);
 void * receiver_input_generator_fn(void * arg);
@@ -128,11 +141,11 @@ void receiver_poll_character(Receiver * xcwcp_receiver);
 void receiver_poll_space(Receiver * xcwcp_receiver);
 
 void test_callback_func(volatile struct timeval * tv, int key_state, void * arg);
-void receiver_start_test_code(Receiver * xcwcp_receiver);
-void receiver_stop_test_code(Receiver * xcwcp_receiver);
+void tester_start_test_code(tester_t * tester);
+void tester_stop_test_code(tester_t * tester);
 
-void compare_text_buffers(Receiver * xcwcp_receiver);
-void prepare_input_text_buffer(Receiver * xcwcp_receiver);
+void tester_compare_text_buffers(tester_t * tester);
+void tester_prepare_input_text_buffer(tester_t * tester);
 
 
 
@@ -308,7 +321,7 @@ void receiver_poll_character(Receiver * xcwcp_receiver)
 		{ /* Actual test code. */
 
 			bool failure = false;
-			xcwcp_receiver->test_received_string[xcwcp_receiver->test_received_string_i++] = c;
+			g_tester.received_string[g_tester.received_string_i++] = c;
 
 			bool is_end_of_word_r = false;
 			bool is_error_r = false;
@@ -428,7 +441,7 @@ void receiver_poll_space(Receiver * xcwcp_receiver)
 			}
 
 
-			xcwcp_receiver->test_received_string[xcwcp_receiver->test_received_string_i++] = ' ';
+			g_tester.received_string[g_tester.received_string_i++] = ' ';
 
 			bool is_end_of_word_r = false;
 			bool is_error_r = false;
@@ -493,39 +506,46 @@ void receiver_sk_event(Receiver * xcwcp_receiver, bool is_down)
 */
 void * receiver_input_generator_fn(void * arg)
 {
-	Receiver * xcwcp_receiver = (Receiver *) arg;
+	tester_t * tester = arg;
 
-
-	prepare_input_text_buffer(xcwcp_receiver);
+	tester_prepare_input_text_buffer(tester);
 
 
 	/* Using Null sound system because this generator is only used
 	   to enqueue text and control key. Sound will be played by
 	   main generator used by xcwcp */
-	cw_gen_t * gen = cw_gen_new(CW_AUDIO_NULL, NULL);
-	cw_gen_set_label(gen, "input gener. gen");
+	tester->gen = cw_gen_new(CW_AUDIO_NULL, NULL);
+	cw_tq_register_low_level_callback_internal(tester->gen->tq, low_tone_queue_callback, tester, 5);
 
-	cw_key_t key;
-	cw_key_set_label(&key, "input gener. key");
-
-	cw_key_register_generator(&key, gen);
-	cw_key_register_keying_callback(&key, test_callback_func, arg);
+	cw_key_register_generator(&tester->key, tester->gen);
+	cw_key_register_keying_callback(&tester->key, test_callback_func, &g_xcwcp_receiver);
 
 
 	/* Start sending the test string. Registered callback will be
-	   called on every mark/space. */
-	cw_gen_start(gen);
-	cw_gen_enqueue_string(gen, xcwcp_receiver->test_input_string);
+	   called on every mark/space. Enqueue only initial part of
+	   string, just to start sending, the rest should be sent by
+	   'low watermark' callback. */
+	cw_gen_start(tester->gen);
+	for (int i = 0; i < 5; i++) {
+		const char c = tester->input_string[tester->input_string_i];
+		if ('\0' == c) {
+			/* A very short input string. */
+			break;
+		} else {
+			cw_gen_enqueue_character(tester->gen, c);
+			tester->input_string_i++;
+		}
+	}
 
 	/* Wait for all characters to be played out. */
-	cw_tq_wait_for_level_internal(gen->tq, 0);
+	cw_tq_wait_for_level_internal(tester->gen->tq, 0);
 	cw_usleep_internal(1000 * 1000);
 
-	cw_gen_delete(&gen);
-	xcwcp_receiver->generating_in_progress = false;
+	cw_gen_delete(&tester->gen);
+	tester->generating_in_progress = false;
 
 
-	compare_text_buffers(&g_xcwcp_receiver);
+	tester_compare_text_buffers(tester);
 
 
 	return NULL;
@@ -534,24 +554,24 @@ void * receiver_input_generator_fn(void * arg)
 
 
 
-void receiver_start_test_code(Receiver * xcwcp_receiver)
+void tester_start_test_code(tester_t * tester)
 {
-	xcwcp_receiver->generating_in_progress = true;
-	pthread_create(&xcwcp_receiver->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, xcwcp_receiver);
+	tester->generating_in_progress = true;
+	pthread_create(&tester->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, tester);
 }
 
 
 
 
-void receiver_stop_test_code(Receiver * xcwcp_receiver)
+void tester_stop_test_code(tester_t * tester)
 {
-	pthread_cancel(xcwcp_receiver->receiver_test_code_thread_id);
+	pthread_cancel(tester->receiver_test_code_thread_id);
 }
 
 
 
 
-void prepare_input_text_buffer(Receiver * xcwcp_receiver)
+void tester_prepare_input_text_buffer(tester_t * tester)
 {
 #if 0
 	const char input[REC_TEST_BUFFER_SIZE] =
@@ -560,10 +580,10 @@ void prepare_input_text_buffer(Receiver * xcwcp_receiver)
 		"one two three four five six seven eight nine ten eleven";      /* Words and spaces. */
 #else
 	/* Short test for occasions where I need a quick test. */
-	const char input[REC_TEST_BUFFER_SIZE] = "one two";
+	const char input[REC_TEST_BUFFER_SIZE] = "one two three four paris";
 	//const char input[REC_TEST_BUFFER_SIZE] = "the quick brown fox jumps over the lazy dog. 01234567890";
 #endif
-	snprintf(xcwcp_receiver->test_input_string, sizeof (xcwcp_receiver->test_input_string), "%s", input);
+	snprintf(tester->input_string, sizeof (tester->input_string), "%s", input);
 
 	return;
 }
@@ -575,34 +595,34 @@ void prepare_input_text_buffer(Receiver * xcwcp_receiver)
    that was received from tested production receiver.
 
    Compare input text with what the receiver received. */
-void compare_text_buffers(Receiver * xcwcp_receiver)
+void tester_compare_text_buffers(tester_t * tester)
 {
 	/* Luckily for us the text enqueued in test generator and
 	   played at ~12WPM is recognized by xcwcp receiver from the
 	   beginning without any problems, so we will be able to do
 	   simple strcmp(). */
 
-	fprintf(stderr, "[II] Sent:     '%s'\n", xcwcp_receiver->test_input_string);
-	fprintf(stderr, "[II] Received: '%s'\n", xcwcp_receiver->test_received_string);
+	fprintf(stderr, "[II] Sent:     '%s'\n", tester->input_string);
+	fprintf(stderr, "[II] Received: '%s'\n", tester->received_string);
 
 	/* Normalize received string. */
 	{
-		const size_t len = strlen(xcwcp_receiver->test_received_string);
+		const size_t len = strlen(tester->received_string);
 		for (size_t i = 0; i < len; i++) {
-			xcwcp_receiver->test_received_string[i] = tolower(xcwcp_receiver->test_received_string[i]);
+			tester->received_string[i] = tolower(tester->received_string[i]);
 		}
-		if (xcwcp_receiver->test_received_string[len - 1] == ' ') {
-			xcwcp_receiver->test_received_string[len - 1] = '\0';
+		if (tester->received_string[len - 1] == ' ') {
+			tester->received_string[len - 1] = '\0';
 		}
 	}
 
 
-	const int compare_result = strcmp(xcwcp_receiver->test_input_string, xcwcp_receiver->test_received_string);
-	if (xcwcp_receiver->cte->expect_op_int(xcwcp_receiver->cte, compare_result, "==", 0, "Final comparison of sent and received strings")) {
+	const int compare_result = strcmp(tester->input_string, tester->received_string);
+	if (g_xcwcp_receiver.cte->expect_op_int(g_xcwcp_receiver.cte, compare_result, "==", 0, "Final comparison of sent and received strings")) {
 		fprintf(stderr, "[II] Test result: success\n");
 	} else {
 		fprintf(stderr, "[EE] Test result: failure\n");
-		fprintf(stderr, "[EE] '%s' != '%s'\n", xcwcp_receiver->test_input_string, xcwcp_receiver->test_received_string);
+		fprintf(stderr, "[EE] '%s' != '%s'\n", tester->input_string, tester->received_string);
 	}
 
 	return;
@@ -637,6 +657,7 @@ int legacy_api_test_rec_poll(cw_test_executor_t * cte)
 
 
 	cw_clear_receive_buffer();
+	cw_set_frequency(cte->config->frequency);
 	cw_generator_start();
 
 	/* Register handler as the CW library keying event callback.
@@ -654,18 +675,16 @@ int legacy_api_test_rec_poll(cw_test_executor_t * cte)
 	//fprintf(stderr, "time on aux config: %10ld : %10ld\n", xcwcp_receiver.main_timer.tv_sec, xcwcp_receiver.main_timer.tv_usec);
 
 
-
-
-
 	/* Prepare xcwcp_receiver object. */
 	memset(&g_xcwcp_receiver, 0, sizeof (g_xcwcp_receiver));
 	g_xcwcp_receiver.cte = cte;
 
 
 	/* Start thread with test code. */
-	receiver_start_test_code(&g_xcwcp_receiver);
+	tester_start_test_code(&g_tester);
 
-	while (g_xcwcp_receiver.generating_in_progress) {
+
+	while (g_tester.generating_in_progress) {
 		/* At 60WPM, a dot is 20ms, so polling for the maximum speed
 		   library needs a 10ms timeout. */
 		usleep(10);
@@ -675,7 +694,7 @@ int legacy_api_test_rec_poll(cw_test_executor_t * cte)
 	/* Stop thread with test code.
 	   Is this really needed? The thread should already be stopped
 	   if we get here. */
-	receiver_stop_test_code(&g_xcwcp_receiver);
+	tester_stop_test_code(&g_tester);
 
 
 	/* Tell legacy objects of libcw (those in production code) to stop working. */
@@ -687,4 +706,26 @@ int legacy_api_test_rec_poll(cw_test_executor_t * cte)
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
+}
+
+
+
+
+void low_tone_queue_callback(void * arg)
+{
+	tester_t * tester = (tester_t *) arg;
+
+	for (int i = 0; i < 5; i++) {
+		const char c = tester->input_string[tester->input_string_i];
+		if ('\0' == c) {
+			/* Unregister ourselves. */
+			cw_tq_register_low_level_callback_internal(tester->gen->tq, NULL, NULL, 0);
+			break;
+		} else {
+			cw_gen_enqueue_character(tester->gen, c);
+			tester->input_string_i++;
+		}
+	}
+
+	return;
 }
