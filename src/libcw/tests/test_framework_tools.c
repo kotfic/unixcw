@@ -144,3 +144,96 @@ void resource_meas_do_measurement(resource_meas * meas)
 
 	return;
 }
+
+
+
+
+void cwtest_param_ranger_init(cwtest_param_ranger_t * ranger, int min, int max, int step, int initial_value)
+{
+	ranger->range_min = min;
+	ranger->range_max = max;
+	ranger->step = step;
+	ranger->previous_value = initial_value;
+
+	ranger->plateau_length = 0;
+
+	if (initial_value == ranger->range_max) {
+		ranger->direction = cwtest_param_ranger_direction_down; /* We can't go up, we are already at max. */
+	} else {
+		ranger->direction = cwtest_param_ranger_direction_up;
+	}
+}
+
+
+
+
+bool cwtest_param_ranger_get_next(cwtest_param_ranger_t * ranger, int * new_value)
+{
+	if (ranger->interval_sec) {
+		/* Generate new value only after specific time
+		   interval has passed since last value was
+		   returned. */
+		const time_t now_timestamp = time(NULL);
+		if (now_timestamp < ranger->previous_timestamp + ranger->interval_sec) {
+			/* Don't generate new value yet. */
+			return false;
+		} else {
+			ranger->previous_timestamp = now_timestamp;
+			/* Go to code that will calculate new value. */
+		}
+	}
+
+
+	/* TODO: when min or max is reached, we should stay on this
+	   'plateau' for few calls. It may be useful to see how tested
+	   objects operate with min/max values of parameters not just
+	   for one period, but for few (10? 100? 1000?) periods. */
+
+	int val = 0;
+	if (ranger->direction == cwtest_param_ranger_direction_up) {
+		val = ranger->previous_value + ranger->step;
+		if (val >= ranger->range_max) {
+			val = ranger->range_max;
+			ranger->direction = cwtest_param_ranger_direction_down; /* Starting with next call, start returning decreasing values. */
+
+			/* TODO: reached plateau here. Stay on the plateau for few calls. */
+		}
+
+	} else if (ranger->direction == cwtest_param_ranger_direction_down) {
+		val = ranger->previous_value - ranger->step;
+		if (val <= ranger->range_min) {
+			val = ranger->range_min;
+			ranger->direction = cwtest_param_ranger_direction_up; /* Starting with next call, start returning increasing values. */
+
+			/* TODO: reached plateau here. Stay on the plateau for few calls. */
+		}
+
+	} else if (ranger->direction & cwtest_param_ranger_direction_plateau) {
+		/* TODO: implement plateau. */
+	} else {
+		fprintf(stderr, "[EE] Unhandled direction %02x\n", ranger->direction);
+		return false;
+	}
+
+
+	ranger->previous_value = val;
+
+	fprintf(stderr, "[DD] Returning new parameter value %d\n", val);
+	*new_value = val;
+
+	return true;
+}
+
+
+
+
+void cwtest_param_ranger_with_interval_sec(cwtest_param_ranger_t * ranger, time_t interval_sec)
+{
+	if (interval_sec) {
+		ranger->previous_timestamp = time(NULL);
+		ranger->interval_sec = interval_sec;
+	} else {
+		ranger->previous_timestamp = 0;
+		ranger->interval_sec = 0;
+	}
+}
