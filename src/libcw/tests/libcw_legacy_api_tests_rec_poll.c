@@ -86,6 +86,16 @@ typedef struct tester_t {
 	cw_key_t key;
 
 	cwtest_param_ranger_t speed_ranger;
+
+
+	/* Input variable for the test. Decreasing or increasing
+	   decides how many characters are enqueued with the same
+	   speed S1. Next batch of characters will be enqueued with
+	   another speed S2. Depending on how long it will take to
+	   dequeue this batch, the difference between S2 and S1 may be
+	   significant and this will throw receiver off. */
+	int characters_to_enqueue;
+
 } tester_t;
 
 static tester_t g_tester;
@@ -580,8 +590,10 @@ void tester_start_test_code(tester_t * tester)
 	cw_key_register_keying_callback(&tester->key, test_callback_func, &g_xcwcp_receiver);
 
 
+	/* TODO: use full range of allowed speeds. */
 	cwtest_param_ranger_init(&tester->speed_ranger, 6 /* CW_SPEED_MIN */, 40 /* CW_SPEED_MAX */, 1, cw_gen_get_speed(tester->gen));
-	cwtest_param_ranger_with_interval_sec(&tester->speed_ranger, 4);
+	cwtest_param_ranger_set_interval_sec(&tester->speed_ranger, 4);
+	cwtest_param_ranger_set_plateau_length(&tester->speed_ranger, 6);
 
 
 	pthread_create(&tester->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, tester);
@@ -674,22 +686,27 @@ void tester_compare_text_buffers(tester_t * tester)
 		fprintf(stderr, "[EE] Test result: failure\n");
 		fprintf(stderr, "[EE] '%s' != '%s'\n", tester->input_string, tester->received_string);
 
+		fprintf(stderr, "\n");
+
 		/* Show exactly where the difference is */
 		const size_t len_in = strlen(tester->input_string);
 		const size_t len_rec = strlen(tester->received_string);
+		const int diffs_to_show_max = 5;
 
+		fprintf(stderr, "[EE] Printing up to %d first differences\n", diffs_to_show_max);
 		int reported = 0;
 		for (size_t i = 0; i < len_in && i < len_rec; i++) {
 			if (tester->input_string[i] != tester->received_string[i]) {
-				fprintf(stderr, "[EE] char %zd: input %d (%c) vs. received %d (%c)\n",
+				fprintf(stderr, "[EE] char %6zd: input %4d (%c) vs. received %4d (%c)\n",
 					i,
 					(int) tester->input_string[i], (int) tester->input_string[i],
 					tester->received_string[i], tester->received_string[i]);
 				reported++;
 			}
-			if (reported == 5) {
+			if (reported == diffs_to_show_max) {
 				/* Don't print them all if there are more of X differences. */
 				fprintf(stderr, "[EE] more differences may be present, but not showing them\n");
+				break;
 			}
 		}
 		if (0 == reported) {
@@ -697,6 +714,8 @@ void tester_compare_text_buffers(tester_t * tester)
 			   skipped checking end of one of strings. */
 			fprintf(stderr, "[EE] difference appears to be at end of one of strings\n");
 		}
+
+		fprintf(stderr, "\n");
 	}
 
 	return;
@@ -728,6 +747,10 @@ int legacy_api_test_rec_poll(cw_test_executor_t * cte)
 		fprintf(stderr, "failed to create generator\n");
 		return -1;
 	}
+
+
+	/* Configure test parameters. */
+	g_tester.characters_to_enqueue = 5;
 
 
 	cw_clear_receive_buffer();
@@ -796,7 +819,7 @@ void low_tone_queue_callback(void * arg)
 {
 	tester_t * tester = (tester_t *) arg;
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < tester->characters_to_enqueue; i++) {
 		const char c = tester->input_string[tester->input_string_i];
 		if ('\0' == c) {
 			/* Unregister ourselves. */

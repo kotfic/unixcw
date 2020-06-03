@@ -184,11 +184,6 @@ bool cwtest_param_ranger_get_next(cwtest_param_ranger_t * ranger, int * new_valu
 	}
 
 
-	/* TODO: when min or max is reached, we should stay on this
-	   'plateau' for few calls. It may be useful to see how tested
-	   objects operate with min/max values of parameters not just
-	   for one period, but for few (10? 100? 1000?) periods. */
-
 	int val = 0;
 	if (ranger->direction == cwtest_param_ranger_direction_up) {
 		val = ranger->previous_value + ranger->step;
@@ -196,7 +191,11 @@ bool cwtest_param_ranger_get_next(cwtest_param_ranger_t * ranger, int * new_valu
 			val = ranger->range_max;
 			ranger->direction = cwtest_param_ranger_direction_down; /* Starting with next call, start returning decreasing values. */
 
-			/* TODO: reached plateau here. Stay on the plateau for few calls. */
+			if (0 != ranger->plateau_length) {
+				fprintf(stderr, "[DD] Entering 'maximum' plateau, value = %d\n", ranger->range_max);
+				ranger->direction |= cwtest_param_ranger_direction_plateau;
+				ranger->plateau_remaining = ranger->plateau_length;
+			}
 		}
 
 	} else if (ranger->direction == cwtest_param_ranger_direction_down) {
@@ -205,11 +204,28 @@ bool cwtest_param_ranger_get_next(cwtest_param_ranger_t * ranger, int * new_valu
 			val = ranger->range_min;
 			ranger->direction = cwtest_param_ranger_direction_up; /* Starting with next call, start returning increasing values. */
 
-			/* TODO: reached plateau here. Stay on the plateau for few calls. */
+			if (0 != ranger->plateau_length) {
+				fprintf(stderr, "[DD] Entering 'minimum' plateau, value = %d\n", ranger->range_min);
+				ranger->direction |= cwtest_param_ranger_direction_plateau;
+				ranger->plateau_remaining = ranger->plateau_length;
+			}
 		}
 
 	} else if (ranger->direction & cwtest_param_ranger_direction_plateau) {
-		/* TODO: implement plateau. */
+		/* Will return the same value as previously. */
+		val = ranger->previous_value;
+
+		if (ranger->plateau_remaining > 0) {
+			fprintf(stderr, "[DD] On plateau, remaining %d\n", ranger->plateau_remaining);
+			ranger->plateau_remaining--;
+		} else {
+			/* Leave the plateau. Bit indicating direction
+			   up or direction down will be read and used
+			   in next function call. */
+			fprintf(stderr, "[DD] Leaving plateau\n");
+			ranger->direction &= (~cwtest_param_ranger_direction_plateau);
+		}
+
 	} else {
 		fprintf(stderr, "[EE] Unhandled direction %02x\n", ranger->direction);
 		return false;
@@ -227,7 +243,7 @@ bool cwtest_param_ranger_get_next(cwtest_param_ranger_t * ranger, int * new_valu
 
 
 
-void cwtest_param_ranger_with_interval_sec(cwtest_param_ranger_t * ranger, time_t interval_sec)
+void cwtest_param_ranger_set_interval_sec(cwtest_param_ranger_t * ranger, time_t interval_sec)
 {
 	if (interval_sec) {
 		ranger->previous_timestamp = time(NULL);
@@ -235,5 +251,17 @@ void cwtest_param_ranger_with_interval_sec(cwtest_param_ranger_t * ranger, time_
 	} else {
 		ranger->previous_timestamp = 0;
 		ranger->interval_sec = 0;
+	}
+}
+
+
+
+
+void cwtest_param_ranger_set_plateau_length(cwtest_param_ranger_t * ranger, int plateau_length)
+{
+	if (plateau_length) {
+		ranger->plateau_length = plateau_length;
+	} else {
+		ranger->plateau_length = 0;
 	}
 }

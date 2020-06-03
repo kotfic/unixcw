@@ -171,9 +171,10 @@ typedef struct cwtest_param_ranger_t {
 	*/
 	int plateau_length;
 
-	/* Internal helper variable. If plateau_length() is non-zero,
-	   how many calls to _get_next() were executed on plateau? */
-	int plateau_i;
+	/* Internal helper variable. If plateau_length is non-zero,
+	   how many next calls to _get_next() should return previous
+	   (minimal or maximal) value? */
+	int plateau_remaining;
 } cwtest_param_ranger_t;
 
 
@@ -214,7 +215,28 @@ void cwtest_param_ranger_init(cwtest_param_ranger_t * ranger, int min, int max, 
    @param ranger
    @param interval_sec at what intervals the call to _get_next() will return true and will return next value of parameter
 */
-void cwtest_param_ranger_with_interval_sec(cwtest_param_ranger_t * ranger, time_t interval_sec);
+void cwtest_param_ranger_set_interval_sec(cwtest_param_ranger_t * ranger, time_t interval_sec);
+
+
+
+
+/**
+   @brief Configure plateau length for ranger
+
+   When value calculated by ranger reaches min or max, decide how many
+   following calls to _get_next() will return the same value equal to
+   min or max. The values returned by _get_next() will stay on that
+   'plateau' for approximately @p plateau_length calls. After
+   approximately @p plateau_length calls, the values returned by
+   _get_next() will leave the plateau and will start to change again.
+
+   Pass zero value of @p plateau_length to disable this feature for @p
+   ranger.
+
+   @param ranger
+   @param plateau_length how many calls to _get_next() will return non-changing min or max value, when the min/max is reached
+*/
+void cwtest_param_ranger_set_plateau_length(cwtest_param_ranger_t * ranger, int plateau_length);
 
 
 
@@ -226,7 +248,7 @@ void cwtest_param_ranger_with_interval_sec(cwtest_param_ranger_t * ranger, time_
    through @p new_value. Otherwise false is returned.
 
    If @param ranger is configured to use intervals (with
-   cwtest_param_ranger_with_interval_sec()), only calls that are
+   cwtest_param_ranger_set_interval_sec()), only calls that are
    separated by at least given time interval will return
    true. Otherwise each call to _get_next() will be successful.
 
