@@ -314,7 +314,7 @@ int cw_rec_get_label(const cw_rec_t * rec, char * label, size_t size);
 
 /* Helper receive functions. */
 int  cw_rec_poll_character(cw_rec_t *rec, const struct timeval *timestamp, char *c, bool *is_end_of_word, bool *is_error);
-void cw_rec_reset_state(cw_rec_t *rec);
+
 
 /* Setters of receiver's essential parameters. */
 int  cw_rec_set_speed(cw_rec_t * rec, int new_value);
@@ -330,7 +330,37 @@ int   cw_rec_get_tolerance(const cw_rec_t * rec);
 int   cw_rec_get_noise_spike_threshold(const cw_rec_t * rec);
 bool  cw_rec_get_adaptive_mode(const cw_rec_t * rec);
 
+
+
+
+/**
+   \brief Reset receiver's state
+
+   The state includes, but is not limited to, state graph and
+   representation buffer.
+
+   Receiver's parameters and statistics are not reset by this function.
+   To reset statistics use cw_rec_reset_statistics().
+*/
+void cw_rec_reset_state(cw_rec_t * rec);
+
+
+
+
+/**
+   \brief Reset receiver's statistics
+
+   Reset the receiver's statistics by removing all records from it and
+   returning it to its initial default state.
+
+   reviewed-on 2017-02-02
+
+   \param rec - receiver
+*/
 void cw_rec_reset_statistics(cw_rec_t * rec);
+
+
+
 
 /* Main receive functions. */
 int cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * timestamp);

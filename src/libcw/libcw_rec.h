@@ -18,6 +18,7 @@
 
 
 #include "libcw.h"
+#include "libcw_debug.h"
 
 
 
@@ -243,6 +244,11 @@ void cw_rec_get_statistics_internal(cw_rec_t *rec, double *dot_sd, double *dash_
 				    double *element_end_sd, double *character_end_sd);
 int cw_rec_get_buffer_length_internal(const cw_rec_t *rec);
 int cw_rec_get_receive_buffer_capacity_internal(void);
+
+
+
+
+void CW_REC_SET_STATE(cw_rec_t * rec, int new_state, cw_debug_t * debug_object);
 
 
 

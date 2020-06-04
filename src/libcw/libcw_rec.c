@@ -728,18 +728,6 @@ void cw_rec_get_statistics_internal(cw_rec_t *rec, double *dot_sd, double *dash_
 
 
 
-/**
-   \brief Clear the receive statistics buffer
-
-   Function handling receiver statistics.
-
-   Clear the receive statistics buffer by removing all records from it and
-   returning it to its initial default state.
-
-   \reviewed on 2017-02-02
-
-   \param rec - receiver
-*/
 void cw_rec_reset_statistics(cw_rec_t * rec)
 {
 	for (int i = 0; i < CW_REC_STATISTICS_CAPACITY; i++) {
@@ -809,15 +797,15 @@ void cw_rec_reset_statistics(cw_rec_t * rec)
 
 
 
-#define CW_REC_SET_STATE(m_rec, m_new_state, m_debug_object)		\
-	{								\
-		cw_debug_msg ((m_debug_object),				\
-			      CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,	\
-			      MSG_PREFIX "'%s': state: %s -> %s @ %s:%d", \
-			      (m_rec)->label,				\
-			      cw_receiver_states[(m_rec)->state], cw_receiver_states[(m_new_state)], __func__, __LINE__); \
-		(m_rec)->state = (m_new_state);				\
-	}
+void CW_REC_SET_STATE(cw_rec_t * rec, int new_state, cw_debug_t * debug_object)
+{
+	cw_debug_msg ((debug_object),
+		      CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
+		      MSG_PREFIX "'%s': state: %s -> %s @ %s:%d",
+		      (rec)->label,
+		      cw_receiver_states[rec->state], cw_receiver_states[new_state], __func__, __LINE__);
+	rec->state = new_state;
+}
 
 
 
@@ -1749,12 +1737,6 @@ int cw_rec_poll_character(cw_rec_t * rec,
 
 
 
-
-/**
-   \brief Reset state of receiver
-
-   The function doesn't reset parameters or statistics.
-*/
 void cw_rec_reset_state(cw_rec_t * rec)
 {
 	memset(rec->representation, 0, sizeof (rec->representation));

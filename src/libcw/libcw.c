@@ -1637,10 +1637,18 @@ int cw_receive_character(const struct timeval *timestamp,
    This routine must be called after successful, or terminating,
    cw_receive_representation() or cw_receive_character() calls, to
    clear the states and prepare the buffer to receive more marks and spaces.
+
+   When migrating to libcw2.h, use cw_rec_reset_state()
+   instead of this function.
 */
 void cw_clear_receive_buffer(void)
 {
-	cw_rec_reset_state(&cw_receiver);
+	/* In 3.5.1 this was implemented by cw_rec_clear_buffer_internal() like this: */
+
+	memset(cw_receiver.representation, 0, sizeof (cw_receiver.representation));
+	cw_receiver.representation_ind = 0;
+
+	CW_REC_SET_STATE (&cw_receiver, RS_IDLE, (&cw_debug_object));
 
 	return;
 }
@@ -1687,10 +1695,19 @@ int cw_get_receive_buffer_length(void)
    Clear the receiver's representation buffer, statistics, and any
    retained receiver's state.  This function is suitable for calling
    from an application exit handler.
+
+   When migrating to libcw2.h, use cw_rec_reset_state() and
+   cw_rec_reset_statistics() instead of this function.
 */
 void cw_reset_receive(void)
 {
-	cw_rec_reset_state(&cw_receiver);
+	/* In 3.5.1 this was implemented by cw_rec_reset_internal() like this: */
+
+	memset(cw_receiver.representation, 0, sizeof (cw_receiver.representation));
+	cw_receiver.representation_ind = 0;
+	CW_REC_SET_STATE ((&cw_receiver), RS_IDLE, (&cw_debug_object));
+
+	cw_rec_reset_statistics(&cw_receiver);
 
 	return;
 }
