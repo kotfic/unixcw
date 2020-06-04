@@ -139,6 +139,21 @@ def print_functions_set(header, functions):
 
 
 
+def print_function_row(function_counter, function_name, is_in_so, is_in_fut):
+    print('{:>3}   {:<50}'.format(function_counter, function_name), end='')
+
+    if is_in_so:
+        print("       ", end='')
+    else:
+        print("    so-", end='')
+
+    if is_in_fut:
+        print("        ")
+    else:
+        print("    fut-")
+
+
+
 
 if __name__ == '__main__':
     so_symbols = set()
@@ -149,17 +164,42 @@ if __name__ == '__main__':
     if sys.argv[3] == '--code':
         tested_functions = find_tested_functions_in_dir(sys.argv[4], "LIBCW_TEST_FUT")
 
-    print_functions_set("All libcw function symbols:", so_symbols)
-    print_functions_set("\nlibcw functions under test:", tested_functions)
-    print_functions_set("libcw functions not tested yet:", so_symbols - tested_functions)
-    print("\n")
+    #print_functions_set("All libcw.so function symbols:", so_symbols)
+    #print_functions_set("\nlibcw FUT functions (functions under test):", tested_functions)
+    #print_functions_set("libcw functions not tested yet:", so_symbols - tested_functions)
+    #print("\n")
 
+
+    all_functions = so_symbols | tested_functions
     n_tested = len(tested_functions)
-    n_all = len(so_symbols)
+    n_all = len(all_functions)
 
     # Check if all tested symbols were found of list of symbols in
     # library:
-    if not tested_functions.issubset(so_symbols):
-        print("Error: set of tested functions is not a subset of all so symbols")
+    #if not tested_functions.issubset(so_symbols):
+    #    print("Error: set of FUT functions is not a subset of all so symbols")
+    #    # First build set of functions that are not common, and then preserve only tested functions.
+    #    not_in_so = (so_symbols ^ tested_functions) & tested_functions
+    #    print_functions_set("FUT functions not in .so:", not_in_so)
 
     print("Functions under test: {} out of {} ({:.2f}%)".format(n_tested, n_all, 100.0 *  n_tested/n_all))
+
+
+    fun_counter = 1
+    for fun in sorted(all_functions):
+        if not fun.endswith("_internal"):
+            is_in_so = fun in so_symbols
+            is_in_fut = fun in tested_functions
+            print_function_row(fun_counter, fun, is_in_so, is_in_fut)
+            fun_counter += 1
+
+    print("")
+
+    for fun in sorted(all_functions):
+        if fun.endswith("_internal"):
+            is_in_so = fun in so_symbols
+            is_in_fut = fun in tested_functions
+            print_function_row(fun_counter, fun, is_in_so, is_in_fut)
+            fun_counter += 1
+
+
