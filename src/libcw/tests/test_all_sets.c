@@ -34,6 +34,7 @@
 #include "libcw_legacy_api_tests.h"
 #include "libcw_legacy_api_tests_rec_poll.h"
 #include "libcw_test_tq_short_space.h"
+#include "libcw_gen_tests_state_callback.h"
 
 
 
@@ -137,6 +138,8 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_enqueue_character),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_enqueue_string),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_forever_internal),
+
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_state_callback),
 
 			LIBCW_TEST_FUNCTION_INSERT(NULL),
 		}

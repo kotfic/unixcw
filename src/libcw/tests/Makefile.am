@@ -95,21 +95,22 @@ libcw_test_legacy_api_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw $(top_buil
 
 
 libcw_test_all_SOURCES = \
-	test_main.c \
 	test_data.c \
 	test_all_sets.c \
-	test_framework.c \
-	test_framework_tools.c \
 	libcw_utils_tests.c \
 	libcw_data_tests.c \
 	libcw_debug_tests.c \
 	libcw_tq_tests.c \
 	libcw_gen_tests.c \
+	libcw_gen_tests_state_callback.c \
 	libcw_key_tests.c \
 	libcw_rec_tests.c \
 	libcw_legacy_api_tests.c \
 	libcw_legacy_api_tests_rec_poll.c \
-	$(LIBCW_BUG_TEST_FILES)
+	$(LIBCW_BUG_TEST_FILES) \
+	test_framework.c \
+	test_framework_tools.c \
+	test_main.c
 
 libcw_test_all_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
 #libcw_test_all_CFLAGS = -I../../
