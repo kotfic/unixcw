@@ -132,7 +132,7 @@ const unsigned int cw_supported_sample_rates[] = {
 
 
 static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, int dequeued_now, int dequeued_prev);
-static void cw_key_tk_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, int key_state);
+static void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, int key_state);
 
 
 
@@ -3026,7 +3026,7 @@ static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone
 		cw_assert (0, MSG_PREFIX "uncaught combination of flags: dequeued_now = %d, dequeued_prev = %d",
 			   dequeued_now, dequeued_prev);
 	}
-	cw_key_tk_set_value_internal(gen, gen->key, state);
+	cw_gen_state_tracking_set_value_internal(gen, gen->key, state);
 
 	return CW_SUCCESS;
 }
@@ -3047,7 +3047,7 @@ static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone
    \param gen generator for which to set new state
    \param state state of generator to be set
 */
-void cw_key_tk_set_value_internal(cw_gen_t * gen, volatile cw_key_t *key, int state)
+void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t *key, int state)
 {
 	cw_assert (key, MSG_PREFIX "tk set value: key is NULL");
 
@@ -3060,7 +3060,7 @@ void cw_key_tk_set_value_internal(cw_gen_t * gen, volatile cw_key_t *key, int st
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-		      MSG_PREFIX "tk set value: %d->%d", gen->state_tracking.state, state);
+		      MSG_PREFIX "set gen state: %d->%d", gen->state_tracking.state, state);
 
 	/* Remember the new generator state. */
 	gen->state_tracking.state = state;

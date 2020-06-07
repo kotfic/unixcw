@@ -222,9 +222,9 @@ void cw_key_register_generator(volatile cw_key_t * key, cw_gen_t * gen)
    Receiver should somehow receive key events from physical or logical
    key. This can be done in one of two ways:
 
-   1. key events -> key variable -> cw_key_tk_set_value_internal() ->
+   1. key events -> key variable -> cw_gen_state_tracking_set_value_internal() ->
       -> registered receiver -> cw_rec_mark_{begin|end}(key->rec, ...)
-   2. key events -> key variable -> cw_key_tk_set_value_internal() ->
+   2. key events -> key variable -> cw_gen_state_tracking_set_value_internal() ->
       -> registered callback function-> key->key_callback_function()
       -> cw_rec_mark_{begin|end}(rec, ...)
 
@@ -1403,4 +1403,3 @@ int cw_key_get_label(const cw_key_t * key, char * label, size_t size)
 
 	return CW_SUCCESS;
 }
-
