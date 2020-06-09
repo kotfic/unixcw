@@ -6,10 +6,12 @@
 
 
 
-/* With this input string we expect 18 high states for dots and dashes,
-   17 low states for inter-mark spaces + 1 low state for ending space. */
-static const char * input_string = "ooosss";
-#define TIMES_COUNT 36
+/*
+  With this input string we expect:
+  6*3 letters, each with 3 marks and 3 inter-mark-spaces = 108.
+*/
+static const char * input_string = "ooo""ooo""ooo""sss""sss""sss";
+#define TIMES_COUNT 108
 
 #define CW_EOE_REPRESENTATION '^'
 
@@ -44,7 +46,7 @@ struct data {
 	char representation;
 	int duration; /* microseconds */
 } times[TIMES_COUNT] = {
-	/* "o" */
+	/* "o" 1 */
 	{ CW_DASH_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION,  0 },
 	{ CW_DASH_REPRESENTATION, 0 },
@@ -52,7 +54,7 @@ struct data {
 	{ CW_DASH_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION,  0 },
 
-	/* "o" */
+	/* "o" 2 */
 	{ CW_DASH_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION,  0 },
 	{ CW_DASH_REPRESENTATION, 0 },
@@ -60,7 +62,7 @@ struct data {
 	{ CW_DASH_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION,  0 },
 
-	/* "o" */
+	/* "o" 3 */
 	{ CW_DASH_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION,  0 },
 	{ CW_DASH_REPRESENTATION, 0 },
@@ -68,7 +70,57 @@ struct data {
 	{ CW_DASH_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION,  0 },
 
-	/* "s" */
+	/* "o" 4 */
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+
+	/* "o" 5 */
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+
+	/* "o" 6 */
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+
+	/* "o" 7 */
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+
+	/* "o" 8 */
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+
+	/* "o" 9 */
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+	{ CW_DASH_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION,  0 },
+
+
+
+	/* "s" 1 */
 	{ CW_DOT_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION, 0 },
 	{ CW_DOT_REPRESENTATION, 0 },
@@ -76,7 +128,7 @@ struct data {
 	{ CW_DOT_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION, 0 },
 
-	/* "s" */
+	/* "s" 2 */
 	{ CW_DOT_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION, 0 },
 	{ CW_DOT_REPRESENTATION, 0 },
@@ -84,7 +136,55 @@ struct data {
 	{ CW_DOT_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION, 0 },
 
-	/* "s" */
+	/* "s" 3 */
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+
+	/* "s" 4 */
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+
+	/* "s" 5 */
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+
+	/* "s" 6 */
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+
+	/* "s" 7 */
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+
+	/* "s" 8 */
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+	{ CW_DOT_REPRESENTATION, 0 },
+	{ CW_EOE_REPRESENTATION, 0 },
+
+	/* "s" 9 */
 	{ CW_DOT_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION, 0 },
 	{ CW_DOT_REPRESENTATION, 0 },
