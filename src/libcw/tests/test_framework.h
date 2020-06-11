@@ -85,7 +85,7 @@ typedef struct cw_test_executor_t {
 
 	/* Sound system and test topic currently tested.
 	   Should be set right before calling a specific test function. */
-	int current_sound_system;
+	enum cw_audio_systems current_sound_system;
 	int current_topic;
 
 	/* Limit of characters that can be printed to console in one row. */
