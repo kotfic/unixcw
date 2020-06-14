@@ -9,6 +9,46 @@
 
 
 /*
+  This test is verifying if callback called on each change of state of
+  generator is called at proper intervals.
+
+  Client code can use cw_gen_register_state_tracking_callback_internal() to
+  register a callback. The callback will be called each time the generator
+  changes it's state between mark/space. The changes of state should occur at
+  time intervals specified by length of marks (dots, dashes) and spaces.
+
+  libcw is using sound card's (sound system's) blocking write property to
+  measure how often and for how long a generator should stay in particular
+  state. Generator will write e.g. mark to sound system, the blocking write
+  will block the generator for specified time, and then the generator will be
+  able to get from tone queue the next element (mark or space) and do another
+  blocking write to sound system.
+
+  Calls to the callback are made between each blocking write. The calls to
+  the callback will be made with smaller or larger precision, depending on:
+
+  1. the exact mechanism used by libcw. For now libcw uses blocking write,
+     but e.g. ALSA is offering other mechanisms that are right now
+     unexplored.
+
+  2. how well the libcw has configured the mechanism. Commit
+     cb99e7884dc5370519dc3a3eacfb3184959b0f87 has fixed an error in
+     configuration of ALSA's HW period size. That incorrect configuration has
+     led to the callback being called at totally invalid (very, very short)
+     intervals.
+
+  I started writing this test to verify that the fix from commit
+  cb99e7884dc5370519dc3a3eacfb3184959b0f87 has been working, but then I
+  thought that the test can work for any sound system supported by libcw. I
+  don't need to verify if low-level configuration of ALSA is working
+  correctly, I just need to verify if the callback mechanism (relying on
+  proper configuration of a sound system) is working correctly.
+*/
+
+
+
+
+/*
   With this input string we expect:
   6*3 letters, each with 3 marks and 3 inter-mark-spaces = 108.
 */
@@ -29,14 +69,22 @@ typedef struct divergence_t {
 
 
 
-typedef struct element_stats_t {
+typedef struct cw_element_t {
+	char representation;
+	int duration; /* microseconds */
+} cw_element_t;
+
+
+
+
+typedef struct cw_element_stats_t {
 	int duration_min;
 	int duration_avg;
 	int duration_max;
 
 	int duration_total;
 	int count;
-} element_stats_t;
+} cw_element_stats_t;
 
 
 
@@ -44,21 +92,28 @@ typedef struct element_stats_t {
 /* Type of data passed to callback.
    We need to store a persistent state of some data between callback calls. */
 typedef struct callback_data_t {
-	struct timeval prev_timestamp;
+	struct timeval prev_timestamp; /* Timestamp at which previous callback was made. */
 	int counter;
 } callback_data_t;
 
 
+
+
 typedef struct test_data_t {
+	/* Sound system for which we have reference data, and with which the
+	   current run of a test should be done. */
 	enum cw_audio_systems sound_system;
+
+	/* Speed (WPM) for which we have reference data, and at which current
+	   run of a test should be done (otherwise we will be comparing
+	   results of tests made in different conditions). */
 	int speed;
 
 	/* Reference values from tests in post_3.5.1 branch. */
 	struct divergence_t reference_div_dots;
 	struct divergence_t reference_div_dashes;
 
-
-	/* Values obtained in current test execution. */
+	/* Values obtained in current test run. */
 	struct divergence_t current_div_dots;
 	struct divergence_t current_div_dashes;
 } test_data_t;
@@ -67,10 +122,14 @@ typedef struct test_data_t {
 
 
 static void gen_callback_fn(void * callback_arg, int state);
-static void update_element_stats(element_stats_t * stats, int element_duration);
-static void print_element_stats_and_divergences(const element_stats_t * stats, const divergence_t * divergences, const char * name, int duration_expected);
-static void calculate_divergences_from_stats(const element_stats_t * stats, divergence_t * divergences, int duration_expected);
+static void update_element_stats(cw_element_stats_t * stats, int element_duration);
+static void print_element_stats_and_divergences(const cw_element_stats_t * stats, const divergence_t * divergences, const char * name, int duration_expected);
+static void calculate_divergences_from_stats(const cw_element_stats_t * stats, divergence_t * divergences, int duration_expected);
 static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_data_t * test_data);
+
+static void calculate_test_results(const cw_element_t * test_input_elements, test_data_t * test_data, int dot_usecs, int dash_usecs);
+static void evaluate_test_results(cw_test_executor_t * cte, test_data_t * test_data);
+static void clear_data(cw_element_t * test_input_elements);
 
 
 
@@ -155,11 +214,7 @@ static test_data_t g_test_data[] = {
 
 
 
-
-static struct test_element {
-	char representation;
-	int duration; /* microseconds */
-} g_test_input_elements[INPUT_ELEMENTS_COUNT] = {
+static cw_element_t g_test_input_elements[INPUT_ELEMENTS_COUNT] = {
 	/* "o" 1 */
 	{ CW_DASH_REPRESENTATION, 0 },
 	{ CW_EOE_REPRESENTATION,  0 },
@@ -317,7 +372,7 @@ static void gen_callback_fn(void * callback_arg, int state)
 	struct timeval now_timestamp = { 0 };
 	gettimeofday(&now_timestamp, NULL);
 
-	if (callback_data->counter) {
+	if (callback_data->counter > 0) { /* Don't do anything for zero-th element, for which there is no 'prev timestamp'. */
 		const int diff = cw_timestamp_compare_internal(&callback_data->prev_timestamp, &now_timestamp);
 #if 1
 		fprintf(stderr, "[II] Call %3d, state %d, representation = '%c', duration of previous element = %6d us\n",
@@ -352,7 +407,7 @@ static void gen_callback_fn(void * callback_arg, int state)
 
 
 
-static void update_element_stats(element_stats_t * stats, int element_duration)
+static void update_element_stats(cw_element_stats_t * stats, int element_duration)
 {
 	stats->duration_total += element_duration;
 	stats->count++;
@@ -369,7 +424,7 @@ static void update_element_stats(element_stats_t * stats, int element_duration)
 
 
 
-static void calculate_divergences_from_stats(const element_stats_t * stats, divergence_t * divergences, int duration_expected)
+static void calculate_divergences_from_stats(const cw_element_stats_t * stats, divergence_t * divergences, int duration_expected)
 {
 	divergences->min = 100 * (stats->duration_min - duration_expected) / (1.0 * duration_expected);
 	divergences->avg = 100 * (stats->duration_avg - duration_expected) / (1.0 * duration_expected);
@@ -379,7 +434,7 @@ static void calculate_divergences_from_stats(const element_stats_t * stats, dive
 
 
 
-static void print_element_stats_and_divergences(const element_stats_t * stats, const divergence_t * divergences, const char * name, int duration_expected)
+static void print_element_stats_and_divergences(const cw_element_stats_t * stats, const divergence_t * divergences, const char * name, int duration_expected)
 {
 	fprintf(stderr, "[II] duration of %7s: min/avg/max = %6d/%6d/%6d, expected = %6d, divergence min/avg/max = %8.3f%%/%8.3f%%/%8.3f%%\n",
 		name,
@@ -395,6 +450,7 @@ static void print_element_stats_and_divergences(const element_stats_t * stats, c
 
 
 
+/* Top-level test function. */
 cwt_retv test_cw_gen_state_callback(cw_test_executor_t * cte)
 {
 	const int max = cte->get_repetitions_count(cte);
@@ -469,81 +525,120 @@ static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_da
 	cw_gen_delete(&gen);
 
 
-	{
-		element_stats_t stats_dot  = { .duration_min = 1000000000, .duration_avg = 0, .duration_max = 0, .duration_total = 0, .count = 0 };
-		element_stats_t stats_dash = { .duration_min = 1000000000, .duration_avg = 0, .duration_max = 0, .duration_total = 0, .count = 0 };
+	calculate_test_results(g_test_input_elements, test_data, dot_usecs, dash_usecs);
+	evaluate_test_results(cte, test_data);
+	clear_data(g_test_input_elements);
 
-		/* Skip first two elements and a last element. The way
-		   the test is structured may impact correctness of
-		   values of these elements. TODO: make the elements
-		   correct. */
-		for (int i = 2; i < INPUT_ELEMENTS_COUNT - 1; i++) {
-			switch (g_test_input_elements[i].representation) {
-			case CW_DOT_REPRESENTATION:
-				update_element_stats(&stats_dot, g_test_input_elements[i].duration);
-				break;
-			case CW_DASH_REPRESENTATION:
-				update_element_stats(&stats_dash, g_test_input_elements[i].duration);
-				break;
-			case CW_EOE_REPRESENTATION:
-				/* TODO: implement. */
-				break;
-			default:
-				break;
-			}
-		}
+	return 0;
+}
 
-		calculate_divergences_from_stats(&stats_dot, &test_data->current_div_dots, dot_usecs);
-		calculate_divergences_from_stats(&stats_dash, &test_data->current_div_dashes, dash_usecs);
 
-		print_element_stats_and_divergences(&stats_dot, &test_data->current_div_dots, "dots", dot_usecs);
-		print_element_stats_and_divergences(&stats_dash, &test_data->current_div_dashes, "dashes", dash_usecs);
 
-		/* Margin above 1.0: allow current results to be slightly worse than reference.
-		   Margin below 1.0: accept current results only if they are better than reference. */
-		const double margin = 1.3;
-		{
-			const double expected_div = fabs(test_data->reference_div_dots.min) * margin;
-			const double current_div = fabs(test_data->current_div_dots.min);
-			cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, min");
-		}
-		{
-			const double expected_div = fabs(test_data->reference_div_dots.avg) * margin;
-			const double current_div = fabs(test_data->current_div_dots.avg);
-			cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, avg");
-		}
-		{
-			const double expected_div = fabs(test_data->reference_div_dots.max) * margin;
-			const double current_div = fabs(test_data->current_div_dots.max);
-			cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, max");
-		}
 
-		{
-			const double expected_div = fabs(test_data->reference_div_dashes.min) * margin;
-			const double current_div = fabs(test_data->current_div_dashes.min);
-			cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, min");
-		}
-		{
-			const double expected_div = fabs(test_data->reference_div_dashes.avg) * margin;
-			const double current_div = fabs(test_data->current_div_dashes.avg);
-			cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, avg");
-		}
-		{
-			const double expected_div = fabs(test_data->reference_div_dashes.max) * margin;
-			const double current_div = fabs(test_data->current_div_dashes.max);
-			cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, max");
-		}
+/**
+   Calculate current divergences (from current run of test) that will be
+   compared with reference values
+*/
+static void calculate_test_results(const cw_element_t * test_input_elements, test_data_t * test_data, int dot_usecs, int dash_usecs)
+{
+	cw_element_stats_t stats_dot  = { .duration_min = 1000000000, .duration_avg = 0, .duration_max = 0, .duration_total = 0, .count = 0 };
+	cw_element_stats_t stats_dash = { .duration_min = 1000000000, .duration_avg = 0, .duration_max = 0, .duration_total = 0, .count = 0 };
 
-		/* TODO: the test should also have test for absolute
-		   value of divergence, not only for comparison with
-		   post_3.5.1 branch. The production code should aim
-		   at low absolute divergence, e.g. no higher than 3%. */
-
-		/* Clear durations before next call of this test function. */
-		for (int i = 0; i < INPUT_ELEMENTS_COUNT; i++) {
-			g_test_input_elements[i].duration = 0;
+	/* Skip first two elements and a last element. The way
+	   the test is structured may impact correctness of
+	   values of these elements. TODO: make the elements
+	   correct. */
+	for (int i = 2; i < INPUT_ELEMENTS_COUNT - 1; i++) {
+		switch (test_input_elements[i].representation) {
+		case CW_DOT_REPRESENTATION:
+			update_element_stats(&stats_dot, test_input_elements[i].duration);
+			break;
+		case CW_DASH_REPRESENTATION:
+			update_element_stats(&stats_dash, test_input_elements[i].duration);
+			break;
+		case CW_EOE_REPRESENTATION:
+			/* TODO: implement. */
+			break;
+		default:
+			break;
 		}
 	}
 
-	return 0;
+	calculate_divergences_from_stats(&stats_dot, &test_data->current_div_dots, dot_usecs);
+	calculate_divergences_from_stats(&stats_dash, &test_data->current_div_dashes, dash_usecs);
+
+	print_element_stats_and_divergences(&stats_dot, &test_data->current_div_dots, "dots", dot_usecs);
+	print_element_stats_and_divergences(&stats_dash, &test_data->current_div_dashes, "dashes", dash_usecs);
+
+	return;
+}
+
+
+
+
+/**
+   Compare test results from current test run with reference data. Update
+   test results in @p cte.
+*/
+static void evaluate_test_results(cw_test_executor_t * cte, test_data_t * test_data)
+{
+	/* Margin above 1.0: allow current results to be slightly worse than reference.
+	   Margin below 1.0: accept current results only if they are better than reference. */
+	const double margin = 1.3;
+	{
+		const double expected_div = fabs(test_data->reference_div_dots.min) * margin;
+		const double current_div = fabs(test_data->current_div_dots.min);
+		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, min");
+	}
+	{
+		const double expected_div = fabs(test_data->reference_div_dots.avg) * margin;
+		const double current_div = fabs(test_data->current_div_dots.avg);
+		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, avg");
+	}
+	{
+		const double expected_div = fabs(test_data->reference_div_dots.max) * margin;
+		const double current_div = fabs(test_data->current_div_dots.max);
+		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, max");
+	}
+
+	{
+		const double expected_div = fabs(test_data->reference_div_dashes.min) * margin;
+		const double current_div = fabs(test_data->current_div_dashes.min);
+		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, min");
+	}
+	{
+		const double expected_div = fabs(test_data->reference_div_dashes.avg) * margin;
+		const double current_div = fabs(test_data->current_div_dashes.avg);
+		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, avg");
+	}
+	{
+		const double expected_div = fabs(test_data->reference_div_dashes.max) * margin;
+		const double current_div = fabs(test_data->current_div_dashes.max);
+		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, max");
+	}
+
+	/* TODO: the test should also have test for absolute
+	   value of divergence, not only for comparison with
+	   post_3.5.1 branch. The production code should aim
+	   at low absolute divergence, e.g. no higher than 3%. */
+
+	return;
+}
+
+
+
+
+/**
+   Clear data accumulated in current test run. The function should be used as
+   a preparation for next test run.
+*/
+static void clear_data(cw_element_t * test_input_elements)
+{
+	/* Clear durations calculated in current test before next call of
+	   this test function. */
+	for (int i = 0; i < INPUT_ELEMENTS_COUNT; i++) {
+		test_input_elements[i].duration = 0;
+	}
+
+	return;
 }
