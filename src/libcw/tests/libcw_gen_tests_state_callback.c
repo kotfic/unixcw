@@ -135,7 +135,11 @@ static void clear_data(cw_element_t * test_input_elements);
 
 
 /**
-  Results of test from branch post_3.5.1 with fixed ALSA HW period size.
+  Results of test from reference branch post_3.5.1 with:
+  1. fixed ALSA HW period size,
+  2. modified PA parameters, copied from these two commits:
+  https://github.com/m5evt/unixcw-3.5.1/commit/2d5491a461587ac4686e2d1b897619c98be05c9e
+  https://github.com/m5evt/unixcw-3.5.1/commit/c86785b595a6d711aae915150df2ccb848ace05c
 
 Null sound system, 4 WMP
 [II] duration of  dashes: min/avg/max = 900130/900208/900239, expected = 900000, divergence min/avg/max =    0.014%/   0.023%/   0.027%
@@ -144,8 +148,8 @@ ALSA sound system, 4 WPM
 [II] duration of  dashes: min/avg/max = 892462/895727/898281, expected = 900000, divergence min/avg/max =   -0.838%/  -0.475%/  -0.191%
 [II] duration of    dots: min/avg/max = 293087/296211/299484, expected = 300000, divergence min/avg/max =   -2.304%/  -1.263%/  -0.172%
 PulseAudio sound system, 4 WPM
-[II] duration of  dashes: min/avg/max = 877140/900892/915285, expected = 900000, divergence min/avg/max =   -2.540%/   0.099%/   1.698%
-[II] duration of    dots: min/avg/max = 272183/300046/303693, expected = 300000, divergence min/avg/max =   -9.272%/   0.015%/   1.231%
+[II] duration of  dashes: min/avg/max = 897406/900200/906788, expected = 900000, divergence min/avg/max =   -0.288%/   0.022%/   0.754%
+[II] duration of    dots: min/avg/max = 294511/299532/303330, expected = 300000, divergence min/avg/max =   -1.830%/  -0.156%/   1.110%
 
 
 Null sound system, 12 WPM
@@ -155,8 +159,8 @@ ALSA sound system, 12 WPM
 [II] duration of  dashes: min/avg/max = 292760/295770/299096, expected = 300000, divergence min/avg/max =   -2.413%/  -1.410%/  -0.301%
 [II] duration of    dots: min/avg/max =  93308/ 96458/ 98940, expected = 100000, divergence min/avg/max =   -6.692%/  -3.542%/  -1.060%
 PulseAudio sound system, 12 WPM
-[II] duration of  dashes: min/avg/max = 282423/300294/311018, expected = 300000, divergence min/avg/max =   -5.859%/   0.098%/   3.673%
-[II] duration of    dots: min/avg/max =  90186/ 99360/121223, expected = 100000, divergence min/avg/max =   -9.814%/  -0.640%/  21.223%
+[II] duration of  dashes: min/avg/max = 295562/299878/303009, expected = 300000, divergence min/avg/max =   -1.479%/  -0.041%/   1.003%
+[II] duration of    dots: min/avg/max =  97274/ 99937/106259, expected = 100000, divergence min/avg/max =   -2.726%/  -0.063%/   6.259%
 
 
 Null sound system, 24 WPM
@@ -166,8 +170,8 @@ ALSA sound system, 24 WPM
 [II] duration of  dashes: min/avg/max = 141977/147780/154997, expected = 150000, divergence min/avg/max =   -5.349%/  -1.480%/   3.331%
 [II] duration of    dots: min/avg/max =  44731/ 47361/ 49472, expected =  50000, divergence min/avg/max =  -10.538%/  -5.278%/  -1.056%
 PulseAudio sound system, 24 WPM
-[II] duration of  dashes: min/avg/max = 130758/147403/171182, expected = 150000, divergence min/avg/max =  -12.828%/  -1.731%/  14.121%
-[II] duration of    dots: min/avg/max =  40092/ 50132/ 70928, expected =  50000, divergence min/avg/max =  -19.816%/   0.264%/  41.856%
+[II] duration of  dashes: min/avg/max = 142998/149541/152615, expected = 150000, divergence min/avg/max =   -4.668%/  -0.306%/   1.743%
+[II] duration of    dots: min/avg/max =  45374/ 50002/ 53423, expected =  50000, divergence min/avg/max =   -9.252%/   0.004%/   6.846%
 
 
 Null sound system, 36 WPM
@@ -177,8 +181,8 @@ ALSA sound system, 36 WPM
 [II] duration of  dashes: min/avg/max =  93665/ 98788/106536, expected =  99999, divergence min/avg/max =   -6.334%/  -1.211%/   6.537%
 [II] duration of    dots: min/avg/max =  28537/ 32776/ 41330, expected =  33333, divergence min/avg/max =  -14.388%/  -1.671%/  23.991%
 PulseAudio sound system, 36 WPM
-[II] duration of  dashes: min/avg/max =  90342/100341/121119, expected =  99999, divergence min/avg/max =   -9.657%/   0.342%/  21.120%
-[II] duration of    dots: min/avg/max =  20046/ 32605/ 50773, expected =  33333, divergence min/avg/max =  -39.861%/  -2.184%/  52.321%
+[II] duration of  dashes: min/avg/max =  97477/100152/105279, expected =  99999, divergence min/avg/max =   -2.522%/   0.153%/   5.280%
+[II] duration of    dots: min/avg/max =  27914/ 33103/ 35747, expected =  33333, divergence min/avg/max =  -16.257%/  -0.690%/   7.242%
 
 
 Null sound system, 60WMP
@@ -188,8 +192,8 @@ ALSA sound system, 60WMP
 [II] duration of  dashes: min/avg/max =  52534/ 56223/ 57938, expected =  60000, divergence min/avg/max =  -12.443%/  -6.295%/  -3.437%
 [II] duration of    dots: min/avg/max =  12107/ 16164/ 16757, expected =  20000, divergence min/avg/max =  -39.465%/ -19.180%/ -16.215%
 PulseAudio sound system, 60WMP
-[II] duration of  dashes: min/avg/max =  40242/ 56756/ 71182, expected =  60000, divergence min/avg/max =  -32.930%/  -5.407%/  18.637%
-[II] duration of    dots: min/avg/max =    197/ 21812/ 30765, expected =  20000, divergence min/avg/max =  -99.015%/   9.060%/  53.825%
+[II] duration of  dashes: min/avg/max =  57549/ 60050/ 65158, expected =  60000, divergence min/avg/max =   -4.085%/   0.083%/   8.597%
+[II] duration of    dots: min/avg/max =  15114/ 19959/ 25528, expected =  20000, divergence min/avg/max =  -24.430%/  -0.205%/  27.640%
 */
 static test_data_t g_test_data[] = {
 	{ .sound_system = CW_AUDIO_NULL,      .speed =  4, .reference_div_dots = {    0.041,    0.068,    0.075 }, .reference_div_dashes = {    0.014,    0.023,    0.027 }},
@@ -204,11 +208,11 @@ static test_data_t g_test_data[] = {
 	{ .sound_system = CW_AUDIO_ALSA,      .speed = 36, .reference_div_dots = {  -14.388,   -1.671,   23.991 }, .reference_div_dashes = {   -6.334,   -1.211,    6.537 }},
 	{ .sound_system = CW_AUDIO_ALSA,      .speed = 60, .reference_div_dots = {  -39.465,  -19.180,  -16.215 }, .reference_div_dashes = {  -12.443,   -6.295,   -3.437 }},
 
-	{ .sound_system = CW_AUDIO_PA,        .speed =  4, .reference_div_dots = {   -9.272,    0.015,    1.231 }, .reference_div_dashes = {   -2.540,    0.099,    1.698 }},
-	{ .sound_system = CW_AUDIO_PA,        .speed = 12, .reference_div_dots = {   -9.814,   -0.640,   21.223 }, .reference_div_dashes = {   -5.859,    0.098,    3.673 }},
-	{ .sound_system = CW_AUDIO_PA,        .speed = 24, .reference_div_dots = {  -19.816,    0.264,   41.856 }, .reference_div_dashes = {  -12.828,   -1.731,   14.121 }},
-	{ .sound_system = CW_AUDIO_PA,        .speed = 36, .reference_div_dots = {  -39.861,   -2.184,   52.321 }, .reference_div_dashes = {   -9.657,    0.342,   21.120 }},
-	{ .sound_system = CW_AUDIO_PA,        .speed = 60, .reference_div_dots = {  -99.015,    9.060,   53.825 }, .reference_div_dashes = {  -32.930,   -5.407,   18.637 }},
+	{ .sound_system = CW_AUDIO_PA,        .speed =  4, .reference_div_dots = {   -1.830,   -0.156,    1.110 }, .reference_div_dashes = {   -0.288,    0.022,    0.754 }},
+	{ .sound_system = CW_AUDIO_PA,        .speed = 12, .reference_div_dots = {   -2.726,   -0.063,    6.259 }, .reference_div_dashes = {   -1.479,   -0.041,    1.003 }},
+	{ .sound_system = CW_AUDIO_PA,        .speed = 24, .reference_div_dots = {   -9.252,    0.004,    6.846 }, .reference_div_dashes = {   -4.668,   -0.306,    1.743 }},
+	{ .sound_system = CW_AUDIO_PA,        .speed = 36, .reference_div_dots = {  -16.257,   -0.690,    7.242 }, .reference_div_dashes = {   -2.522,    0.153,    5.280 }},
+	{ .sound_system = CW_AUDIO_PA,        .speed = 60, .reference_div_dots = {  -24.430,   -0.205,   27.640 }, .reference_div_dashes = {   -4.085,    0.083,    8.597 }},
 };
 
 
@@ -584,7 +588,7 @@ static void evaluate_test_results(cw_test_executor_t * cte, test_data_t * test_d
 {
 	/* Margin above 1.0: allow current results to be slightly worse than reference.
 	   Margin below 1.0: accept current results only if they are better than reference. */
-	const double margin = 1.3;
+	const double margin = 1.5;
 	{
 		const double expected_div = fabs(test_data->reference_div_dots.min) * margin;
 		const double current_div = fabs(test_data->current_div_dots.min);
