@@ -915,7 +915,7 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 	self->stdout = stdout;
 	self->stderr = stderr;
 
-	self->use_resource_meas = true;
+	self->use_resource_meas = false;
 
 	self->expect_op_int = cw_test_expect_op_int;
 	self->expect_op_int_errors_only = cw_test_expect_op_int_errors_only;
