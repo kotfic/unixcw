@@ -3090,14 +3090,6 @@ void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
 			cw_rec_mark_end(key->rec, &key->timer);
 		}
 	}
-//#ifdef KAMIL
-	if (key && key->key_callback_func) {
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "set gen state: about to call callback, key state = %d\n", gen->state_tracking.state);
-
-		(*key->key_callback_func)(&key->timer, gen->state_tracking.state, key->key_callback_arg);
-	}
-//#endif
 
 	if (gen->state_tracking.state_tracking_callback_func) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,

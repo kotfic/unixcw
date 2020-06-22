@@ -705,7 +705,7 @@ void compare_text_buffers(Receiver * xcwcp_receiver)
 
 
 
-void test_callback_func(volatile timeval * timer, int key_state, void * arg)
+void test_callback_func(void * arg, int key_state)
 {
 	/* Inform xcwcp receiver (which will inform libcw receiver)
 	   about new state of straight key ("sk").
@@ -743,7 +743,8 @@ void * receiver_input_generator_fn(void * arg)
 	cw_key_t key;
 
 	cw_key_register_generator(&key, gen);
-	cw_key_register_keying_callback(&key, test_callback_func, arg);
+	cw_gen_register_state_tracking_callback_internal(gen, test_callback_func, arg);
+	//cw_key_register_keying_callback(&key, test_callback_func, arg);
 
 	/* Start sending the test string. Registered callback will be
 	   called on every mark/space. */

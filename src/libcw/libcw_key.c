@@ -156,40 +156,6 @@ static int cw_key_sk_set_value_internal(volatile cw_key_t * key, int key_state);
 
 
 
-/**
-   \brief Register external callback function for keying
-
-   Register a \p callback_func function that should be called when a
-   state of a \p key changes from "key open" to "key closed", or
-   vice-versa.
-
-   The first argument passed to the registered callback is key's timer.
-
-   The second argument passed to the registered callback function is
-   the supplied \p callback_arg, if any.
-
-   The third argument passed to registered callback function is the
-   key state: CW_KEY_STATE_CLOSED (one/true) for "key closed", and
-   CW_KEY_STATE_OPEN (zero/false) for "key open".
-
-   Calling this routine with a NULL function address disables keying
-   callbacks.  Any callback supplied will be called in signal handler
-   context (TODO ??).
-
-   \param key
-   \param callback_func - callback function to be called on key state changes
-   \param callback_arg - first argument to callback_func
-*/
-void cw_key_register_keying_callback(volatile cw_key_t * key, cw_key_callback_t callback_func, void * callback_arg)
-{
-	key->key_callback_func = callback_func;
-	key->key_callback_arg = callback_arg;
-
-	return;
-}
-
-
-
 
 /**
    Comment for key used as iambic keyer:
@@ -296,24 +262,8 @@ int cw_key_sk_set_value_internal(volatile cw_key_t *key, int key_state)
 	/* Remember the new key value. */
 	key->sk.key_value = key_state;
 
-	/* Call a registered callback. */
-	if (key->key_callback_func) {
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "sk set value: about to call callback, key state = %d\n", key->sk.key_value);
-
-		(*key->key_callback_func)(&key->timer, key->sk.key_value, key->key_callback_arg);
-	}
-#ifdef KAMIL
-	if (key->gen->state_tracking.state_tracking_callback_func) {
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "sk set value: about to call legacy callback, key state = %d\n", key->sk.key_value);
-
-		(*key->gen->state_tracking.state_tracking_callback_func)(gen->state_tracking.state_tracking_callback_arg, key->sk.key_value);
-		fprintf(stderr, "%s:%d legacy callback called for sk\n", __func__, __LINE__);
-	} else {
-		fprintf(stderr, "%s:%d no legacy callback registered for sk\n", __func__, __LINE__);
-	}
-#endif
+	/* TODO: if you want to have a per-key callback called on each key state 
+	  change, you should call it here. */
 
 	int rv;
 	if (key->sk.key_value == CW_KEY_STATE_CLOSED) {
@@ -399,24 +349,8 @@ int cw_key_ik_set_value_internal(volatile cw_key_t *key, int key_state, char sym
 	/* Remember the new key value. */
 	key->ik.key_value = key_state;
 
-	/* Call a registered callback. */
-	if (key->key_callback_func) {
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "ik set value: about to call callback, key state = %d\n", key->ik.key_value);
-
-		(*key->key_callback_func)(&key->timer, key->ik.key_value, key->key_callback_arg);
-	}
-#ifdef KAMIL
-	if (key->gen->state_tracking.state_tracking_callback_func) {
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "ik set value: about to call legacy callback, key state = %d\n", key->ik.key_value);
-
-		(*key->gen->state_tracking.state_tracking_callback_func)(key->gen->state_tracking.state_tracking_callback_arg, key->ik.key_value);
-		fprintf(stderr, "%s:%d legacy callback called for for ik\n", __func__, __LINE__);
-	} else {
-		fprintf(stderr, "%s:%d no legacy callback registered for ik\n", __func__, __LINE__);
-	}
-#endif
+	/* TODO: if you want to have a per-key callback called on each key state 
+	  change, you should call it here. */
 
 	/* 'Partial' means without any end-of-mark spaces. */
 	int rv = cw_gen_enqueue_partial_symbol_internal(key->gen, symbol);
@@ -1290,9 +1224,6 @@ cw_key_t * cw_key_new(void)
 
 	key->gen = (cw_gen_t *) NULL;
 	key->rec = (cw_rec_t *) NULL;
-
-	key->key_callback_func = NULL;
-	key->key_callback_arg = NULL;
 
 	key->sk.key_value = CW_KEY_STATE_OPEN;
 

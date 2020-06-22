@@ -153,7 +153,7 @@ void receiver_poll_report_error(Receiver * xcwcp_receiver);
 void receiver_poll_character(Receiver * xcwcp_receiver);
 void receiver_poll_space(Receiver * xcwcp_receiver);
 
-void test_callback_func(volatile struct timeval * tv, int key_state, void * arg);
+void test_callback_func(void * arg, int key_state);
 void tester_start_test_code(tester_t * tester);
 void tester_stop_test_code(tester_t * tester);
 
@@ -587,7 +587,7 @@ void tester_start_test_code(tester_t * tester)
 	cw_tq_register_low_level_callback_internal(tester->gen->tq, low_tone_queue_callback, tester, 5);
 
 	cw_key_register_generator(&tester->key, tester->gen);
-	cw_key_register_keying_callback(&tester->key, test_callback_func, &g_xcwcp_receiver);
+	cw_gen_register_state_tracking_callback_internal(tester->gen, test_callback_func, &g_xcwcp_receiver);
 
 
 	/* TODO: use full range of allowed speeds. */
@@ -724,7 +724,7 @@ void tester_compare_text_buffers(tester_t * tester)
 
 
 
-void test_callback_func(volatile struct timeval * tv, int key_state, void * arg)
+void test_callback_func(void * arg, int key_state)
 {
 	/* Inform libcw receiver about new state of straight key ("sk").
 

@@ -221,7 +221,6 @@ int cw_key_get_label(const cw_key_t * key, char * label, size_t size);
 
 
 
-void cw_key_register_keying_callback(volatile cw_key_t * key, cw_key_callback_t callback_func, void * callback_arg);
 void cw_key_register_generator(volatile cw_key_t * key, cw_gen_t * gen);
 void cw_key_register_receiver(volatile cw_key_t * key, cw_rec_t * rec);
 

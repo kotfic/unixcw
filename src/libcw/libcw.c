@@ -140,10 +140,6 @@ static volatile cw_key_t cw_key = {
 	.rec = &cw_receiver,
 
 
-	.key_callback_func = NULL,
-	.key_callback_arg = NULL,
-
-
 	.sk = {
 		.key_value = CW_KEY_STATE_OPEN
 	},

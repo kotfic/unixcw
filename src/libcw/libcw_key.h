@@ -80,16 +80,6 @@ struct cw_key_struct {
 	   cw_key_t. */
 	cw_rec_t * rec;
 
-	/* External "on key state change" callback function and its
-	   argument.
-
-	   It may be useful for a client to have this library control
-	   an external keying device, for example, an oscillator, or a
-	   transmitter.  Here is where we keep the address of a
-	   function that is passed to us for this purpose, and a void*
-	   argument for it. */
-	cw_key_callback_t key_callback_func;
-	void * key_callback_arg;
 
 	/* Straight key. */
 	struct {
