@@ -302,7 +302,7 @@ bool cw_is_alsa_possible(const char *device)
 				  0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
 	if (rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "is possible: can't open ALSA device '%s'", dev);
+			      MSG_PREFIX "is possible: can't open ALSA device '%s': %s", dev, cw_alsa.snd_strerror(rv));
 		dlclose(cw_alsa.handle);
 		return false;
 	} else {
@@ -390,7 +390,7 @@ int cw_alsa_open_device_internal(cw_gen_t *gen)
 				      0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
 	if (rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: can't open ALSA device '%s'", gen->sound_device);
+			      MSG_PREFIX "open: can't open ALSA device '%s': %s", gen->sound_device, cw_alsa.snd_strerror(rv));
 		return CW_FAILURE;
 	}
 	/*
