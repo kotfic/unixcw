@@ -494,8 +494,6 @@ int cw_rec_get_noise_spike_threshold(const cw_rec_t * rec)
 
 
 
-/* TODO: this function probably should have its old-style version in
-   libcw.h as well. */
 /**
    \brief Set receiver's gap
 
