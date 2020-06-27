@@ -126,16 +126,19 @@ static struct {
 	const char *(* snd_strerror)(int errnum);
 
 
-	/* Get full ALSA HW configuration space. Notice that there is
-	   no "any" function for SW parameters. */
-	int (* snd_pcm_hw_params_any)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params);
-
 	/* "Install one PCM hardware configuration chosen from a
 	   configuration space and snd_pcm_prepare it."  */
 	int (* snd_pcm_hw_params)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params);
 
 	/* Allocate 'hw params' variable. */
 	int (* snd_pcm_hw_params_malloc)(snd_pcm_hw_params_t **ptr);
+
+	/* "frees a previously allocated snd_pcm_hw_params_t" */
+	void (* snd_pcm_hw_params_free)(snd_pcm_hw_params_t * params);
+
+	/* Get full ALSA HW configuration space. Notice that there is
+	   no "any" function for SW parameters. */
+	int (* snd_pcm_hw_params_any)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params);
 
 	/* Basic HW parameters. */
 	int (* snd_pcm_hw_params_set_format)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_format_t val);
@@ -235,6 +238,7 @@ static struct {
 	.snd_strerror = NULL,
 
 	.snd_pcm_hw_params_malloc = NULL,
+	.snd_pcm_hw_params_free = NULL,
 	.snd_pcm_hw_params_any = NULL,
 	.snd_pcm_hw_params_set_format = NULL,
 	.snd_pcm_hw_params_set_rate_near = NULL,
@@ -439,6 +443,8 @@ int cw_alsa_open_device_internal(cw_gen_t *gen)
 	rv = cw_alsa.snd_pcm_hw_params_get_period_size(hw_params, &period_size, &dir);
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "open: rv = %d, ALSA period size would be %u frames", rv, (unsigned int) period_size);
+
+	cw_alsa.snd_pcm_hw_params_free(hw_params);
 
 	/* The linker (?) that I use on Debian links libcw against
 	   old version of get_period_size(), which returns
@@ -900,6 +906,8 @@ void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 
 		fprintf(stderr, "    sample rate = %u, period size range = %lu - %lu\n", cw_supported_sample_rates[i], period_size_min, period_size_max);
 	}
+
+	cw_alsa.snd_pcm_hw_params_free(hw_params);
 }
 
 
@@ -1026,37 +1034,38 @@ static int cw_alsa_dlsym_internal(void *handle)
 
 	*(void **) &(cw_alsa.snd_pcm_hw_params_malloc)               = dlsym(handle, "snd_pcm_hw_params_malloc");
 	if (!cw_alsa.snd_pcm_hw_params_malloc)              return -20;
+	*(void **) &(cw_alsa.snd_pcm_hw_params_free)                 = dlsym(handle, "snd_pcm_hw_params_free");
+	if (!cw_alsa.snd_pcm_hw_params_free)                return -21;
+
 	*(void **) &(cw_alsa.snd_pcm_hw_params_any)                  = dlsym(handle, "snd_pcm_hw_params_any");
-	if (!cw_alsa.snd_pcm_hw_params_any)                 return -21;
+	if (!cw_alsa.snd_pcm_hw_params_any)                 return -30;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_format)           = dlsym(handle, "snd_pcm_hw_params_set_format");
-	if (!cw_alsa.snd_pcm_hw_params_set_format)          return -22;
+	if (!cw_alsa.snd_pcm_hw_params_set_format)          return -31;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_rate_near)        = dlsym(handle, "snd_pcm_hw_params_set_rate_near");
-	if (!cw_alsa.snd_pcm_hw_params_set_rate_near)       return -23;
+	if (!cw_alsa.snd_pcm_hw_params_set_rate_near)       return -32;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_rate)             = dlsym(handle, "snd_pcm_hw_params_get_rate");
-	if (!cw_alsa.snd_pcm_hw_params_get_rate)            return -24;
+	if (!cw_alsa.snd_pcm_hw_params_get_rate)            return -33;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_access)           = dlsym(handle, "snd_pcm_hw_params_set_access");
-	if (!cw_alsa.snd_pcm_hw_params_set_access)          return -25;
+	if (!cw_alsa.snd_pcm_hw_params_set_access)          return -34;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_channels)         = dlsym(handle, "snd_pcm_hw_params_set_channels");
-	if (!cw_alsa.snd_pcm_hw_params_set_channels)        return -26;
+	if (!cw_alsa.snd_pcm_hw_params_set_channels)        return -35;
 	*(void **) &(cw_alsa.snd_pcm_hw_params)                      = dlsym(handle, "snd_pcm_hw_params");
-	if (!cw_alsa.snd_pcm_hw_params)                     return -27;
+	if (!cw_alsa.snd_pcm_hw_params)                     return -36;
 
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_periods)          = dlsym(handle, "snd_pcm_hw_params_get_periods");
-	if (!cw_alsa.snd_pcm_hw_params_get_periods)         return -28;
-
-
+	if (!cw_alsa.snd_pcm_hw_params_get_periods)          return -40;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_period_size_min)  = dlsym(handle, "snd_pcm_hw_params_get_period_size_min");
-	if (!cw_alsa.snd_pcm_hw_params_get_period_size_min)  return -40;
+	if (!cw_alsa.snd_pcm_hw_params_get_period_size_min)  return -41;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_period_size_max)  = dlsym(handle, "snd_pcm_hw_params_get_period_size_max");
-	if (!cw_alsa.snd_pcm_hw_params_get_period_size_max)  return -41;
+	if (!cw_alsa.snd_pcm_hw_params_get_period_size_max)  return -42;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_period_size_near)  = dlsym(handle, "snd_pcm_hw_params_set_period_size_near");
-	if (!cw_alsa.snd_pcm_hw_params_set_period_size_near) return -42;
+	if (!cw_alsa.snd_pcm_hw_params_set_period_size_near) return -43;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_period_size)      = dlsym(handle, "snd_pcm_hw_params_set_period_size");
-	if (!cw_alsa.snd_pcm_hw_params_set_period_size)      return -43;
+	if (!cw_alsa.snd_pcm_hw_params_set_period_size)      return -44;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_period_size_max)  = dlsym(handle, "snd_pcm_hw_params_set_period_size_max");
-	if (!cw_alsa.snd_pcm_hw_params_set_period_size_max)  return -44;
+	if (!cw_alsa.snd_pcm_hw_params_set_period_size_max)  return -45;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_period_size)      = dlsym(handle, "snd_pcm_hw_params_get_period_size");
-	if (!cw_alsa.snd_pcm_hw_params_get_period_size)      return -45;
+	if (!cw_alsa.snd_pcm_hw_params_get_period_size)      return -46;
 
 
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_buffer_size_min)  = dlsym(handle, "snd_pcm_hw_params_get_buffer_size_min");
