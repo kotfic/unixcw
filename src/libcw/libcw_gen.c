@@ -353,6 +353,18 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 		return CW_SUCCESS;
 	}
 
+	/* TODO: Tone queue may have e.g. 10 tones enqueued at this
+	   moment. To have a "gentle" silencing of generator, we shouldn't
+	   interrupt in the middle of current tone. What we should do is:
+	   - remove all tones ahead of current tone (perhaps starting from
+             the end).
+	   - see how long the current tone is. If it's relatively short, let
+             it play to the end, but if it's long tone, interrupt it.
+	   - see if the current tone is "forever" tone. If it is, end the
+             "forever" tone using method suitable for such tone.
+	   - only after all this you can enqueue a tone silent that will
+	     ensure that a key is not in "down" state. */
+
 	/* Somewhere there may be a key in "down" state and we need to
 	   make it go "up", regardless of sound sink (even for
 	   CDW_AUDIO_NULL, because that sound system can also be used with a key).
@@ -367,7 +379,7 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 	    || gen->sound_system == CW_AUDIO_PA) {
 
 		/* Allow some time for playing the last tone. */
-		usleep(2 * gen->quantum_duration); /* TODO: this should be usleep(2 * tone->duration). */
+		usleep(2 * tone->duration);
 
 	} else if (gen->sound_system == CW_AUDIO_CONSOLE) {
 		/* Sine wave generation should have been stopped
