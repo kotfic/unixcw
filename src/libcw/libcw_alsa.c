@@ -33,6 +33,7 @@
 
 
 #include "config.h"
+#include "libcw2.h"
 #include "libcw_debug.h"
 
 
@@ -99,7 +100,7 @@ static void cw_alsa_print_sw_params_internal(snd_pcm_sw_params_t *sw_params, con
 
 static int  cw_alsa_dlsym_internal(void *handle);
 static int  cw_alsa_write_internal(cw_gen_t *gen);
-static int  cw_alsa_debug_evaluate_write_internal(cw_gen_t *gen, int rv);
+static int  cw_alsa_debug_evaluate_write_internal(cw_gen_t *gen, int snd_rv);
 static int  cw_alsa_open_device_internal(cw_gen_t *gen);
 static void cw_alsa_close_device_internal(cw_gen_t *gen);
 
@@ -291,7 +292,7 @@ bool cw_is_alsa_possible(const char *device)
 	}
 
 	int rv = cw_alsa_dlsym_internal(cw_alsa.handle);
-	if (rv < 0) {
+	if (0 != rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "is possible: failed to resolve ALSA symbol #%d, can't correctly load ALSA library", rv);
 		dlclose(cw_alsa.handle);
@@ -300,13 +301,13 @@ bool cw_is_alsa_possible(const char *device)
 
 	const char *dev = device ? device : CW_DEFAULT_ALSA_DEVICE;
 	snd_pcm_t *alsa_handle = NULL;
-	rv = cw_alsa.snd_pcm_open(&alsa_handle,
-				  dev,                     /* name */
-				  SND_PCM_STREAM_PLAYBACK, /* stream (playback/capture) */
-				  0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
-	if (rv < 0) {
+	int snd_rv = cw_alsa.snd_pcm_open(&alsa_handle,
+					  dev,                     /* name */
+					  SND_PCM_STREAM_PLAYBACK, /* stream (playback/capture) */
+					  0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "is possible: can't open ALSA device '%s': %s", dev, cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "is possible: can't open ALSA device '%s': %s", dev, cw_alsa.snd_strerror(snd_rv));
 		dlclose(cw_alsa.handle);
 		return false;
 	} else {
@@ -361,13 +362,13 @@ int cw_alsa_write_internal(cw_gen_t *gen)
 	/* Send sound buffer to ALSA.
 	   Size of correct and current data in the buffer is the same as
 	   ALSA's period, so there should be no underruns */
-	int rv = cw_alsa.snd_pcm_writei(gen->alsa_data.handle, gen->buffer, gen->buffer_n_samples);
-	rv = cw_alsa_debug_evaluate_write_internal(gen, rv); /* TODO: fix reusing rv variable. */
+	const int snd_rv = cw_alsa.snd_pcm_writei(gen->alsa_data.handle, gen->buffer, gen->buffer_n_samples);
+	const cw_ret_t cw_ret = cw_alsa_debug_evaluate_write_internal(gen, snd_rv);
 	/*
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "write: written %d/%d samples", rv, gen->buffer_n_samples);
+		      MSG_PREFIX "write: written %d/%d samples", snd_rv, gen->buffer_n_samples);
 	*/
-	return rv;
+	return cw_ret;
 }
 
 
@@ -388,35 +389,33 @@ int cw_alsa_write_internal(cw_gen_t *gen)
 */
 int cw_alsa_open_device_internal(cw_gen_t *gen)
 {
-	int rv = cw_alsa.snd_pcm_open(&gen->alsa_data.handle,
-				      gen->sound_device,       /* name */
-				      SND_PCM_STREAM_PLAYBACK, /* stream (playback/capture) */
-				      0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
-	if (rv < 0) {
+	int snd_rv = cw_alsa.snd_pcm_open(&gen->alsa_data.handle,
+					  gen->sound_device,       /* name */
+					  SND_PCM_STREAM_PLAYBACK, /* stream (playback/capture) */
+					  0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: can't open ALSA device '%s': %s", gen->sound_device, cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "open: can't open ALSA device '%s': %s", gen->sound_device, cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 	/*
-	rv = snd_pcm_nonblock(gen->alsa_data.handle, 0);
-	if (rv < 0) {
+	snd_rv = snd_pcm_nonblock(gen->alsa_data.handle, 0);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR, MSG_PREFIX "can't set block for ALSA handle");
 		return CW_FAILURE;
 	}
 	*/
 
-	/* TODO: move this to cw_alsa_set_hw_params_internal(),
-	   deallocate hw_params. */
 	snd_pcm_hw_params_t *hw_params = NULL;
-	rv = cw_alsa.snd_pcm_hw_params_malloc(&hw_params);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_malloc(&hw_params);
+	if (0 != snd_rv || NULL == hw_params) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: can't allocate memory for ALSA hw params");
+			      MSG_PREFIX "open: can't allocate memory for ALSA hw params: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
-	rv = cw_alsa_set_hw_params_internal(gen, hw_params);
-	if (rv != CW_SUCCESS) {
+	cw_ret_t cw_ret = cw_alsa_set_hw_params_internal(gen, hw_params);
+	if (cw_ret != CW_SUCCESS) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: can't set ALSA hw params");
 		return CW_FAILURE;
@@ -430,27 +429,27 @@ int cw_alsa_open_device_internal(cw_gen_t *gen)
 	}
 #endif
 
-	rv = cw_alsa.snd_pcm_prepare(gen->alsa_data.handle);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_prepare(gen->alsa_data.handle);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: can't prepare ALSA handler");
+			      MSG_PREFIX "open: can't prepare ALSA handler: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
 	/* Get size for data buffer */
 	snd_pcm_uframes_t period_size; /* period size in frames */
 	int dir = 1;
-	rv = cw_alsa.snd_pcm_hw_params_get_period_size(hw_params, &period_size, &dir);
+	snd_rv = cw_alsa.snd_pcm_hw_params_get_period_size(hw_params, &period_size, &dir);
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "open: rv = %d, ALSA period size would be %u frames", rv, (unsigned int) period_size);
+		      MSG_PREFIX "open: rv = %d/%s, ALSA period size would be %u frames", snd_rv, cw_alsa.snd_strerror(snd_rv), (unsigned int) period_size);
 
 	cw_alsa.snd_pcm_hw_params_free(hw_params);
 
 	/* The linker (?) that I use on Debian links libcw against
 	   old version of get_period_size(), which returns
 	   period size as return value. This is a workaround. */
-	if (rv > 1) {
-		gen->buffer_n_samples = rv;
+	if (snd_rv > 1) {
+		gen->buffer_n_samples = snd_rv;
 	} else {
 		gen->buffer_n_samples = period_size;
 	}
@@ -507,26 +506,26 @@ void cw_alsa_close_device_internal(cw_gen_t *gen)
    \reviewed on 2017-02-05
 
    \param gen - generator
-   \param rv - value returned by snd_pcm_writei()
+   \param snd_rv - value returned by snd_pcm_writei()
 
    \return CW_SUCCESS if write was successful
    \return CW_FAILURE otherwise
 */
-int cw_alsa_debug_evaluate_write_internal(cw_gen_t *gen, int rv)
+int cw_alsa_debug_evaluate_write_internal(cw_gen_t *gen, int snd_rv)
 {
-	if (rv == -EPIPE) {
+	if (snd_rv == -EPIPE) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
 			      MSG_PREFIX "write: underrun");
 		cw_alsa.snd_pcm_prepare(gen->alsa_data.handle); /* Reset sound sink. */
 
-	} else if (rv < 0) {
+	} else if (snd_rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
-			      MSG_PREFIX "write: writei: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "write: writei: %s", cw_alsa.snd_strerror(snd_rv));
 		cw_alsa.snd_pcm_prepare(gen->alsa_data.handle);  /* Reset sound sink. */
 
-	} else if (rv != gen->buffer_n_samples) {
+	} else if (snd_rv != gen->buffer_n_samples) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
-			      MSG_PREFIX "short write, %d != %d", rv, gen->buffer_n_samples);
+			      MSG_PREFIX "short write, %d != %d", snd_rv, gen->buffer_n_samples);
 	} else {
 		return CW_SUCCESS;
 	}
@@ -549,10 +548,10 @@ int cw_alsa_debug_evaluate_write_internal(cw_gen_t *gen, int rv)
 int cw_alsa_set_hw_params_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params)
 {
 	/* Get full configuration space. */
-	int rv = cw_alsa.snd_pcm_hw_params_any(gen->alsa_data.handle, hw_params);
-	if (rv < 0) {
+	int snd_rv = cw_alsa.snd_pcm_hw_params_any(gen->alsa_data.handle, hw_params);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "set hw params: can't get current hw params: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "set hw params: can't get current hw params: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
@@ -562,27 +561,27 @@ int cw_alsa_set_hw_params_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params
 
 
 	/* Set the sample format */
-	rv = cw_alsa.snd_pcm_hw_params_set_format(gen->alsa_data.handle, hw_params, CW_ALSA_SAMPLE_FORMAT);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_set_format(gen->alsa_data.handle, hw_params, CW_ALSA_SAMPLE_FORMAT);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "set hw params: can't set sample format: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "set hw params: can't set sample format: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
 
 	/* Set PCM access type */
-	rv = cw_alsa.snd_pcm_hw_params_set_access(gen->alsa_data.handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_set_access(gen->alsa_data.handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "set hw params: can't set access type: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "set hw params: can't set access type: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
 	/* Set number of channels */
-	rv = cw_alsa.snd_pcm_hw_params_set_channels(gen->alsa_data.handle, hw_params, CW_AUDIO_CHANNELS);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_set_channels(gen->alsa_data.handle, hw_params, CW_AUDIO_CHANNELS);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "set hw params: can't set number of channels: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "set hw params: can't set number of channels: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
@@ -668,10 +667,10 @@ int cw_alsa_set_hw_params_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params
 	cw_alsa_print_hw_params_internal(hw_params, "after setting hw params");
 
 	/* Save hw parameters to device */
-	rv = cw_alsa.snd_pcm_hw_params(gen->alsa_data.handle, hw_params);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params(gen->alsa_data.handle, hw_params);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "set hw params: can't save hw parameters: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "set hw params: can't save hw parameters: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	} else {
 		return CW_SUCCESS;
@@ -686,15 +685,15 @@ int cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params
 	/* Set the sample rate. This influences range of available
 	   period sizes (see cw_alsa_test_hw_period_sizes()). */
 	bool success = false;
-	int pcm_rv = 0;
+	int snd_rv = 0;
 	int dir = 0;
 
 	/* Start from lowest sample rate. Lower sample rates means wider range of supported period sizes. */
 	const int max = 7; /* FIXME: hardcoded value. */
 	for (int i = max - 1; i >= 0; i--) {
 		unsigned int rate = cw_supported_sample_rates[i];
-		pcm_rv = cw_alsa.snd_pcm_hw_params_set_rate_near(gen->alsa_data.handle, hw_params, &rate, &dir);
-		if (0 == pcm_rv) {
+		snd_rv = cw_alsa.snd_pcm_hw_params_set_rate_near(gen->alsa_data.handle, hw_params, &rate, &dir);
+		if (0 == snd_rv) {
 			if (rate != cw_supported_sample_rates[i]) {
 				cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING, MSG_PREFIX "imprecise sample rate:");
 				cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING, MSG_PREFIX "asked for: %u", cw_supported_sample_rates[i]);
@@ -708,7 +707,7 @@ int cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params
 
 	if (!success) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "set hw params: can't set sample rate: %s", cw_alsa.snd_strerror(pcm_rv));
+			      MSG_PREFIX "set hw params: can't set sample rate: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
@@ -722,7 +721,7 @@ int cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params
 
 int cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params)
 {
-	int pcm_rv = 0;
+	int snd_rv = 0;
 	int dir = 0;
 
 	uint64_t n_alsa_frames_smallest = 0;
@@ -761,10 +760,10 @@ int cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params
 
 		intended_period_size = period_size_min;
 
-		pcm_rv = cw_alsa.snd_pcm_hw_params_set_period_size(gen->alsa_data.handle, hw_params, intended_period_size, 1);
-		if (pcm_rv < 0) {
+		snd_rv = cw_alsa.snd_pcm_hw_params_set_period_size(gen->alsa_data.handle, hw_params, intended_period_size, 1);
+		if (0 != snd_rv) {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-				      MSG_PREFIX "Unable to set intended exact period size %lu for playback: %s", intended_period_size, cw_alsa.snd_strerror(pcm_rv));
+				      MSG_PREFIX "Unable to set intended exact period size %lu for playback: %s", intended_period_size, cw_alsa.snd_strerror(snd_rv));
 			return CW_FAILURE;
 		}
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
@@ -774,10 +773,10 @@ int cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
 			      MSG_PREFIX "Will try to set intended near period size %lu for playback, dir = %d", intended_period_size, dir);
 
-		pcm_rv = cw_alsa.snd_pcm_hw_params_set_period_size_near(gen->alsa_data.handle, hw_params, &intended_period_size, &dir);
-		if (pcm_rv < 0) {
+		snd_rv = cw_alsa.snd_pcm_hw_params_set_period_size_near(gen->alsa_data.handle, hw_params, &intended_period_size, &dir);
+		if (0 != snd_rv) {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-				      MSG_PREFIX "Unable to set intended near period size %lu for playback: %s", intended_period_size, cw_alsa.snd_strerror(pcm_rv));
+				      MSG_PREFIX "Unable to set intended near period size %lu for playback: %s", intended_period_size, cw_alsa.snd_strerror(snd_rv));
 			return CW_FAILURE;
 		}
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
@@ -791,18 +790,18 @@ int cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params
 		/* Sometimes, for some reason, these two values can be different.
 		   On my PC max = min+1 */
 		dir = -1;
-		pcm_rv = cw_alsa.snd_pcm_hw_params_set_period_size_max(gen->alsa_data.handle, hw_params, &period_size_min, &dir);
-		if (0 != pcm_rv) {
+		snd_rv = cw_alsa.snd_pcm_hw_params_set_period_size_max(gen->alsa_data.handle, hw_params, &period_size_min, &dir);
+		if (0 != snd_rv) {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
-				      MSG_PREFIX "Unable to set period_size_max: %s", cw_alsa.snd_strerror(pcm_rv));
+				      MSG_PREFIX "Unable to set period_size_max: %s", cw_alsa.snd_strerror(snd_rv));
 		}
 	}
 
 
-	pcm_rv = cw_alsa.snd_pcm_hw_params_get_period_size(hw_params, &cw_alsa.actual_period_size, &dir);
-	if (pcm_rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_get_period_size(hw_params, &cw_alsa.actual_period_size, &dir);
+	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "Unable to get period size for playback: %s", cw_alsa.snd_strerror(pcm_rv));
+			      MSG_PREFIX "Unable to get period size for playback: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
@@ -816,7 +815,7 @@ int cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params
 
 int cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params)
 {
-	int pcm_rv = 0;
+	int snd_rv = 0;
 
 	/* ALSA documentation says about buffer size that it
 	   should be two times period size. See e.g. here:
@@ -827,18 +826,18 @@ int cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_pcm_hw_params
 	snd_pcm_uframes_t intended_buffer_size = cw_alsa.actual_period_size * 3;
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "Will try to set intended buffer size %lu", intended_buffer_size);
-	pcm_rv = cw_alsa.snd_pcm_hw_params_set_buffer_size_near(gen->alsa_data.handle, hw_params, &intended_buffer_size);
-	if (pcm_rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_set_buffer_size_near(gen->alsa_data.handle, hw_params, &intended_buffer_size);
+	if (0 != snd_rv) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "Unable to set buffer size %lu for playback: %s", intended_buffer_size, cw_alsa.snd_strerror(pcm_rv));
+			      MSG_PREFIX "Unable to set buffer size %lu for playback: %s", intended_buffer_size, cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
 
-	pcm_rv = cw_alsa.snd_pcm_hw_params_get_buffer_size(hw_params, &cw_alsa.actual_buffer_size);
-	if (pcm_rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_get_buffer_size(hw_params, &cw_alsa.actual_buffer_size);
+	if (0 != snd_rv) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "Unable to get buffer size for playback: %s", cw_alsa.snd_strerror(pcm_rv));
+			      MSG_PREFIX "Unable to get buffer size for playback: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
@@ -876,10 +875,10 @@ void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 	snd_pcm_hw_params_t * hw_params = NULL;
 	int snd_rv = 0;
 
-	snd_rv = cw_alsa.snd_pcm_hw_params_malloc(&hw_params); /* TODO: free() */
-	if (0 != snd_rv) {
+	snd_rv = cw_alsa.snd_pcm_hw_params_malloc(&hw_params);
+	if (0 != snd_rv || NULL == hw_params) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: can't allocate memory for ALSA hw params");
+			      MSG_PREFIX "open: can't allocate memory for ALSA hw params: %s", cw_alsa.snd_strerror(snd_rv));
 		return;
 	}
 
@@ -964,22 +963,22 @@ int cw_alsa_set_sw_params_internal(cw_gen_t *gen, snd_pcm_sw_params_t *swparams)
 	snd_pcm_t *handle = gen->alsa_data.handle;
 
 
-	int rv;
+	int snd_rv;
 	/* Get the current swparams. */
-	rv = cw_alsa.snd_pcm_sw_params_current(handle, swparams);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_sw_params_current(handle, swparams);
+	if (0 != snd_rv) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "Unable to determine current swparams for playback: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "Unable to determine current swparams for playback: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
 
 
 	/* write the parameters to the playback device */
-	rv = cw_alsa.snd_pcm_sw_params(handle, swparams);
-	if (rv < 0) {
+	snd_rv = cw_alsa.snd_pcm_sw_params(handle, swparams);
+	if (0 != snd_rv) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "Unable to set sw params for playback: %s", cw_alsa.snd_strerror(rv));
+			      MSG_PREFIX "Unable to set sw params for playback: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 
