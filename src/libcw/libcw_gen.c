@@ -731,10 +731,9 @@ int cw_gen_stop(cw_gen_t *gen)
 	}
 
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
-		      MSG_PREFIX "gen->do_dequeue_and_generate = false");
+		      MSG_PREFIX "setting gen->do_dequeue_and_generate to false");
 
 	gen->do_dequeue_and_generate = false;
-	fprintf(stderr, MSG_PREFIX "setting do_dequeue_and_generate to %d\n", gen->do_dequeue_and_generate);
 
 	if (!gen->thread.running) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_INFO, MSG_PREFIX "EXIT: seems that thread function was not started at all");
