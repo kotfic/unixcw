@@ -25,3 +25,14 @@ perf report
 * gdb
 
 export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./.libs/libcw_test_legacy_api -n legacy_api_test_low_level_gen_parameters
+
+* PulseAudio
+
+To kill pulseaudio server and prevent it from re-starting:
+cat ~/.config/pulse/client.conf
+autospawn = yes
+killall -9 pulseaudio
+
+
+* ALSA
+"plughw" device
