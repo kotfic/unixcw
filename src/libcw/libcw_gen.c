@@ -379,7 +379,7 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 	    || gen->sound_system == CW_AUDIO_PA) {
 
 		/* Allow some time for playing the last tone. */
-		usleep(2 * tone->duration);
+		usleep(2 * tone.duration);
 
 	} else if (gen->sound_system == CW_AUDIO_CONSOLE) {
 		/* Sine wave generation should have been stopped
