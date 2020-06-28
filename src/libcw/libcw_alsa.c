@@ -85,10 +85,10 @@ static const snd_pcm_format_t CW_ALSA_SAMPLE_FORMAT = SND_PCM_FORMAT_S16; /* "Si
 
 
 static int cw_alsa_set_hw_params_internal(cw_gen_t *gen, snd_pcm_hw_params_t *params);
-static int cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params);
+static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params);
 static int cw_alsa_set_hw_params_period_size_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params);
 static int cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params);
-static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t *hw_params, const char *where);
+static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, const char * where);
 static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen);
 
 #if CW_ALSA_SW_PARAMS_CONFIG
@@ -143,8 +143,6 @@ static struct {
 
 	/* Basic HW parameters. */
 	int (* snd_pcm_hw_params_set_format)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_format_t val);
-	int (* snd_pcm_hw_params_set_rate_near)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int *val, int *dir);
-	int (* snd_pcm_hw_params_get_rate)(snd_pcm_hw_params_t *params, unsigned int *val, int *dir);
 	int (* snd_pcm_hw_params_set_access)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_access_t _access);
 	int (* snd_pcm_hw_params_set_channels)(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val);
 
@@ -187,6 +185,12 @@ static struct {
 	/* Get currently set buffer size, either internally restricted
 	   by ALSA, or set with snd_pcm_hw_params_set_buffer_size_near(). */
 	int (* snd_pcm_hw_params_get_buffer_size)(const snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val);
+
+
+	int (* snd_pcm_hw_params_set_rate_near)(snd_pcm_t * pcm, snd_pcm_hw_params_t * params, unsigned int * val, int * dir);
+	int (* snd_pcm_hw_params_get_rate)(snd_pcm_hw_params_t * params, unsigned int * val, int * dir);
+	int (* snd_pcm_hw_params_get_rate_min)(const snd_pcm_hw_params_t * params, unsigned int * val, int * dir);
+	int (* snd_pcm_hw_params_get_rate_max)(const snd_pcm_hw_params_t * params, unsigned int * val, int * dir);
 
 
 #if CW_ALSA_SW_PARAMS_CONFIG
@@ -242,8 +246,6 @@ static struct {
 	.snd_pcm_hw_params_free = NULL,
 	.snd_pcm_hw_params_any = NULL,
 	.snd_pcm_hw_params_set_format = NULL,
-	.snd_pcm_hw_params_set_rate_near = NULL,
-	.snd_pcm_hw_params_get_rate = NULL,
 	.snd_pcm_hw_params_set_access = NULL,
 	.snd_pcm_hw_params_set_channels = NULL,
 	.snd_pcm_hw_params = NULL,
@@ -260,6 +262,11 @@ static struct {
 	.snd_pcm_hw_params_get_buffer_size_max = NULL,
 	.snd_pcm_hw_params_set_buffer_size_near = NULL,
 	.snd_pcm_hw_params_get_buffer_size = NULL,
+
+	.snd_pcm_hw_params_set_rate_near = NULL,
+	.snd_pcm_hw_params_get_rate = NULL,
+	.snd_pcm_hw_params_get_rate_min = NULL,
+	.snd_pcm_hw_params_get_rate_max = NULL,
 
 #if CW_ALSA_SW_PARAMS_CONFIG
 	.snd_pcm_sw_params_current = NULL,
@@ -680,18 +687,23 @@ int cw_alsa_set_hw_params_internal(cw_gen_t *gen, snd_pcm_hw_params_t *hw_params
 
 
 
-int cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params)
+cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params)
 {
 	/* Set the sample rate. This influences range of available
 	   period sizes (see cw_alsa_test_hw_period_sizes()). */
 	bool success = false;
 	int snd_rv = 0;
-	int dir = 0;
 
-	/* Start from lowest sample rate. Lower sample rates means wider range of supported period sizes. */
-	const int max = 7; /* FIXME: hardcoded value. */
-	for (int i = max - 1; i >= 0; i--) {
+	/* Start from high sample rate. For some reason trying to set a lower
+	   rate first resulted in problems with these two tests:
+	    - test_cw_gen_state_callback
+	    - test_cw_gen_forever_internal
+
+	   On the other hand lower sample rates seems to mean wider range of
+	   supported period sizes. */
+	for (int i = 0; cw_supported_sample_rates[i]; i++) {
 		unsigned int rate = cw_supported_sample_rates[i];
+		int dir = 0; /* Reset to zero before each ALSA API call. */
 		snd_rv = cw_alsa.snd_pcm_hw_params_set_rate_near(gen->alsa_data.handle, hw_params, &rate, &dir);
 		if (0 == snd_rv) {
 			if (rate != cw_supported_sample_rates[i]) {
@@ -870,6 +882,7 @@ int cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_pcm_hw_params
    able to play tones with CW_FREQUENCY_MAX without
    distortion. Therefore minimal sample rate should be 8000.
 */
+__attribute__((unused))
 void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 {
 	snd_pcm_hw_params_t * hw_params = NULL;
@@ -913,7 +926,9 @@ void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 
 void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t *hw_params, const char * where)
 {
-	int dir;
+	int dir = 0;
+	int dir_min = 0;
+	int dir_max = 0;
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "HW params %s:", where);
@@ -952,6 +967,17 @@ void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t *hw_params, const char
 	cw_alsa.snd_pcm_hw_params_get_periods(hw_params, &n_periods, &dir);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      "     " MSG_PREFIX "Count of periods in buffer: %u", n_periods);
+
+
+	dir_min = 0;
+	dir_max = 0;
+	unsigned int rate_min = 0;
+	unsigned int rate_max = 0;
+	cw_alsa.snd_pcm_hw_params_get_rate_min(hw_params, &rate_min, &dir_min);
+	cw_alsa.snd_pcm_hw_params_get_rate_max(hw_params, &rate_max, &dir_max);
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+		      "     " MSG_PREFIX "Range of sample rates: %u - %u (dir min = %d, dir max = %d)",
+		      rate_min, rate_max, dir_min, dir_max);
 }
 
 
@@ -1040,16 +1066,12 @@ static int cw_alsa_dlsym_internal(void *handle)
 	if (!cw_alsa.snd_pcm_hw_params_any)                 return -30;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_format)           = dlsym(handle, "snd_pcm_hw_params_set_format");
 	if (!cw_alsa.snd_pcm_hw_params_set_format)          return -31;
-	*(void **) &(cw_alsa.snd_pcm_hw_params_set_rate_near)        = dlsym(handle, "snd_pcm_hw_params_set_rate_near");
-	if (!cw_alsa.snd_pcm_hw_params_set_rate_near)       return -32;
-	*(void **) &(cw_alsa.snd_pcm_hw_params_get_rate)             = dlsym(handle, "snd_pcm_hw_params_get_rate");
-	if (!cw_alsa.snd_pcm_hw_params_get_rate)            return -33;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_access)           = dlsym(handle, "snd_pcm_hw_params_set_access");
-	if (!cw_alsa.snd_pcm_hw_params_set_access)          return -34;
+	if (!cw_alsa.snd_pcm_hw_params_set_access)          return -32;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_set_channels)         = dlsym(handle, "snd_pcm_hw_params_set_channels");
-	if (!cw_alsa.snd_pcm_hw_params_set_channels)        return -35;
+	if (!cw_alsa.snd_pcm_hw_params_set_channels)        return -33;
 	*(void **) &(cw_alsa.snd_pcm_hw_params)                      = dlsym(handle, "snd_pcm_hw_params");
-	if (!cw_alsa.snd_pcm_hw_params)                     return -36;
+	if (!cw_alsa.snd_pcm_hw_params)                     return -34;
 
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_periods)          = dlsym(handle, "snd_pcm_hw_params_get_periods");
 	if (!cw_alsa.snd_pcm_hw_params_get_periods)          return -40;
@@ -1075,6 +1097,15 @@ static int cw_alsa_dlsym_internal(void *handle)
 	if (!cw_alsa.snd_pcm_hw_params_set_buffer_size_near) return -52;
 	*(void **) &(cw_alsa.snd_pcm_hw_params_get_buffer_size)      = dlsym(handle, "snd_pcm_hw_params_get_buffer_size");
 	if (!cw_alsa.snd_pcm_hw_params_get_buffer_size)      return -53;
+
+	*(void **) &(cw_alsa.snd_pcm_hw_params_set_rate_near)        = dlsym(handle, "snd_pcm_hw_params_set_rate_near");
+	if (!cw_alsa.snd_pcm_hw_params_set_rate_near)        return -60;
+	*(void **) &(cw_alsa.snd_pcm_hw_params_get_rate)             = dlsym(handle, "snd_pcm_hw_params_get_rate");
+	if (!cw_alsa.snd_pcm_hw_params_get_rate)             return -61;
+	*(void **) &(cw_alsa.snd_pcm_hw_params_get_rate_min)         = dlsym(handle, "snd_pcm_hw_params_get_rate_min");
+	if (!cw_alsa.snd_pcm_hw_params_get_rate_min)         return -62;
+	*(void **) &(cw_alsa.snd_pcm_hw_params_get_rate_max)         = dlsym(handle, "snd_pcm_hw_params_get_rate_max");
+	if (!cw_alsa.snd_pcm_hw_params_get_rate_max)         return -63;
 
 
 #if CW_ALSA_SW_PARAMS_CONFIG
