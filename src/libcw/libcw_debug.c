@@ -77,7 +77,7 @@ struct {
    Other modules can access the table only through pointer in debug
    object. I don't expose this table (by making it globally visible)
    to decrease number of 'extern' declarations. */
-static const char *cw_debug_level_labels[] = { "DD", "II", "WW", "EE" };
+static const char *cw_debug_level_labels[] = { "[DD]", "[II]", "[WW]", "[EE]" };
 
 
 
