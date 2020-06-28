@@ -64,7 +64,7 @@ static void test_helper_tq_callback(void * data);
 
 static void gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen)
 {
-	*gen = cw_gen_new(cte->current_sound_system, NULL);
+	*gen = cw_gen_new(cte->current_sound_system, cte->current_sound_device);
 	if (!*gen) {
 		cte->log_error(cte, "Can't create generator, stopping the test\n");
 		return;
@@ -1055,7 +1055,7 @@ int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 	cw_gen_t * gen = NULL;
 
 	for (int i = 0; i < max; i++) {
-		gen = cw_gen_new(cte->current_sound_system, NULL);
+		gen = cw_gen_new(cte->current_sound_system, cte->current_sound_device);
 		cte->assert2(cte, gen, "failed to create a tone queue\n");
 		cw_gen_start(gen);
 

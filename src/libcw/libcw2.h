@@ -53,8 +53,22 @@ cw_ret_t cw_get_package_version(int * major, int * minor, int * maintenance);
 
 
 
-/* Basic generator functions. */
+/**
+   @brief Create new generator
+
+   The generator is initialized and is ready to be started with
+   cw_gen_start().
+
+   Returned pointer is owned by caller. Use cw_gen_delete() to deallocate it.
+
+   If @p device is NULL or an empty string, then a library-default device for
+   given @p sound_system will be used.
+
+   @return pointer to new generator on success
+   @return NULL on failure
+*/
 cw_gen_t * cw_gen_new(int sound_system, const char * device);
+
 void       cw_gen_delete(cw_gen_t ** gen);
 int        cw_gen_stop(cw_gen_t * gen);
 int        cw_gen_start(cw_gen_t * gen);

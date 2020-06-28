@@ -100,7 +100,7 @@ void legacy_api_cw_single_test_setup(void)
 */
 int legacy_api_test_setup(cw_test_executor_t * cte)
 {
-	int rv = cw_generator_new(cte->current_sound_system, NULL);
+	int rv = cw_generator_new(cte->current_sound_system, cte->current_sound_device);
 	if (rv != CW_SUCCESS) {
 		cte->log_error(cte, "Can't create generator, stopping the test\n");
 		return -1;
@@ -1638,8 +1638,7 @@ int legacy_api_test_basic_gen_operations(cw_test_executor_t * cte)
 
 	/* Test setting up generator. */
 	{
-		const char * device = NULL; /* Use default device. */
-		cwret = LIBCW_TEST_FUT(cw_generator_new)(cte->current_sound_system, device);
+		cwret = LIBCW_TEST_FUT(cw_generator_new)(cte->current_sound_system, cte->current_sound_device);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "cw_generator_new()");
 		if (cwret != CW_SUCCESS) {
 			return -1;

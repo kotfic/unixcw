@@ -123,6 +123,12 @@ typedef struct cw_config_t {
 	int tested_areas[LIBCW_TEST_TOPIC_MAX + 1];
 	char test_function_name[128];  /* Execute only a test function with this name. */
 	int test_repetitions; /* How many times a single test function should be repeated? */
+
+	/* Names of specific sound devices that should be used for tests. If
+	   a test should be executed for a group of sound systems, we may
+	   want to specify which exactly sound device to use for each of
+	   these sound systems. So we need per-sound-system options/fields. */
+	char test_alsa_device_name[CW_SOUND_DEVICE_NAME_SIZE];
 } cw_config_t;
 
 

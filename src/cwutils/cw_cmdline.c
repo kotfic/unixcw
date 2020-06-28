@@ -427,8 +427,7 @@ void cw_print_help(cw_config_t *config)
 
 	if (config->has_feature_libcw_test_specific
 	    || config->has_feature_test_repetitions
-	    || config->has_feature_test_name
-	    || config->has_feature_libcw_test_specific) {
+	    || config->has_feature_test_name) {
 
 		fprintf(stderr, "%s",     _("Options specific to test programs:\n"));
 
@@ -440,6 +439,16 @@ void cw_print_help(cw_config_t *config)
 			fprintf(stderr, "%s", _("        k - Morse key\n"));
 			fprintf(stderr, "%s", _("        r - receiver\n"));
 			fprintf(stderr, "%s", _("        o - other\n"));
+
+			fprintf(stderr, "%s", _("  -S, --test_systems=SYSTEMS\n"));
+			fprintf(stderr, "%s", _("        test one or more of these sound systems:\n"));
+			fprintf(stderr, "%s", _("        n - Null\n"));
+			fprintf(stderr, "%s", _("        c - console\n"));
+			fprintf(stderr, "%s", _("        o - OSS\n"));
+			fprintf(stderr, "%s", _("        a - ALSA\n"));
+			fprintf(stderr, "%s", _("        p - PulseAudio\n"));
+
+			fprintf(stderr, "%s", _("  -X, --alsa_device=device\n"));
 		}
 		if (config->has_feature_test_repetitions) {
 			fprintf(stderr, "%s", _("  -R, --test_repetitions=N\n"));
@@ -523,6 +532,7 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 	if (config->has_feature_libcw_test_specific) {
 		append_option(buffer, size, &n, "S:|test_systems");
 		append_option(buffer, size, &n, "A:|test_areas");
+		append_option(buffer, size, &n, "X:|alsa_device");
 	}
 	if (config->has_feature_test_repetitions) {
 		append_option(buffer, size, &n, "R:|test_repetitions");
@@ -874,6 +884,10 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 
 	case 'R':
 		config->test_repetitions = atoi(optarg);
+		break;
+
+	case 'X':
+		snprintf(config->test_alsa_device_name, sizeof (config->test_alsa_device_name), "%s", optarg);
 		break;
 
 	default: /* '?' */

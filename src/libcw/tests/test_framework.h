@@ -86,6 +86,7 @@ typedef struct cw_test_executor_t {
 	/* Sound system and test topic currently tested.
 	   Should be set right before calling a specific test function. */
 	enum cw_audio_systems current_sound_system;
+	char current_sound_device[CW_SOUND_DEVICE_NAME_SIZE];
 	int current_topic;
 
 	/* Limit of characters that can be printed to console in one row. */
@@ -298,6 +299,11 @@ typedef struct cw_test_executor_t {
 	   set, function returns "None" text label.
 	*/
 	const char * (* get_current_sound_system_label)(struct cw_test_executor_t * self);
+
+	/**
+	   @brief Get name of current sound device
+	*/
+	const char * (* get_current_sound_device)(struct cw_test_executor_t * self);
 
 
 

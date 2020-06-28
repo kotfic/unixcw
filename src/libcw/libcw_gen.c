@@ -556,7 +556,9 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 		int rv = cw_gen_new_open_internal(gen, sound_system, device);
 		if (rv == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-				      MSG_PREFIX "failed to open sound sink for sound system '%s' and device '%s'", cw_get_audio_system_label(sound_system), device);
+				      MSG_PREFIX "failed to open sound sink for sound system '%s' and device '%s'",
+				      cw_get_audio_system_label(sound_system),
+				      gen->sound_device);
 			cw_gen_delete(&gen);
 			return (cw_gen_t *) NULL;
 		}
@@ -840,16 +842,17 @@ int cw_gen_join_thread_internal(cw_gen_t * gen)
 /**
    \brief Open sound system
 
-   A wrapper for code trying to open sound device specified by
-   \p sound_system.  Open sound system will be assigned to given
-   generator. Caller can also specify sound device to use instead
-   of a default one.
+   A wrapper for code trying to open sound device specified by \p
+   sound_system.  Open sound system will be assigned to given
+   generator. Caller can also specify sound device to use instead of a
+   default one. If @p device is NULL or empty string, library-default device
+   will be used.
 
    \reviewed on 2017-01-26
 
    \param gen - freshly created generator
    \param sound_system - sound system to open and assign to the generator
-   \param device - name of sound device to be used instead of a default one
+   \param device[in] name of sound device to be used instead of a default one
 
    \return CW_SUCCESS on success
    \return CW_FAILURE otherwise
@@ -867,9 +870,11 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	   the three in separate 'if' clauses, I can check all other
 	   values of sound system as well. */
 
+	const bool device_provided = (NULL != device && '\0' != device[0]);
+
 	if (sound_system == CW_AUDIO_NULL) {
 
-		const char *dev = device ? device : default_sound_devices[CW_AUDIO_NULL];
+		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_NULL];
 		if (cw_is_null_possible(dev)) {
 			cw_null_configure(gen, dev);
 			return gen->open_device(gen);
@@ -879,7 +884,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	if (sound_system == CW_AUDIO_PA
 	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device ? device : default_sound_devices[CW_AUDIO_PA];
+		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_PA];
 		if (cw_is_pa_possible(dev)) {
 			cw_pa_configure(gen, dev);
 			return gen->open_device(gen);
@@ -889,7 +894,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	if (sound_system == CW_AUDIO_OSS
 	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device ? device : default_sound_devices[CW_AUDIO_OSS];
+		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_OSS];
 		if (cw_is_oss_possible(dev)) {
 			cw_oss_configure(gen, dev);
 			return gen->open_device(gen);
@@ -899,7 +904,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	if (sound_system == CW_AUDIO_ALSA
 	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device ? device : default_sound_devices[CW_AUDIO_ALSA];
+		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_ALSA];
 		if (cw_is_alsa_possible(dev)) {
 			cw_alsa_configure(gen, dev);
 			return gen->open_device(gen);
@@ -908,7 +913,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 	if (sound_system == CW_AUDIO_CONSOLE) {
 
-		const char *dev = device ? device : default_sound_devices[CW_AUDIO_CONSOLE];
+		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_CONSOLE];
 		if (cw_is_console_possible(dev)) {
 			cw_console_configure(gen, dev);
 			return gen->open_device(gen);

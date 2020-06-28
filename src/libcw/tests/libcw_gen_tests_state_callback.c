@@ -125,7 +125,7 @@ static void gen_callback_fn(void * callback_arg, int state);
 static void update_element_stats(cw_element_stats_t * stats, int element_duration);
 static void print_element_stats_and_divergences(const cw_element_stats_t * stats, const divergence_t * divergences, const char * name, int duration_expected);
 static void calculate_divergences_from_stats(const cw_element_stats_t * stats, divergence_t * divergences, int duration_expected);
-static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_data_t * test_data);
+static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_data_t * test_data, const char * sound_device);
 
 static void calculate_test_results(const cw_element_t * test_input_elements, test_data_t * test_data, int dot_usecs, int dash_usecs);
 static void evaluate_test_results(cw_test_executor_t * cte, test_data_t * test_data);
@@ -471,7 +471,8 @@ cwt_retv test_cw_gen_state_callback(cw_test_executor_t * cte)
 		if (cte->current_sound_system != test_data->sound_system) {
 			continue;
 		}
-		if (cwt_retv_ok != test_cw_gen_state_callback_sub(cte, test_data)) {
+		const char * sound_device = cte->current_sound_device;
+		if (cwt_retv_ok != test_cw_gen_state_callback_sub(cte, test_data, sound_device)) {
 			retv = cwt_retv_err;
 			break;
 		}
@@ -485,9 +486,10 @@ cwt_retv test_cw_gen_state_callback(cw_test_executor_t * cte)
 
 
 
-static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_data_t * test_data)
+static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_data_t * test_data, const char * sound_device)
 {
-	cw_gen_t * gen = cw_gen_new(test_data->sound_system, NULL);
+	cw_gen_t * gen = cw_gen_new(test_data->sound_system,
+				    sound_device);
 	cw_gen_set_speed(gen, test_data->speed);
 	cw_gen_set_frequency(gen, cte->config->frequency);
 

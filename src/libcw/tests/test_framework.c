@@ -111,6 +111,7 @@ static bool cw_test_sound_system_was_requested(cw_test_executor_t * self, cw_sou
 
 static const char * cw_test_get_current_topic_label(cw_test_executor_t * self);
 static const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self);
+static const char * cw_test_get_current_sound_device(cw_test_executor_t * self);
 
 static void cw_test_set_current_topic_and_sound_system(cw_test_executor_t * self, int topic, int sound_system);
 
@@ -746,6 +747,7 @@ void cw_test_print_test_header(cw_test_executor_t * self, const char * fmt, ...)
 	self->log_info(self, "Test name: %s\n", va_buf);
 	self->log_info(self, "Current test topic: %s\n", self->get_current_topic_label(self));
 	self->log_info(self, "Current sound system: %s\n", self->get_current_sound_system_label(self));
+	self->log_info(self, "Current sound device: '%s'\n", self->get_current_sound_device(self));
 
 	{
 		self->log_info(self, " ");
@@ -770,6 +772,14 @@ void cw_test_print_test_footer(cw_test_executor_t * self, const char * test_name
 const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self)
 {
 	return cw_get_audio_system_label(self->current_sound_system);
+}
+
+
+
+
+const char * cw_test_get_current_sound_device(cw_test_executor_t * self)
+{
+	return self->current_sound_device;
 }
 
 
@@ -812,6 +822,29 @@ void cw_test_set_current_topic_and_sound_system(cw_test_executor_t * self, int t
 {
 	self->current_topic = topic;
 	self->current_sound_system = sound_system;
+
+	self->current_sound_device[0] = '\0'; /* Clear value from previous run of test. */
+	switch (self->current_sound_system) {
+	case CW_AUDIO_ALSA:
+		if ('\0' != self->config->test_alsa_device_name[0]) {
+			snprintf(self->current_sound_device, sizeof (self->current_sound_device), "%s", self->config->test_alsa_device_name);
+		}
+		break;
+	case CW_AUDIO_NULL:
+	case CW_AUDIO_CONSOLE:
+	case CW_AUDIO_OSS:
+	case CW_AUDIO_PA:
+		/* We don't have a buffer with device name for this sound system. */
+		break;
+	case CW_AUDIO_NONE:
+	case CW_AUDIO_SOUNDCARD:
+	default:
+		/* Technically speaking this is an error, but we shouldn't
+		   get here because test binary won't accept such sound
+		   systems through command line. */
+		break;
+	}
+
 	self->stats = &self->all_stats[sound_system][topic];
 }
 
@@ -947,6 +980,7 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 
 	self->get_current_topic_label = cw_test_get_current_topic_label;
 	self->get_current_sound_system_label = cw_test_get_current_sound_system_label;
+	self->get_current_sound_device = cw_test_get_current_sound_device;
 
 	self->print_test_stats = cw_test_print_test_stats;
 
@@ -964,6 +998,7 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 	self->console_n_cols = default_cw_test_print_n_chars;
 
 	self->current_sound_system = CW_AUDIO_NONE;
+	self->current_sound_device[0] = '\0';
 
 	snprintf(self->msg_prefix, sizeof (self->msg_prefix), "%s: ", msg_prefix);
 

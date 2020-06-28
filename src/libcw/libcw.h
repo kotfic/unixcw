@@ -74,6 +74,15 @@ typedef int16_t cw_sample_t;
 #define CW_DEFAULT_PA_DEVICE        "( default )"
 
 
+
+
+/* E.g. "default", "plughw", "/dev/something"
+   Includes space for terminating NUL. */
+#define CW_SOUND_DEVICE_NAME_SIZE  64
+
+
+
+
 /* Limits on values of CW send and timing parameters */
 #define CW_SPEED_MIN             4   /* Lowest WPM allowed */
 #define CW_SPEED_MAX            60   /* Highest WPM allowed */

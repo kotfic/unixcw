@@ -61,7 +61,7 @@ static int key_setup(cw_test_executor_t * cte, cw_key_t ** key, cw_gen_t ** gen)
 	}
 
 
-	*gen = cw_gen_new(cte->current_sound_system, NULL);
+	*gen = cw_gen_new(cte->current_sound_system, cte->current_sound_device);
 	if (!*gen) {
 		cte->log_error(cte, "Can't create gen, stopping the test\n");
 		return -1;
