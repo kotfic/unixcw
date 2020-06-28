@@ -551,13 +551,17 @@ cwt_retv test_cw_gen_tone_slope_shape_enums(cw_test_executor_t * cte)
    It's not a test of a "forever" function, but of "forever"
    functionality.
 
+   Pay attention to CPU usage during execution of this function. I have been
+   experiencing 100% CPU usage on one of cores with ALSA sound system when HW
+   configuration of the ALSA sound system was incorrect.
+
    @reviewed on 2020-05-07
 */
 cwt_retv test_cw_gen_forever_internal(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
-	const int seconds = 5;
+	const int seconds = 7;
 	cte->log_info(cte, "forever tone (%d seconds):\n", seconds);
 
 	const cwt_retv rv = test_cw_gen_forever_sub(cte, seconds);
