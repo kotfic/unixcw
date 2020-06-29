@@ -9,14 +9,6 @@
 
 
 
-#if defined(__cplusplus)
-extern "C"
-{
-#endif
-
-
-
-
 #include "config.h"
 
 
@@ -29,8 +21,18 @@ extern "C"
 
 
 
+#include "libcw2.h"
 
-typedef void (* cw_queue_low_callback_t)(void*);
+
+
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+
+
 
 
 /* Right now there is no function that would calculate number of tones
@@ -237,7 +239,7 @@ typedef struct {
 	/* Generator associated with a tone queue. */
 	struct cw_gen_struct *gen;
 
-	char label[16]; /* TODO: use LIBCW_INSTANCE_LABEL_SIZE from libcw2.h */
+	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
 } cw_tone_queue_t;
 
 

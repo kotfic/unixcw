@@ -26,6 +26,9 @@
 
 #include "libcw.h"
 #include "libcw2.h"
+#include "../../libcw/libcw_gen.h"
+#include "../../libcw/libcw_key.h"
+#include "../../libcw/libcw_tq.h"
 #include "../../libcw/libcw_utils.h"
 #include "test_framework.h"
 #include "test_framework_tools.h"

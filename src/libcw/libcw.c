@@ -45,17 +45,12 @@
 
 
 
-/* Main container for data related to generating audible Morse code.
-   This is a global variable in library file, but in future the
-   variable will be moved from the file to client code.
-
-   This is a global variable that should be converted into a function
-   argument; this pointer should exist only in client's code, should
-   initially be returned by new(), and deleted by delete().
-
-   TODO: perform the conversion later, when you figure out ins and
-   outs of the library. */
-cw_gen_t *cw_generator = NULL;
+/*
+  Main container for data related to generating audible Morse code.  This is
+  a global variable in legacy library. New library code (with API declared in
+  libcw2.h) will not use global generator variable.
+*/
+cw_gen_t * cw_generator = NULL;
 
 
 
@@ -400,10 +395,8 @@ int cw_set_gap(int new_value)
 	if (rv != CW_FAILURE) {
 		/* Ideally generator and receiver should have their
 		   own, separate cw_set_gap() functions. Unfortunately
-		   this is not the case (for now) so gap should be set
-		   here for receiver as well.
-
-		   TODO: add cw_set_gap() function for receiver. */
+		   this is not the case so gap should be set
+		   here for receiver as well. */
 		rv = cw_rec_set_gap(&cw_receiver, new_value);
 	}
 	return rv;
@@ -1536,8 +1529,6 @@ int cw_receive_buffer_dash(const struct timeval *timestamp)
 
    \p is_error indicates that the representation was terminated by an
    error condition.
-
-   TODO: the function should be called cw_receiver_poll_representation().
 
    The function is called periodically (poll()-like function) by
    client code in hope that at some attempt receiver will be ready to

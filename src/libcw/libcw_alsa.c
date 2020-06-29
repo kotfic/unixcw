@@ -35,6 +35,7 @@
 #include "config.h"
 #include "libcw2.h"
 #include "libcw_debug.h"
+#include "libcw_rec.h"
 
 
 

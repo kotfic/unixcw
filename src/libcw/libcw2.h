@@ -4,6 +4,11 @@
 
 
 
+#include "libcw.h"
+
+
+
+
 #if defined(__cplusplus)
 extern "C"
 {
@@ -13,21 +18,23 @@ extern "C"
 
 
 /* Instances of cw_gen_t, cw_rec_t, cw_key_t and cw_tq_t types have
-   ::label[LIBCW_INSTANCE_LABEL_SIZE] field. The field can be used by
+   ::label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE] field. The field can be used by
    client code to distinguish instances of the same type.
 
    This size includes space for terminating NUL. */
-#define LIBCW_INSTANCE_LABEL_SIZE 16
-
-
-
-
-#include "libcw_gen.h"
+#define LIBCW_OBJECT_INSTANCE_LABEL_SIZE 16
 
 
 
 
 typedef int cw_ret_t;
+
+struct cw_key_struct;
+typedef struct cw_key_struct cw_key_t;
+
+struct cw_rec_struct;
+typedef struct cw_rec_struct cw_rec_t;
+
 
 
 
@@ -90,7 +97,7 @@ int        cw_gen_start(cw_gen_t * gen);
    @p label can be an empty string: generator's label will become empty
    string.
 
-   @p label longer than (`LIBCW_INSTANCE_LABEL_SIZE`-1) characters will
+   @p label longer than (LIBCW_OBJECT_INSTANCE_LABEL_SIZE-1) characters will
    be truncated and
    `cw_debug_object:CW_DEBUG_CLIENT_CODE:CW_DEBUG_WARNING` will be
    logged. This is not treated as error: function will not return
@@ -113,12 +120,12 @@ int cw_gen_set_label(cw_gen_t * gen, const char * label);
    @p gen and @p label can't be NULL.
 
    @p label should be a buffer of size at least
-   `LIBCW_INSTANCE_LABEL_SIZE`.
+   LIBCW_OBJECT_INSTANCE_LABEL_SIZE.
 
    @p size should have value equal to size of @p label char buffer.
 
    @p size is not validated: it could be smaller than
-   `LIBCW_INSTANCE_LABEL_SIZE`, it could be zero. Function's caller
+   LIBCW_OBJECT_INSTANCE_LABEL_SIZE, it could be zero. Function's caller
    will get only as many characters of generator's label as he asked
    for.
 
@@ -159,9 +166,15 @@ void cw_gen_flush_queue(cw_gen_t * gen);
 const char *cw_gen_get_sound_device(cw_gen_t const * gen);
 int cw_gen_get_sound_system(cw_gen_t const * gen);
 size_t cw_gen_get_queue_length(cw_gen_t const * gen);
+
+typedef void (* cw_queue_low_callback_t)(void *);
 int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level);
+
 int cw_gen_wait_for_tone(cw_gen_t * gen);
 bool cw_gen_is_queue_full(cw_gen_t const * gen);
+
+typedef void (* cw_gen_state_tracking_callback_t)(void * callback_arg, int state);
+void cw_gen_register_state_tracking_callback_internal(cw_gen_t * gen, cw_gen_state_tracking_callback_t callback_func, void * callback_arg);
 
 
 
@@ -191,7 +204,7 @@ void cw_key_delete(cw_key_t ** key);
    @p label can be an empty string: key's label will become empty
    string.
 
-   @p label longer than (`LIBCW_INSTANCE_LABEL_SIZE`-1) characters will
+   @p label longer than (LIBCW_OBJECT_INSTANCE_LABEL_SIZE-1) characters will
    be truncated and
    `cw_debug_object:CW_DEBUG_CLIENT_CODE:CW_DEBUG_WARNING` will be
    logged. This is not treated as error: function will not return
@@ -214,14 +227,13 @@ int cw_key_set_label(cw_key_t * key, const char * label);
    @p key and @p label can't be NULL.
 
    @p label should be a buffer of size at least
-   `LIBCW_INSTANCE_LABEL_SIZE`.
+   LIBCW_OBJECT_INSTANCE_LABEL_SIZE.
 
    @p size should have value equal to size of @p label char buffer.
 
    @p size is not validated: it could be smaller than
-   `LIBCW_INSTANCE_LABEL_SIZE`, it could be zero. Function's caller
-   will get only as many characters of key's label as he asked
-   for.
+   LIBCW_OBJECT_INSTANCE_LABEL_SIZE, it could be zero. Function's caller will
+   get only as many characters of key's label as he asked for.
 
    @param[in] key key from which to get label
    @param[in] label output buffer
@@ -281,7 +293,7 @@ void       cw_rec_delete(cw_rec_t ** rec);
    @p label can be an empty string: receiver's label will become empty
    string.
 
-   @p label longer than (`LIBCW_INSTANCE_LABEL_SIZE`-1) characters will
+   @p label longer than (LIBCW_OBJECT_INSTANCE_LABEL_SIZE-1) characters will
    be truncated and
    `cw_debug_object:CW_DEBUG_CLIENT_CODE:CW_DEBUG_WARNING` will be
    logged. This is not treated as error: function will not return
@@ -304,14 +316,13 @@ int cw_rec_set_label(cw_rec_t * rec, const char * label);
    @p rec and @p label can't be NULL.
 
    @p label should be a buffer of size at least
-   `LIBCW_INSTANCE_LABEL_SIZE`.
+   LIBCW_OBJECT_INSTANCE_LABEL_SIZE.
 
    @p size should have value equal to size of @p label char buffer.
 
    @p size is not validated: it could be smaller than
-   `LIBCW_INSTANCE_LABEL_SIZE`, it could be zero. Function's caller
-   will get only as many characters of receiver's label as he asked
-   for.
+   LIBCW_OBJECT_INSTANCE_LABEL_SIZE, it could be zero. Function's caller will
+   get only as many characters of receiver's label as he asked for.
 
    @param[in] rec receiver from which to get label
    @param[in] label output buffer

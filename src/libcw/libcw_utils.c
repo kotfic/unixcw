@@ -126,7 +126,6 @@ int cw_version(void)
 
 	// fprintf(stderr, "current:revision:age: %ld:%ld:%ld\n", current, revision, age);
 
-	/* TODO: Return all three parts of library version. */
 	return ((int) current) << 16 | ((int) revision);
 }
 

@@ -82,6 +82,7 @@
 #include "libcw_data.h"
 #include "libcw_null.h"
 #include "libcw_console.h"
+#include "libcw_rec.h"
 #include "libcw_oss.h"
 #include "libcw2.h"
 #include "libcw_gen_internal.h"
@@ -168,33 +169,29 @@ static const int CW_AUDIO_QUANTUM_DURATION_INITIAL = 100;  /* [us] */
 
 
 /**
-   \brief Get a copy of readable label of current sound system
+   @brief Get a readable label of current sound system
 
-   Get a copy of human-readable string describing sound system
-   associated currently with given \p gen.
+   Get a human-readable string describing sound system associated currently
+   with given @p gen.
 
-   The function returns newly allocated pointer to one of following
-   strings: "None", "Null", "Console", "OSS", "ALSA", "PulseAudio",
-   "Soundcard".
+   The function returns through @p buffer one of following strings: "None",
+   "Null", "Console", "OSS", "ALSA", "PulseAudio", "Soundcard".
 
-   The returned pointer is owned by caller.
+   @reviewed-on 2020-06-29
 
-   Notice that the function returns a new pointer to newly allocated
-   string. cw_generator_get_audio_system_label() returns a pointer to
-   static string owned by library.
+   @param[in] gen - generator for which to check sound system label
+   @param[out] buffer output buffer where the label will be saved
+   @param[in] size total size of the buffer (including space for terminating NUL)
 
-   \param gen - generator for which to check sound system label
-
-   \return sound system's label
+   @return @p buffer
 */
-char * cw_gen_get_sound_system_label_internal(cw_gen_t *gen)
+char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffer, size_t size)
 {
-	char *s = strdup(cw_get_audio_system_label(gen->sound_system)); /* TODO: replace with writing to buffer provided by caller. */
-	if (!s) {
-		cw_vdm ("failed to strdup() sound system label for sound system %d\n", gen->sound_system);
+	if (buffer) {
+		snprintf(buffer, size, "%s", cw_get_audio_system_label(gen->sound_system));
 	}
 
-	return s;
+	return buffer;
 }
 
 
@@ -2963,7 +2960,7 @@ int cw_gen_set_label(cw_gen_t * gen, const char * label)
 			      MSG_PREFIX "'%s': 'label' argument is NULL", gen->label);
 		return CW_FAILURE;
 	}
-	if (strlen(label) > (LIBCW_INSTANCE_LABEL_SIZE - 1)) {
+	if (strlen(label) > (LIBCW_OBJECT_INSTANCE_LABEL_SIZE - 1)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_WARNING,
 			      MSG_PREFIX "'%s': new label '%s' too long, truncating", gen->label, label);
 		/* Not an error, just log warning. New label will be truncated. */

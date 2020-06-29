@@ -54,11 +54,6 @@ enum { CW_SYMBOL_SPACE = ' ' };
 
 
 
-typedef void (* cw_gen_state_tracking_callback_t)(void * callback_arg, int state);
-
-
-
-
 struct cw_gen_struct {
 
 	/* Tone queue. */
@@ -370,7 +365,7 @@ struct cw_gen_struct {
 		int z;
 	} oss_version;
 
-	char label[16]; /* TODO: use LIBCW_INSTANCE_LABEL_SIZE from libcw2.h */
+	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
 
 #ifdef LIBCW_WITH_ALSA
 	/* Data used by ALSA. */
@@ -416,17 +411,14 @@ int cw_gen_enqueue_character_partial(cw_gen_t * gen, char c);
 
 
 
-int   cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device);
-int   cw_gen_silence_internal(cw_gen_t *gen);
-char *cw_gen_get_sound_system_label_internal(cw_gen_t *gen);
+int    cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device);
+int    cw_gen_silence_internal(cw_gen_t *gen);
+char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffer, size_t size);
 
 void cw_generator_delete_internal(void);
 
 void cw_gen_reset_parameters_internal(cw_gen_t *gen);
 void cw_gen_sync_parameters_internal(cw_gen_t *gen);
-
-
-void cw_gen_register_state_tracking_callback_internal(cw_gen_t * gen, cw_gen_state_tracking_callback_t callback_func, void * callback_arg);
 
 
 

@@ -262,7 +262,7 @@ int cw_key_sk_set_value_internal(volatile cw_key_t *key, int key_state)
 	/* Remember the new key value. */
 	key->sk.key_value = key_state;
 
-	/* TODO: if you want to have a per-key callback called on each key state 
+	/* TODO: if you want to have a per-key callback called on each key state
 	  change, you should call it here. */
 
 	int rv;
@@ -349,7 +349,7 @@ int cw_key_ik_set_value_internal(volatile cw_key_t *key, int key_state, char sym
 	/* Remember the new key value. */
 	key->ik.key_value = key_state;
 
-	/* TODO: if you want to have a per-key callback called on each key state 
+	/* TODO: if you want to have a per-key callback called on each key state
 	  change, you should call it here. */
 
 	/* 'Partial' means without any end-of-mark spaces. */
@@ -1295,7 +1295,7 @@ int cw_key_set_label(cw_key_t * key, const char * label)
 			      MSG_PREFIX "'%s': 'label' argument is NULL", key->label);
 		return CW_FAILURE;
 	}
-	if (strlen(label) > (LIBCW_INSTANCE_LABEL_SIZE - 1)) {
+	if (strlen(label) > (LIBCW_OBJECT_INSTANCE_LABEL_SIZE - 1)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_WARNING,
 			      MSG_PREFIX "'%s': new label '%s' too long, truncating", key->label, label);
 		/* Not an error, just log warning. New label will be truncated. */

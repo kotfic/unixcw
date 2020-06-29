@@ -78,7 +78,7 @@ typedef int16_t cw_sample_t;
 
 /* E.g. "default", "plughw", "/dev/something"
    Includes space for terminating NUL. */
-#define CW_SOUND_DEVICE_NAME_SIZE  64
+#define LIBCW_SOUND_DEVICE_NAME_SIZE  64
 
 
 

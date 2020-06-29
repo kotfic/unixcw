@@ -18,6 +18,7 @@
 
 
 #include "libcw.h"
+#include "libcw2.h"
 #include "libcw_debug.h"
 
 
@@ -217,11 +218,8 @@ struct cw_rec_struct {
 	   space on a later poll. */
 	bool is_pending_inter_word_space;
 
-	char label[16]; /* TODO: use LIBCW_INSTANCE_LABEL_SIZE from libcw2.h */
+	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
 };
-
-
-typedef struct cw_rec_struct cw_rec_t;
 
 
 

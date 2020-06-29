@@ -380,8 +380,6 @@ int cw_rec_get_tolerance(const cw_rec_t * rec)
 
    Use NULL for the pointer argument to any parameter value not required.
 
-   TODO: reconsider order of these function arguments.
-
    \reviewed on 2017-02-02
 
    \param *rec
@@ -496,9 +494,6 @@ int cw_rec_get_noise_spike_threshold(const cw_rec_t * rec)
 
 /**
    \brief Set receiver's gap
-
-   TODO: this function probably should have its old-style version in
-   libcw.h as well.
 
    \errno EINVAL - \p new_value is out of range.
 
@@ -1979,7 +1974,7 @@ int cw_rec_set_label(cw_rec_t * rec, const char * label)
 			      MSG_PREFIX "'%s': 'label' argument is NULL", rec->label);
 		return CW_FAILURE;
 	}
-	if (strlen(label) > (LIBCW_INSTANCE_LABEL_SIZE - 1)) {
+	if (strlen(label) > (LIBCW_OBJECT_INSTANCE_LABEL_SIZE - 1)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_WARNING,
 			      MSG_PREFIX "'%s': new label '%s' too long, truncating", rec->label, label);
 		/* Not an error, just log warning. New label will be truncated. */

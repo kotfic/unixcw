@@ -128,7 +128,7 @@ typedef struct cw_config_t {
 	   a test should be executed for a group of sound systems, we may
 	   want to specify which exactly sound device to use for each of
 	   these sound systems. So we need per-sound-system options/fields. */
-	char test_alsa_device_name[CW_SOUND_DEVICE_NAME_SIZE];
+	char test_alsa_device_name[LIBCW_SOUND_DEVICE_NAME_SIZE];
 } cw_config_t;
 
 
