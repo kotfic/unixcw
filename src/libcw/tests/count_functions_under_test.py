@@ -223,6 +223,11 @@ if __name__ == '__main__':
 
     print_stats(n_tested, n_all)
 
+    print("")
+    print("'fut-' - function not tested (not marked by 'function under test' macro")
+    print("'so-'  - function not found in .so library");
+    print("")
+
     fun_counter = 1
     for fun in sorted(all_functions):
         if not fun.endswith("_internal"):
