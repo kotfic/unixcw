@@ -74,8 +74,8 @@ extern cw_debug_t cw_debug_object_dev;
 
 static pa_simple *cw_pa_simple_new_internal(pa_sample_spec *ss, pa_buffer_attr *ba, const char *device, const char *stream_name, int *error);
 static int        cw_pa_dlsym_internal(void *handle);
-static int        cw_pa_open_device_internal(cw_gen_t *gen);
-static void       cw_pa_close_device_internal(cw_gen_t *gen);
+static int        cw_pa_open_and_configure_device_internal(cw_gen_t *gen);
+static void       cw_pa_close_device_internal(cw_gen_t * gen);
 static int        cw_pa_write_internal(cw_gen_t *gen);
 
 
@@ -165,7 +165,7 @@ bool cw_is_pa_possible(const char *device)
 	if (!s) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "is possible: can't connect to PulseAudio server: %s", cw_pa.pa_strerror(error));
-		if (cw_pa.handle) {
+		if (cw_pa.handle) { /* FIXME: this closing of global handle won't work well for multi-generator library. */
 			dlclose(cw_pa.handle);
 		}
 		return false;
@@ -181,25 +181,28 @@ bool cw_is_pa_possible(const char *device)
 
 
 /**
-   \brief Configure given generator to work with PulseAudio sound sink
+   @brief Configure given @p gen variable to work with PulseAudio sound system
 
-   \reviewed on 2017-02-04
+   This function only sets some fields of @p gen (variables and function
+   pointers). It doesn't interact with PulseAudio sound system.
 
-   \param gen - generator
-   \param dev - PulseAudio device to use
+   @reviewed 2017-02-04
 
-   \return CW_SUCCESS
+   @param gen[in] generator structure in which to fill some fields
+   @param device_name[in] name of PulseAudio device to use
+
+   @return CW_SUCCESS
 */
-int cw_pa_configure(cw_gen_t *gen, const char *dev)
+cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 {
 	assert (gen);
 
 	gen->sound_system = CW_AUDIO_PA;
-	cw_gen_set_sound_device_internal(gen, dev);
+	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_device  = cw_pa_open_device_internal;
-	gen->close_device = cw_pa_close_device_internal;
-	gen->write        = cw_pa_write_internal;
+	gen->open_and_configure_device = cw_pa_open_and_configure_device_internal;
+	gen->close_device              = cw_pa_close_device_internal;
+	gen->write                     = cw_pa_write_internal;
 
 	return CW_SUCCESS;
 }
@@ -212,12 +215,12 @@ int cw_pa_configure(cw_gen_t *gen, const char *dev)
 
    \reviewed on 2017-02-04
 
-   \param gen - generator
+   @param gen[in] generator that will write to sound sink
 
    \return CW_SUCCESS on success
    \return CW_FAILURE otherwise
 */
-int cw_pa_write_internal(cw_gen_t *gen)
+int cw_pa_write_internal(cw_gen_t * gen)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_PA);
@@ -338,19 +341,19 @@ int cw_pa_dlsym_internal(void *handle)
 
 
 /**
-   \brief Open PulseAudio output, associate it with given generator
+   @brief Open and configure PulseAudio handle stored in given generator
 
    You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator \p gen won't know which device to open.
 
-   \reviewed on 2017-02-04
+   @param gen[in] generator for which to open and configure sound system handle
 
    \param gen - generator
 
    \return CW_FAILURE on errors
    \return CW_SUCCESS on success
 */
-int cw_pa_open_device_internal(cw_gen_t *gen)
+int cw_pa_open_and_configure_device_internal(cw_gen_t * gen)
 {
 	/* TODO: this piece of code is duplicated in cw_pa_simple_new_internal() */
 	const char *dev = (char *) NULL; /* NULL - let PulseAudio use default device. */
@@ -390,13 +393,13 @@ int cw_pa_open_device_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Close PulseAudio device associated with given generator
+   @brief Close PulseAudio device stored in given generator
 
    \reviewed on 2017-02-04
 
-   \param gen - generator
+   @param gen[in] generator for which to close its sound device
 */
-void cw_pa_close_device_internal(cw_gen_t *gen)
+void cw_pa_close_device_internal(cw_gen_t * gen)
 {
 	if (gen->pa_data.s) {
 		/* Make sure that every single sample was played */
@@ -412,7 +415,7 @@ void cw_pa_close_device_internal(cw_gen_t *gen)
 			      MSG_PREFIX "close device: called the function for NULL PA sink");
 	}
 
-	if (cw_pa.handle) {
+	if (cw_pa.handle) { /* FIXME: this closing of global handle won't work well for multi-generator library. */
 		dlclose(cw_pa.handle);
 	}
 
@@ -453,7 +456,7 @@ bool cw_is_pa_possible(__attribute__((unused)) const char *device)
 
 
 
-int cw_pa_configure(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) const char *device)
+cw_ret_t cw_pa_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");

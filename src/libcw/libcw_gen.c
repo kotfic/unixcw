@@ -524,7 +524,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 		gen->sound_device_is_open = false;
 		gen->dev_raw_sink = -1;
 
-		gen->open_device = NULL;
+		gen->open_and_configure_device = NULL;
 		gen->close_device = NULL;
 		gen->write = NULL;
 
@@ -536,7 +536,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 		/* Sound system - ALSA. */
 #ifdef LIBCW_WITH_ALSA
-		gen->alsa_data.handle = NULL;
+		gen->alsa_data.pcm_handle = NULL;
 #endif
 
 		/* Sound system - PulseAudio. */
@@ -872,8 +872,8 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_NULL];
 		if (cw_is_null_possible(dev)) {
-			cw_null_configure(gen, dev);
-			return gen->open_device(gen);
+			cw_null_fill_gen_internal(gen, dev);
+			return gen->open_and_configure_device(gen);
 		}
 	}
 
@@ -882,8 +882,8 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_PA];
 		if (cw_is_pa_possible(dev)) {
-			cw_pa_configure(gen, dev);
-			return gen->open_device(gen);
+			cw_pa_fill_gen_internal(gen, dev);
+			return gen->open_and_configure_device(gen);
 		}
 	}
 
@@ -892,8 +892,8 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_OSS];
 		if (cw_is_oss_possible(dev)) {
-			cw_oss_configure(gen, dev);
-			return gen->open_device(gen);
+			cw_oss_fill_gen_internal(gen, dev);
+			return gen->open_and_configure_device(gen);
 		}
 	}
 
@@ -902,8 +902,8 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_ALSA];
 		if (cw_is_alsa_possible(dev)) {
-			cw_alsa_configure(gen, dev);
-			return gen->open_device(gen);
+			cw_alsa_fill_gen_internal(gen, dev);
+			return gen->open_and_configure_device(gen);
 		}
 	}
 
@@ -911,8 +911,8 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_CONSOLE];
 		if (cw_is_console_possible(dev)) {
-			cw_console_configure(gen, dev);
-			return gen->open_device(gen);
+			cw_console_fill_gen_internal(gen, dev);
+			return gen->open_and_configure_device(gen);
 		}
 	}
 

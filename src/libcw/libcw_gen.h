@@ -333,8 +333,12 @@ struct cw_gen_struct {
 	   PulseAudio). */
 	int dev_raw_sink;
 
-	int  (* open_device)(cw_gen_t *gen);
-	void (* close_device)(cw_gen_t *gen);
+	/* Open and configure sound system handle stored in given generator. */
+	cw_ret_t (* open_and_configure_device)(cw_gen_t * gen);
+
+	/* Close sound system device stored in given generator. */
+	void (* close_device)(cw_gen_t * gen);
+
 	int  (* write)(cw_gen_t *gen);
 
 

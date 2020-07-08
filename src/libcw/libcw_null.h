@@ -12,7 +12,10 @@
 #include "libcw_gen.h"
 #include "libcw_tq.h"
 
-int  cw_null_configure(cw_gen_t *gen, const char *device);
+
+
+
+cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name);
 void cw_null_write(cw_gen_t *gen, cw_tone_t *tone);
 
 

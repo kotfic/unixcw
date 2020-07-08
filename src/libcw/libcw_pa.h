@@ -34,7 +34,10 @@ typedef struct cw_pa_data_struct {
 
 #include "libcw_gen.h"
 
-int cw_pa_configure(cw_gen_t *gen, const char *device);
+
+
+
+cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name);
 
 
 

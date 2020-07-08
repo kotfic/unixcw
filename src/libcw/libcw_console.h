@@ -15,7 +15,7 @@
 
 
 
-int  cw_console_configure(cw_gen_t *gen, const char *device);
+cw_ret_t cw_console_fill_gen_internal(cw_gen_t * gen, const char * device_name);
 int  cw_console_write(cw_gen_t *gen, cw_tone_t *tone);
 void cw_console_silence(cw_gen_t *gen);
 

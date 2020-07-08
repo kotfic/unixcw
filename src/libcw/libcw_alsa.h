@@ -10,6 +10,7 @@
 
 
 #include "config.h"
+#include "libcw2.h"
 
 
 
@@ -19,7 +20,7 @@
 #include <alsa/asoundlib.h>
 
 typedef struct cw_alsa_data_struct {
-	snd_pcm_t *handle; /* Output handle for sound data. */
+	snd_pcm_t * pcm_handle; /* Output handle for sound data. */
 } cw_alsa_data_t;
 
 
@@ -30,7 +31,10 @@ typedef struct cw_alsa_data_struct {
 
 #include "libcw_gen.h"
 
-int  cw_alsa_configure(cw_gen_t *gen, const char *device);
+
+
+
+cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name);
 void cw_alsa_drop(cw_gen_t *gen);
 
 

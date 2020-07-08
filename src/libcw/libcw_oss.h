@@ -11,7 +11,10 @@
 
 #include "libcw_gen.h"
 
-int cw_oss_configure(cw_gen_t *gen, const char *device);
+
+
+
+cw_ret_t cw_oss_fill_gen_internal(cw_gen_t * gen, const char * device_name);
 
 
 

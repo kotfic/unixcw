@@ -45,32 +45,35 @@
 
 
 
-static int  cw_null_open_device_internal(cw_gen_t *gen);
-static void cw_null_close_device_internal(cw_gen_t *gen);
+static int  cw_null_open_and_configure_device_internal(cw_gen_t *gen);
+static void cw_null_close_device_internal(cw_gen_t * gen);
 
 
 
 
 /**
-   \brief Configure given generator to work with Null sound sink
+   @brief Configure given @p gen variable to work with Null sound system
 
-   \reviewed on 2017-02-04
+   This function only sets some fields of @p gen (variables and function
+   pointers). It doesn't interact with Null sound system.
 
-   \param gen - generator
-   \param dev - Null device to use
+   @reviewed 2017-02-04
 
-   \return CW_SUCCESS
+   @param gen[in] generator structure in which to fill some fields
+   @param device_name[in] name of Null device to use
+
+   @return CW_SUCCESS
 */
-int cw_null_configure(cw_gen_t *gen, const char *device)
+cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 {
 	assert (gen);
 
 	gen->sound_system = CW_AUDIO_NULL;
-	cw_gen_set_sound_device_internal(gen, device);
+	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_device  = cw_null_open_device_internal;
-	gen->close_device = cw_null_close_device_internal;
-	// gen->write        = cw_null_write; /* The function is called in libcw_gen.c explicitly/directly, not by a pointer. TODO: we should call this function by function pointer. */
+	gen->open_and_configure_device = cw_null_open_and_configure_device_internal;
+	gen->close_device              = cw_null_close_device_internal;
+	// gen->write                     = cw_null_write; /* The function is called in libcw_gen.c explicitly/directly, not by a pointer. TODO: we should call this function by function pointer. */
 
 	gen->sample_rate = 48000; /* Some asserts may check for non-zero
 				     value of sample rate or its derivatives. */
@@ -99,13 +102,13 @@ bool cw_is_null_possible(__attribute__((unused)) const char *device)
 
 
 /**
-   \brief Open Null sound device associated with given generator
+   @brief Open and configure Null sound system handle stored in given generator
 
-   \param gen - generator
+   @param gen[in] generator for which to open and configure sound system handle
 
    \return CW_SUCCESS
 */
-int cw_null_open_device_internal(cw_gen_t *gen)
+int cw_null_open_and_configure_device_internal(cw_gen_t *gen)
 {
 	gen->sound_device_is_open = true;
 	return CW_SUCCESS;
@@ -115,13 +118,13 @@ int cw_null_open_device_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Close Null sound device associated with given generator
+   @brief Close Null device stored in given generator
 
-   \param gen - generator
+   @param gen[in] generator for which to close its sound device
 
    \return CW_SUCCESS
 */
-void cw_null_close_device_internal(cw_gen_t *gen)
+void cw_null_close_device_internal(cw_gen_t * gen)
 {
 	gen->sound_device_is_open = false;
 	return;

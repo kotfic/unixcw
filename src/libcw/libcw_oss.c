@@ -103,8 +103,8 @@ static const int CW_OSS_SAMPLE_FORMAT = AFMT_S16_NE;  /* Sound format AFMT_S16_N
 static int  cw_oss_open_device_ioctls_internal(int *fd, int *sample_rate);
 static int  cw_oss_get_version_internal(int fd, int *x, int *y, int *z);
 static int  cw_oss_write_internal(cw_gen_t *gen);
-static int  cw_oss_open_device_internal(cw_gen_t *gen);
-static void cw_oss_close_device_internal(cw_gen_t *gen);
+static int  cw_oss_open_and_configure_device_internal(cw_gen_t *gen);
+static void cw_oss_close_device_internal(cw_gen_t * gen);
 
 
 
@@ -179,25 +179,28 @@ bool cw_is_oss_possible(const char *device)
 
 
 /**
-   \brief Configure given generator to work with OSS sound system
+   @brief Configure given @p gen variable to work with OSS sound system
 
-   \reviewed on 2017-02-05
+   This function only sets some fields of @p gen (variables and function
+   pointers). It doesn't interact with OSS sound system.
 
-   \param gen - generator
-   \param dev - OSS device to use
+   @reviewed 2017-02-05
 
-   \return CW_SUCCESS
+   @param gen[in] generator structure in which to fill some fields
+   @param device_name[in] name of OSS device to use
+
+   @return CW_SUCCESS
 */
-int cw_oss_configure(cw_gen_t *gen, const char *device)
+cw_ret_t cw_oss_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 {
 	assert (gen);
 
 	gen->sound_system = CW_AUDIO_OSS;
-	cw_gen_set_sound_device_internal(gen, device);
+	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_device  = cw_oss_open_device_internal;
-	gen->close_device = cw_oss_close_device_internal;
-	gen->write        = cw_oss_write_internal;
+	gen->open_and_configure_device = cw_oss_open_and_configure_device_internal;
+	gen->close_device              = cw_oss_close_device_internal;
+	gen->write                     = cw_oss_write_internal;
 
 	return CW_SUCCESS;
 }
@@ -208,13 +211,12 @@ int cw_oss_configure(cw_gen_t *gen, const char *device)
 /**
    \brief Write generated samples to OSS sound system configured and opened for generator
 
-
-   \param gen - generator
+   @param gen[in] generator that will write to sound sink
 
    \return CW_SUCCESS on success
    \return CW_FAILURE otherwise
 */
-int cw_oss_write_internal(cw_gen_t *gen)
+int cw_oss_write_internal(cw_gen_t * gen)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_OSS);
@@ -235,22 +237,22 @@ int cw_oss_write_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Open OSS output, associate it with given generator
+   @brief Open and configure OSS handle stored in given generator
 
    You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator \p gen won't know which device to open.
 
    \reviewed on 2017-02-05
 
-   \param gen - generator
+   @param gen[in] generator for which to open and configure sound system handle
 
    \return CW_FAILURE on errors
    \return CW_SUCCESS on success
 */
-int cw_oss_open_device_internal(cw_gen_t *gen)
+int cw_oss_open_and_configure_device_internal(cw_gen_t * gen)
 {
 	/* TODO: there seems to be some redundancy between
-	   cw_oss_open_device_internal() and is_possible() function. */
+	   cw_oss_open_and_configure_device_internal() and is_possible() function. */
 
 	/* Open the given soundcard device file, for write only. */
 	int soundcard = open(gen->sound_device, O_WRONLY);
@@ -486,13 +488,13 @@ int cw_oss_open_device_ioctls_internal(int *fd, int *sample_rate)
 
 
 /**
-   \brief Close OSS device associated with given generator
+   @brief Close OSS device stored in given generator
 
    \reviewed on 2017-02-05
 
-   \param gen - generator
+   @param gen[in] generator for which to close its sound device
 */
-void cw_oss_close_device_internal(cw_gen_t *gen)
+void cw_oss_close_device_internal(cw_gen_t * gen)
 {
 	close(gen->sound_sink);
 	gen->sound_sink = -1;
@@ -564,7 +566,7 @@ bool cw_is_oss_possible(__attribute__((unused)) const char *device)
 
 
 
-int  cw_oss_configure(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) const char *device)
+cw_ret_t cw_oss_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");

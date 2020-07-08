@@ -93,8 +93,8 @@ extern cw_debug_t cw_debug_object_dev;
    from linux/include/asm-i386/timex.h, included here for portability. */
 static const int KIOCSOUND_CLOCK_TICK_RATE = 1193180;
 
-static void cw_console_close_device_internal(cw_gen_t *gen);
-static int  cw_console_open_device_internal(cw_gen_t *gen);
+static void cw_console_close_device_internal(cw_gen_t * gen);
+static int  cw_console_open_and_configure_device_internal(cw_gen_t *gen);
 static int  cw_console_write_low_level_internal(cw_gen_t *gen, bool state);
 
 
@@ -162,7 +162,7 @@ bool cw_is_console_possible(const char *device)
 
 
 /**
-   \brief Open console PC speaker device associated with given generator
+   @brief Open and configure console PC speaker device stored in given generator
 
    The function doesn't check if ioctl(fd, KIOCSOUND, ...) works,
    the client code must use cw_is_console_possible() instead, prior
@@ -173,12 +173,12 @@ bool cw_is_console_possible(const char *device)
 
    \reviewed on 2017-02-04
 
-   \param gen - generator
+   @param gen[in] generator for which to open and configure PC speaker device
 
    \return CW_FAILURE on errors
    \return CW_SUCCESS on success
 */
-int cw_console_open_device_internal(cw_gen_t *gen)
+int cw_console_open_and_configure_device_internal(cw_gen_t *gen)
 {
 	assert (gen->sound_device);
 
@@ -227,11 +227,13 @@ void cw_console_silence(cw_gen_t *gen)
 
 
 /**
-   \brief Close console device associated with given generator
+   @brief Close console PC speaker device stored in given generator
 
    \reviewed on 2017-02-04
+
+   @param gen[in] generator for which to close its sound device
 */
-void cw_console_close_device_internal(cw_gen_t *gen)
+void cw_console_close_device_internal(cw_gen_t * gen)
 {
 	close(gen->sound_sink);
 	gen->sound_sink = -1;
@@ -344,25 +346,28 @@ int cw_console_write_low_level_internal(cw_gen_t *gen, bool state)
 
 
 /**
-   \brief Configure given generator to work with Console sound sink
+   @brief Configure given @p gen variable to work with Console sound system
 
-   \reviewed on 2017-02-04
+   This function only sets some fields of @p gen (variables and function
+   pointers). It doesn't interact with Console sound system.
 
-   \param gen - generator
-   \param dev - Null device to use
+   @reviewed 2017-02-04
 
-   \return CW_SUCCESS
+   @param gen[in] generator structure in which to fill some fields
+   @param device_name[in] name of Console device to use
+
+   @return CW_SUCCESS
 */
-int cw_console_configure(cw_gen_t *gen, const char *device)
+cw_ret_t cw_console_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 {
 	assert (gen);
 
 	gen->sound_system = CW_AUDIO_CONSOLE;
-	cw_gen_set_sound_device_internal(gen, device);
+	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_device  = cw_console_open_device_internal;
-	gen->close_device = cw_console_close_device_internal;
-	// gen->write        = cw_console_write; // The function is called in libcw.c directly/explicitly, not through a pointer. TODO: we should call this function by function pointer. */
+	gen->open_and_configure_device = cw_console_open_and_configure_device_internal;
+	gen->close_device              = cw_console_close_device_internal;
+	// gen->write                     = cw_console_write; // The function is called in libcw.c directly/explicitly, not through a pointer. TODO: we should call this function by function pointer. */
 
 	return CW_SUCCESS;
 }
@@ -390,7 +395,7 @@ bool cw_is_console_possible(__attribute__((unused)) const char *device)
 
 
 
-int cw_console_configure(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) const char *device)
+cw_ret_t cw_console_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");
