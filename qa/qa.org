@@ -29,8 +29,8 @@ export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./.libs/libcw_test_l
 * PulseAudio
 
 To kill pulseaudio server and prevent it from re-starting:
-cat ~/.config/pulse/client.conf
-autospawn = yes
+emacs ~/.config/pulse/client.conf
+autospawn = no
 killall -9 pulseaudio
 
 
