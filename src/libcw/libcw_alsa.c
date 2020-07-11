@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
-  Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+  Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -28,12 +28,12 @@
 
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 
 
 
-#include "config.h"
-#include "libcw2.h"
+#include "libcw_alsa.h"
 #include "libcw_debug.h"
 #include "libcw_rec.h"
 
@@ -66,7 +66,6 @@ extern const unsigned int cw_supported_sample_rates[];
 
 
 #include "libcw.h"
-#include "libcw_alsa.h"
 #include "libcw_utils.h"
 #include "libcw_gen.h"
 
@@ -195,7 +194,7 @@ struct cw_alsa_handle_t {
 	   notification".
 
 	   We don't do that here, so don't use the function. */
-	int (* snd_pcm_sw_params_set_start_threshold)(snd_pcm_t *pcm, snd_pcm_sw_params_t *params, snd_pcm_uframes_t val);
+	//int (* snd_pcm_sw_params_set_start_threshold)(snd_pcm_t *pcm, snd_pcm_sw_params_t *params, snd_pcm_uframes_t val);
 
 	/* This source:
 	   https://users.suse.com/~mana/alsa090_howto.html
@@ -345,7 +344,7 @@ cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 /**
    @brief Write generated samples to ALSA sound sink configured and opened for generator
 
-   @reviewed on 2020-07-07
+   @reviewed 2020-07-07
 
    @param gen[in] generator that will write to sound sink
 
@@ -380,9 +379,9 @@ static cw_ret_t cw_alsa_write_internal(cw_gen_t * gen)
    You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator @p gen won't know which device to open.
 
-   @reviewed on 2020-07-07
+   @reviewed 2020-07-07
 
-   @param gen[in] generator for which to open and configure sound system handle
+   @param gen[in] generator for which to open and configure PCM handle
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -473,7 +472,7 @@ static cw_ret_t cw_alsa_open_and_configure_device_internal(cw_gen_t * gen)
 /**
    @brief Close ALSA device stored in given generator
 
-   @reviewed on 2020-07-07
+   @reviewed 2020-07-07
 
    @param gen[in] generator for which to close its sound device
 */
@@ -502,17 +501,20 @@ static void cw_alsa_close_device_internal(cw_gen_t * gen)
 
 
 /**
-   \brief Handle value returned by ALSA's write function (snd_pcm_writei)
+   @brief Handle value returned by ALSA's write function (snd_pcm_writei())
 
-   If specific errors occurred during write, sound sink is reset by this function.
+   If the returned value indicates error, ALSA handle is reset by this
+   function.
 
-   \reviewed on 2017-02-05
+   This function also checks if expected number of bytes has been written.
 
-   \param gen - generator
-   \param snd_rv - value returned by snd_pcm_writei()
+   @reviewed 2020-07-08
 
-   \return CW_SUCCESS if write was successful
-   \return CW_FAILURE otherwise
+   @param gen[in] generator with ALSA handle
+   @param snd_rv[in] value returned by snd_pcm_writei()
+
+   @return CW_SUCCESS if @p snd_rv is non-error and no other write-related error was detected
+   @return CW_FAILURE otherwise
 */
 static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv)
 {
@@ -520,33 +522,36 @@ static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
 			      MSG_PREFIX "write: underrun");
 		cw_alsa.snd_pcm_prepare(gen->alsa_data.pcm_handle); /* Reset sound sink. */
+		return CW_FAILURE;
 
 	} else if (snd_rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
 			      MSG_PREFIX "write: writei: %s", cw_alsa.snd_strerror(snd_rv));
-		cw_alsa.snd_pcm_prepare(gen->alsa_data.pcm_handle);  /* Reset sound sink. */
+		cw_alsa.snd_pcm_prepare(gen->alsa_data.pcm_handle); /* Reset sound sink. */
+		return CW_FAILURE;
 
 	} else if (snd_rv != gen->buffer_n_samples) {
-		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
-			      MSG_PREFIX "short write, %d != %d", snd_rv, gen->buffer_n_samples);
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
+			      MSG_PREFIX "short write, expected to write %d bytes, written %d bytes", gen->buffer_n_samples, snd_rv);
+		return CW_FAILURE;
 	} else {
 		return CW_SUCCESS;
 	}
-
-	return CW_FAILURE;
 }
 
 
 
 
 /**
-   \brief Set up hardware buffer parameters of ALSA sink
+   @brief Set up hardware buffer parameters of ALSA sink
 
-   \param gen - generator with ALSA handle set up
-   \param params - allocated hw params data structure to be used
+   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param hw_params[in] allocated hw params data structure to be used by this function
 
-   \return CW_FAILURE on errors
-   \return CW_SUCCESS on success
+   @reviewed 2020-07-09
+
+   @return CW_FAILURE on errors
+   @return CW_SUCCESS on success
 */
 static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params)
 {
@@ -559,7 +564,7 @@ static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params
 	}
 
 
-	//cw_alsa_test_hw_period_sizes(gen); /* This function is only for tests. */
+	// cw_alsa_test_hw_period_sizes(gen); /* This function is only for tests. */
 	cw_alsa_print_hw_params_internal(hw_params, "before limiting configuration space");
 
 
@@ -676,14 +681,28 @@ static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "set hw params: can't save hw parameters: %s", cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
-	} else {
-		return CW_SUCCESS;
 	}
+
+	return CW_SUCCESS;
 }
 
 
 
 
+/**
+   @brief Set value of sample rate in given hw_params variable
+
+   Function sets sample rate in @p hw_params, and also sets it in given @p
+   gen.
+
+   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param hw_params[in] allocated hw params data structure to be used by this function
+
+   @reviewed 2020-07-09
+
+   @return CW_FAILURE on errors
+   @return CW_SUCCESS on success
+*/
 static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params)
 {
 	/* Set the sample rate. This influences range of available
@@ -728,6 +747,23 @@ static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_p
 
 
 
+/**
+   @brief Set value of period size in given hw_params variable
+
+   Function sets sample rate in @p hw_params, and also sets it in given @p
+   gen.
+
+   TODO: this shouldn't be so complicated. The function is unclear.
+
+   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param hw_params[in] allocated hw params data structure to be used by this function
+   @param actual_period_size[out] period size that has been selected
+
+   @reviewed 2020-07-09
+
+   @return CW_FAILURE on errors
+   @return CW_SUCCESS on success
+*/
 static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t * actual_period_size)
 {
 	int snd_rv = 0;
@@ -822,6 +858,18 @@ static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_p
 
 
 
+/**
+   @brief Set value of buffer size in given hw_params variable
+
+   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param hw_params[in] allocated hw params data structure to be used by this function
+   @param actual_period_size[in] period size that has been configured earlier with cw_alsa_set_hw_params_period_size_internal()
+
+   @reviewed 2020-07-09
+
+   @return CW_FAILURE on errors
+   @return CW_SUCCESS on success
+*/
 static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t actual_period_size)
 {
 	int snd_rv = 0;
@@ -833,7 +881,7 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
 
 	   We can experiment here with other value. */
 	snd_pcm_uframes_t intended_buffer_size = actual_period_size * 3;
-	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "Will try to set intended buffer size %lu", intended_buffer_size);
 	snd_rv = cw_alsa.snd_pcm_hw_params_set_buffer_size_near(gen->alsa_data.pcm_handle, hw_params, &intended_buffer_size);
 	if (0 != snd_rv) {
@@ -841,7 +889,6 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
 			      MSG_PREFIX "Unable to set buffer size %lu for playback: %s", intended_buffer_size, cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
-
 
 	return CW_SUCCESS;
 }
@@ -871,6 +918,10 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
    have rather small sample rates. But on the other hand we need to be
    able to play tones with CW_FREQUENCY_MAX without
    distortion. Therefore minimal sample rate should be 8000.
+
+   @reviewed 2020-07-10
+
+   @param gen[in] generator variable with opened ALSA PCM handle, for which the period sizes should be tested
 */
 __attribute__((unused))
 static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
@@ -886,7 +937,7 @@ static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 	}
 
 
-	fprintf(stderr, "Sample rate vs. period size range:\n");
+	fprintf(stderr, "[II] Sample rate vs. period size range:\n");
 	for (int i = 0; 0 != cw_supported_sample_rates[i]; i++) {
 		unsigned int rate = cw_supported_sample_rates[i];
 
@@ -906,7 +957,8 @@ static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 		cw_alsa.snd_pcm_hw_params_get_period_size_min(hw_params, &period_size_min, &dir);
 		cw_alsa.snd_pcm_hw_params_get_period_size_max(hw_params, &period_size_max, &dir);
 
-		fprintf(stderr, "    sample rate = %u, period size range = %lu - %lu\n", cw_supported_sample_rates[i], period_size_min, period_size_max);
+		fprintf(stderr, "[II]     sample rate = %7u, period size range = %lu - %lu\n",
+			cw_supported_sample_rates[i], period_size_min, period_size_max);
 	}
 
 	cw_alsa.snd_pcm_hw_params_free(hw_params);
@@ -915,6 +967,14 @@ static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 
 
 
+/**
+   @brief Print most important fields of @p hw_params structure
+
+   @reviewed 2020-07-10
+
+   @param hw_params[in] structure from which to print some fields
+   @param where[in] debug indicator used in debug messages printed by this function
+*/
 static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, const char * where)
 {
 	int dir = 0;
@@ -927,16 +987,19 @@ static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, co
 
 	snd_pcm_uframes_t period_size_min = 0;
 	snd_pcm_uframes_t period_size_max = 0;
+	dir = 0;
 	cw_alsa.snd_pcm_hw_params_get_period_size_min(hw_params, &period_size_min, &dir);
+	dir = 0;
 	cw_alsa.snd_pcm_hw_params_get_period_size_max(hw_params, &period_size_max, &dir);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      "     " MSG_PREFIX "Range of period sizes: %lu - %lu", period_size_min, period_size_max);
+		      MSG_PREFIX "    Range of period sizes: %lu - %lu", period_size_min, period_size_max);
 
 
 	snd_pcm_uframes_t current_period_size = 0;
+	dir = 0;
 	cw_alsa.snd_pcm_hw_params_get_period_size(hw_params, &current_period_size, &dir);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      "     " MSG_PREFIX "Current period size: %lu, dir = %d", current_period_size, dir);
+		      MSG_PREFIX "    Current period size: %lu, dir = %d", current_period_size, dir);
 
 
 	snd_pcm_uframes_t buffer_size_min = 0;
@@ -944,20 +1007,25 @@ static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, co
 	cw_alsa.snd_pcm_hw_params_get_buffer_size_min(hw_params, &buffer_size_min);
 	cw_alsa.snd_pcm_hw_params_get_buffer_size_max(hw_params, &buffer_size_max);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      "     " MSG_PREFIX "Range of buffer sizes: %lu - %lu", buffer_size_min, buffer_size_max);
+		      MSG_PREFIX "    Range of buffer sizes: %lu - %lu", buffer_size_min, buffer_size_max);
 
 
 	snd_pcm_uframes_t current_buffer_size = 0;
 	cw_alsa.snd_pcm_hw_params_get_buffer_size(hw_params, &current_buffer_size);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      "     " MSG_PREFIX "Current buffer size: %lu", current_buffer_size);
+		      MSG_PREFIX "    Current buffer size: %lu", current_buffer_size);
 
 
 	/* How many periods in a buffer? */
 	unsigned int n_periods = 0;
+	dir = 0;
 	cw_alsa.snd_pcm_hw_params_get_periods(hw_params, &n_periods, &dir);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      "     " MSG_PREFIX "Count of periods in buffer: %u", n_periods);
+		      MSG_PREFIX "    Count of periods in buffer: %u", n_periods);
+	/* The ratio should be a value with zero fractional part. TODO: write a test for it. */
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+		      MSG_PREFIX "    Ratio of period size to buffer size = %f",
+		      (1.0 * current_buffer_size) / current_period_size);
 
 
 	dir_min = 0;
@@ -967,7 +1035,7 @@ static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, co
 	cw_alsa.snd_pcm_hw_params_get_rate_min(hw_params, &rate_min, &dir_min);
 	cw_alsa.snd_pcm_hw_params_get_rate_max(hw_params, &rate_max, &dir_max);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      "     " MSG_PREFIX "Range of sample rates: %u - %u (dir min = %d, dir max = %d)",
+		      MSG_PREFIX "    Range of sample rates: %u - %u (dir min = %d, dir max = %d)",
 		      rate_min, rate_max, dir_min, dir_max);
 }
 
@@ -1018,19 +1086,21 @@ static void cw_alsa_print_sw_params_internal(snd_pcm_sw_params_t * sw_params, co
 
 
 /**
-   \brief Resolve/get symbols from ALSA library
+   @brief Resolve/get symbols from ALSA library
 
    Function resolves/gets addresses of ALSA functions used by libcw and
    stores them in @p alsa_handle.
 
-   On failure the function returns negative value, different for every
-   symbol that the funciton failed to resolve. Function stops and returns
-   on first failure.
+   On failure the function returns negative value, different for every symbol
+   that the funciton failed to resolve. Function stops and returns on first
+   failure.
 
-   \param alsa_handle[in] handle with function pointers
+   @reviewed 2020-07-10
 
-   \return 0 on success
-   \return negative value on failure, indicating which library symbol failed to load
+   @param alsa_handle[in] structure with function pointers to set
+
+   @return 0 on success
+   @return negative value on failure, indicating which library symbol failed to load
 */
 static int cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle)
 {
@@ -1116,15 +1186,17 @@ static int cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle)
 
 
 /**
-   \brief Call ALSA's snd_pcm_drop() function for given generator
+   @brief Call ALSA's snd_pcm_drop() function for given generator
 
-   \reviewed on 2017-02-05
+   @reviewed 2017-02-05
 
-   \param gen - generator
+   @param gen[in] generator with ALSA PCM handle
 */
-void cw_alsa_drop(cw_gen_t *gen)
+void cw_alsa_drop_internal(cw_gen_t * gen)
 {
-	cw_alsa.snd_pcm_drop(gen->alsa_data.pcm_handle);
+	if (gen->sound_system == CW_AUDIO_ALSA) {
+		cw_alsa.snd_pcm_drop(gen->alsa_data.pcm_handle);
+	}
 
 	return;
 }
@@ -1137,13 +1209,7 @@ void cw_alsa_drop(cw_gen_t *gen)
 
 
 
-#include <stdbool.h>
-#include "libcw_alsa.h"
-
-
-
-
-bool cw_is_alsa_possible(__attribute__((unused)) const char * device)
+bool cw_is_alsa_possible(__attribute__((unused)) const char * device_name)
 {
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");
@@ -1155,7 +1221,7 @@ bool cw_is_alsa_possible(__attribute__((unused)) const char * device)
 
 cw_ret_t cw_alsa_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
 {
-	cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");
 	return CW_FAILURE;
 }
@@ -1163,8 +1229,9 @@ cw_ret_t cw_alsa_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __att
 
 
 
-void cw_alsa_drop(__attribute__((unused)) cw_gen_t *gen)
+void cw_alsa_drop_internal(__attribute__((unused)) cw_gen_t * gen)
 {
+	/* Don't log anything. */
 	return;
 }
 

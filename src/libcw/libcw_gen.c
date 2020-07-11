@@ -75,17 +75,18 @@
 
 
 
-#include "libcw_gen.h"
-#include "libcw_debug.h"
-#include "libcw_utils.h"
-#include "libcw_signal.h"
-#include "libcw_data.h"
-#include "libcw_null.h"
-#include "libcw_console.h"
-#include "libcw_rec.h"
-#include "libcw_oss.h"
 #include "libcw2.h"
+#include "libcw_alsa.h"
+#include "libcw_console.h"
+#include "libcw_data.h"
+#include "libcw_debug.h"
+#include "libcw_gen.h"
 #include "libcw_gen_internal.h"
+#include "libcw_oss.h"
+#include "libcw_rec.h"
+#include "libcw_signal.h"
+#include "libcw_utils.h"
+#include "libcw_null.h"
 
 
 
@@ -393,7 +394,7 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 
 	if (gen->sound_system == CW_AUDIO_ALSA) {
 		/* "Stop a PCM dropping pending frames. " */
-		cw_alsa_drop(gen);
+		cw_alsa_drop_internal(gen);
 	}
 
 	/* TODO: we just want to silence the generator, right? So we don't stop it.
