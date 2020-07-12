@@ -36,3 +36,7 @@ killall -9 pulseaudio
 
 * ALSA
 "plughw" device
+
+
+https://alsa.opensrc.org/Proc_asound_documentation
+echo 32 > /proc/asound/card0/pcm0p/sub0/prealloc
