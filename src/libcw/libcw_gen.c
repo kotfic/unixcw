@@ -525,9 +525,10 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 		gen->sound_device_is_open = false;
 		gen->dev_raw_sink = -1;
 
-		gen->open_and_configure_device = NULL;
-		gen->close_device = NULL;
-		gen->write = NULL;
+		gen->open_and_configure_sound_device = NULL;
+		gen->close_sound_device = NULL;
+		gen->write_buffer_to_sound_device = NULL;
+		gen->write_tone_to_sound_device = NULL;
 
 
 		/* Sound system - OSS. */
@@ -633,8 +634,8 @@ void cw_gen_delete(cw_gen_t **gen)
 	free((*gen)->buffer);
 	(*gen)->buffer = NULL;
 
-	if ((*gen)->close_device) {
-		(*gen)->close_device(*gen);
+	if ((*gen)->close_sound_device) {
+		(*gen)->close_sound_device(*gen);
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_WARNING, MSG_PREFIX "WARNING: 'close' function pointer is NULL, something went wrong");
 	}
@@ -874,7 +875,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_NULL];
 		if (cw_is_null_possible(dev)) {
 			cw_null_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_device(gen);
+			return gen->open_and_configure_sound_device(gen);
 		}
 	}
 
@@ -884,7 +885,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_PA];
 		if (cw_is_pa_possible(dev)) {
 			cw_pa_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_device(gen);
+			return gen->open_and_configure_sound_device(gen);
 		}
 	}
 
@@ -894,7 +895,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_OSS];
 		if (cw_is_oss_possible(dev)) {
 			cw_oss_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_device(gen);
+			return gen->open_and_configure_sound_device(gen);
 		}
 	}
 
@@ -904,7 +905,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_ALSA];
 		if (cw_is_alsa_possible(dev)) {
 			cw_alsa_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_device(gen);
+			return gen->open_and_configure_sound_device(gen);
 		}
 	}
 
@@ -913,7 +914,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_CONSOLE];
 		if (cw_is_console_possible(dev)) {
 			cw_console_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_device(gen);
+			return gen->open_and_configure_sound_device(gen);
 		}
 	}
 
@@ -1007,10 +1008,9 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 		cw_debug_ev (&cw_debug_object_ev, 0, tone.frequency ? CW_DEBUG_EVENT_TONE_HIGH : CW_DEBUG_EVENT_TONE_LOW);
 #endif
 
-		if (gen->sound_system == CW_AUDIO_NULL) {
-			cw_null_write(gen, &tone);
-		} else if (gen->sound_system == CW_AUDIO_CONSOLE) {
-			cw_console_write(gen, &tone);
+		if (gen->sound_system == CW_AUDIO_NULL || gen->sound_system == CW_AUDIO_CONSOLE) {
+			cw_assert (NULL != gen->write_tone_to_sound_device, "'gen->write_tone_to_sound_device' pointer is NULL");
+			gen->write_tone_to_sound_device(gen, &tone);
 		} else {
 			cw_gen_write_to_soundcard_internal(gen, &tone, is_empty_tone);
 		}
@@ -1564,7 +1564,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_e
 			/* We have a buffer full of samples. The
 			   buffer is ready to be pushed to sound
 			   sink. */
-			gen->write(gen);
+			gen->write_buffer_to_sound_device(gen);
 #if CW_DEV_RAW_SINK
 			cw_dev_debug_raw_sink_write_internal(gen);
 #endif

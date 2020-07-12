@@ -93,8 +93,9 @@ extern cw_debug_t cw_debug_object_dev;
    from linux/include/asm-i386/timex.h, included here for portability. */
 static const int KIOCSOUND_CLOCK_TICK_RATE = 1193180;
 
-static void cw_console_close_device_internal(cw_gen_t * gen);
-static int  cw_console_open_and_configure_device_internal(cw_gen_t *gen);
+static void cw_console_close_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, cw_tone_t * tone);
 static int  cw_console_write_low_level_internal(cw_gen_t *gen, bool state);
 
 
@@ -119,17 +120,18 @@ static int  cw_console_write_low_level_internal(cw_gen_t *gen, bool state);
 
    \reviewed on 2017-02-04
 
-   \param device - name of console device to be used; if NULL then library will use default device.
+   @param device_name[in] name of console device to be used; if NULL then the
+   function will use library-default device name.
 
    \return true if opening console output succeeded;
    \return false if opening console output failed;
 */
-bool cw_is_console_possible(const char *device)
+bool cw_is_console_possible(const char * device_name)
 {
 	/* No need to allocate space for device path, just a
 	   pointer (to a memory allocated somewhere else by
 	   someone else) will be sufficient in local scope. */
-	const char *dev = device ? device : CW_DEFAULT_CONSOLE_DEVICE;
+	const char *dev = device_name ? device_name : CW_DEFAULT_CONSOLE_DEVICE;
 
 	int fd = open(dev, O_WRONLY);
 	if (fd == -1) {
@@ -178,7 +180,7 @@ bool cw_is_console_possible(const char *device)
    \return CW_FAILURE on errors
    \return CW_SUCCESS on success
 */
-int cw_console_open_and_configure_device_internal(cw_gen_t *gen)
+cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen)
 {
 	assert (gen->sound_device);
 
@@ -233,7 +235,7 @@ void cw_console_silence(cw_gen_t *gen)
 
    @param gen[in] generator for which to close its sound device
 */
-void cw_console_close_device_internal(cw_gen_t * gen)
+void cw_console_close_sound_device_internal(cw_gen_t * gen)
 {
 	close(gen->sound_sink);
 	gen->sound_sink = -1;
@@ -263,7 +265,7 @@ void cw_console_close_device_internal(cw_gen_t * gen)
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
-int cw_console_write(cw_gen_t *gen, cw_tone_t *tone)
+static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, cw_tone_t * tone)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_CONSOLE);
@@ -365,9 +367,9 @@ cw_ret_t cw_console_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 	gen->sound_system = CW_AUDIO_CONSOLE;
 	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_and_configure_device = cw_console_open_and_configure_device_internal;
-	gen->close_device              = cw_console_close_device_internal;
-	// gen->write                     = cw_console_write; // The function is called in libcw.c directly/explicitly, not through a pointer. TODO: we should call this function by function pointer. */
+	gen->open_and_configure_sound_device = cw_console_open_and_configure_sound_device_internal;
+	gen->close_sound_device              = cw_console_close_sound_device_internal;
+	gen->write_tone_to_sound_device      = cw_console_write_tone_to_sound_device_internal;
 
 	return CW_SUCCESS;
 }
@@ -405,7 +407,7 @@ cw_ret_t cw_console_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __
 
 
 
-int cw_console_write(__attribute__((unused)) cw_gen_t *gen, __attribute__((unused)) cw_tone_t *tone)
+cw_ret_t cw_console_write_tone_to_sound_device_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) cw_tone_t * tone)
 {
 	return CW_FAILURE;
 }

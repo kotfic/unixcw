@@ -9,14 +9,13 @@
 
 
 
+#include "libcw2.h"
 #include "libcw_gen.h"
-#include "libcw_tq.h"
 
 
 
 
 cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name);
-void cw_null_write(cw_gen_t *gen, cw_tone_t *tone);
 
 
 

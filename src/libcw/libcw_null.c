@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
-  Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+  Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -18,10 +18,12 @@
 */
 
 
-/**
-   \file libcw_null.c
 
-   \brief Null sound sink.
+
+/**
+   @file libcw_null.c
+
+   @brief Null sound sink.
 
    No sound is being played, but time periods necessary for generator
    to operate are being measured.
@@ -30,23 +32,24 @@
 
 
 
-#include <stdio.h>
 #include <assert.h>
-#include <sys/time.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <sys/time.h>
 
 
 
 
+#include "libcw_gen.h"
 #include "libcw_null.h"
 #include "libcw_utils.h"
-#include "libcw_gen.h"
 
 
 
 
-static int  cw_null_open_and_configure_device_internal(cw_gen_t *gen);
-static void cw_null_close_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static void     cw_null_close_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_null_write_tone_to_sound_device_internal(cw_gen_t * gen, cw_tone_t * tone);
 
 
 
@@ -55,9 +58,11 @@ static void cw_null_close_device_internal(cw_gen_t * gen);
    @brief Configure given @p gen variable to work with Null sound system
 
    This function only sets some fields of @p gen (variables and function
-   pointers). It doesn't interact with Null sound system.
+   pointers). It doesn't interact with Null sound system. @p device_name
+   variable is used, but the value of the variable doesn't really matter for
+   NULL sound system.
 
-   @reviewed 2017-02-04
+   @reviewed 2020-07-12
 
    @param gen[in] generator structure in which to fill some fields
    @param device_name[in] name of Null device to use
@@ -71,9 +76,9 @@ cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 	gen->sound_system = CW_AUDIO_NULL;
 	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_and_configure_device = cw_null_open_and_configure_device_internal;
-	gen->close_device              = cw_null_close_device_internal;
-	// gen->write                     = cw_null_write; /* The function is called in libcw_gen.c explicitly/directly, not by a pointer. TODO: we should call this function by function pointer. */
+	gen->open_and_configure_sound_device = cw_null_open_and_configure_sound_device_internal;
+	gen->close_sound_device              = cw_null_close_sound_device_internal;
+	gen->write_tone_to_sound_device      = cw_null_write_tone_to_sound_device_internal;
 
 	gen->sample_rate = 48000; /* Some asserts may check for non-zero
 				     value of sample rate or its derivatives. */
@@ -85,15 +90,16 @@ cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 
 
 /**
-   \brief Check if it is possible to open Null sound output
+   @brief Check if it is possible to open Null sound output
 
-   \reviewed on 2017-02-04
+   @reviewed on 2020-07-12
 
-   \param device - sink device, unused
+   @param device_name[in] name of Null device to be used. Value is ignored
+   for Null sound system.
 
-   \return true - it's always possible to write to Null device
+   @return true it's always possible to write to Null device
 */
-bool cw_is_null_possible(__attribute__((unused)) const char *device)
+bool cw_is_null_possible(__attribute__((unused)) const char * device_name)
 {
 	return true;
 }
@@ -104,11 +110,13 @@ bool cw_is_null_possible(__attribute__((unused)) const char *device)
 /**
    @brief Open and configure Null sound system handle stored in given generator
 
+   @reviewed on 2020-07-12
+
    @param gen[in] generator for which to open and configure sound system handle
 
-   \return CW_SUCCESS
+   @return CW_SUCCESS
 */
-int cw_null_open_and_configure_device_internal(cw_gen_t *gen)
+static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen)
 {
 	gen->sound_device_is_open = true;
 	return CW_SUCCESS;
@@ -120,11 +128,11 @@ int cw_null_open_and_configure_device_internal(cw_gen_t *gen)
 /**
    @brief Close Null device stored in given generator
 
-   @param gen[in] generator for which to close its sound device
+   @reviewed on 2020-07-12
 
-   \return CW_SUCCESS
+   @param gen[in] generator for which to close its sound device
 */
-void cw_null_close_device_internal(cw_gen_t * gen)
+static void cw_null_close_sound_device_internal(cw_gen_t * gen)
 {
 	gen->sound_device_is_open = false;
 	return;
@@ -134,20 +142,19 @@ void cw_null_close_device_internal(cw_gen_t * gen)
 
 
 /**
-   \brief Write to Null sound sink configured and opened for generator
+   @brief Write to Null sound device configured and opened for generator
 
    The function doesn't really write the samples anywhere, it just
    sleeps for period of time that would be necessary to write the
    samples to a real sound device and play/sound them.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2020-07-12
 
-   \param gen - generator
+   @param gen[in] generator that will write to sound device
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE otherwise
+   @return CW_SUCCESS
 */
-void cw_null_write(__attribute__((unused)) cw_gen_t *gen, cw_tone_t *tone)
+static cw_ret_t cw_null_write_tone_to_sound_device_internal(__attribute__((unused)) cw_gen_t * gen, cw_tone_t * tone)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_NULL);
@@ -155,5 +162,5 @@ void cw_null_write(__attribute__((unused)) cw_gen_t *gen, cw_tone_t *tone)
 
 	cw_usleep_internal(tone->duration);
 
-	return;
+	return CW_SUCCESS;
 }

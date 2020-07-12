@@ -11,6 +11,7 @@
 
 
 #include "libcw.h"
+#include "libcw2.h"
 #include "libcw_alsa.h"
 #include "libcw_key.h"
 #include "libcw_pa.h"
@@ -334,12 +335,24 @@ struct cw_gen_struct {
 	int dev_raw_sink;
 
 	/* Open and configure sound system handle stored in given generator. */
-	cw_ret_t (* open_and_configure_device)(cw_gen_t * gen);
+	cw_ret_t (* open_and_configure_sound_device)(cw_gen_t * gen);
 
 	/* Close sound system device stored in given generator. */
-	void (* close_device)(cw_gen_t * gen);
+	void (* close_sound_device)(cw_gen_t * gen);
 
-	int  (* write)(cw_gen_t *gen);
+	/* Two types of write functions:
+	   - one that writes to device samples from generator's buffer (the
+             contents is calculated earlier),
+	   - one that writes to device an on/off state from provided tone
+             argument.
+
+	   The first function is implemented by real sound systems that
+	   support real sound cards: OSS, ALSA and PulseAudio.
+
+	   The second function is for pseudo sound systems that don't access
+	   a sound card: Null and Console. */
+	cw_ret_t (* write_buffer_to_sound_device)(cw_gen_t * gen);
+	cw_ret_t (* write_tone_to_sound_device)(cw_gen_t * gen, cw_tone_t * tone);
 
 
 	/*

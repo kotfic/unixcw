@@ -19,9 +19,9 @@
 
 
 /**
-   \file libcw_alsa.c
+   @file libcw_alsa.c
 
-   \brief ALSA sound system.
+   @brief ALSA sound system.
 */
 
 
@@ -229,10 +229,10 @@ static void cw_alsa_print_sw_params_internal(snd_pcm_sw_params_t * sw_params, co
 #endif
 
 static int      cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle);
-static cw_ret_t cw_alsa_write_internal(cw_gen_t * gen);
+static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv);
-static cw_ret_t cw_alsa_open_and_configure_device_internal(cw_gen_t * gen);
-static void     cw_alsa_close_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static void     cw_alsa_close_sound_device_internal(cw_gen_t * gen);
 
 
 
@@ -331,9 +331,9 @@ cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 	gen->sound_system = CW_AUDIO_ALSA;
 	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_and_configure_device = cw_alsa_open_and_configure_device_internal;
-	gen->close_device              = cw_alsa_close_device_internal;
-	gen->write                     = cw_alsa_write_internal;
+	gen->open_and_configure_sound_device = cw_alsa_open_and_configure_sound_device_internal;
+	gen->close_sound_device              = cw_alsa_close_sound_device_internal;
+	gen->write_buffer_to_sound_device    = cw_alsa_write_buffer_to_sound_device_internal;
 
 	return CW_SUCCESS;
 }
@@ -342,16 +342,16 @@ cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 
 
 /**
-   @brief Write generated samples to ALSA sound sink configured and opened for generator
+   @brief Write generated samples to ALSA sound device configured and opened for generator
 
    @reviewed 2020-07-07
 
-   @param gen[in] generator that will write to sound sink
+   @param gen[in] generator that will write to sound device
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
 */
-static cw_ret_t cw_alsa_write_internal(cw_gen_t * gen)
+static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_ALSA);
@@ -386,7 +386,7 @@ static cw_ret_t cw_alsa_write_internal(cw_gen_t * gen)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_alsa_open_and_configure_device_internal(cw_gen_t * gen)
+static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 {
 	int snd_rv = cw_alsa.snd_pcm_open(&gen->alsa_data.pcm_handle,
 					  gen->sound_device,       /* name */
@@ -476,7 +476,7 @@ static cw_ret_t cw_alsa_open_and_configure_device_internal(cw_gen_t * gen)
 
    @param gen[in] generator for which to close its sound device
 */
-static void cw_alsa_close_device_internal(cw_gen_t * gen)
+static void cw_alsa_close_sound_device_internal(cw_gen_t * gen)
 {
 	/* "Stop a PCM dropping pending frames. " */
 	cw_alsa.snd_pcm_drop(gen->alsa_data.pcm_handle);

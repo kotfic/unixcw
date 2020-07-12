@@ -74,9 +74,9 @@ extern cw_debug_t cw_debug_object_dev;
 
 static pa_simple *cw_pa_simple_new_internal(pa_sample_spec *ss, pa_buffer_attr *ba, const char *device, const char *stream_name, int *error);
 static int        cw_pa_dlsym_internal(void *handle);
-static int        cw_pa_open_and_configure_device_internal(cw_gen_t *gen);
-static void       cw_pa_close_device_internal(cw_gen_t * gen);
-static int        cw_pa_write_internal(cw_gen_t *gen);
+static cw_ret_t   cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static void       cw_pa_close_sound_device_internal(cw_gen_t * gen);
+static int        cw_pa_write_buffer_to_sound_device_internal(cw_gen_t *gen);
 
 
 
@@ -128,12 +128,13 @@ static const int CW_PA_BUFFER_N_SAMPLES = 256;
    Function first tries to load PulseAudio library, and then does a test
    opening of PulseAudio output, but it closes it before returning.
 
-   \param device - sink device, NULL for default PulseAudio device
+   @param device_name[in] name of PulseAudio device to be used; if NULL then
+   the function will use library-default device name.
 
    \return true if opening PulseAudio output succeeded
    \return false if opening PulseAudio output failed
 */
-bool cw_is_pa_possible(const char *device)
+bool cw_is_pa_possible(const char * device_name)
 {
 	const char * const library_name = "libpulse-simple.so";
 	if (!cw_dlopen_internal(library_name, &cw_pa.handle)) {
@@ -152,8 +153,8 @@ bool cw_is_pa_possible(const char *device)
 
 	/* TODO: this piece of code is duplicated in cw_pa_simple_new_internal() */
 	const char *dev = (char *) NULL;
-	if (device && strcmp(device, CW_DEFAULT_PA_DEVICE)) {
-		dev = device;
+	if (device_name && strcmp(device_name, CW_DEFAULT_PA_DEVICE)) {
+		dev = device_name;
 	}
 
 	pa_sample_spec ss;
@@ -200,9 +201,9 @@ cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 	gen->sound_system = CW_AUDIO_PA;
 	cw_gen_set_sound_device_internal(gen, device_name);
 
-	gen->open_and_configure_device = cw_pa_open_and_configure_device_internal;
-	gen->close_device              = cw_pa_close_device_internal;
-	gen->write                     = cw_pa_write_internal;
+	gen->open_and_configure_sound_device = cw_pa_open_and_configure_sound_device_internal;
+	gen->close_sound_device              = cw_pa_close_sound_device_internal;
+	gen->write_buffer_to_sound_device    = cw_pa_write_buffer_to_sound_device_internal;
 
 	return CW_SUCCESS;
 }
@@ -211,16 +212,16 @@ cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 
 
 /**
-   \brief Write generated samples to PulseAudio sound sink configured and opened for generator
+   @brief Write generated samples to PulseAudio sound device configured and opened for generator
 
    \reviewed on 2017-02-04
 
-   @param gen[in] generator that will write to sound sink
+   @param gen[in] generator that will write to sound device
 
    \return CW_SUCCESS on success
    \return CW_FAILURE otherwise
 */
-int cw_pa_write_internal(cw_gen_t * gen)
+int cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_PA);
@@ -353,7 +354,7 @@ int cw_pa_dlsym_internal(void *handle)
    \return CW_FAILURE on errors
    \return CW_SUCCESS on success
 */
-int cw_pa_open_and_configure_device_internal(cw_gen_t * gen)
+cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 {
 	/* TODO: this piece of code is duplicated in cw_pa_simple_new_internal() */
 	const char *dev = (char *) NULL; /* NULL - let PulseAudio use default device. */
@@ -399,7 +400,7 @@ int cw_pa_open_and_configure_device_internal(cw_gen_t * gen)
 
    @param gen[in] generator for which to close its sound device
 */
-void cw_pa_close_device_internal(cw_gen_t * gen)
+void cw_pa_close_sound_device_internal(cw_gen_t * gen)
 {
 	if (gen->pa_data.s) {
 		/* Make sure that every single sample was played */

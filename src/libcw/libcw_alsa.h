@@ -10,7 +10,6 @@
 
 
 #include "config.h"
-#include "libcw2.h"
 
 
 
@@ -34,6 +33,7 @@ typedef struct cw_alsa_data_struct {
 
 
 
+#include "libcw2.h"
 #include "libcw_gen.h"
 
 
