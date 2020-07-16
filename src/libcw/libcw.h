@@ -305,11 +305,11 @@ extern const char *cw_get_console_device(void);
 extern const char *cw_get_soundcard_device(void);
 
 
-extern bool cw_is_null_possible(const char *device);
-extern bool cw_is_console_possible(const char *device);
-extern bool cw_is_oss_possible(const char *device);
-extern bool cw_is_alsa_possible(const char *device);
-extern bool cw_is_pa_possible(const char *device);
+extern bool cw_is_null_possible(const char * device_name);
+extern bool cw_is_console_possible(const char * device_name);
+extern bool cw_is_oss_possible(const char * device_name);
+extern bool cw_is_alsa_possible(const char * device_name);
+extern bool cw_is_pa_possible(const char * device_name);
 
 
 

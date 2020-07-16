@@ -10,13 +10,12 @@
 
 
 #include "libcw_gen.h"
-#include "libcw_tq.h"
 
 
 
 
 cw_ret_t cw_console_fill_gen_internal(cw_gen_t * gen, const char * device_name);
-void cw_console_silence(cw_gen_t *gen);
+void cw_console_silence(cw_gen_t * gen);
 
 
 

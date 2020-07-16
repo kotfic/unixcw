@@ -520,7 +520,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 	/* Sound system. */
 	{
 		gen->sound_device = NULL;
-		gen->sound_sink = -1;
+		gen->sound_sink_fd = -1;
 		/* gen->sound_system = sound_system; */ /* We handle this field below. */
 		gen->sound_device_is_open = false;
 		gen->dev_raw_sink = -1;

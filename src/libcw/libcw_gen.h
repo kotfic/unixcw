@@ -321,9 +321,8 @@ struct cw_gen_struct {
 	   (it may be unused for PulseAudio) */
 	char * sound_device;
 
-	/* Output file descriptor for debug data (console, OSS, ALSA,
-	   PulseAudio). */
-	int sound_sink;
+	/* Output file descriptor for Console and OSS sound systems. */
+	int sound_sink_fd;
 
 	/* none/null/console/OSS/ALSA/PulseAudio */
 	int sound_system;
