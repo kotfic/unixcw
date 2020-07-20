@@ -136,6 +136,11 @@ static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state);
 */
 bool cw_is_console_possible(const char * device_name)
 {
+	/* TODO: revise logging of errors here. E.g. inability to open a file
+	   is not an error, but a simple indication that console buzzer is
+	   not accessible on this machine, and this should not be logged as
+	   error. */
+
 	/* No need to allocate space for device path, just a
 	   pointer (to a memory allocated somewhere else by
 	   someone else) will be sufficient in local scope. */

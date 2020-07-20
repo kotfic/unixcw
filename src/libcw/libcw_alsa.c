@@ -243,8 +243,7 @@ static cw_alsa_handle_t cw_alsa;
 
 
 /**
-   @brief Check if it is possible to open ALSA sound sink with given device
-   name
+   @brief Check if it is possible to open ALSA output with given device name
 
    The check consists of two parts:
    -# whether it's possible to load ALSA shared library,
@@ -271,6 +270,11 @@ static cw_alsa_handle_t cw_alsa;
 */
 bool cw_is_alsa_possible(const char * device_name)
 {
+	/* TODO: revise logging of errors here. E.g. inability to open a
+	   library is not an error, but a simple indication that ALSA is not
+	   accessible on this machine, and this should not be logged as
+	   error. */
+
 	const char * library_name = "libasound.so.2";
 	if (!cw_dlopen_internal(library_name, &cw_alsa.lib_handle)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,

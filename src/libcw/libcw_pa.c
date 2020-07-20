@@ -123,7 +123,8 @@ static const int CW_PA_BUFFER_N_SAMPLES = 256;
 
 
 /**
-   \brief Check if it is possible to open PulseAudio output
+   @brief Check if it is possible to open PulseAudio output with given device
+   name
 
    Function first tries to load PulseAudio library, and then does a test
    opening of PulseAudio output, but it closes it before returning.
@@ -136,6 +137,11 @@ static const int CW_PA_BUFFER_N_SAMPLES = 256;
 */
 bool cw_is_pa_possible(const char * device_name)
 {
+	/* TODO: revise logging of errors here. E.g. inability to open a
+	   library is not an error, but a simple indication that PA is not
+	   accessible on this machine, and this should not be logged as
+	   error. */
+
 	const char * const library_name = "libpulse-simple.so";
 	if (!cw_dlopen_internal(library_name, &cw_pa.handle)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
