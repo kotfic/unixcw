@@ -216,7 +216,7 @@ typedef struct cw_alsa_handle_t cw_alsa_handle_t;
 /* Constants specific to ALSA sound system configuration */
 static const snd_pcm_format_t CW_ALSA_SAMPLE_FORMAT = SND_PCM_FORMAT_S16; /* "Signed 16 bit CPU endian"; I'm guessing that "CPU endian" == "native endianess" */
 
-static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params_t * params);
+static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params);
 static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params);
 static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t * actual_period_size);
 static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t actual_period_size);

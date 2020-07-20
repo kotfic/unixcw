@@ -58,17 +58,16 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
-#include <stdio.h>
-#include <sys/time.h>
-#include <sys/ioctl.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <unistd.h>
-
 
 #if   defined(HAVE_SYS_KD_H)
 #       include <sys/kd.h>
@@ -91,8 +90,9 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
-#include "libcw_utils.h"
 #include "libcw_gen.h"
+#include "libcw_utils.h"
+
 
 
 
