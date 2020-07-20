@@ -16,15 +16,13 @@
 
 #ifdef LIBCW_WITH_PULSEAUDIO
 
-#include <pulse/simple.h>
 #include <pulse/error.h>
+#include <pulse/simple.h>
 
 typedef struct cw_pa_data_struct {
-	pa_simple *s;       /* Audio handle. */
-	pa_sample_spec ss;  /* Sample specification. */
+	pa_simple * simple;    /* Audio handle. */
+	pa_sample_spec spec;   /* Sample specification. */
 	pa_usec_t latency_usecs;
-
-	pa_buffer_attr ba;
 } cw_pa_data_t;
 
 #endif /* #ifdef LIBCW_WITH_PULSEAUDIO */

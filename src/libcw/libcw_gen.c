@@ -543,13 +543,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 		/* Sound system - PulseAudio. */
 #ifdef LIBCW_WITH_PULSEAUDIO
-		gen->pa_data.s = NULL;
-
-		gen->pa_data.ba.prebuf    = (uint32_t) -1;
-		gen->pa_data.ba.tlength   = (uint32_t) -1;
-		gen->pa_data.ba.minreq    = (uint32_t) -1;
-		gen->pa_data.ba.maxlength = (uint32_t) -1;
-		gen->pa_data.ba.fragsize  = (uint32_t) -1;
+		gen->pa_data.simple = NULL;
 #endif
 
 		int rv = cw_gen_new_open_internal(gen, sound_system, device);
