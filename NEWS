@@ -34,6 +34,9 @@ version 3.6.0 / 2020-XX-YY
     similar to ALSA improvements mentioned above. Thanks again,
     Matthew!
 
+  - Behaviour of cw_lookup_phonetic() library function has been modified: the
+    function now accepts NULL as a second argument (output buffer).
+
 
   xcwcp:
 

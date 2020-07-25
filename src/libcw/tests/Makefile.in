@@ -585,6 +585,8 @@ modern_api_test_files = \
 	libcw_data_tests.h \
 	libcw_gen_tests.c \
 	libcw_gen_tests.h \
+	libcw_gen_tests_state_callback.c \
+	libcw_gen_tests_state_callback.h \
 	libcw_rec_tests.c \
 	libcw_rec_tests.h \
 	libcw_utils_tests.c \

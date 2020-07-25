@@ -59,6 +59,11 @@ extern const char * test_invalid_representations[];
 
 
 
+static int test_phonetic_lookups_internal_sub(cw_test_executor_t * cte, char * phonetic_buffer);
+
+
+
+
 /**
    The function builds every possible well formed representation no
    longer than 7 chars, and then calculates a hash of the
@@ -458,7 +463,7 @@ int test_prosign_lookups_internal(cw_test_executor_t * cte)
 
 
 /**
-   @reviewed on 2019-10-12
+   @reviewed on 2020-07-25
 */
 int test_phonetic_lookups_internal(cw_test_executor_t * cte)
 {
@@ -476,71 +481,124 @@ int test_phonetic_lookups_internal(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, false, "==", failure, "phonetic lookup: maximum phonetic length (%d)", length);
 	}
 
-
 	/* Test: lookup of phonetic + reverse lookup. */
 	{
-		bool lookup_failure = false;
-		bool reverse_failure = false;
+		char phonetic_buffer[sizeof ("VeryLongPhoneticString")] = { 0 };
 
-		/* Notice that We go here through all possible values
-		   of char, not through all values returned from
-		   cw_list_characters(). */
-		for (int i = 0; i < UCHAR_MAX; i++) {
-			char phonetic[sizeof ("VeryLongPhoneticString")] = { 0 };
+		/* Tested function should work with NULL output buffer as well. */
+		test_phonetic_lookups_internal_sub(cte, phonetic_buffer);
+		test_phonetic_lookups_internal_sub(cte, NULL);
+	}
 
-			const int cwret = LIBCW_TEST_FUT(cw_lookup_phonetic)((char) i, phonetic); /* TODO: we need a version of the function that accepts size argument. */
-			const bool is_alpha = (bool) isalpha(i);;
-			if (CW_SUCCESS == cwret) {
-				/*
-				  Library claims that 'i' is a byte
-				  that has a phonetic (e.g. 'F' ->
-				  "Foxtrot").
+	/* Test: simple test that the lookup is sane. */
+	{
+		bool simple_failure = false;
+		char phonetic_buffer[sizeof ("VeryLongPhoneticString")] = { 0 };
 
-				  Let's verify this using result of
-				  isalpha().
-				*/
-				if (!cte->expect_op_int_errors_only(cte, true, "==", is_alpha, "phonetic lookup (A): lookup of phonetic for '%c' (#%d)\n", (char) i, i)) {
-					lookup_failure = true;
-					break;
-				}
-			} else {
-				/*
-				  Library claims that 'i' is a byte
-				  that doesn't have a phonetic.
+		struct {
+			char character;
+			const char * string;
+		} data[] = {
+			{ 'a', "Alfa" },
+			{ 'A', "Alfa" },
+			{ 'z', "Zulu" },
+			{ 'Z', "Zulu" },
+			{  0,  ""     }}; /* Guard. */
 
-				  Let's verify this using result of
-				  isalpha().
-				*/
-				if (!cte->expect_op_int_errors_only(cte, false, "==", is_alpha, "phonetic lookup (B): lookup of phonetic for '%c' (#%d)\n", (char) i, i)) {
-					lookup_failure = true;
-					break;
-				}
+		int i = 0;
+		while (data[i].character) {
+			const int cwret = LIBCW_TEST_FUT(cw_lookup_phonetic)((char) data[i].character, phonetic_buffer); /* TODO: we need a version of the function that accepts size argument. */
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "phonetic lookup: simple lookup failure for character '%c'\n", data[i].character)) {
+				simple_failure = true;
+				break;
 			}
 
-
-			if (CW_SUCCESS == cwret && is_alpha) {
-				/* We have looked up a letter, it has
-				   a phonetic.  Almost by definition,
-				   the first letter of phonetic should
-				   be the same as the looked up
-				   letter. */
-				reverse_failure = (phonetic[0] != toupper((char) i));
-				if (!cte->expect_op_int_errors_only(cte, false, "==", reverse_failure, "phonetic lookup: reverse lookup for phonetic \"%s\" ('%c' / #%d)\n", phonetic, (char) i, i)) {
-					reverse_failure = true;
-					break;
-				}
+			int cmp = strcmp(phonetic_buffer, data[i].string);
+			if (!cte->expect_op_int_errors_only(cte, 0, "==", cmp, "phonetic lookup: simple lookup error for character '%c'/'%s' -> '%s'\n",
+							    data[i].character, data[i].string, phonetic_buffer)) {
+				simple_failure = true;
+				break;
 			}
+
+			i++;
 		}
 
-		cte->expect_op_int(cte, false, "==", lookup_failure, "phonetic lookup: lookup");
-		cte->expect_op_int(cte, false, "==", reverse_failure, "phonetic lookup: reverse lookup");
+		cte->expect_op_int(cte, false, "==", simple_failure, "phonetic lookup: simple lookup test failed\n");
 	}
+
 
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
 }
 
+
+
+
+/**
+   Tested function should correctly handle NULL and non-NULL @p phonetic_buffer
+
+   @reviewed on 2020-07-25
+*/
+static int test_phonetic_lookups_internal_sub(cw_test_executor_t * cte, char * phonetic_buffer)
+{
+	bool lookup_failure = false;
+	bool reverse_failure = false;
+
+	/* Notice that we go here through all possible values
+	   of char, not through all values returned from
+	   cw_list_characters(). */
+	for (int i = 0; i < UCHAR_MAX; i++) {
+
+		const int cwret = LIBCW_TEST_FUT(cw_lookup_phonetic)((char) i, phonetic_buffer); /* TODO: we need a version of the function that accepts size argument. */
+		const bool is_alpha = (bool) isalpha(i);
+		if (CW_SUCCESS == cwret) {
+			/*
+			  Library claims that 'i' is a byte
+			  that has a phonetic (e.g. 'F' ->
+			  "Foxtrot").
+
+			  Let's verify this using result of
+			  isalpha().
+			*/
+			if (!cte->expect_op_int_errors_only(cte, true, "==", is_alpha, "phonetic lookup (A): lookup of phonetic for '%c' (#%d)\n", (char) i, i)) {
+				lookup_failure = true;
+				break;
+			}
+		} else {
+			/*
+			  Library claims that 'i' is a byte
+			  that doesn't have a phonetic.
+
+			  Let's verify this using result of
+			  isalpha().
+			*/
+			if (!cte->expect_op_int_errors_only(cte, false, "==", is_alpha, "phonetic lookup (B): lookup of phonetic for '%c' (#%d)\n", (char) i, i)) {
+				lookup_failure = true;
+				break;
+			}
+		}
+
+
+		if (CW_SUCCESS == cwret && is_alpha && NULL != phonetic_buffer) {
+			/* We have looked up a letter, it has
+			   a phonetic.  Almost by definition,
+			   the first letter of phonetic should
+			   be the same as the looked up
+			   letter. */
+			reverse_failure = (phonetic_buffer[0] != toupper((char) i));
+			if (!cte->expect_op_int_errors_only(cte, false, "==", reverse_failure, "phonetic lookup: reverse lookup for phonetic \"%s\" ('%c' / #%d)\n", phonetic_buffer, (char) i, i)) {
+				reverse_failure = true;
+				break;
+			}
+		}
+	}
+
+	cte->expect_op_int(cte, false, "==", lookup_failure, "phonetic lookup: lookup");
+	cte->expect_op_int(cte, false, "==", reverse_failure, "phonetic lookup: reverse lookup");
+
+	return 0;
+}
 
 
 

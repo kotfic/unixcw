@@ -1154,38 +1154,40 @@ int cw_get_maximum_phonetic_length(void)
 
 
 /**
-   \brief Get the phonetic of a given character
+   @brief Look up the phonetic of a given character
 
-   On success the routine fills in the string pointer passed in with the
-   phonetic of given character \p c.
+   On success the routine copies a phonetic corresponding to @p character
+   into @p buffer. @p buffer is managed and owned by caller.
 
-   It is considered an error if \p phonetics is NULL (why would you
-   call this function to get the phonetic if you don't provide output
-   buffer?).
+   It is NOT considered an error if @p buffer is NULL. In such case the
+   function will just verify if @p character can be represented by a
+   phonetic, i.e. if @p character is a letter.
 
-   The length of phonetic must be at least one greater than the longest
-   phonetic held in the phonetic lookup table, as returned by
+   If non-NULL, the size of @p buffer must be greater by at least 1 than the
+   longest phonetic held in the phonetic lookup table, as returned by
    cw_get_maximum_phonetic_length().
 
-   \errno ENOENT - character cannot be found
+   @reviewed 2020-07-25
 
-   \param c - character to look up
-   \param phonetic - output, space for phonetic of a character
+   @errno ENOENT - phonetic for given character cannot be found
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param character[in] character to look up
+   @param buffer[out] buffer for phonetic of a character, may be NULL
+
+   @return CW_SUCCESS on success (phonetic has been found and - if @p buffer is non-NULL) has been copied to the buffer
+   @return CW_FAILURE on failure (phonetic for given character cannot be found)
 */
-int cw_lookup_phonetic(char c, char *phonetic)
+int cw_lookup_phonetic(char character, char * buffer)
 {
 	/* Coerce to uppercase, and verify the input argument. */
-	c = toupper(c);
-	if (c >= 'A' && c <= 'Z') {
-		if (phonetic) {
-			strcpy(phonetic, g_phonetics_table[c - 'A']);
-			return CW_SUCCESS;
+	character = toupper(character);
+	if (character >= 'A' && character <= 'Z') {
+		if (NULL != buffer) {
+			strcpy(buffer, g_phonetics_table[character - 'A']);
 		} else {
-			/* TODO: set some errno here. */
+			/* Simply ignore the fact that caller didn't specify output buffer. */
 		}
+		return CW_SUCCESS;
 	}
 
 	/* No such phonetic. */
