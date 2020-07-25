@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
-  Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+  Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -19,18 +19,18 @@
 
 
 /**
-   \file libcw_data.c
+   @file libcw_data.c
 
-   \brief Characters, representations, lookup and validation functions.
+   @brief Characters, representations, lookup and validation functions.
 
    The only hard data stored by libcw library seems to be:
-   \li characters and their representations
-   \li procedural signals
-   \li phonetics
+   @li characters and their representations
+   @li procedural signals
+   @li phonetics
 
    These three groups of data, collected in three separate tables, are
-   defined in this file, together with lookup functions and other
-   related utility functions.
+   defined in this file, together with lookup functions and other related
+   utility functions.
 
    Unit test functions for this code are at the end of the file.
 */
@@ -38,19 +38,19 @@
 
 
 
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h> /* UCHAR_MAX */
 #include <stdbool.h>
 #include <stdio.h>
-#include <limits.h> /* UCHAR_MAX */
 #include <string.h>
-#include <errno.h>
-#include <ctype.h>
 
 
 
 
 #include "libcw.h"
-#include "libcw_debug.h"
 #include "libcw_data.h"
+#include "libcw_debug.h"
 
 
 
@@ -67,6 +67,11 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
+static __attribute__((constructor)) void cw_data_constructor_internal(void);
+
+
+
+
 /*
   Morse code characters table.  This table allows lookup of the Morse
   representation of a given alphanumeric character.  Representations
@@ -75,7 +80,9 @@ extern cw_debug_t cw_debug_object_dev;
 
   Notice that ASCII characters are stored as uppercase characters.
 */
-
+static size_t g_main_table_maximum_representation_length;
+static int g_main_table_characters_count;
+static const cw_entry_t * g_main_table_fast_lookup[UCHAR_MAX];  /* Fast lookup table */
 const cw_entry_t CW_TABLE[] = { /* TODO: make it accessible through function only, and add static keyword. */
 	/* ASCII 7bit letters */
 	{'A', ".-"  },  {'B', "-..."},  {'C', "-.-."},
@@ -131,68 +138,71 @@ const cw_entry_t CW_TABLE[] = { /* TODO: make it accessible through function onl
 
 
 
+
+
+
 /**
-   \brief Return the number of characters present in character lookup table
+   @brief Return the number of characters present in main character lookup table
 
    Return the number of characters that are known to libcw.
    The number includes:
-   \li ASCII 7bit letters,
-   \li numerals,
-   \li punctuation,
-   \li ISO 8859-1 accented characters,
-   \li ISO 8859-2 accented characters,
-   \li non-standard procedural signal extensions to standard CW characters.
+   @li ASCII 7bit letters,
+   @li numerals,
+   @li punctuation,
+   @li ISO 8859-1 accented characters,
+   @li ISO 8859-2 accented characters,
+   @li non-standard procedural signal extensions to standard CW characters.
 
-   \reviewed on 2017-02-01
+   @reviewed 2020-07-25
 
-   \return number of characters known to libcw
+   @return number of characters known to libcw
 */
 int cw_get_character_count(void)
 {
-	static int character_count = 0;
-
-	if (character_count == 0) {
-		for (const cw_entry_t *cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
-			character_count++;
+#if 0   /* Disabled on 2020-07-25. Moved to library constructor. */
+	static int g_main_table_characters_count = 0;
+	if (0 == g_main_table_characters_count) {
+		for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
+			g_main_table_characters_count++;
 		}
 	}
-
-	return character_count;
+#endif
+	return g_main_table_characters_count;
 }
 
 
 
 
 /**
-   \brief Get list of characters present in character lookup table
+   @brief Get list of characters present in character lookup table
 
    Function provides a string containing all of the characters represented
    in library's lookup table.
 
    The list includes:
-   \li ASCII 7bit letters,
-   \li numerals,
-   \li punctuation,
-   \li ISO 8859-1 accented characters,
-   \li ISO 8859-2 accented characters,
-   \li non-standard procedural signal extensions to standard CW characters.
+   @li ASCII 7bit letters,
+   @li numerals,
+   @li punctuation,
+   @li ISO 8859-1 accented characters,
+   @li ISO 8859-2 accented characters,
+   @li non-standard procedural signal extensions to standard CW characters.
 
-   \p list should be allocated and managed by caller.
-   The length of \p list must be at least one greater than the number
-   of characters represented in the character lookup table, returned
-   by cw_get_character_count().
+   @p list should be allocated and managed by caller.  The length of @p list
+   must be at least one greater than the number of characters represented in
+   the character lookup table, returned by cw_get_character_count(). The
+   string placed in @p list will be NUL-terminated.
 
-   \reviewed on 2017-02-01
+   @reviewed 2020-07-25
 
-   \param list - pointer to space to be filled by function
+   @param list[out] buffer for string with all characters
 */
-void cw_list_characters(char *list)
+void cw_list_characters(char * list)
 {
 	cw_assert (list, MSG_PREFIX "output pointer is NULL");
 
 	/* Append each table character to the output string. */
 	int i = 0;
-	for (const cw_entry_t *cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
+	for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
 		list[i++] = cw_entry->character;
 	}
 
@@ -205,96 +215,98 @@ void cw_list_characters(char *list)
 
 
 /**
-   \brief Get length of the longest representation
+   @brief Get length of the longest representation of characters
 
    Function returns the string length of the longest representation in the
-   character lookup table.
+   main character lookup table. It is the count of dots and dashes in the
+   longest representation of characters known to libcw (not including
+   terminating NUL).
 
-   \reviewed on 2017-02-01
+   @reviewed 2020-07-25
 
-   \return a positive number - length of the longest representation
+   @return length of the longest representation
 */
 int cw_get_maximum_representation_length(void)
 {
-	static int maximum_length = 0;
-
-	if (maximum_length == 0) {
+#if 0   /* Disabled on 2020-07-25. Code moved to library constructor. */
+	static size_t g_main_table_maximum_representation_length = 0;
+	if (0 == g_main_table_maximum_representation_length) {
 		/* Traverse the main lookup table, finding the longest representation. */
-		for (const cw_entry_t *cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
-			int length = (int) strlen(cw_entry->representation);
-			if (length > maximum_length) {
-				maximum_length = length;
+		for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
+			size_t length = strlen(cw_entry->representation);
+			if (length > g_main_table_maximum_representation_length) {
+				g_main_table_maximum_representation_length = length;
 			}
 		}
 	}
-
-	return maximum_length;
+#endif
+	return (int) g_main_table_maximum_representation_length;
 }
 
 
 
 
-
 /**
-   \brief Return representation of given character
+   @brief Return representation of given character
 
-   Look up the given character \p c, and return the representation of
+   Look up the given character @p character, and return the representation of
    that character.  Return NULL if there is no representation for the given
    character. Otherwise return pointer to static string with representation
    of character.
 
    The returned pointer is owned and managed by library.
 
-   \reviewed on 2017-02-01
+   @reviewed 2020-07-25
 
-   \param c - character to look up
+   @param character[in] character to look up
 
-   \return pointer to string with representation of character on success
-   \return NULL on failure (when \p c has no representation)
+   @return pointer to string with representation of character on success
+   @return NULL on failure (when @p character has no representation)
 */
-const char *cw_character_to_representation_internal(int c)
+const char * cw_character_to_representation_internal(int character)
 {
-	static const cw_entry_t *lookup[UCHAR_MAX];  /* Fast lookup table */
+#if 0   /* Disabled on 2020-07-25. Moved to library constructor. */
+	static const cw_entry_t * g_main_table_fast_lookup[UCHAR_MAX];  /* Fast lookup table */
 	static bool is_initialized = false;
-
 	/* If this is the first call, set up the fast lookup table to give
 	   direct access to the CW table for a given character. */
 	if (!is_initialized) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_INFO,
 			      MSG_PREFIX "initializing fast lookup table");
 
-		for (const cw_entry_t *cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
-			lookup[(unsigned char) cw_entry->character] = cw_entry;
+		for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
+			g_main_table_fast_lookup[(unsigned char) cw_entry->character] = cw_entry;
 		}
 
 		is_initialized = true;
 	}
+#endif
 
 	/* There is no differentiation in the lookup and
 	   representation table between upper and lower case
 	   characters; everything is held as uppercase.  So before we
 	   do the lookup, we convert to ensure that both cases
 	   work. */
-	c = toupper(c);
+	character = toupper(character);
 
 	/* Now use the table to lookup the table entry.  Unknown characters
 	   return NULL, courtesy of the fact that explicitly uninitialized
 	   static variables are initialized to zero, so lookup[x] is NULL
 	   if it's not assigned to in the above loop. */
-	const cw_entry_t *cw_entry = lookup[(unsigned char) c];
+	const cw_entry_t * cw_entry = g_main_table_fast_lookup[(unsigned char) character];
 
 	/* Lookups code may be called frequently, so first do a rough
 	   test with cw_debug_has_flag(). */
-	if (cw_debug_has_flag((&cw_debug_object), CW_DEBUG_LOOKUPS)) {
+	if (cw_debug_has_flag(&cw_debug_object, CW_DEBUG_LOOKUPS)) {
 		if (cw_entry) {
-			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
-				      MSG_PREFIX "char to representation: '%c' -> '%c'/'%s'\n", c, cw_entry->character, cw_entry->representation);
-		} else if (isprint(c)) {
-			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
-				      MSG_PREFIX "char to representation: '%c' -> NOTHING\n", c);
+			cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "char to representation: '%c' -> '%c'/'%s'\n", character, cw_entry->character, cw_entry->representation);
+		} else if (isprint(character)) {
+			cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "char to representation: '%c' -> NOTHING\n", character);
 		} else {
-			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
-				      MSG_PREFIX "char to representation: '0x%02x' -> NOTHING\n", (unsigned char) c);
+			cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "char to representation: '0x%02x' -> NOTHING\n", (unsigned int) character);
 		}
 	}
 
@@ -304,35 +316,35 @@ const char *cw_character_to_representation_internal(int c)
 
 
 
-
 /**
-   \brief Get representation of a given character
+   @brief Get representation of a given character
 
    The function is depreciated, use cw_character_to_representation() instead.
 
-   Return the string representation (shape) of a given Morse code
-   character \p c.
+   Return the string representation of a given character @p character.
 
-   The routine returns CW_SUCCESS on success, and fills in the string
-   pointer (\p representation) passed in.
-   On failure, it returns CW_FAILURE and sets errno to ENOENT,
-   indicating that the character \p c could not be found.
+   The routine returns CW_SUCCESS on success, and fills in the string pointer
+   (@p representation) passed in.  On failure, it returns CW_FAILURE and sets
+   errno to ENOENT, indicating that the character @p character could not be
+   found.
 
-   The length of \p representation buffer must be at least one greater
+   The length of @p representation buffer must be at least one greater
    than the length of longest representation held in the character
    lookup table. The largest value of length is returned by
    cw_get_maximum_representation_length().
 
-   \param c - character to look up
-   \param representation - pointer to space for representation of character
+   @reviewed 2020-07-25
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param character[in] character to look up
+   @param representation[out] pointer to space for representation of character
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-int cw_lookup_character(char c, char *representation)
+int cw_lookup_character(char character, char * representation)
 {
 	/* Lookup the character, and if found, return the string. */
-	const char *retval = cw_character_to_representation_internal(c);
+	const char * retval = cw_character_to_representation_internal(character);
 	if (retval) {
 		if (representation) {
 			strcpy(representation, retval);
@@ -348,28 +360,28 @@ int cw_lookup_character(char c, char *representation)
 
 
 
-
 /**
-   \brief Get representation of a given character
+   @brief Get representation of a given character
 
    On success return representation of a given character.
    Returned pointer is owned by caller of the function.
 
    On failure function returns NULL and sets errno:
-   \errno ENOENT - the character could not be found.
-   \errno ENOMEM - character has been found, but function failed
-   to strdup() representation.
+   @errno ENOENT - the character could not be found.
+   @errno ENOMEM - character has been found, but function failed to strdup() representation.
 
-   \param c - character to look up
+   @reviewed 2020-07-25
 
-   \return pointer to freshly allocated representation on success
-   \return NULL on failure
+   @param character[in] character to look up
+
+   @return pointer to freshly allocated representation on success
+   @return NULL on failure
 */
-char *cw_character_to_representation(int c)
+char * cw_character_to_representation(int character)
 {
 	/* Lookup representation of the character, and if found, return copy of the representation. */
 
-	const char *representation = cw_character_to_representation_internal(c);
+	const char * representation = cw_character_to_representation_internal(character);
 	if (NULL == representation) {
 		errno = ENOENT;
 		return NULL;
@@ -415,11 +427,10 @@ char *cw_character_to_representation(int c)
 
    \param representation - string representing a character
 
-   \return non-zero value of hash of valid representation (in range
-   CW_DATA_MIN_REPRESENTATION_HASH-CW_DATA_MAX_REPRESENTATION_HASH)
-   \return zero for invalid representation
+   @return non-zero value of hash of valid representation (in range CW_DATA_MIN_REPRESENTATION_HASH-CW_DATA_MAX_REPRESENTATION_HASH)
+   @return zero for invalid representation
 */
-uint8_t cw_representation_to_hash_internal(const char *representation)
+uint8_t cw_representation_to_hash_internal(const char * representation)
 {
 	/* Our algorithm can handle only 7 characters of representation.
 	   And we insist on there being at least one character, too.  */
@@ -430,7 +441,7 @@ uint8_t cw_representation_to_hash_internal(const char *representation)
 
 	/* Build up the hash based on the dots and dashes; start at 1,
 	   the sentinel * (start) bit. */
-	unsigned int hash = 1;
+	unsigned int hash = 1; /* TODO: shouldn't this be uint8_t? */
 	for (size_t i = 0; i < length; i++) {
 		/* Left-shift everything so far. */
 		hash <<= 1;
@@ -465,10 +476,10 @@ uint8_t cw_representation_to_hash_internal(const char *representation)
 
    FIXME: function should be able to return zero as non-error value (?).
 
-   \return zero if there is no character for given representation
-   \return non-zero character corresponding to given representation otherwise
+   @return zero if there is no character for given representation
+   @return non-zero character corresponding to given representation otherwise
 */
-int cw_representation_to_character_internal(const char *representation)
+int cw_representation_to_character_internal(const char * representation)
 {
 	static const cw_entry_t *lookup[UCHAR_MAX];   /* Fast lookup table */
 	static bool is_complete = true;               /* Set to false if there are any
@@ -479,9 +490,10 @@ int cw_representation_to_character_internal(const char *representation)
 	/* If this is the first call, set up the fast lookup table to give direct
 	   access to the CW table for a hashed representation. */
 	if (!is_initialized) {
+		/* TODO: move the initialization to cw_data_constructor_internal(). */
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_INFO,
 			      MSG_PREFIX "initialize hash lookup table");
-		is_complete = cw_representation_lookup_init_internal(lookup);
+		is_complete = CW_SUCCESS == cw_representation_lookup_init_internal(lookup);
 		is_initialized = true;
 	}
 
@@ -576,10 +588,10 @@ int cw_representation_to_character_internal(const char *representation)
 
    FIXME: function should be able to return zero as non-error value (?).
 
-   \return zero if there is no character for given representation
-   \return non-zero character corresponding to given representation otherwise
+   @return zero if there is no character for given representation
+   @return non-zero character corresponding to given representation otherwise
 */
-int cw_representation_to_character_direct_internal(const char *representation)
+int cw_representation_to_character_direct_internal(const char * representation)
 {
 	/* Search the table entry by entry, sequentially, from top to
 	   bottom. */
@@ -626,10 +638,10 @@ int cw_representation_to_character_direct_internal(const char *representation)
 
    \param lookup - lookup table to be initialized
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE otherwise
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise
 */
-int cw_representation_lookup_init_internal(const cw_entry_t *lookup[])
+cw_ret_t cw_representation_lookup_init_internal(const cw_entry_t *lookup[])
 {
 	/* For each main table entry, create a hash entry.  If the
 	   hashing of any entry fails, note that the table is not
@@ -770,8 +782,8 @@ int cw_lookup_representation(const char *representation, char *c)
 	}
 
 	/* Lookup the representation, and if found, return the character. */
-	char character = cw_representation_to_character_internal(representation);
-	if (character) {
+	int character = cw_representation_to_character_internal(representation);
+	if (0 != character) {
 		if (c) {
 			*c = character;
 		}
@@ -812,9 +824,9 @@ int cw_representation_to_character(const char *representation)
 	}
 
 	/* Lookup the representation, and if found, return the character. */
-	int c = cw_representation_to_character_internal(representation);
-	if (c) {
-		return c;
+	int character = cw_representation_to_character_internal(representation);
+	if (0 != character) {
+		return character;
 	} else {
 		/* Failed to find the requested representation. */
 		errno = ENOENT;
@@ -843,8 +855,9 @@ typedef struct {
 
 
 
-
-static const cw_prosign_entry_t CW_PROSIGN_TABLE[] = {
+static int g_prosign_table_characters_count;
+static size_t g_prosign_table_maximum_expansion_length;
+static const cw_prosign_entry_t g_prosign_table[] = {
 	/* Standard procedural signals */
 	{'"', "AF",  false},   {'\'', "WG", false},  {'$', "SX",  false},
 	{'(', "KN",  false},   {')', "KK",  false},  {'+', "AR",  false},
@@ -865,6 +878,7 @@ static const cw_prosign_entry_t CW_PROSIGN_TABLE[] = {
 	{0,   NULL, false}
 };
 
+static const cw_prosign_entry_t * g_prosign_table_fast_lookup[UCHAR_MAX];  /* Fast lookup table. */
 
 
 
@@ -877,16 +891,16 @@ static const cw_prosign_entry_t CW_PROSIGN_TABLE[] = {
 */
 int cw_get_procedural_character_count(void)
 {
-	static int character_count = 0;
-
-	if (character_count == 0) {
-
-		for (const cw_prosign_entry_t *e = CW_PROSIGN_TABLE; e->character; e++) {
-			character_count++;
+#if 0   /* Disabled on 2020-07-25. Moved to library constructor. */
+	static int g_prosign_table_characters_count = 0;
+	if (0 == g_prosign_table_characters_count) {
+		for (const cw_prosign_entry_t *e = g_prosign_table; e->character; e++) {
+			g_prosign_table_characters_count++;
 		}
 	}
+#endif
 
-	return character_count;
+	return g_prosign_table_characters_count;
 }
 
 
@@ -912,7 +926,7 @@ void cw_list_procedural_characters(char *list)
 {
 	/* Append each table character to the output string. */
 	int i = 0;
-	for (const cw_prosign_entry_t *e = CW_PROSIGN_TABLE; e->character; e++) {
+	for (const cw_prosign_entry_t *e = g_prosign_table; e->character; e++) {
 		list[i++] = e->character;
 	}
 
@@ -934,19 +948,19 @@ void cw_list_procedural_characters(char *list)
 */
 int cw_get_maximum_procedural_expansion_length(void)
 {
-	static size_t maximum_length = 0;
-
-	if (maximum_length == 0) {
+#if 0   /* Disabled on 2020-07-25. Moved to library constructor. */
+	static size_t g_prosign_table_maximum_expansion_length = 0;
+	if (0 == g_prosign_table_maximum_expansion_length) {
 		/* Traverse the prosign table, finding the longest expansion. */
-		for (const cw_prosign_entry_t *e = CW_PROSIGN_TABLE; e->character; e++) {
+		for (const cw_prosign_entry_t *e = g_prosign_table; e->character; e++) {
 			size_t length = strlen(e->expansion);
-			if (length > maximum_length) {
-				maximum_length = length;
+			if (length > g_prosign_table_maximum_expansion_length) {
+				g_prosign_table_maximum_expansion_length = length;
 			}
 		}
 	}
-
-	return (int) maximum_length;
+#endif
+	return (int) g_prosign_table_maximum_expansion_length;
 }
 
 
@@ -962,50 +976,49 @@ int cw_get_maximum_procedural_expansion_length(void)
    Pointer returned by the function is owned and managed by library.
    \p is_usually_expanded pointer is owned by client code.
 
-   \param c - character to look up
-   \param is_usually_expanded - output, display hint
+   @param character[in] character to look up
+   @param is_usually_expanded[out] display hint
 
-   \return expansion of input character on success
-   \return NULL if there is no table entry for the given character
+   @return expansion of input character on success
+   @return NULL if there is no table entry for the given character
 */
-const char *cw_lookup_procedural_character_internal(int c, bool *is_usually_expanded)
+const char * cw_lookup_procedural_character_internal(int character, bool *is_usually_expanded)
 {
-	static const cw_prosign_entry_t *lookup[UCHAR_MAX];  /* Fast lookup table. */
-	static bool is_initialized = false;
-
+#if 0   /* Disabled on 2020-07-25. Code moved to library constructor. */
 	/* If this is the first call, set up the fast lookup table to
 	   give direct access to the procedural expansions table for
 	   a given character. */
+	static bool is_initialized = false;
 	if (!is_initialized) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_INFO,
 			      MSG_PREFIX "initialize prosign fast lookup table");
 
-		for (const cw_prosign_entry_t *e = CW_PROSIGN_TABLE; e->character; e++) {
-			lookup[(unsigned char) e->character] = e;
-
-			is_initialized = true;
+		for (const cw_prosign_entry_t *e = g_prosign_table; e->character; e++) {
+			g_prosign_table_fast_lookup[(unsigned char) e->character] = e;
 		}
+		is_initialized = true;
 	}
+#endif
 
 	/* Lookup the procedural signal table entry.  Unknown characters
 	   return NULL.  All procedural signals are non-alphabetical, so no
 	   need to use any uppercase coercion here. */
-	const cw_prosign_entry_t *cw_prosign = lookup[(unsigned char) c];
+	const cw_prosign_entry_t * cw_prosign = g_prosign_table_fast_lookup[(unsigned char) character];
 
 	/* Lookups code may be called frequently, so first do a rough
 	   test with cw_debug_has_flag(). */
 	if (cw_debug_has_flag((&cw_debug_object), CW_DEBUG_LOOKUPS)) {
 		if (cw_prosign) {
-			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+			cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
 				      MSG_PREFIX "prosign lookup '%c' -> '%c'/'%s'/%d\n",
-				      c, cw_prosign->character,
+				      character, cw_prosign->character,
 				      cw_prosign->expansion, cw_prosign->is_usually_expanded);
-		} else if (isprint(c)) {
-			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
-				      MSG_PREFIX "prosign lookup '%c' -> NOTHING\n", c);
+		} else if (isprint(character)) {
+			cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "prosign lookup '%c' -> NOTHING\n", character);
 		} else {
-			cw_debug_msg ((&cw_debug_object), CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
-				      MSG_PREFIX "prosign lookup '0x%02x' -> NOTHING\n", (unsigned char) c);
+			cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_DEBUG,
+				      MSG_PREFIX "prosign lookup '0x%02x' -> NOTHING\n", (unsigned int) character);
 		}
 	}
 
@@ -1052,7 +1065,7 @@ int cw_lookup_procedural_character(char c, char *expansion, int *is_usually_expa
 	bool is_expanded;
 
 	/* Lookup, and if found, return the string and display hint. */
-	const char *retval = cw_lookup_procedural_character_internal(c, &is_expanded);
+	const char * retval = cw_lookup_procedural_character_internal(c, &is_expanded);
 	if (retval) {
 		if (expansion) {
 			strcpy(expansion, retval);
@@ -1080,7 +1093,8 @@ int cw_lookup_procedural_character(char c, char *expansion, int *is_usually_expa
 
 /* Phonetics table.  Not really CW, but it might be handy to have.
    The table contains ITU/NATO phonetics. */
-static const char *const CW_PHONETICS[] = {
+static size_t g_phonetics_table_maximum_phonetic_length;
+static const char * const g_phonetics_table[] = {
 	"Alfa",
 	"Bravo",
 	"Charlie",
@@ -1120,19 +1134,20 @@ static const char *const CW_PHONETICS[] = {
 */
 int cw_get_maximum_phonetic_length(void)
 {
-	static size_t maximum_length = 0;
-
-	if (maximum_length == 0) {
+#if 0   /* Disabled on 2020-07-25. Moved to library constructor. */
+	static size_t g_phonetics_table_maximum_phonetic_length = 0;
+	if (0 == g_phonetics_table_maximum_phonetic_length) {
 		/* Traverse the phonetics table, finding the longest phonetic string. */
-		for (int phonetic = 0; CW_PHONETICS[phonetic]; phonetic++) {
-			size_t length = strlen(CW_PHONETICS[phonetic]);
-			if (length > maximum_length) {
-				maximum_length = length;
+		for (int phonetic = 0; g_phonetics_table[phonetic]; phonetic++) {
+			size_t length = strlen(g_phonetics_table[phonetic]);
+			if (length > g_phonetics_table_maximum_phonetic_length) {
+				g_phonetics_table_maximum_phonetic_length = length;
 			}
 		}
 	}
+#endif
 
-	return (int) maximum_length;
+	return (int) g_phonetics_table_maximum_phonetic_length;
 }
 
 
@@ -1166,7 +1181,7 @@ int cw_lookup_phonetic(char c, char *phonetic)
 	c = toupper(c);
 	if (c >= 'A' && c <= 'Z') {
 		if (phonetic) {
-			strcpy(phonetic, CW_PHONETICS[c - 'A']);
+			strcpy(phonetic, g_phonetics_table[c - 'A']);
 			return CW_SUCCESS;
 		} else {
 			/* TODO: set some errno here. */
@@ -1182,27 +1197,40 @@ int cw_lookup_phonetic(char c, char *phonetic)
 
 
 /**
-   \brief Check if given character can be converted to Morse code symbols
+   @brief Check if given character is valid
 
-   Check that a given character is valid and can be sent by libcw as a
-   Morse character.
+   Check that a given character is valid and can be converted to Morse code
+   symbols by libcw and sent a Morse character.
 
    Space character (' ') is also considered to be a valid character.
 
-   \param c - character to check
+   @errno ENOENT on failure (character is invalid).
 
-   \return CW_SUCCESS if character is valid
-   \return CW_FAILURE otherwise
+   Notice the difference in errno set by cw_character_is_valid() (ENOENT) and
+   cw_string_is_valid() (EINVAL). This different behaviour goes way back to
+   unixcw-2.3 and is preserved in new versions for backwards compatibility
+   reasons.
+
+   @reviewed 2020-07-25
+
+   @param character[in] character to check
+
+   @return true if character is valid
+   @return false otherwise
 */
-bool cw_character_is_valid(char c)
+bool cw_character_is_valid(char character)
 {
-	/* If the character is the Space/Backspace special-case, or it is in the
-	   lookup table, return success. */
-	if (c == ' ' || c == '\b' || cw_character_to_representation_internal(c)) {
-		return CW_SUCCESS;
+	/* If the character is the Space/Backspace special-case, or it is in
+	   the lookup table, return success.
+
+	   FIXME FIXME FIXME: backspace character should not be treated as
+	   valid character. It has been introduced here as a fix for some
+	   issue. */
+	if (character == ' ' || character == '\b' || cw_character_to_representation_internal(character)) {
+		return true;
 	} else {
 		errno = ENOENT;
-		return CW_FAILURE;
+		return false;
 	}
 }
 
@@ -1210,6 +1238,9 @@ bool cw_character_is_valid(char c)
 
 
 
+/**
+   @reviewed 2020-07-25
+*/
 int cw_check_character(char c)
 {
 	return (int) cw_character_is_valid(c);
@@ -1219,24 +1250,32 @@ int cw_check_character(char c)
 
 
 /**
-   \brief Check if all characters in given string can be converted to Morse code symbols
+   @brief Check if all characters in given string are valid
 
    Check that each character in the given string is valid and can be
-   sent by libcw as a Morse character.
+   converted by libcw to Morse code symbols sent as a Morse character.
 
    Space character (' ') is also considered to be a valid character.
 
-   Function sets errno to EINVAL on failure
+   @errno EINVAL on failure (when an invalid character has been found in @p
+   string).
 
-   \param string - string to check
+   Notice the difference in errno set by cw_character_is_valid() (ENOENT) and
+   cw_string_is_valid() (EINVAL). This different behaviour goes way back to
+   unixcw-2.3 and is preserved in new versions for backwards compatibility
+   reasons.
 
-   \return CW_SUCCESS if all characters in string are valid
-   \return CW_FAILURE otherwise
+   @reviewed 2020-07-25
+
+   @param string[in] string to check
+
+   @return true if all characters in string are valid
+   @return false otherwise
 */
-bool cw_string_is_valid(const char *string)
+bool cw_string_is_valid(const char * string)
 {
-	/* Check that each character in the string has a Morse
-	   representation, or - as a special case - is a space character. */
+	/* Check that each character satisfies validity as specified by
+	   cw_character_is_valid(). */
 	for (int i = 0; string[i] != '\0'; i++) {
 		if (!cw_character_is_valid(string[i])) {
 			errno = EINVAL;
@@ -1250,8 +1289,82 @@ bool cw_string_is_valid(const char *string)
 
 
 
-
-int cw_check_string(const char *string)
+/**
+   @reviewed 2020-07-25
+*/
+int cw_check_string(const char * string)
 {
 	return cw_string_is_valid(string);
+}
+
+
+
+
+/**
+   @brief Constructor for 'data' module of libcw
+
+   Since we may have multiple gen/rec/key objects per application, it's
+   better to initialize library's data structures before the multiple objects
+   start calling library functions that have internal static 'is_initialized'
+   flags.
+
+   @reviewed 2020-07-25
+*/
+void cw_data_constructor_internal(void)
+{
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_INTERNAL, CW_DEBUG_INFO,
+		      MSG_PREFIX "constructor for 'data' module started");
+
+
+
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_INFO,
+		      MSG_PREFIX "initializing main fast lookup table");
+	for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
+
+		/* Initialize lookup table for main characters. */
+		g_main_table_fast_lookup[(unsigned char) cw_entry->character] = cw_entry;
+
+		/* Calculate the length of the longest representation in main lookup table. */
+		const size_t length = strlen(cw_entry->representation);
+		if (length > g_main_table_maximum_representation_length) {
+			g_main_table_maximum_representation_length = length;
+		}
+
+		/* Calculate count of characters in main lookup table. */
+		g_main_table_characters_count++;
+	}
+
+
+
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_INFO,
+		      MSG_PREFIX "initialize prosign fast lookup table");
+	for (const cw_prosign_entry_t * entry = g_prosign_table; entry->character; entry++) {
+
+		/* Initialize lookup table for procedural characters. */
+		g_prosign_table_fast_lookup[(unsigned char) entry->character] = entry;
+
+		/* Calculate the length of the longest expansion of prosign. */
+		const size_t length = strlen(entry->expansion);
+		if (length > g_prosign_table_maximum_expansion_length) {
+		        g_prosign_table_maximum_expansion_length = length;
+		}
+
+		/* Calculate the count of procedural characters. */
+		g_prosign_table_characters_count++;
+	}
+
+
+
+	/* Calculate the length of the longest phonetic. */
+	for (int phonetic = 0; g_phonetics_table[phonetic]; phonetic++) {
+		const size_t length = strlen(g_phonetics_table[phonetic]);
+		if (length > g_phonetics_table_maximum_phonetic_length) {
+			g_phonetics_table_maximum_phonetic_length = length;
+		}
+	}
+
+
+
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_INTERNAL, CW_DEBUG_INFO,
+		      MSG_PREFIX "constructor for 'data' module completed");
 }

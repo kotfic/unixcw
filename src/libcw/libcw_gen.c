@@ -2329,7 +2329,7 @@ int cw_gen_enqueue_valid_character_partial_internal(cw_gen_t *gen, char characte
 		return CW_SUCCESS;
 	}
 
-	const char *representation = cw_character_to_representation_internal(character);
+	const char * representation = cw_character_to_representation_internal(character);
 
 	/* This shouldn't happen since we are in _valid_character_ function... */
 	cw_assert (representation, MSG_PREFIX "failed to find representation for character '%c'/%hhx", character, character);

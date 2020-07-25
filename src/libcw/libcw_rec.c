@@ -1696,8 +1696,8 @@ int cw_rec_poll_character(cw_rec_t * rec,
 	}
 
 	/* Look up the representation using the lookup functions. */
-	char character = cw_representation_to_character_internal(representation);
-	if (!character) {
+	int character = cw_representation_to_character_internal(representation);
+	if (0 == character) {
 		errno = ENOENT;
 		return CW_FAILURE;
 	}

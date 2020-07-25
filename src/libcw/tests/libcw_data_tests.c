@@ -225,7 +225,7 @@ int test_cw_representation_to_character_internal_speed(cw_test_executor_t * cte)
 	gettimeofday(&start, NULL);
 	for (int i = 0; i < N; i++) {
 		for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
-			__attribute__((unused)) int rv = cw_representation_to_character_internal(cw_entry->representation);
+			__attribute__((unused)) int character = cw_representation_to_character_internal(cw_entry->representation);
 		}
 	}
 	gettimeofday(&stop, NULL);
@@ -236,7 +236,7 @@ int test_cw_representation_to_character_internal_speed(cw_test_executor_t * cte)
 	gettimeofday(&start, NULL);
 	for (int i = 0; i < N; i++) {
 		for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
-			__attribute__((unused)) int rv = cw_representation_to_character_direct_internal(cw_entry->representation);
+			__attribute__((unused)) int character = cw_representation_to_character_direct_internal(cw_entry->representation);
 		}
 	}
 	gettimeofday(&stop, NULL);
