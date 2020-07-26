@@ -508,13 +508,13 @@ int test_phonetic_lookups_internal(cw_test_executor_t * cte)
 		int i = 0;
 		while (data[i].character) {
 			const int cwret = LIBCW_TEST_FUT(cw_lookup_phonetic)((char) data[i].character, phonetic_buffer); /* TODO: we need a version of the function that accepts size argument. */
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "phonetic lookup: simple lookup failure for character '%c'\n", data[i].character)) {
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "phonetic lookup: simple lookup for character '%c'\n", data[i].character)) {
 				simple_failure = true;
 				break;
 			}
 
 			int cmp = strcmp(phonetic_buffer, data[i].string);
-			if (!cte->expect_op_int_errors_only(cte, 0, "==", cmp, "phonetic lookup: simple lookup error for character '%c'/'%s' -> '%s'\n",
+			if (!cte->expect_op_int_errors_only(cte, 0, "==", cmp, "phonetic lookup: simple lookup for character '%c'/'%s' -> '%s'\n",
 							    data[i].character, data[i].string, phonetic_buffer)) {
 				simple_failure = true;
 				break;
@@ -523,7 +523,7 @@ int test_phonetic_lookups_internal(cw_test_executor_t * cte)
 			i++;
 		}
 
-		cte->expect_op_int(cte, false, "==", simple_failure, "phonetic lookup: simple lookup test failed\n");
+		cte->expect_op_int(cte, false, "==", simple_failure, "phonetic lookup: simple lookup test");
 	}
 
 

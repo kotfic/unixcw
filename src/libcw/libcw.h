@@ -236,7 +236,7 @@ extern int  cw_generator_set_tone_slope(cw_gen_t *gen, int slope_shape, int slop
 extern int   cw_get_character_count(void);
 extern void  cw_list_characters(char *list);
 extern int   cw_get_maximum_representation_length(void);
-extern char *cw_character_to_representation(int c);
+extern char *cw_character_to_representation(int character);
 extern bool  cw_representation_is_valid(const char *representation);
 extern int   cw_representation_to_character(const char *representation);
 
@@ -246,13 +246,13 @@ extern int cw_get_procedural_character_count(void);
 extern void cw_list_procedural_characters(char *list);
 extern int cw_get_maximum_procedural_expansion_length(void);
 
-extern int cw_lookup_procedural_character(char c, char * expansion,
+extern int cw_lookup_procedural_character(char character, char * expansion,
 					  int *is_usually_expanded);
 
 
 /* Phonetic alphabet */
 extern int cw_get_maximum_phonetic_length(void);
-extern int cw_lookup_phonetic(char c, char *phonetic);
+extern int cw_lookup_phonetic(char character, char *buffer);
 
 
 /* Morse code controls and timing parameters */
@@ -356,7 +356,7 @@ extern int cw_send_character(char c);
 extern int cw_send_character_partial(char c);
 extern int cw_send_string(const char *string);
 
-extern bool cw_character_is_valid(char c);
+extern bool cw_character_is_valid(char character);
 extern bool cw_string_is_valid(const char *string);
 
 
@@ -434,11 +434,11 @@ extern void cw_reset_straight_key(void);
 
 
 /* deprecated functions */
-extern int cw_check_representation(const char *representation)           __attribute__ ((deprecated));   /* Use cw_representation_is_valid(). */
-extern int cw_lookup_representation(const char *representation, char *c) __attribute__ ((deprecated));   /* Use cw_representation_to_character(). */
-extern int cw_lookup_character(char c, char *representation)             __attribute__ ((deprecated));   /* Use cw_character_to_representation(). */
-extern int cw_check_character(char c)                                    __attribute__ ((deprecated));   /* Use cw_character_is_valid(). */
-extern int cw_check_string(const char *string)                           __attribute__ ((deprecated));   /* Use cw_string_is_valid(). */
+extern int cw_check_representation(const char *representation)                   __attribute__ ((deprecated));   /* Use cw_representation_is_valid(). */
+extern int cw_lookup_representation(const char *representation, char *character) __attribute__ ((deprecated));   /* Use cw_representation_to_character(). */
+extern int cw_lookup_character(char character, char *representation)             __attribute__ ((deprecated));   /* Use cw_character_to_representation(). */
+extern int cw_check_character(char character)                                    __attribute__ ((deprecated));   /* Use cw_character_is_valid(). */
+extern int cw_check_string(const char *string)                                   __attribute__ ((deprecated));   /* Use cw_string_is_valid(). */
 
 
 #if defined(__cplusplus)
