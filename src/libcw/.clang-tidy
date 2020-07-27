@@ -1,3 +1,0 @@
-Checks: "*,-llvm-header-guard,-readability-else-after-return,-misc-static-assert,-cert-dcl03-c"
-HeaderFilterRegex: '.*'
-
