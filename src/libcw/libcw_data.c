@@ -885,8 +885,8 @@ int cw_representation_to_character(const char * representation)
    if the character is usually expanded for display. */
 typedef struct {
 	const char character;            /* Character represented */
-	const char * const expansion;    /* Procedural expansion of the character */
 	const bool is_usually_expanded;  /* If expanded display is usual */
+	const char * const expansion;    /* Procedural expansion of the character */
 } cw_prosign_entry_t;
 
 
@@ -895,22 +895,22 @@ static int g_prosign_table_characters_count;
 static size_t g_prosign_table_maximum_expansion_length;
 static const cw_prosign_entry_t g_prosign_table[] = {
 	/* Standard procedural signals */
-	{'"', "AF",  false},   {'\'', "WG",  false},  {'$', "SX",  false},
-	{'(', "KN",  false},   {')',  "KK",  false},  {'+', "AR",  false},
-	{',', "MIM", false},   {'-',  "DU",  false},  {'.', "AAA", false},
-	{'/', "DN",  false},   {':',  "OS",  false},  {';', "KR",  false},
-	{'=', "BT",  false},   {'?',  "IMI", false},  {'_', "IQ",  false},
-	{'@', "AC",  false},
+	{ '"', false, "AF"  },   { '\'', false,  "WG"  },  { '$', false, "SX"  },
+	{ '(', false, "KN"  },   { ')',  false,  "KK"  },  { '+', false, "AR"  },
+	{ ',', false, "MIM" },   { '-',  false,  "DU"  },  { '.', false, "AAA" },
+	{ '/', false, "DN"  },   { ':',  false,  "OS"  },  { ';', false, "KR"  },
+	{ '=', false, "BT"  },   { '?',  false,  "IMI" },  { '_', false, "IQ"  },
+	{ '@', false, "AC"  },
 
 	/* Non-standard procedural signal extensions to standard CW characters. */
-	{'<', "VA", true},  /* VA/SK, end of work */
-	{'>', "BK", true},  /* BK, break */
-	{'!', "SN", true},  /* SN, understood */
-	{'&', "AS", true},  /* AS, wait */
-	{'^', "KA", true},  /* KA, starting signal */
-	{'~', "AL", true},  /* AL, paragraph */
+	{ '<', true,  "VA" },  /* VA/SK, end of work */
+	{ '>', true,  "BK" },  /* BK, break */
+	{ '!', true,  "SN" },  /* SN, understood */
+	{ '&', true,  "AS" },  /* AS, wait */
+	{ '^', true,  "KA" },  /* KA, starting signal */
+	{ '~', true,  "AL" },  /* AL, paragraph */
 
-	{0,   NULL, false} /* Guard. */
+	{  0,  false,  NULL } /* Guard. */
 };
 
 static const cw_prosign_entry_t * g_prosign_table_fast_lookup[UCHAR_MAX];  /* Fast lookup table. */
