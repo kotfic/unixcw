@@ -9,8 +9,8 @@
 
 
 
-#include "libcw_utils.h"
 #include "libcw_tq.h"
+#include "libcw_utils.h"
 
 
 
@@ -20,7 +20,7 @@
 
 
 
-CW_STATIC_FUNC int    cw_tq_set_capacity_internal(cw_tone_queue_t * tq, size_t capacity, size_t high_water_mark);
+CW_STATIC_FUNC cw_ret_t cw_tq_set_capacity_internal(cw_tone_queue_t * tq, size_t capacity, size_t high_water_mark);
 CW_STATIC_FUNC size_t cw_tq_get_high_water_mark_internal(const cw_tone_queue_t * tq) __attribute__((unused));
 CW_STATIC_FUNC size_t cw_tq_prev_index_internal(const cw_tone_queue_t * tq, size_t ind) __attribute__((unused));
 CW_STATIC_FUNC size_t cw_tq_next_index_internal(const cw_tone_queue_t * tq, size_t ind);

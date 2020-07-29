@@ -133,7 +133,7 @@ const unsigned int cw_supported_sample_rates[] = {
 
 
 
-static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, int dequeued_now, int dequeued_prev);
+static cw_ret_t cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev);
 static void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, int key_state);
 
 
@@ -369,7 +369,7 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 	   Otherwise the key may stay in "down" state forever. */
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
-	int status = cw_tq_enqueue_internal(gen->tq, &tone);
+	cw_ret_t status = cw_tq_enqueue_internal(gen->tq, &tone);
 
 	if (gen->sound_system == CW_AUDIO_NULL
 	    || gen->sound_system == CW_AUDIO_OSS
@@ -430,7 +430,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 	/* Tone queue. */
 	{
 		gen->tq = cw_tq_new_internal();
-		if (!gen->tq) {
+		if (NULL == gen->tq) {
 			cw_gen_delete(&gen);
 			return (cw_gen_t *) NULL;
 		} else {
@@ -642,7 +642,7 @@ void cw_gen_delete(cw_gen_t **gen)
 	free((*gen)->tone_slope.amplitudes);
 	(*gen)->tone_slope.amplitudes = NULL;
 
-	cw_tq_delete_internal(&((*gen)->tq));
+	cw_tq_delete_internal(&(*gen)->tq);
 
 	(*gen)->sound_system = CW_AUDIO_NONE;
 
@@ -796,7 +796,7 @@ int cw_gen_join_thread_internal(cw_gen_t * gen)
 	   handle.
 
 	   The delay also allows the generator function thread to stop
-	   generating tone (or for tone queue to get out of CW_TQ_IDLE
+	   generating tone (or for tone queue to get out of CW_TQ_EMPTY
 	   state) and exit before we resort to killing generator
 	   function thread. */
 	cw_usleep_internal(1 * CW_USECS_PER_SEC);
@@ -946,8 +946,8 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, 0, CW_SLOPE_MODE_STANDARD_SLOPES);
 
-	int dequeued_prev = CW_FAILURE; /* Status of previous call to dequeue(). */
-	int dequeued_now = CW_FAILURE; /* Status of current call to dequeue(). */
+	cw_ret_t dequeued_prev = CW_FAILURE; /* Status of previous call to dequeue(). */
+	cw_ret_t dequeued_now = CW_FAILURE; /* Status of current call to dequeue(). */
 
 	while (gen->do_dequeue_and_generate) {
 		dequeued_now = cw_tq_dequeue_internal(gen->tq, &tone);
@@ -1018,7 +1018,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 
 		   - allows client code to observe any dequeue event
                      by waiting for signal in
-                     cw_tq_wait_for_tone_internal();
+                     cw_tq_wait_for_end_of_current_tone_internal();
 		*/
 
 		//fprintf(stderr, MSG_PREFIX "      sending signal on dequeue, target thread id = %ld\n", gen->client.thread_id);
@@ -2066,7 +2066,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t *gen,
 */
 int cw_gen_enqueue_mark_internal(cw_gen_t *gen, char mark, bool is_first)
 {
-	int status;
+	cw_ret_t status;
 
 	/* Synchronize low-level timings if required. */
 	cw_gen_sync_parameters_internal(gen);
@@ -2667,11 +2667,13 @@ int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.duration, CW_SLOPE_MODE_RISING_SLOPE);
-	int rv = cw_tq_enqueue_internal(gen->tq, &tone);
+	cw_ret_t cwret = cw_tq_enqueue_internal(gen->tq, &tone);
 
-	if (rv != CW_SUCCESS) {
+	if (cwret != CW_SUCCESS) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
 			      MSG_PREFIX "enqueue begin mark: failed to enqueue rising slope: '%s'", strerror(errno));
+		/* TODO: what do we do with this error now? The cwret
+		   variable will be overwritten below. */
 	}
 
 	/* If there was an error during enqueue of rising slope of
@@ -2680,9 +2682,9 @@ int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 	   "main" tone, we are allowed to return failure to caller. */
 	CW_TONE_INIT(&tone, gen->frequency, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	tone.is_forever = true;
-	rv = cw_tq_enqueue_internal(gen->tq, &tone);
+	cwret = cw_tq_enqueue_internal(gen->tq, &tone);
 
-	if (rv != CW_SUCCESS) {
+	if (cwret != CW_SUCCESS) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
 			      MSG_PREFIX "enqueue begin mark: failed to enqueue forever tone: '%s'", strerror(errno));
 	}
@@ -2690,7 +2692,7 @@ int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_DEBUG,
 		      MSG_PREFIX "enqueue begin mark: tone queue len = %zu", cw_tq_length_internal(gen->tq));
 
-	return rv;
+	return cwret;
 }
 
 
@@ -2711,7 +2713,7 @@ int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
-int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
+cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
 {
 	if (gen->sound_system == CW_AUDIO_CONSOLE) {
 		/* FIXME: I think that enqueueing tone is not just a
@@ -2732,9 +2734,9 @@ int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
 		   to zero should be enough, but... */
 		cw_tone_t tone;
 		CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.duration, CW_SLOPE_MODE_FALLING_SLOPE);
-		int rv = cw_tq_enqueue_internal(gen->tq, &tone);
+		cw_ret_t cwret = cw_tq_enqueue_internal(gen->tq, &tone);
 
-		if (rv == CW_SUCCESS) {
+		if (CW_SUCCESS == cwret) {
 			/* ... but on some occasions, on some
 			   platforms, some sound systems may need to
 			   constantly generate "silent" tone. These four
@@ -2751,10 +2753,10 @@ int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
 			   new tone in queue to dequeue. */
 			CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 			tone.is_forever = true;
-			rv = cw_tq_enqueue_internal(gen->tq, &tone);
+			cwret = cw_tq_enqueue_internal(gen->tq, &tone);
 		}
 
-		return rv;
+		return cwret;
 	}
 }
 
@@ -2781,7 +2783,7 @@ int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
-int cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol)
+cw_ret_t cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol)
 {
 	cw_tone_t tone = { 0 };
 
@@ -2829,7 +2831,7 @@ int cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol)
 */
 int cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level)
 {
-	return cw_tq_wait_for_level_internal(gen->tq, level);
+	return (int) cw_tq_wait_for_level_internal(gen->tq, level);
 }
 
 
@@ -2915,7 +2917,7 @@ size_t cw_gen_get_queue_length(cw_gen_t const * gen)
 */
 int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level)
 {
-	return cw_tq_register_low_level_callback_internal(gen->tq, callback_func, callback_arg, level);
+	return (int) cw_tq_register_low_level_callback_internal(gen->tq, callback_func, callback_arg, level);
 }
 
 
@@ -2923,7 +2925,7 @@ int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t c
 
 int cw_gen_wait_for_tone(cw_gen_t * gen)
 {
-	return cw_tq_wait_for_tone_internal(gen->tq);
+	return (int) cw_tq_wait_for_end_of_current_tone_internal(gen->tq);
 }
 
 
@@ -3009,7 +3011,7 @@ int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
 
 
 
-static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, int dequeued_now, int dequeued_prev)
+static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev)
 {
 	int state = CW_KEY_STATE_OPEN;
 

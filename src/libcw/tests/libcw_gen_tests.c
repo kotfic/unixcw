@@ -597,12 +597,12 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds)
 
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, freq, slope_duration, CW_SLOPE_MODE_RISING_SLOPE);
-	const int cwret1 = cw_tq_enqueue_internal(gen->tq, &tone);
+	const cw_ret_t cwret1 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret1, "enqueue first tone"); /* Use "errors only" here because this is not a core part of test. */
 
 	CW_TONE_INIT(&tone, freq, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	tone.is_forever = true;
-	const int cwret2 = cw_tq_enqueue_internal(gen->tq, &tone);
+	const cw_ret_t cwret2 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret2, "enqueue forever tone");
 
 #ifdef __FreeBSD__  /* Tested on FreeBSD 10. */
@@ -622,7 +622,7 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds)
 
 	/* Silence the generator. */
 	CW_TONE_INIT(&tone, 0, slope_duration, CW_SLOPE_MODE_FALLING_SLOPE);
-	const int cwret3 = cw_tq_enqueue_internal(gen->tq, &tone);
+	const cw_ret_t cwret3 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret3, "silence the generator");
 
 	usleep(10 * slope_duration); /* Don't stop generator immediately, because the sound will be distorted. TODO: shouldn't we use some gen_wait() function for that? */

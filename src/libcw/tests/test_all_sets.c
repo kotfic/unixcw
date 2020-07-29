@@ -103,7 +103,7 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_enqueue_internal_B),
 
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_new_delete_internal),
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_get_capacity_internal),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_capacity_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_length_internal_1),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_prev_index_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_next_index_internal),

@@ -52,9 +52,9 @@ enum {
 	/* Tone queue will accept at most "capacity" tones. */
 	CW_TONE_QUEUE_CAPACITY_MAX = 3000,        /* ~= 5 minutes at 12 WPM */
 
-	/* Tone queue will refuse to accept new tones (characters?) if
-	   number of tones in queue (queue length) is already equal or
-	   larger than queue's high water mark. */
+	/* Tone queue will refuse to accept new tones (TODO: tones or
+	   characters?) if number of tones in queue (queue length) is already
+	   equal or larger than queue's high water mark. */
 	CW_TONE_QUEUE_HIGH_WATER_MARK_MAX = 2900
 };
 
@@ -63,10 +63,10 @@ enum {
 
 
 /* Tone queue states (with totally random non-false values). */
-enum cw_queue_state {
-	CW_TQ_IDLE = 45,
-	CW_TQ_BUSY = 74
-};
+typedef enum {
+	CW_TQ_EMPTY    = 45,
+	CW_TQ_NONEMPTY = 74
+} cw_queue_state_t;
 
 
 /* Return values from dequeue function. */
@@ -81,7 +81,7 @@ enum {
 
 
 typedef struct {
-	/* Frequency of a tone. */
+	/* Frequency of a tone, in Hz. */
 	int frequency;
 
 	/* Duration of a tone, in microseconds. */
@@ -203,7 +203,7 @@ typedef struct {
 	   from the queue as a first one. */
 	volatile size_t head;
 
-	int state; /* CW_TQ_IDLE / CW_TQ_BUSY */
+	cw_queue_state_t state; /* TODO: replace this with 'bool is_empty' flag. */
 
 	size_t capacity;
 	size_t high_water_mark;
@@ -214,8 +214,8 @@ typedef struct {
 	   in the queue drops below a defined low water mark.
 	   This routine can then refill the buffer, as required. */
 	volatile size_t low_water_mark;
-	void     (*low_water_callback)(void*);
-	void     *low_water_callback_arg;
+	void     (* low_water_callback)(void *);
+	void     * low_water_callback_arg;
 	/* Set to true when conditions for calling low water callback
 	   are true. The flag is set in cw_tq module, but the callback
 	   itself may be called outside of the module, e.g. by cw_gen
@@ -237,30 +237,30 @@ typedef struct {
 	pthread_mutex_t mutex;
 
 	/* Generator associated with a tone queue. */
-	struct cw_gen_struct *gen;
+	struct cw_gen_struct * gen;
 
 	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
 } cw_tone_queue_t;
 
 
 
-cw_tone_queue_t *cw_tq_new_internal(void);
-void             cw_tq_delete_internal(cw_tone_queue_t **tq);
-void             cw_tq_flush_internal(cw_tone_queue_t *tq);
+cw_tone_queue_t * cw_tq_new_internal(void);
+void              cw_tq_delete_internal(cw_tone_queue_t ** tq);
+void              cw_tq_flush_internal(cw_tone_queue_t * tq);
 
-size_t cw_tq_get_capacity_internal(cw_tone_queue_t *tq);
-size_t cw_tq_length_internal(cw_tone_queue_t *tq);
-int    cw_tq_enqueue_internal(cw_tone_queue_t *tq, cw_tone_t *tone);
-int    cw_tq_dequeue_internal(cw_tone_queue_t *tq, cw_tone_t *tone);
+size_t cw_tq_capacity_internal(const cw_tone_queue_t * tq);
+size_t cw_tq_length_internal(cw_tone_queue_t * tq);
+cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone);
+cw_ret_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone);
 
-int  cw_tq_wait_for_level_internal(cw_tone_queue_t *tq, size_t level);
-int  cw_tq_register_low_level_callback_internal(cw_tone_queue_t * tq, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level);
-bool cw_tq_is_busy_internal(cw_tone_queue_t *tq);
-int  cw_tq_wait_for_tone_internal(cw_tone_queue_t *tq);
-void cw_tq_reset_internal(cw_tone_queue_t *tq);
-bool cw_tq_is_full_internal(const cw_tone_queue_t *tq);
+cw_ret_t cw_tq_wait_for_level_internal(cw_tone_queue_t * tq, size_t level);
+cw_ret_t cw_tq_register_low_level_callback_internal(cw_tone_queue_t * tq, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level);
+bool cw_tq_is_nonempty_internal(const cw_tone_queue_t * tq);
+cw_ret_t cw_tq_wait_for_end_of_current_tone_internal(cw_tone_queue_t * tq);
+void cw_tq_reset_internal(cw_tone_queue_t * tq);
+bool cw_tq_is_full_internal(const cw_tone_queue_t * tq);
 
-void cw_tq_handle_backspace_internal(cw_tone_queue_t *tq);
+void cw_tq_handle_backspace_internal(cw_tone_queue_t * tq);
 
 
 

@@ -669,7 +669,7 @@ int cw_key_ik_notify_paddle_event(volatile cw_key_t *key, int dot_paddle_state, 
 	/* If the tone queue or the straight key are busy, this is going to
 	   conflict with our use of the sound card, console sounder, and
 	   keying system.  So return an error status in this case. */
-	if (cw_tq_is_busy_internal(key->gen->tq) || cw_key_sk_is_busy(key)) {
+	if (cw_tq_is_nonempty_internal(key->gen->tq) || cw_key_sk_is_busy(key)) {
 		errno = EBUSY;
 		return CW_FAILURE;
 	}
@@ -1121,7 +1121,7 @@ int cw_key_sk_notify_event(volatile cw_key_t * key, int key_state)
 #if 0 /* This is disabled, but I'm not sure why. */  /* This code has been disabled some time before 2017-01-31. */
 	/* If the tone queue or the keyer are busy, we can't use the
 	   sound card, console sounder, or the key control system. */
-	if (cw_tq_is_busy_internal(key->gen->tq) || cw_key_ik_is_busy_internal(key)) {
+	if (cw_tq_is_nonempty_internal(key->gen->tq) || cw_key_ik_is_busy_internal(key)) {
 		errno = EBUSY;
 		return CW_FAILURE;
 	}

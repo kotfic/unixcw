@@ -25,7 +25,7 @@ int test_cw_tq_is_full_internal(cw_test_executor_t * cte);
 int test_cw_tq_enqueue_dequeue_internal(cw_test_executor_t * cte);
 int test_cw_tq_enqueue_args_internal(cw_test_executor_t * cte);
 int test_cw_tq_new_delete_internal(cw_test_executor_t * cte);
-int test_cw_tq_get_capacity_internal(cw_test_executor_t * cte);
+int test_cw_tq_capacity_internal(cw_test_executor_t * cte);
 int test_cw_tq_length_internal_1(cw_test_executor_t * cte);
 int test_cw_tq_callback(cw_test_executor_t * cte);
 int test_cw_tq_prev_index_internal(cw_test_executor_t * cte);

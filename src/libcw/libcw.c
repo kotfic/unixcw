@@ -872,7 +872,7 @@ const char *cw_generator_get_audio_system_label(void)
 */
 int cw_register_tone_queue_low_callback(void (*callback_func)(void*), void *callback_arg, int level)
 {
-	return cw_tq_register_low_level_callback_internal(cw_generator->tq, callback_func, callback_arg, level);
+	return (int) cw_tq_register_low_level_callback_internal(cw_generator->tq, callback_func, callback_arg, level);
 }
 
 
@@ -893,7 +893,7 @@ int cw_register_tone_queue_low_callback(void (*callback_func)(void*), void *call
 */
 bool cw_is_tone_busy(void)
 {
-	return cw_tq_is_busy_internal(cw_generator->tq);
+	return cw_tq_is_nonempty_internal(cw_generator->tq);
 }
 
 
@@ -912,7 +912,7 @@ bool cw_is_tone_busy(void)
 */
 int cw_wait_for_tone(void)
 {
-	return cw_tq_wait_for_tone_internal(cw_generator->tq);
+	return (int) cw_tq_wait_for_end_of_current_tone_internal(cw_generator->tq);
 }
 
 
@@ -936,7 +936,7 @@ int cw_wait_for_tone(void)
 */
 int cw_wait_for_tone_queue(void)
 {
-	return cw_tq_wait_for_level_internal(cw_generator->tq, 0);
+	return (int) cw_tq_wait_for_level_internal(cw_generator->tq, 0);
 }
 
 
@@ -967,7 +967,7 @@ int cw_wait_for_tone_queue(void)
 */
 int cw_wait_for_tone_queue_critical(int level)
 {
-	return cw_tq_wait_for_level_internal(cw_generator->tq, (size_t) level);
+	return (int) cw_tq_wait_for_level_internal(cw_generator->tq, (size_t) level);
 }
 
 
@@ -994,7 +994,7 @@ bool cw_is_tone_queue_full(void)
 */
 int cw_get_tone_queue_capacity(void)
 {
-	return (int) cw_tq_get_capacity_internal(cw_generator->tq);
+	return (int) cw_tq_capacity_internal(cw_generator->tq);
 }
 
 
@@ -1094,9 +1094,9 @@ int cw_queue_tone(int usecs, int frequency)
 
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, frequency, usecs, CW_SLOPE_MODE_STANDARD_SLOPES);
-	int rv = cw_tq_enqueue_internal(cw_generator->tq, &tone);
+	cw_ret_t cwret = cw_tq_enqueue_internal(cw_generator->tq, &tone);
 
-	return rv;
+	return (int) cwret;
 }
 
 
