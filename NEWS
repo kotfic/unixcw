@@ -37,6 +37,14 @@ version 3.6.0 / 2020-XX-YY
   - Behaviour of cw_lookup_phonetic() library function has been modified: the
     function now accepts NULL as a second argument (output buffer).
 
+  - Several items in libcw_debug.h are marked as deprecated. These items
+    should be used only internally, during development of libcw, and should
+    not be used by client code. They will be removed from the header in the
+    future.
+
+  - Declaration of cw_debug_print_flags() has been removed from libcw_debug.h
+    header. The function was not defined in the library, so noone could have
+    used the function.
 
   xcwcp:
 

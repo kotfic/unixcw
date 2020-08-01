@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
- * Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+ * Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,11 +19,11 @@
 
 
 
-/**
-   \file libcw_debug.c
 
-   \brief An attempt to create some smart debugging facility to libcw
-   and applications using the library.
+/**
+   @file libcw_debug.c
+
+   @brief Debugging facility to libcw and applications using the library.
 */
 
 
@@ -34,12 +34,12 @@
 
 
 
-#include <stdio.h>
-#include <sys/time.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 
 
@@ -57,10 +57,10 @@
 
 
 
-struct {
+static struct {
 	int flag;
-	const char *message;
-} cw_debug_event_strings[] = {
+	const char * message;
+} event_logging_strings[] = {
 	{ CW_DEBUG_EVENT_TONE_LOW,        "CW_DEBUG_EVENT_TONE_LOW"        },
 	{ CW_DEBUG_EVENT_TONE_MID,        "CW_DEBUG_EVENT_TONE_MID"        },
 	{ CW_DEBUG_EVENT_TONE_HIGH,       "CW_DEBUG_EVENT_TONE_HIGH"       },
@@ -77,13 +77,13 @@ struct {
    Other modules can access the table only through pointer in debug
    object. I don't expose this table (by making it globally visible)
    to decrease number of 'extern' declarations. */
-static const char *cw_debug_level_labels[] = { "[DD]", "[II]", "[WW]", "[EE]" };
+static const char * cw_debug_level_labels[] = { "[DD]", "[II]", "[WW]", "[EE]" };
 
 
 
 
 cw_debug_t cw_debug_object = {
-	.flags = CW_DEBUG_STDLIB | CW_DEBUG_SOUND_SYSTEM, //CW_DEBUG_TONE_QUEUE; //CW_DEBUG_KEYER_STATES | CW_DEBUG_STRAIGHT_KEY | CW_DEBUG_KEYING; // | CW_DEBUG_TONE_QUEUE;,
+	.flags = CW_DEBUG_STDLIB | CW_DEBUG_SOUND_SYSTEM,
 	.n = 0,
 	.n_max = 1,
 	.level = CW_DEBUG_NONE,
@@ -109,23 +109,29 @@ cw_debug_t cw_debug_object_ev = {
 
 
 
-static void cw_debug_flush(cw_debug_t *debug_object);
+static void cw_event_debugging_flush_internal(cw_debug_t * debug_object);
 
 
 
 
 /**
-   \brief Write all events from the debug object to a file
+   @brief Write all events from the debug object to a file
 
-   Function writes all events stored in the \p debug object to file
+   Function writes all events stored in the @p debug_object to file
    associated with the object, and removes the events.
 
    List of events is preceded with "FLUSH START\n" line, and
    followed by "FLUSH END\n" line.
 
-   \param debug_object - debug object
+   Function is used only in advanced debugging of events in library.
+
+   @internal
+   @reviewed 2020-08-01
+   @endinternal
+
+   @param debug_object[in] debug object from which to flush events
 */
-void cw_debug_flush(cw_debug_t * debug_object)
+void cw_event_debugging_flush_internal(cw_debug_t * debug_object)
 {
 	if (debug_object->n <= 0) {
 		return;
@@ -138,8 +144,9 @@ void cw_debug_flush(cw_debug_t * debug_object)
 	for (int i = 0; i < debug_object->n; i++) {
 		fprintf(stderr, "libcwevent:\t%06lld%06lld\t%s\n",
 			debug_object->events[i].sec - diff, debug_object->events[i].usec,
-			cw_debug_event_strings[debug_object->events[i].event].message);
+			event_logging_strings[debug_object->events[i].event].message);
 	}
+	debug_object->n = 0;
 	fprintf(stderr, "FLUSH END\n");
 
 	fflush(stderr);
@@ -151,7 +158,7 @@ void cw_debug_flush(cw_debug_t * debug_object)
 
 
 /**
-   \brief Set a value of debug flags in given debug variable
+   @brief Set a value of debug flags in given debug variable
 
    Assign specified value to given debug variable.
 
@@ -159,11 +166,15 @@ void cw_debug_flush(cw_debug_t * debug_object)
    variable, it erases existing value and assigns new one. Use
    cw_debug_get_flags() if you want to OR new flag with existing ones.
 
+   @internal
+   @reviewed 2020-08-01
+   @endinternal
 
-   \param debug_object - debug object for which to set flags
-   \param flags - new value to be assigned to the object
+   @param debug_object[in] debug object for which to set flags
+   @param flags[in] new value to be assigned to the object, a sum of one or
+   more of CW_DEBUG_* flags from libcw.h
 */
-void cw_debug_set_flags(cw_debug_t *debug_object, uint32_t flags)
+void cw_debug_set_flags(cw_debug_t * debug_object, uint32_t flags)
 {
 	debug_object->flags = flags;
 	return;
@@ -172,14 +183,20 @@ void cw_debug_set_flags(cw_debug_t *debug_object, uint32_t flags)
 
 
 
-
 /**
-   \brief Get current library's debug flags
+   @brief Get library's current debug flags
 
-   Function returns value of library's internal debug variable.
+   Function returns value of library's internal debug variable, a sum of one
+   or more of CW_DEBUG_* flags from libcw.h.
 
-   \return value of library's debug flags variable
-   TODO: there is some initialization code using LIBCW_DEBUG env. Perhaps we should include it somehow in libcw2 code.
+   @internal
+   @reviewed 2020-08-01
+
+   TODO: there is some initialization code using LIBCW_DEBUG env. Perhaps we
+   should include it somehow in libcw2 code.
+   @endinternal
+
+   @return value of library's debug flags variable
 */
 uint32_t cw_get_debug_flags(void)
 {
@@ -196,7 +213,7 @@ uint32_t cw_get_debug_flags(void)
 			 * Set the debug flags from LIBCW_DEBUG.  If it is an invalid
 			 * numeric, treat it as 0; there is no error checking.
 			 */
-			const char *debug_value = getenv("LIBCW_DEBUG");
+			const char * debug_value = getenv("LIBCW_DEBUG");
 			if (debug_value) {
 				cw_debug_object.flags = strtoul(debug_value, NULL, 0);
 			}
@@ -212,13 +229,18 @@ uint32_t cw_get_debug_flags(void)
 
 
 /**
-   \brief Get current debug flags from given debug object
+   @brief Get current debug flags from given debug object
 
-   Function returns value of debug object's debug flags.
+   Function returns value of debug object's debug flags, a sum of one or more
+   of CW_DEBUG_* flags from libcw.h.
 
-   \return value of debug objects debug flags variable
+   @internal
+   @reviewed 2020-08-01
+   @endinternal
+
+   @return value of debug object's debug flags
 */
-uint32_t cw_debug_get_flags(cw_debug_t *debug_object)
+uint32_t cw_debug_get_flags(const cw_debug_t * debug_object)
 {
 	/* FIXME: what about initialization? */
 	return debug_object->flags;
@@ -228,17 +250,21 @@ uint32_t cw_debug_get_flags(cw_debug_t *debug_object)
 
 
 /**
-   \brief Check if given debug flag is set
+   @brief Check if given debug flag is set
 
    Function checks if a specified debug flag is set in given debug object.
 
-   \param debug object - debug object to be checked
-   \param flag - flag to be checked.
+   @internal
+   @reviewed 2020-08-01
+   @endinternal
 
-   \return true if given flag is set
-   \return false if given flag is not set
+   @param debug object[in] - debug object to be checked
+   @param flag[in] flag to be checked, one of CW_DEBUG_* flags from libcw.h
+
+   @return true if given flag is set
+   @return false otherwise
 */
-bool cw_debug_has_flag(cw_debug_t *debug_object, uint32_t flag)
+bool cw_debug_has_flag(const cw_debug_t * debug_object, uint32_t flag)
 {
 	if (debug_object) {
 		return debug_object->flags & flag;
@@ -256,11 +282,17 @@ bool cw_debug_has_flag(cw_debug_t *debug_object, uint32_t flag)
 
 
 /**
-   \brief Print configuration of generator
+   @brief Print configuration of generator
 
-   \param gen - generator
+   Print to stderr some of generator's parameters.
+
+   @internal
+   @reviewed 2020-08-01
+   @endinternal
+
+   @param gen[in] generator
 */
-void cw_dev_debug_print_generator_setup(const cw_gen_t *gen)
+void cw_dev_debug_print_generator_setup(const cw_gen_t * gen)
 {
 	fprintf(stderr, "sound system:         %s\n",     cw_get_audio_system_label(gen->sound_system));
 	if (gen->sound_system == CW_AUDIO_OSS) {
@@ -270,7 +302,8 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t *gen)
 	fprintf(stderr, "sound device:         \"%s\"\n",  gen->sound_device);
 	fprintf(stderr, "sample rate:          %d Hz\n",  gen->sample_rate);
 
-#ifdef LIBCW_WITH_PULSEAUDIO
+	/* Temporarily disabled because gen->pa_data.ba is missing. */
+#if 0 // def LIBCW_WITH_PULSEAUDIO
 	if (gen->sound_system == CW_AUDIO_PA) {
 		fprintf(stderr, "PulseAudio latency:   %llu us\n", (unsigned long long int) gen->pa_data.latency_usecs);
 
@@ -323,23 +356,27 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t *gen)
 
 
 /**
-   \brief Write generator's samples to debug file
+   @brief Write generator's samples to debug file
 
    This function does any actual writing only for generators
    configured to use OSS, Alsa and PulseAudio sound sinks. Using the
    function on generators configured with other sound sinks doesn't
    produce any output and the function always returns CW_SUCCESS.
 
-   \param gen - generator
+   @internal
+   @reviewed 2020-08-01
+   @endinternal
 
-   \return CW_SUCCESS on write success
-   \return CW_FAILURE otherwise
+   @param gen[in] generator
+
+   @return CW_SUCCESS on write success
+   @return CW_FAILURE otherwise
 */
-int cw_dev_debug_raw_sink_write_internal(cw_gen_t *gen)
+int cw_dev_debug_raw_sink_write_internal(cw_gen_t * gen)
 {
-	if (gen->sound_system == CW_AUDIO_NONE
-	    || gen->sound_system == CW_AUDIO_NULL
-	    || gen->sound_system == CW_AUDIO_CONSOLE) {
+	if (gen->sound_system != CW_AUDIO_OSS
+	    && gen->sound_system != CW_AUDIO_ALSA
+	    && gen->sound_system != CW_AUDIO_PA) {
 
 		return CW_SUCCESS;
 	}
@@ -355,12 +392,12 @@ int cw_dev_debug_raw_sink_write_internal(cw_gen_t *gen)
 		gen->buffer[samples - 1] = 0x8000;
 #endif
 
-		int n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
+		const size_t n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
 
 		int rv = write(gen->dev_raw_sink, gen->buffer, n_bytes);
 		if (rv == -1) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-				      MSG_PREFIX "write error: %s (gen->dev_raw_sink = %ld, gen->buffer = %ld, n_bytes = %d)", strerror(errno), (long) gen->dev_raw_sink, (long) gen->buffer, n_bytes);
+				      MSG_PREFIX "write error: %s (gen->dev_raw_sink = %ld, gen->buffer = %ld, n_bytes = %zu)", strerror(errno), (long) gen->dev_raw_sink, (long) gen->buffer, n_bytes);
 			return CW_FAILURE;
 		}
 	}
@@ -372,17 +409,23 @@ int cw_dev_debug_raw_sink_write_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Add debug event to debug object
+   @brief Add debug event to debug object
 
-   \param debug_object - debug object
-   \param flag
-   \param event
-   \param func
-   \param line
+   Function is used only in advanced debugging of events in library.
+
+   @internal
+   @reviewed 2020-08-01
+   @endinternal
+
+   @param debug_object[in] debug object
+   @param flag[in] one of CW_DEBUG_* flags from libcw.h
+   @param event[in] one of CW_DEBUG_EVENT_* flags from libcw_debug.h
+   @param func[in] function where the event occurred
+   @param line[in] file line in which the event occurred
 */
-void cw_debug_event_internal(cw_debug_t *debug_object, uint32_t flag, uint32_t event, const char *func, int line)
+void cw_debug_event_internal(cw_debug_t * debug_object, uint32_t flag, uint32_t event, const char * func, int line)
 {
-	if (!debug_object) {
+	if (NULL == debug_object) {
 		return;
 	}
 
@@ -400,8 +443,7 @@ void cw_debug_event_internal(cw_debug_t *debug_object, uint32_t flag, uint32_t e
 	debug_object->n++;
 
 	if (debug_object->n >= debug_object->n_max) {
-		cw_debug_flush(debug_object);
-		debug_object->n = 0;
+		cw_event_debugging_flush_internal(debug_object);
 	}
 
 	return;

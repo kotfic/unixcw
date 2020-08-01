@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h> /* uint32_t */
 #include <stdio.h>
 
 
@@ -21,14 +22,23 @@ extern "C"
 {
 #endif
 
-#include <stdint.h> /* uint32_t */
+
+
+
+/* ************************** */
+/* Basic debugging utilities. */
+/* ************************** */
+
+
 
 
 #define CW_DEBUG_N_EVENTS_MAX (1024 * 128)
 
-typedef struct {
 
-	uint32_t flags;  /* Unused at the moment. */
+
+
+typedef struct {
+	uint32_t flags; /* See libcw.h, enum with CW_DEBUG_* values. */
 
 	int n;       /* Event counter. */
 	int n_max;   /* Flush threshold. */
@@ -37,28 +47,30 @@ typedef struct {
 	int level;
 
 	/* Human-readable labels for debug levels. */
-	const char **level_labels;
+	const char ** level_labels;
 
+	/* This is used only by utilities declared in section "Stuff used for
+	   advanced logging of events in library.". */
 	struct {
-		uint32_t event;   /* Event ID. One of values from enum below. */
+		uint32_t event;   /* Event ID. One of CW_DEBUG_EVENT_* values. */
 		long long sec;    /* Time of registering the event - second. */
 		long long usec;   /* Time of registering the event - microsecond. */
-	} events[CW_DEBUG_N_EVENTS_MAX];
-
+	} events[CW_DEBUG_N_EVENTS_MAX] __attribute__((deprecated));
 } cw_debug_t;
 
 
 
-void     cw_debug_set_flags(cw_debug_t *debug_object, uint32_t flags);
-uint32_t cw_debug_get_flags(cw_debug_t *debug_object);
-void     cw_debug_print_flags(cw_debug_t *debug_object);
-bool     cw_debug_has_flag(cw_debug_t *debug_object, uint32_t flag);
-void     cw_debug_event_internal(cw_debug_t *debug_object, uint32_t flag, uint32_t event, const char *func, int line);
+
+void     cw_debug_set_flags(cw_debug_t * debug_object, uint32_t flags);
+uint32_t cw_debug_get_flags(const cw_debug_t * debug_object);
+bool     cw_debug_has_flag(const cw_debug_t * debug_object, uint32_t flag);
+
 
 
 
 void     cw_set_debug_flags(uint32_t flags)    __attribute__ ((deprecated));
 uint32_t cw_get_debug_flags(void)              __attribute__ ((deprecated));
+
 
 
 
@@ -78,28 +90,26 @@ uint32_t cw_get_debug_flags(void)              __attribute__ ((deprecated));
 
 
 
-#define cw_debug_ev(debug_object, flag, event)				\
-	{								\
-		cw_debug_event_internal((debug_object), flag, event, __func__, __LINE__); \
-	}
+/* ********************************************************************************** */
+/* ******** Don't use any items from below this line, they are deprecated. ********** */
+/* ********************************************************************************** */
 
 
 
 
-enum {
-	CW_DEBUG_EVENT_TONE_LOW  = 0,         /* Tone with non-zero frequency. */
-	CW_DEBUG_EVENT_TONE_MID,              /* A state between LOW and HIGH, probably unused. */
-	CW_DEBUG_EVENT_TONE_HIGH,             /* Tone with zero frequency. */
-	CW_DEBUG_EVENT_TQ_JUST_EMPTIED,       /* A last tone from libcw's queue of tones has been dequeued, making the queue empty. */
-	CW_DEBUG_EVENT_TQ_NONEMPTY,           /* A tone from libcw's queue of tones has been dequeued, but the queue is still non-empty. */
-	CW_DEBUG_EVENT_TQ_STILL_EMPTY         /* libcw's queue of tones has been asked for tone, but there were no tones on the queue. */
-};
+/* ******************************* */
+/* Additional debugging utilities. */
+/* ******************************* */
 
+/*
+  Code in this section is considered deprecated. Don't use it in client code.
 
-
+  Code in this section is marked as deprecated because it is redundant. Use
+  either cw_debug_msg() or fprintf().
+*/
 
 /**
-   \brief Print debug message - verbose version
+   @brief Print debug message - verbose version
 
    This macro behaves much like fprintf(stderr, ...) function, caller
    only have to provide format string with converesion specifiers and
@@ -110,8 +120,6 @@ enum {
 
    See "C: A Reference Manual", chapter 3.3.10 for more information on
    variable argument lists in macros (it requires C99).
-
-   Macro copied from my cdw project.
 */
 #ifndef NDEBUG
 #define cw_vdm(...) fprintf(stderr, "%s():%d: ", __func__, __LINE__); fprintf(stderr, __VA_ARGS__);
@@ -122,10 +130,48 @@ enum {
 
 
 
-/**
-  \brief Assert macro with message
+/* ***************************************************** */
+/* Stuff used for advanced logging of events in library. */
+/* ***************************************************** */
 
-  Macro copied from my cdw project.
+/*
+  Code in this section is considered deprecated. Don't use it in client code.
+
+  Code in this section is marked as deprecated because it should be used only
+  during development of libcw, and should not be used by client code.
+*/
+
+void cw_debug_event_internal(cw_debug_t *debug_object, uint32_t flag, uint32_t event, const char *func, int line) __attribute__ ((deprecated));
+#define cw_debug_ev(debug_object, flag, event)				\
+	{								\
+		cw_debug_event_internal((debug_object), flag, event, __func__, __LINE__); \
+	}
+
+enum {
+	CW_DEBUG_EVENT_TONE_LOW  = 0,         /* Tone with non-zero frequency. */
+	CW_DEBUG_EVENT_TONE_MID,              /* A state between LOW and HIGH, probably unused. */
+	CW_DEBUG_EVENT_TONE_HIGH,             /* Tone with zero frequency. */
+	CW_DEBUG_EVENT_TQ_JUST_EMPTIED,       /* A last tone from libcw's queue of tones has been dequeued, making the queue empty. */
+	CW_DEBUG_EVENT_TQ_NONEMPTY,           /* A tone from libcw's queue of tones has been dequeued, but the queue is still non-empty. */
+	CW_DEBUG_EVENT_TQ_STILL_EMPTY         /* libcw's queue of tones has been asked for tone, but there were no tones on the queue. */
+} __attribute__ ((deprecated));
+
+
+
+
+/* ********** */
+/* Assertions */
+/* ********** */
+
+/*
+  Code in this section is considered deprecated. Don't use it in client code.
+
+  Code in this section is considered as deprecated because it should be used
+  only during development of libcw, and should not be used by client code.
+*/
+
+/**
+   @brief Assert macro with message
 */
 #ifndef NDEBUG
 #define cw_assert(expr, ...)					\
@@ -146,9 +192,20 @@ enum {
 
 
 
+/* ******************************************************* */
+/* Utilities used only during development of libcw itself. */
+/* ******************************************************* */
+
+/*
+  Code in this section is considered deprecated. Don't use it in client code.
+
+  Code in this section is marked as deprecated because it should be used only
+  during development of libcw, and should not be used by client code.
+*/
+
 #ifdef LIBCW_WITH_DEV
-int  cw_dev_debug_raw_sink_write_internal(cw_gen_t * gen);
-void cw_dev_debug_print_generator_setup(const cw_gen_t * gen);
+int  cw_dev_debug_raw_sink_write_internal(cw_gen_t * gen) __attribute__ ((deprecated));
+void cw_dev_debug_print_generator_setup(const cw_gen_t * gen) __attribute__ ((deprecated));
 #endif
 
 
