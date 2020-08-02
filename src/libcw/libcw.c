@@ -872,7 +872,7 @@ const char *cw_generator_get_audio_system_label(void)
 */
 int cw_register_tone_queue_low_callback(void (*callback_func)(void*), void *callback_arg, int level)
 {
-	return (int) cw_tq_register_low_level_callback_internal(cw_generator->tq, callback_func, callback_arg, level);
+	return cw_tq_register_low_level_callback_internal(cw_generator->tq, callback_func, callback_arg, level);
 }
 
 
@@ -912,7 +912,7 @@ bool cw_is_tone_busy(void)
 */
 int cw_wait_for_tone(void)
 {
-	return (int) cw_tq_wait_for_end_of_current_tone_internal(cw_generator->tq);
+	return cw_tq_wait_for_end_of_current_tone_internal(cw_generator->tq);
 }
 
 
@@ -936,7 +936,7 @@ int cw_wait_for_tone(void)
 */
 int cw_wait_for_tone_queue(void)
 {
-	return (int) cw_tq_wait_for_level_internal(cw_generator->tq, 0);
+	return cw_tq_wait_for_level_internal(cw_generator->tq, 0);
 }
 
 
@@ -967,7 +967,7 @@ int cw_wait_for_tone_queue(void)
 */
 int cw_wait_for_tone_queue_critical(int level)
 {
-	return (int) cw_tq_wait_for_level_internal(cw_generator->tq, (size_t) level);
+	return cw_tq_wait_for_level_internal(cw_generator->tq, (size_t) level);
 }
 
 
@@ -1096,7 +1096,7 @@ int cw_queue_tone(int usecs, int frequency)
 	CW_TONE_INIT(&tone, frequency, usecs, CW_SLOPE_MODE_STANDARD_SLOPES);
 	cw_ret_t cwret = cw_tq_enqueue_internal(cw_generator->tq, &tone);
 
-	return (int) cwret;
+	return cwret;
 }
 
 
@@ -1801,9 +1801,7 @@ int cw_get_iambic_curtis_mode_b_state(void)
 
    If appropriate, this routine starts the keyer functions sending the
    relevant element.  Element send and timing occurs in the background,
-   so this routine returns almost immediately.  See cw_keyer_element_wait()
-   and cw_keyer_wait() for details about how to check the current status of
-   iambic keyer background processing.
+   so this routine returns almost immediately.
 
    \param dot_paddle_state
    \param dash_paddle_state
@@ -1860,7 +1858,7 @@ int cw_notify_keyer_dash_paddle_event(int dash_paddle_state)
 */
 void cw_get_keyer_paddles(int *dot_paddle_state, int *dash_paddle_state)
 {
-	cw_key_ik_get_paddles(&cw_key, dot_paddle_state, dash_paddle_state);
+	cw_key_ik_get_paddles(&cw_key, (cw_key_value_t *) dot_paddle_state, (cw_key_value_t *) dash_paddle_state);
 	return;
 }
 
@@ -1917,7 +1915,8 @@ bool cw_is_keyer_busy(void)
 */
 int cw_wait_for_keyer_element(void)
 {
-	return cw_key_ik_wait_for_element(&cw_key);
+	/* TODO: update function description: errno and and return values. */
+	return cw_key_ik_wait_for_end_of_current_element(&cw_key);
 }
 
 
@@ -2010,7 +2009,7 @@ void cw_straight_key_clock_internal(void)
 */
 int cw_notify_straight_key_event(int key_state)
 {
-	return cw_key_sk_notify_event(&cw_key, key_state);
+	return cw_key_sk_set_value(&cw_key, key_state);
 }
 
 
@@ -2027,7 +2026,9 @@ int cw_notify_straight_key_event(int key_state)
 */
 int cw_get_straight_key_state(void)
 {
-	return cw_key_sk_get_value(&cw_key);
+	cw_key_value_t key_value = CW_KEY_VALUE_OPEN;
+	cw_key_sk_get_value(&cw_key, &key_value);
+	return (int) key_value;
 }
 
 
@@ -2045,7 +2046,7 @@ int cw_get_straight_key_state(void)
 */
 bool cw_is_straight_key_busy(void)
 {
-	return cw_key_sk_is_busy(&cw_key);
+	return CW_KEY_STATE_CLOSED == cw_get_straight_key_state();
 }
 
 

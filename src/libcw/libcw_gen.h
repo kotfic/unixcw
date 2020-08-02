@@ -412,9 +412,9 @@ int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen);
 
 /* These are also 'enqueue' primitives, but are intended to be used on
    hardware keying events. */
-int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen);
-int cw_gen_enqueue_begin_space_internal(cw_gen_t *gen);
-int cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol);
+cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t * gen);
+cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t * gen);
+cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol);
 
 
 

@@ -55,7 +55,7 @@ struct cw_key_struct {
 	   (but a generator doesn't need a key). This is why the key
 	   data type has a "generator" field, not the other way
 	   around. */
-	cw_gen_t *gen;
+	cw_gen_t * gen;
 
 
 	/* There should be a binding between key and a receiver.
@@ -80,7 +80,7 @@ struct cw_key_struct {
 
 	/* Straight key. */
 	struct {
-		int key_value;    /* Open/Closed, Space/Mark, NoSound/Sound. */
+		cw_key_value_t key_value;
 	} sk;
 
 
@@ -91,7 +91,7 @@ struct cw_key_struct {
 	   paddle values are CLOSED at the same time. */
 	struct {
 		int graph_state;       /* State of iambic keyer state machine. */
-		int key_value;         /* CW_KEY_STATE_OPEN or CW_KEY_STATE_CLOSED (Space/Mark, NoSound/Sound). */
+		cw_key_value_t key_value;
 
 		bool dot_paddle;       /* Dot paddle value. CW_KEY_STATE_OPEN or CW_KEY_STATE_CLOSED. */
 		bool dash_paddle;      /* Dash paddle value. CW_KEY_STATE_OPEN or CW_KEY_STATE_CLOSED. */
@@ -119,7 +119,7 @@ struct cw_key_struct {
 
 
 
-int  cw_key_ik_update_graph_state_internal(volatile cw_key_t * key);
+cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key);
 void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs);
 
 

@@ -189,6 +189,25 @@ void cw_gen_register_state_tracking_callback_internal(cw_gen_t * gen, cw_gen_sta
 
 
 
+/*
+  For straight key this is a value of a single (and the only) element of a
+  key.
+
+  For a iambic keyer and other key types this a value of one of two paddles.
+
+  A state of key's internal graph (state machine) can have values that have
+  _STATE_ in their names. I'm making here a distinction between "value" and
+  "state", reserving word "state" for state of the internal graph (state
+  machine).
+*/
+typedef enum {
+	CW_KEY_VALUE_OPEN = CW_KEY_STATE_OPEN,      /* Space, no sound. */
+	CW_KEY_VALUE_CLOSED = CW_KEY_STATE_CLOSED,  /* Mark, sound. */
+} cw_key_value_t;
+
+
+
+
 cw_key_t * cw_key_new(void);
 void cw_key_delete(cw_key_t ** key);
 
@@ -221,7 +240,7 @@ void cw_key_delete(cw_key_t ** key);
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise (e.g. @p key or @p label is NULL)
 */
-int cw_key_set_label(cw_key_t * key, const char * label);
+cw_ret_t cw_key_set_label(cw_key_t * key, const char * label);
 
 
 
@@ -247,7 +266,7 @@ int cw_key_set_label(cw_key_t * key, const char * label);
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure (e.g. @p key or @p label is NULL)
 */
-int cw_key_get_label(const cw_key_t * key, char * label, size_t size);
+cw_ret_t cw_key_get_label(const cw_key_t * key, char * label, size_t size);
 
 
 
@@ -258,16 +277,15 @@ void cw_key_register_receiver(volatile cw_key_t * key, cw_rec_t * rec);
 void cw_key_ik_enable_curtis_mode_b(volatile cw_key_t * key);
 void cw_key_ik_disable_curtis_mode_b(volatile cw_key_t * key);
 bool cw_key_ik_get_curtis_mode_b(const volatile cw_key_t * key);
-int  cw_key_ik_notify_paddle_event(volatile cw_key_t * key, int dot_paddle_state, int dash_paddle_state);
-int  cw_key_ik_notify_dash_paddle_event(volatile cw_key_t * key, int dash_paddle_state);
-int  cw_key_ik_notify_dot_paddle_event(volatile cw_key_t * key, int dot_paddle_state);
-void cw_key_ik_get_paddles(const volatile cw_key_t * key, int * dot_paddle_state, int * dash_paddle_state);
-int  cw_key_ik_wait_for_element(const volatile cw_key_t * key);
-int  cw_key_ik_wait_for_keyer(volatile cw_key_t * key);
+cw_ret_t cw_key_ik_notify_paddle_event(volatile cw_key_t * key, cw_key_value_t dot_paddle_value, cw_key_value_t dash_paddle_value);
+cw_ret_t cw_key_ik_notify_dash_paddle_event(volatile cw_key_t * key, cw_key_value_t dash_paddle_value);
+cw_ret_t cw_key_ik_notify_dot_paddle_event(volatile cw_key_t * key, cw_key_value_t dot_paddle_value);
+void cw_key_ik_get_paddles(const volatile cw_key_t * key, cw_key_value_t * dot_paddle_value, cw_key_value_t * dash_paddle_value);
+cw_ret_t cw_key_ik_wait_for_end_of_current_element(const volatile cw_key_t * key);
+cw_ret_t cw_key_ik_wait_for_keyer(volatile cw_key_t * key);
 
-int  cw_key_sk_get_value(const volatile cw_key_t * key);
-bool cw_key_sk_is_busy(volatile cw_key_t * key);
-int  cw_key_sk_notify_event(volatile cw_key_t * key, int key_state);
+cw_ret_t cw_key_sk_get_value(const volatile cw_key_t * key, cw_key_value_t * key_value);
+cw_ret_t cw_key_sk_set_value(volatile cw_key_t * key, cw_key_value_t key_value);
 
 
 

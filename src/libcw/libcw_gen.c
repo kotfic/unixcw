@@ -992,6 +992,10 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 
 		cw_gen_state_tracking_internal(gen, &tone, dequeued_now, dequeued_prev);
 
+		/* Also look at call to cw_key_ik_update_graph_state_internal()
+		   made below. Both calls are about updating some internals of
+		   key. This one is done before blocking write, the other is
+		   done after blocking write. */
 		if (gen->key) {
 			cw_key_ik_increment_timer_internal(gen->key, tone.duration);
 		}
@@ -1002,6 +1006,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 		cw_debug_ev (&cw_debug_object_ev, 0, tone.frequency ? CW_DEBUG_EVENT_TONE_HIGH : CW_DEBUG_EVENT_TONE_LOW);
 #endif
 
+		/* This is a blocking write. */
 		if (gen->sound_system == CW_AUDIO_NULL || gen->sound_system == CW_AUDIO_CONSOLE) {
 			cw_assert (NULL != gen->write_tone_to_sound_device, "'gen->write_tone_to_sound_device' pointer is NULL");
 			gen->write_tone_to_sound_device(gen, &tone);
@@ -1043,7 +1048,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 		   a tone of specified duration. A duration of Mark or
 		   Space has elapsed. Inform iambic keyer that the
 		   tone it has enqueued has elapsed. The keyer may
-		   want to change its state.
+		   want to change state of its internal state machine.
 
 		   (Whether iambic keyer has enqueued any tones or
 		   not, and whether it is waiting for the
@@ -1056,7 +1061,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 		   iambic keyer. Inner workings of straight key are
 		   much more simple, the straight key doesn't need to
 		   use generator as a timer. */
-		if (!cw_key_ik_update_graph_state_internal(gen->key)) {
+		if (CW_FAILURE == cw_key_ik_update_graph_state_internal(gen->key)) {
 			/* just try again, once */
 			usleep(1000);
 			cw_key_ik_update_graph_state_internal(gen->key);
@@ -2655,7 +2660,7 @@ void cw_gen_sync_parameters_internal(cw_gen_t *gen)
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
-int cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
+cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 {
 	/* In case of straight key we don't know at all how long the
 	   tone should be (we don't know for how long the straight key
@@ -2772,7 +2777,8 @@ cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
    length. This means that the function should be called for events
    from iambic keyer.
 
-   'Partial' means without any end-of-mark spaces.
+   The function doesn't add any end-of-mark spaces (hence "no_eom_space" in
+   name).
 
    The function is called in very specific context, see cw_key module
    for details.
@@ -2783,7 +2789,7 @@ cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
-cw_ret_t cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol)
+cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol)
 {
 	cw_tone_t tone = { 0 };
 
@@ -2831,7 +2837,7 @@ cw_ret_t cw_gen_enqueue_partial_symbol_internal(cw_gen_t *gen, char symbol)
 */
 int cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level)
 {
-	return (int) cw_tq_wait_for_level_internal(gen->tq, level);
+	return cw_tq_wait_for_level_internal(gen->tq, level);
 }
 
 
@@ -2917,7 +2923,7 @@ size_t cw_gen_get_queue_length(cw_gen_t const * gen)
 */
 int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level)
 {
-	return (int) cw_tq_register_low_level_callback_internal(gen->tq, callback_func, callback_arg, level);
+	return cw_tq_register_low_level_callback_internal(gen->tq, callback_func, callback_arg, level);
 }
 
 
@@ -2925,7 +2931,7 @@ int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t c
 
 int cw_gen_wait_for_tone(cw_gen_t * gen)
 {
-	return (int) cw_tq_wait_for_end_of_current_tone_internal(gen->tq);
+	return cw_tq_wait_for_end_of_current_tone_internal(gen->tq);
 }
 
 

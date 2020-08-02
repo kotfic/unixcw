@@ -44,8 +44,8 @@
 
 static int key_setup(cw_test_executor_t * cte, cw_key_t ** key, cw_gen_t ** gen);
 static void key_destroy(cw_key_t ** key, cw_gen_t ** gen);
-static int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, int intended_dot_paddle, int intended_dash_paddle, char mark_representation, const char * marks_name, int max);
-static int test_straight_key_helper(cw_test_executor_t * cte, cw_key_t * key, int intended_key_state, const char * state_name, int max);
+static int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t intended_dot_paddle, cw_key_value_t intended_dash_paddle, char mark_representation, const char * marks_name, int max);
+static int test_straight_key_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t intended_key_value, const char * state_name, int max);
 
 
 
@@ -111,14 +111,14 @@ void key_destroy(cw_key_t ** key, cw_gen_t ** gen)
 /**
    @reviewed on 2019-10-12
 */
-int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, int intended_dot_paddle, int intended_dash_paddle, char mark_representation, const char * marks_name, int max)
+int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t intended_dot_paddle, cw_key_value_t intended_dash_paddle, char mark_representation, const char * marks_name, int max)
 {
 	/* Test: keying dot. */
 	{
 		/* Seems like this function calls means "keyer pressed
 		   until further notice". First argument is true, so
 		   this is a dot. */
-		int cwret = LIBCW_TEST_FUT(cw_key_ik_notify_paddle_event)(key, intended_dot_paddle, intended_dash_paddle);
+		cw_ret_t cwret = LIBCW_TEST_FUT(cw_key_ik_notify_paddle_event)(key, intended_dot_paddle, intended_dash_paddle);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "cw_key_ik_notify_paddle_event(key, %d, %d)", intended_dot_paddle, intended_dash_paddle);
 
 
@@ -130,7 +130,7 @@ int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, int intended_dot
 		   pressed. We just want to get N marks. */
 		cte->log_info(cte, "%s: ", marks_name);
 		for (int i = 0; i < max; i++) {
-			cwret = LIBCW_TEST_FUT(cw_key_ik_wait_for_element)(key);
+			cwret = LIBCW_TEST_FUT(cw_key_ik_wait_for_end_of_current_element)(key);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "wait for iambic key element (%s), #%d", marks_name, i)) {
 				failure = true;
 				break;
@@ -146,8 +146,8 @@ int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, int intended_dot
 
 	/* Test: preserving of paddle states. */
 	{
-		int readback_dot_paddle;
-		int readback_dash_paddle;
+		cw_key_value_t readback_dot_paddle;
+		cw_key_value_t readback_dash_paddle;
 
 		LIBCW_TEST_FUT(cw_key_ik_get_paddles)(key, &readback_dot_paddle, &readback_dash_paddle);
 		cte->expect_op_int(cte, intended_dot_paddle, "==", readback_dot_paddle, "cw_keyer_get_keyer_paddles(): preserving dot paddle (%s)", marks_name);
@@ -181,19 +181,19 @@ int test_keyer(cw_test_executor_t * cte)
 
 
 	/* Test: keying dot. */
-	test_keyer_helper(cte, key, CW_KEY_STATE_CLOSED, CW_KEY_STATE_OPEN, CW_DOT_REPRESENTATION, "dots", max);
+	test_keyer_helper(cte, key, CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_OPEN, CW_DOT_REPRESENTATION, "dots", max);
 
 	/* Test: keying dash. */
-	test_keyer_helper(cte, key, CW_KEY_STATE_OPEN, CW_KEY_STATE_CLOSED, CW_DASH_REPRESENTATION, "dashes", max);
+	test_keyer_helper(cte, key, CW_KEY_VALUE_OPEN, CW_KEY_VALUE_CLOSED, CW_DASH_REPRESENTATION, "dashes", max);
 
 	/* Test: keying alternate dit/dash. */
-	test_keyer_helper(cte, key, CW_KEY_STATE_CLOSED, CW_KEY_STATE_CLOSED, '#', "alternating", max);
+	test_keyer_helper(cte, key, CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_CLOSED, '#', "alternating", max);
 
 
 	/* Test: set new state of paddles: no paddle pressed. */
 	{
-		int cwret = LIBCW_TEST_FUT(cw_key_ik_notify_paddle_event)(key, CW_KEY_STATE_OPEN, CW_KEY_STATE_OPEN);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "cw_key_ik_notify_paddle_event(%d, %d)", CW_KEY_STATE_OPEN, CW_KEY_STATE_OPEN);
+		cw_ret_t cwret = LIBCW_TEST_FUT(cw_key_ik_notify_paddle_event)(key, CW_KEY_VALUE_OPEN, CW_KEY_VALUE_OPEN);
+		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "cw_key_ik_notify_paddle_event(%d, %d)", CW_KEY_VALUE_OPEN, CW_KEY_VALUE_OPEN);
 	}
 
 	cw_key_ik_wait_for_keyer(key);
@@ -209,40 +209,30 @@ int test_keyer(cw_test_executor_t * cte)
 
 
 /**
-   @reviewed on 2019-10-12
+   @reviewed on 2020-08-02
 */
-int test_straight_key_helper(cw_test_executor_t * cte, cw_key_t * key, int intended_key_state, const char * state_name, int max)
+int test_straight_key_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t intended_key_value, const char * state_name, int max)
 {
 	bool event_failure = false;
 	bool state_failure = false;
-	bool busy_failure = false;
 
 	for (int i = 0; i < max; i++) {
-		const int cwret = LIBCW_TEST_FUT(cw_key_sk_notify_event)(key, intended_key_state);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "key state %d", intended_key_state)) {
+		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_key_sk_set_value)(key, intended_key_value);
+		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "key value %d", intended_key_value)) {
 			event_failure = true;
 			break;
 		}
 
-		const int readback_state = LIBCW_TEST_FUT(cw_key_sk_get_value)(key);
-		if (!cte->expect_op_int_errors_only(cte, intended_key_state, "==", readback_state, "key state readback (%d)", intended_key_state)) {
+		cw_key_value_t readback_value;
+		LIBCW_TEST_FUT(cw_key_sk_get_value)(key, &readback_value);
+		if (!cte->expect_op_int_errors_only(cte, intended_key_value, "==", readback_value, "key value readback (%d)", intended_key_value)) {
 			state_failure = true;
-			break;
-		}
-
-		/* not busy == up == opened
-		   busy == down == closed. */
-		const bool is_busy = LIBCW_TEST_FUT(cw_key_sk_is_busy)(key);
-		const bool expected_is_busy = intended_key_state == CW_KEY_STATE_CLOSED;
-		if (!cte->expect_op_int_errors_only(cte, expected_is_busy, "==", is_busy, "key business readback (%d)", intended_key_state)) {
-			busy_failure = true;
 			break;
 		}
 	}
 
-	cte->expect_op_int(cte, false, "==", event_failure, "cw_key_sk_notify_event(<key %s>)", state_name);
-	cte->expect_op_int(cte, false, "==", state_failure, "cw_key_sk_get_value(<key %s)", state_name);
-	cte->expect_op_int(cte, false, "==", busy_failure, "cw_straight_key_busy(<key %s>)", state_name);
+	cte->expect_op_int(cte, false, "==", event_failure, "cw_key_sk_set_state(<key %s>)", state_name);
+	cte->expect_op_int(cte, false, "==", state_failure, "cw_key_sk_get_state(<key %s)", state_name);
 
 	return 0;
 }
@@ -267,43 +257,36 @@ int test_straight_key(cw_test_executor_t * cte)
 
 	/* See what happens when we tell the library 'max' times in a
 	   row that key is open. */
-	test_straight_key_helper(cte, key, CW_KEY_STATE_OPEN, "open", max);
+	test_straight_key_helper(cte, key, CW_KEY_VALUE_OPEN, "open", max);
 
 	/* See what happens when we tell the library 'max' times in a
 	   row that key is closed. */
-	test_straight_key_helper(cte, key, CW_KEY_STATE_CLOSED, "closed", max);
+	test_straight_key_helper(cte, key, CW_KEY_VALUE_CLOSED, "closed", max);
 
 
 	{
 		bool event_failure = false;
 		bool state_failure = false;
-		bool busy_failure = false;
 
 		const int usecs = CW_USECS_PER_SEC;
 
 		/* Alternate between open and closed. */
 		for (int i = 0; i < max; i++) {
-			const int intended_key_state = (i % 2) ? CW_KEY_STATE_OPEN : CW_KEY_STATE_CLOSED;
-			const int cwret = LIBCW_TEST_FUT(cw_key_sk_notify_event)(key, intended_key_state);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "alternating key state, notification, iteration %d, value %d", i, intended_key_state)) {
+			const cw_key_value_t intended_key_value = (i % 2) ? CW_KEY_VALUE_OPEN : CW_KEY_VALUE_CLOSED;
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_key_sk_set_value)(key, intended_key_value);
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "alternating key value, notification, iteration %d, value %d", i, intended_key_value)) {
 				event_failure = true;
 				break;
 			}
 
-			const int readback_key_state = LIBCW_TEST_FUT(cw_key_sk_get_value)(key);
-			if (!cte->expect_op_int_errors_only(cte, intended_key_state, "==", readback_key_state, "alternating key state, value readback, iteration %d, value %d", i, intended_key_state)) {
+			cw_key_value_t readback_key_value;
+			LIBCW_TEST_FUT(cw_key_sk_get_value)(key, &readback_key_value);
+			if (!cte->expect_op_int_errors_only(cte, intended_key_value, "==", readback_key_value, "alternating key value, value readback, iteration %d, value %d", i, intended_key_value)) {
 				state_failure = true;
 				break;
 			}
 
-			const bool is_busy = LIBCW_TEST_FUT(cw_key_sk_is_busy)(key);
-			const bool expected_is_busy = intended_key_state == CW_KEY_STATE_CLOSED;
-			if (!cte->expect_op_int_errors_only(cte, expected_is_busy, "==", is_busy, "alternating key state, busy readback, iteration %d, value %d", i, intended_key_state)) {
-				busy_failure = true;
-				break;
-			}
-
-			cte->log_info_cont(cte, "%d", intended_key_state);
+			cte->log_info_cont(cte, "%d", intended_key_value);
 #ifdef __FreeBSD__
 			/* There is a problem with nanosleep() and
 			   signals on FreeBSD. TODO: see if the
@@ -317,11 +300,10 @@ int test_straight_key(cw_test_executor_t * cte)
 		cte->log_info_cont(cte, "\n");
 
 		/* Never leave the key closed. */
-		cw_key_sk_notify_event(key, CW_KEY_STATE_OPEN);
+		cw_key_sk_set_value(key, CW_KEY_VALUE_OPEN);
 
-		cte->expect_op_int(cte, false, "==", event_failure, "cw_key_sk_notify_event(<key open/closed>)");
-		cte->expect_op_int(cte, false, "==", state_failure, "cw_key_sk_get_value(<key open/closed>)");
-		cte->expect_op_int(cte, false, "==", busy_failure, "cw_straight_key_busy(<key open/closed>)");
+		cte->expect_op_int(cte, false, "==", event_failure, "cw_key_sk_set_state(<key open/closed>)");
+		cte->expect_op_int(cte, false, "==", state_failure, "cw_key_sk_get_state(<key open/closed>)");
 	}
 
 	sleep(1); /* Don't go immediately to key_destroy(), because this will cut the sound of the last dot short. TODO: shouldn't this be some kind of wait()? */
