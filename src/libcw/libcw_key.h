@@ -91,10 +91,16 @@ struct cw_key_struct {
 	   paddle values are CLOSED at the same time. */
 	struct {
 		int graph_state;       /* State of iambic keyer state machine. */
+
+		/* Overall value of key. Whether the key is generating a
+		   Dash/Dot (CW_KEY_VALUE_CLOSED) or Space (CW_KEY_VALUE_OPEN). */
 		cw_key_value_t key_value;
 
-		bool dot_paddle;       /* Dot paddle value. CW_KEY_STATE_OPEN or CW_KEY_STATE_CLOSED. */
-		bool dash_paddle;      /* Dash paddle value. CW_KEY_STATE_OPEN or CW_KEY_STATE_CLOSED. */
+		/* Current values of paddles. Correspond directly to states
+		   of electric contacts in user's equipment (e.g. paddles,
+		   keyboard arrow keys). */
+		cw_key_value_t dot_paddle_value;
+		cw_key_value_t dash_paddle_value;
 
 		bool dot_latch;        /* Dot false->true latch */
 		bool dash_latch;       /* Dash false->true latch */
@@ -104,14 +110,18 @@ struct cw_key_struct {
 		   Mode A is a bit less timing-critical, so we'll make that the default. */
 		bool curtis_mode_b;
 
-		bool curtis_b_latch;   /* Curtis Dot&Dash latch */
+		/* Curtis Dot&Dash latch */
+		bool curtis_b_latch;
 
-		bool lock;             /* FIXME: describe why we need this flag. */
+		/* FIXME: describe why we need this flag. */
+		bool lock;
+
+#define IAMBIC_KEY_HAS_TIMER
+#ifdef IAMBIC_KEY_HAS_TIMER
+		/* Timer for receiving of iambic keying, owned by client code. */
+		struct timeval * ik_timer;
+#endif
 	} ik;
-
-
-	/* Every key event needs to have a timestamp. */
-	struct timeval timer;
 
 	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
 };
@@ -120,7 +130,10 @@ struct cw_key_struct {
 
 
 cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key);
+#ifdef IAMBIC_KEY_HAS_TIMER
 void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs);
+#endif
+void cw_key_ik_register_timer_internal(volatile cw_key_t * key, struct timeval * timer);
 
 
 void cw_key_ik_get_paddle_latches_internal(volatile cw_key_t * key, int * dot_paddle_latch_state, int * dash_paddle_latch_state);

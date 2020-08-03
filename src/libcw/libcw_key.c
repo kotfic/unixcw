@@ -156,6 +156,30 @@ static cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_val
 
 
 
+/**
+   Most of the time libcw just passes around key_callback_arg, not caring of
+   what type it is, and not attempting to do any operations on it. On one
+   occasion however, it needs to know whether key_callback_arg is of type
+   'struct timeval', and if so, it must do some operation on it. I could pass
+   struct with ID as key_callback_arg, but that may break some old client
+   code. Instead I've created this function that has only one, very specific
+   purpose: to pass to libcw a pointer to timer.
+
+   The timer is owned by client code, and is used to measure and clock
+   iambic keyer.
+
+   @param key
+   @param timer
+*/
+void cw_key_ik_register_timer_internal(volatile cw_key_t * key, struct timeval * timer)
+{
+	key->ik.ik_timer = timer;
+
+	return;
+}
+
+
+
 
 /**
    Comment for key used as iambic keyer:
@@ -263,10 +287,12 @@ cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 	cw_assert (key, MSG_PREFIX "key is NULL");
 	cw_assert (key->gen, MSG_PREFIX "gen is NULL");
 
+#if 0 /* Disabled on 2020-08-03. Timer moved to iambic keyer only. */
 	struct timeval t;
 	gettimeofday(&t, NULL); /* TODO: isn't gettimeofday() susceptible to NTP syncs? */
 	key->timer.tv_sec = t.tv_sec;
 	key->timer.tv_usec = t.tv_usec;
+#endif
 
 	if (key->sk.key_value == key_value) {
 		/* This may happen when dequeueing 'forever' tone
@@ -577,7 +603,7 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 		   repeat.  And if nothing is true, then revert to
 		   idling. */
 
-		if (!key->ik.dot_paddle) {
+		if (CW_KEY_VALUE_OPEN == key->ik.dot_paddle_value) {
 			/* Client has informed us that dot paddle has
 			   been released. Clear the paddle state
 			   memory. */
@@ -615,7 +641,7 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 			   MSG_PREFIX "inconsistency between keyer graph state (%s) ad key value (%d)",
 			   cw_iambic_keyer_graph_states[key->ik.graph_state], key->ik.key_value);
 
-		if (!key->ik.dash_paddle) {
+		if (CW_KEY_VALUE_OPEN == key->ik.dash_paddle_value) {
 			/* Client has informed us that dash paddle has
 			   been released. Clear the paddle state
 			   memory. */
@@ -716,11 +742,11 @@ cw_ret_t cw_key_ik_notify_paddle_event(volatile cw_key_t * key, cw_key_value_t d
 
 	/* Clean up and save the paddle value passed in. */
 #if 0    /* This code has been disabled on 2017-01-31. */
-	key->ik.dot_paddle = (dot_paddle_value != 0);
-	key->ik.dash_paddle = (dash_paddle_value != 0);
+	key->ik.dot_paddle_value = (dot_paddle_value != 0);
+	key->ik.dash_paddle_value = (dash_paddle_value != 0);
 #else
-	key->ik.dot_paddle = dot_paddle_value;
-	key->ik.dash_paddle = dash_paddle_value;
+	key->ik.dot_paddle_value = dot_paddle_value;
+	key->ik.dash_paddle_value = dash_paddle_value;
 #endif
 
 	/* Update the paddle latches if either paddle goes CLOSED.
@@ -728,17 +754,17 @@ cw_ret_t cw_key_ik_notify_paddle_event(volatile cw_key_t * key, cw_key_value_t d
 	   paddles go back to OPEN during this element, the item still
 	   gets actioned.  The signal handler is also responsible for
 	   clearing down the latches. TODO: verify the comment. */
-	if (key->ik.dot_paddle == CW_KEY_VALUE_CLOSED) {
+	if (CW_KEY_VALUE_CLOSED == key->ik.dot_paddle_value) {
 		key->ik.dot_latch = true;
 	}
-	if (key->ik.dash_paddle == CW_KEY_VALUE_CLOSED) {
+	if (CW_KEY_VALUE_CLOSED == key->ik.dash_paddle_value) {
 		key->ik.dash_latch = true;
 	}
 
 
 	if (key->ik.curtis_mode_b
-	    && key->ik.dot_paddle == CW_KEY_VALUE_CLOSED
-	    && key->ik.dash_paddle == CW_KEY_VALUE_CLOSED) {
+	    && CW_KEY_VALUE_CLOSED == key->ik.dot_paddle_value
+	    && CW_KEY_VALUE_CLOSED == key->ik.dash_paddle_value) {
 
 		/* Both paddles closed at the same time in Curtis mode B.
 
@@ -750,7 +776,7 @@ cw_ret_t cw_key_ik_notify_paddle_event(volatile cw_key_t * key, cw_key_value_t d
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_INFO,
 		      MSG_PREFIX "ik notify: paddles %d,%d, latches %d,%d, curtis_b %d",
-		      key->ik.dot_paddle, key->ik.dash_paddle,
+		      key->ik.dot_paddle_value, key->ik.dash_paddle_value,
 		      key->ik.dot_latch, key->ik.dash_latch, key->ik.curtis_b_latch);
 
 
@@ -796,12 +822,16 @@ static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t 
 	cw_assert (key, MSG_PREFIX "key is NULL");
 	cw_assert (key->gen, MSG_PREFIX "gen is NULL");
 
-	struct timeval t;
-	gettimeofday(&t, NULL); /* TODO: isn't gettimeofday() susceptible to NTP syncs? */
-	key->timer.tv_sec = t.tv_sec;
-	key->timer.tv_usec = t.tv_usec;
+#ifdef IAMBIC_KEY_HAS_TIMER
+	if (NULL != key->ik.ik_timer) {
+		struct timeval t;
+		gettimeofday(&t, NULL); /* TODO: isn't gettimeofday() susceptible to NTP syncs? */
+		key->ik.ik_timer->tv_sec = t.tv_sec;
+		key->ik.ik_timer->tv_usec = t.tv_usec;
+	}
+#endif
 
-	if (key->ik.dot_paddle == CW_KEY_VALUE_OPEN && key->ik.dash_paddle == CW_KEY_VALUE_OPEN) {
+	if (CW_KEY_VALUE_OPEN == key->ik.dot_paddle_value && CW_KEY_VALUE_OPEN == key->ik.dash_paddle_value) {
 		/* Both paddles are open/up. We certainly don't want
 		   to start any process upon "both paddles open"
 		   event. But the function shouldn't have been called
@@ -817,7 +847,7 @@ static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t 
 
 	const int old_graph_state = key->ik.graph_state;
 
-	if (key->ik.dot_paddle == CW_KEY_VALUE_CLOSED) {
+	if (CW_KEY_VALUE_CLOSED == key->ik.dot_paddle_value) {
 		/* "Dot" paddle pressed. Pretend that we are in "after
 		   dash" space, so that keyer will have to transit
 		   into "dot" mark graph state. */
@@ -880,7 +910,7 @@ static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t 
 */
 cw_ret_t cw_key_ik_notify_dot_paddle_event(volatile cw_key_t * key, cw_key_value_t dot_paddle_value)
 {
-	return cw_key_ik_notify_paddle_event(key, dot_paddle_value, key->ik.dash_paddle);
+	return cw_key_ik_notify_paddle_event(key, dot_paddle_value, key->ik.dash_paddle_value);
 }
 
 
@@ -905,7 +935,7 @@ cw_ret_t cw_key_ik_notify_dot_paddle_event(volatile cw_key_t * key, cw_key_value
 */
 cw_ret_t cw_key_ik_notify_dash_paddle_event(volatile cw_key_t * key, cw_key_value_t dash_paddle_value)
 {
-	return cw_key_ik_notify_paddle_event(key, key->ik.dot_paddle, dash_paddle_value);
+	return cw_key_ik_notify_paddle_event(key, key->ik.dot_paddle_value, dash_paddle_value);
 }
 
 
@@ -927,10 +957,10 @@ cw_ret_t cw_key_ik_notify_dash_paddle_event(volatile cw_key_t * key, cw_key_valu
 void cw_key_ik_get_paddles(const volatile cw_key_t * key, cw_key_value_t * dot_paddle_value, cw_key_value_t * dash_paddle_value)
 {
 	if (dot_paddle_value) {
-		*dot_paddle_value = key->ik.dot_paddle;
+		*dot_paddle_value = key->ik.dot_paddle_value;
 	}
 	if (dash_paddle_value) {
-		*dash_paddle_value = key->ik.dash_paddle;
+		*dash_paddle_value = key->ik.dash_paddle_value;
 	}
 	return;
 }
@@ -1072,7 +1102,7 @@ cw_ret_t cw_key_ik_wait_for_keyer(volatile cw_key_t * key)
 	   TODO: verify this comment. If this is a correct behaviour, then it
 	   would limit the number of scenarios where this function could be
 	   used. */
-	if (key->ik.dot_paddle == CW_KEY_VALUE_CLOSED || key->ik.dash_paddle == CW_KEY_VALUE_CLOSED) {
+	if (CW_KEY_VALUE_CLOSED == key->ik.dot_paddle_value || CW_KEY_VALUE_CLOSED == key->ik.dash_paddle_value) {
 		errno = EDEADLK;
 		return CW_FAILURE;
 	}
@@ -1112,8 +1142,8 @@ void cw_key_ik_reset_internal(volatile cw_key_t * key)
 
 	key->ik.key_value = CW_KEY_VALUE_OPEN;
 
-	key->ik.dot_paddle = CW_KEY_VALUE_OPEN;
-	key->ik.dash_paddle = CW_KEY_VALUE_OPEN;
+	key->ik.dot_paddle_value = CW_KEY_VALUE_OPEN;
+	key->ik.dash_paddle_value = CW_KEY_VALUE_OPEN;
 	key->ik.dot_latch = false;
 	key->ik.dash_latch = false;
 	key->ik.curtis_mode_b = false;
@@ -1132,6 +1162,7 @@ void cw_key_ik_reset_internal(volatile cw_key_t * key)
 
 
 
+#ifdef IAMBIC_KEY_HAS_TIMER
 /**
    Iambic keyer has an internal timer variable. On some occasions the
    variable needs to be updated.
@@ -1159,7 +1190,7 @@ void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs)
 		return;
 	}
 
-	if (key->ik.graph_state != KS_IDLE) {
+	if (key->ik.graph_state != KS_IDLE && NULL != key->ik.ik_timer) {
 		/* Update timestamp that clocks iambic keyer
 		   with current time interval. This must be
 		   done only when iambic keyer is in
@@ -1170,14 +1201,14 @@ void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs)
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
 			      MSG_PREFIX "ik increment: incrementing timer by %d [us]\n", usecs);
 
-		key->timer.tv_usec += usecs % CW_USECS_PER_SEC;
-		key->timer.tv_sec  += usecs / CW_USECS_PER_SEC + key->timer.tv_usec / CW_USECS_PER_SEC;
-		key->timer.tv_usec %= CW_USECS_PER_SEC;
+		key->ik.ik_timer->tv_usec += usecs % CW_USECS_PER_SEC;
+		key->ik.ik_timer->tv_sec  += usecs / CW_USECS_PER_SEC + key->ik.ik_timer->tv_usec / CW_USECS_PER_SEC;
+		key->ik.ik_timer->tv_usec %= CW_USECS_PER_SEC;
 	}
 
 	return;
 }
-
+#endif
 
 
 
@@ -1306,8 +1337,8 @@ cw_key_t * cw_key_new(void)
 	key->ik.graph_state = KS_IDLE;
 	key->ik.key_value = CW_KEY_VALUE_OPEN;
 
-	key->ik.dot_paddle = CW_KEY_VALUE_OPEN;
-	key->ik.dash_paddle = CW_KEY_VALUE_OPEN;
+	key->ik.dot_paddle_value = CW_KEY_VALUE_OPEN;
+	key->ik.dash_paddle_value = CW_KEY_VALUE_OPEN;
 	key->ik.dot_latch = false;
 	key->ik.dash_latch = false;
 
@@ -1316,8 +1347,9 @@ cw_key_t * cw_key_new(void)
 
 	key->ik.lock = false;
 
-	key->timer.tv_sec = 0;
-	key->timer.tv_usec = 0;
+#ifdef IAMBIC_KEY_HAS_TIMER
+	key->ik.ik_timer = NULL;
+#endif
 
 	return key;
 }

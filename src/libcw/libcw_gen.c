@@ -992,6 +992,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 
 		cw_gen_state_tracking_internal(gen, &tone, dequeued_now, dequeued_prev);
 
+#ifdef IAMBIC_KEY_HAS_TIMER
 		/* Also look at call to cw_key_ik_update_graph_state_internal()
 		   made below. Both calls are about updating some internals of
 		   key. This one is done before blocking write, the other is
@@ -999,6 +1000,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 		if (gen->key) {
 			cw_key_ik_increment_timer_internal(gen->key, tone.duration);
 		}
+#endif
 		dequeued_prev = dequeued_now;
 
 
@@ -3100,10 +3102,22 @@ void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
 	if (false && key->rec) {
 		if (gen->state_tracking.state) {
 			/* Key down. */
-			cw_rec_mark_begin(key->rec, &key->timer);
+			cw_rec_mark_begin(key->rec,
+#ifdef IAMBIC_KEY_HAS_TIMER
+					  key->ik.ik_timer
+#else
+					  NULL
+#endif
+					  );
 		} else {
 			/* Key up. */
-			cw_rec_mark_end(key->rec, &key->timer);
+			cw_rec_mark_end(key->rec,
+#ifdef IAMBIC_KEY_HAS_TIMER
+					key->ik.ik_timer
+#else
+					NULL
+#endif
+					);
 		}
 	}
 

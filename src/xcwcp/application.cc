@@ -1108,14 +1108,12 @@ void Application::make_auxiliaries_end(void)
 	   code. */
 	cw_register_keying_callback(libcw_keying_event_static, &receiver->main_timer);
 
-#if 0   /* FIXME: enable. */
 	/* The call above registered receiver->main_timer as a generic
 	   argument to a callback. However, libcw needs to know when
 	   the argument happens to be of type 'struct timeval'. This
 	   is why we have this second call, explicitly passing
 	   receiver's timer to libcw. */
 	cw_iambic_keyer_register_timer(&receiver->main_timer);
-#endif
 
 	gettimeofday(&(receiver->main_timer), NULL);
 	//fprintf(stderr, "time on aux config: %10ld : %10ld\n", receiver->main_timer.tv_sec, receiver->main_timer.tv_usec);

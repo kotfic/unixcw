@@ -142,10 +142,10 @@ static volatile cw_key_t cw_key = {
 
 	.ik = {
 		.graph_state = KS_IDLE,
-		.key_value = CW_KEY_STATE_OPEN,
+		.key_value = CW_KEY_VALUE_OPEN,
 
-		.dot_paddle = false,
-		.dash_paddle = false,
+		.dot_paddle_value = CW_KEY_VALUE_OPEN,
+		.dash_paddle_value = CW_KEY_VALUE_OPEN,
 
 		.dot_latch = false,
 		.dash_latch = false,
@@ -1739,6 +1739,27 @@ void cw_register_keying_callback(void (*callback_func)(void*, int), void *callba
 
 
 
+/**
+   Most of the time libcw just passes around key_callback_arg,
+   not caring of what type it is, and not attempting to do any
+   operations on it. On one occasion however, it needs to know whether
+   key_callback_arg is of type 'struct timeval', and if so, it
+   must do some operation on it. I could pass struct with ID as
+   key_callback_arg, but that may break some old client
+   code. Instead I've created this function that has only one, very
+   specific purpose: to pass to libcw a pointer to timer.
+
+   The timer is owned by client code, and is used to measure and clock iambic
+   keyer.
+*/
+void cw_iambic_keyer_register_timer(struct timeval * timer)
+{
+	cw_key_ik_register_timer_internal(&cw_key, timer);
+	return;
+}
+
+
+
 
 /**
    \brief Enable iambic Curtis mode B
@@ -1831,7 +1852,7 @@ int cw_notify_keyer_paddle_event(int dot_paddle_state, int dash_paddle_state)
 */
 int cw_notify_keyer_dot_paddle_event(int dot_paddle_state)
 {
-	return cw_notify_keyer_paddle_event(dot_paddle_state, cw_key.ik.dash_paddle);
+	return cw_notify_keyer_paddle_event(dot_paddle_state, cw_key.ik.dash_paddle_value);
 }
 
 
@@ -1843,7 +1864,7 @@ int cw_notify_keyer_dot_paddle_event(int dot_paddle_state)
 */
 int cw_notify_keyer_dash_paddle_event(int dash_paddle_state)
 {
-	return cw_notify_keyer_paddle_event(cw_key.ik.dot_paddle, dash_paddle_state);
+	return cw_notify_keyer_paddle_event(cw_key.ik.dot_paddle_value, dash_paddle_state);
 }
 
 
