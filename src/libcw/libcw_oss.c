@@ -307,7 +307,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	gen->buffer_n_samples = size;
 
 
-	cw_oss_get_version_internal(gen->sound_sink_fd, &gen->oss_version.x, &gen->oss_version.y, &gen->oss_version.z);
+	cw_oss_get_version_internal(gen->sound_sink_fd, &gen->oss_data.version_x, &gen->oss_data.version_y, &gen->oss_data.version_z);
 
 	/* Mark sound sink as now open for business. */
 	gen->sound_device_is_open = true;

@@ -8,6 +8,14 @@
 
 
 
+typedef struct cw_oss_data_struct {
+	int version_x;
+	int version_y;
+	int version_z;
+} cw_oss_data_t;
+
+
+
 
 #include "libcw_gen.h"
 

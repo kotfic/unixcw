@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
-  Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+  Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -19,9 +19,9 @@
 
 
 /**
-   \file libcw_gen.c
+   @file libcw_gen.c
 
-   \brief Generate pcm samples according to tones from tone queue, and
+   @brief Generate pcm samples according to tones from tone queue, and
    send them to sound sink.
 
    Functions operating on one of core elements of libcw: a generator.
@@ -56,13 +56,13 @@
 
 #include "config.h"
 
+#include <errno.h>
+#include <inttypes.h> /* uint32_t */
+#include <math.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <math.h>
-#include <signal.h>
-#include <errno.h>
-#include <inttypes.h> /* uint32_t */
 
 #if defined(HAVE_STRING_H)
 # include <string.h>
@@ -82,11 +82,11 @@
 #include "libcw_debug.h"
 #include "libcw_gen.h"
 #include "libcw_gen_internal.h"
+#include "libcw_null.h"
 #include "libcw_oss.h"
 #include "libcw_rec.h"
 #include "libcw_signal.h"
 #include "libcw_utils.h"
-#include "libcw_null.h"
 
 
 
@@ -133,8 +133,8 @@ const unsigned int cw_supported_sample_rates[] = {
 
 
 
-static cw_ret_t cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev);
-static void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, int key_state);
+static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev);
+static void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, cw_key_value_t value);
 
 
 
@@ -142,7 +142,7 @@ static void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw
 /* Every sound system opens an sound device: a default device, or some
    other device. Default devices have their default names, and here is
    a list of them. It is indexed by values of "enum cw_audio_systems". */
-static const char *default_sound_devices[] = {
+static const char * default_sound_devices[] = {
 	(char *) NULL,          /* CW_AUDIO_NONE */
 	CW_DEFAULT_NULL_DEVICE, /* CW_AUDIO_NULL */
 	CW_DEFAULT_CONSOLE_DEVICE,
@@ -178,9 +178,11 @@ static const int CW_AUDIO_QUANTUM_DURATION_INITIAL = 100;  /* [us] */
    The function returns through @p buffer one of following strings: "None",
    "Null", "Console", "OSS", "ALSA", "PulseAudio", "Soundcard".
 
-   @reviewed-on 2020-06-29
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   @param[in] gen - generator for which to check sound system label
+   @param[in] gen generator for which to check sound system label
    @param[out] buffer output buffer where the label will be saved
    @param[in] size total size of the buffer (including space for terminating NUL)
 
@@ -199,25 +201,29 @@ char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffe
 
 
 /**
-   \brief Start a generator
+   @brief Start a generator
 
-   Start given \p generator. As soon as there are tones enqueued in generator, the generator will start playing them.
+   Start given @p gen. As soon as there are tones enqueued in generator, the
+   generator will start playing them.
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on errors
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
+
+   @param[in] gen generator to start
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on errors
 */
-int cw_gen_start(cw_gen_t * gen)
+cw_ret_t cw_gen_start(cw_gen_t * gen)
 {
 	gen->phase_offset = 0.0;
 
-	/* This should be set to true before launching
-	   cw_gen_dequeue_and_generate_internal(), because loop in the
-	   function run only when the flag is set. */
-	gen->do_dequeue_and_generate = true;
-
+#ifdef GENERATOR_CLIENT_THREAD
 	/* This generator exists in client's application thread.
 	   Generator's 'dequeue and generate' function will be a separate thread. */
-	gen->client.thread_id = pthread_self();
+	gen->library_client.thread_id = pthread_self();
+#endif
 
 	if (gen->sound_system != CW_AUDIO_NULL
 	    && gen->sound_system != CW_AUDIO_CONSOLE
@@ -231,6 +237,10 @@ int cw_gen_start(cw_gen_t * gen)
 			      MSG_PREFIX "unsupported sound system %d", gen->sound_system);
 		return CW_FAILURE;
 	}
+	/* This should be set to true before launching
+	   cw_gen_dequeue_and_generate_internal(), because loop in the
+	   function run only when the flag is set. */
+	gen->do_dequeue_and_generate = true;
 
 
 	/* cw_gen_dequeue_and_generate_internal() is THE
@@ -264,23 +274,27 @@ int cw_gen_start(cw_gen_t * gen)
 
 
 /**
-   \brief Set sound device name or path
+   @brief Set sound device name or path
 
-   Set path to sound device, or name of sound device. The path/name
-   will be associated with given generator \p gen, and used when opening
-   sound device.
+   Set path to sound device, or set name of sound device. The path/name will
+   be associated with given generator @p gen, and used when opening sound
+   device.
 
    Use this function only when setting up a generator.
 
    Function creates its own copy of input string.
 
-   \param gen - generator to be updated
-   \param device - device to be assigned to generator \p gen
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on errors
+   @param[in] gen generator to be updated
+   @param[in] device_name device to be assigned to generator @p gen
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on errors
 */
-int cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device)
+cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_name)
 {
 	/* This should be NULL, either because it has been
 	   initialized statically as NULL, or set to
@@ -295,13 +309,13 @@ int cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device)
 		return CW_FAILURE;
 	}
 
-	if (device) {
-		gen->sound_device = strdup(device);
+	if (device_name) {
+		gen->sound_device = strdup(device_name);
 	} else {
 		gen->sound_device = strdup(default_sound_devices[gen->sound_system]);
 	}
 
-	if (!gen->sound_device) {
+	if (NULL == gen->sound_device) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR, MSG_PREFIX "malloc()");
 		return CW_FAILURE;
 	} else {
@@ -313,27 +327,31 @@ int cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device)
 
 
 /**
-   \brief Silence the generator
+   @brief Silence the generator
 
-   Force an sound sink currently used by generator \p gen to go
+   Force an sound sink currently used by generator @p gen to go
    silent.
 
    The function does not clear/flush tone queue, nor does it stop the
-   generator. It just makes sure that sound sink (console / OSS / ALSA
-   / PulseAudio) does not produce a sound of any frequency and any
-   volume.
+   generator. It just makes sure that sound sink (console / OSS / ALSA /
+   PulseAudio) does not produce a sound of any frequency and any volume.
 
-   You probably want to call cw_tq_flush_internal(gen->tq) before
-   calling this function.
+   You probably want to call cw_tq_flush_internal(gen->tq) before calling
+   this function. TODO: shouldn't cw_tq_flush_internal() be called inside of
+   this function?
 
-   \param gen - generator using an sound sink that should be silenced
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure to silence a sound sink
+   @param[in] gen generator using an sound sink that should be silenced
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure to silence a sound sink
 */
-int cw_gen_silence_internal(cw_gen_t *gen)
+cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 {
-	if (!gen) {
+	if (NULL == gen) {
 		/* This may happen because the process of finalizing
 		   usage of libcw is rather complicated. This should
 		   be somehow resolved. */
@@ -361,12 +379,17 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 	   - see if the current tone is "forever" tone. If it is, end the
              "forever" tone using method suitable for such tone.
 	   - only after all this you can enqueue a tone silent that will
-	     ensure that a key is not in "down" state. */
+	     ensure that a key is not in "down" state.
 
-	/* Somewhere there may be a key in "down" state and we need to
-	   make it go "up", regardless of sound sink (even for
-	   CDW_AUDIO_NULL, because that sound system can also be used with a key).
-	   Otherwise the key may stay in "down" state forever. */
+	   What if the last tone on queue is a Very Long Tone, and silencing
+	   the generator will take a long time?
+	*/
+
+	/* Somewhere there may be a key in "down" state and we need to make
+	   it go "up", regardless of sound sink (even for CDW_AUDIO_NULL,
+	   because that sound system can also be used with a key).  Otherwise
+	   the key may stay in "down" state forever and the sound will be
+	   played after "silencing" of the generator. */
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	cw_ret_t status = cw_tq_enqueue_internal(gen->tq, &tone);
@@ -408,10 +431,27 @@ int cw_gen_silence_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Create new generator
+   @brief Create new generator
+
+   Allocate new generator, set default values of generator's fields, assign a
+   sound system and device name to it, open the sound sink, return the
+   generator.
+
+   Returned pointer is owned by caller. Delete the allocated generator with
+   cw_gen_delete().
+
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
+
+   @param[in] sound_system sound system with which the generator should work
+   @param[in] device_name name of sound device to be used (may be NULL, library will use its default for given @p sound_system).
+
+   @return pointer to new generator on success
+   @return NULL on failure
 
 */
-cw_gen_t * cw_gen_new(int sound_system, const char * device)
+cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 {
 #ifdef LIBCW_WITH_DEV
 	fprintf(stderr, "libcw build %s %s\n", __DATE__, __TIME__);
@@ -419,8 +459,8 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 	cw_assert (sound_system != CW_AUDIO_NONE, MSG_PREFIX "can't create generator with sound system '%s'", cw_get_audio_system_label(sound_system));
 
-	cw_gen_t *gen = (cw_gen_t *) malloc(sizeof (cw_gen_t));
-	if (!gen) {
+	cw_gen_t * gen = (cw_gen_t *) malloc(sizeof (cw_gen_t));
+	if (NULL == gen) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR, MSG_PREFIX "malloc()");
 		return (cw_gen_t *) NULL;
 	}
@@ -492,8 +532,10 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 
 		/* Library's client. */
-		gen->client.thread_id = -1;
-		gen->client.name = (char *) NULL;
+#ifdef GENERATOR_CLIENT_THREAD
+		gen->library_client.thread_id = -1;
+#endif
+		gen->library_client.name = (char *) NULL;
 
 
 		/* CW key associated with this generator. */
@@ -532,9 +574,11 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 
 		/* Sound system - OSS. */
-		gen->oss_version.x = -1;
-		gen->oss_version.y = -1;
-		gen->oss_version.z = -1;
+#ifdef LIBCW_WITH_OSS
+		gen->oss_data.version_x = -1;
+		gen->oss_data.version_y = -1;
+		gen->oss_data.version_z = -1;
+#endif
 
 		/* Sound system - ALSA. */
 #ifdef LIBCW_WITH_ALSA
@@ -546,8 +590,8 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 		gen->pa_data.simple = NULL;
 #endif
 
-		int rv = cw_gen_new_open_internal(gen, sound_system, device);
-		if (rv == CW_FAILURE) {
+		cw_ret_t cwret = cw_gen_new_open_internal(gen, sound_system, device_name);
+		if (cwret == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 				      MSG_PREFIX "failed to open sound sink for sound system '%s' and device '%s'",
 				      cw_get_audio_system_label(sound_system),
@@ -573,8 +617,8 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 		/* Set slope that late, because it uses value of sample rate.
 		   The sample rate value is set in
 		   cw_gen_new_open_internal(). */
-		rv = cw_gen_set_tone_slope(gen, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, CW_AUDIO_SLOPE_DURATION);
-		if (rv == CW_FAILURE) {
+		cwret = cw_gen_set_tone_slope(gen, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, CW_AUDIO_SLOPE_DURATION);
+		if (cwret == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_ERROR,
 				      MSG_PREFIX "failed to set slope");
 			cw_gen_delete(&gen);
@@ -584,9 +628,9 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 	/* State tracking. */
 	{
-		gen->state_tracking.state = CW_KEY_STATE_OPEN;
-		gen->state_tracking.state_tracking_callback_func = NULL;
-		gen->state_tracking.state_tracking_callback_arg = NULL;
+		gen->value_tracking.value = CW_KEY_VALUE_OPEN;
+		gen->value_tracking.value_tracking_callback_func = NULL;
+		gen->value_tracking.value_tracking_callback_arg = NULL;
 	}
 
 	cw_sigalrm_install_top_level_handler_internal(); /* TODO: still needed? */
@@ -597,14 +641,21 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device)
 
 
 /**
-   \brief Delete a generator
+   @brief Delete a generator
 
+   Delete a generator that has been created with cw_gen_new().
+
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
+
+   @param[in/out] gen pointer to generator to delete
 */
 void cw_gen_delete(cw_gen_t **gen)
 {
-	cw_assert (gen, MSG_PREFIX "generator is NULL");
+	cw_assert (NULL != gen, MSG_PREFIX "generator is NULL");
 
-	if (!*gen) {
+	if (NULL == *gen) {
 		return;
 	}
 
@@ -636,8 +687,8 @@ void cw_gen_delete(cw_gen_t **gen)
 
 	pthread_attr_destroy(&(*gen)->thread.attr);
 
-	free((*gen)->client.name);
-	(*gen)->client.name = NULL;
+	free((*gen)->library_client.name);
+	(*gen)->library_client.name = NULL;
 
 	free((*gen)->tone_slope.amplitudes);
 	(*gen)->tone_slope.amplitudes = NULL;
@@ -656,7 +707,7 @@ void cw_gen_delete(cw_gen_t **gen)
 
 
 /**
-   \brief Stop a generator
+   @brief Stop a generator
 
    1. Empty generator's tone queue.
    2. Silence generator's sound sink.
@@ -670,15 +721,18 @@ void cw_gen_delete(cw_gen_t **gen)
    generator's sound sink fails.
    Otherwise function returns CW_SUCCESS.
 
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   \param gen - generator to stop
+   @param[in] gen generator to stop
 
-   \return CW_SUCCESS if all three (four) actions completed (successfully)
-   \return CW_FAILURE if any of the actions failed (see note above)
+   @return CW_SUCCESS if all three (four) actions completed (successfully)
+   @return CW_FAILURE if any of the actions failed (see note above)
 */
-int cw_gen_stop(cw_gen_t *gen)
+cw_ret_t cw_gen_stop(cw_gen_t * gen)
 {
-	if (!gen) {
+	if (NULL == gen) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_WARNING,
 			      MSG_PREFIX "called the function for NULL generator");
 		/* Not really a runtime error, so return
@@ -714,12 +768,11 @@ int cw_gen_stop(cw_gen_t *gen)
 #11 0x000000000040241e in send_cw_character (c=c@entry=102, is_partial=is_partial@entry=0) at cw.c:501
 #12 0x0000000000401d3d in parse_stream (stream=0x7f15b39234e0 <_IO_2_1_stdin_>) at cw.c:538
 #13 main (argc=<optimized out>, argv=<optimized out>) at cw.c:652
-	 */
+	*/
 
 	cw_tq_flush_internal(gen->tq);
 
-	int rv = cw_gen_silence_internal(gen);
-	if (rv != CW_SUCCESS) {
+	if (CW_SUCCESS != cw_gen_silence_internal(gen)) {
 		return CW_FAILURE;
 	}
 
@@ -772,16 +825,18 @@ int cw_gen_stop(cw_gen_t *gen)
 
 
 /**
-   \brief Wrapper for pthread_join() and debug code
+   @brief Wrapper for pthread_join() and debug code
 
-   \reviewed on 2017-01-26
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   \param gen
+   @param[in] gen generator for which to join its thread
 
-   \return CW_SUCCESS if joining succeeded
-   \return CW_FAILURE otherwise
+   @return CW_SUCCESS if joining succeeded
+   @return CW_FAILURE otherwise
 */
-int cw_gen_join_thread_internal(cw_gen_t * gen)
+cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
 {
 	/* TODO: this comment may no longer be true and necessary.
 	   Sleep a bit to postpone closing a device.  This way we can
@@ -832,24 +887,26 @@ int cw_gen_join_thread_internal(cw_gen_t * gen)
 
 
 /**
-   \brief Open sound system
+   @brief Open sound system
 
-   A wrapper for code trying to open sound device specified by \p
+   A wrapper for code trying to open sound device specified by @p
    sound_system.  Open sound system will be assigned to given
    generator. Caller can also specify sound device to use instead of a
-   default one. If @p device is NULL or empty string, library-default device
-   will be used.
+   default one. If @p device_name is NULL or empty string, library-default
+   device will be used.
 
-   \reviewed on 2017-01-26
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   \param gen - freshly created generator
-   \param sound_system - sound system to open and assign to the generator
-   \param device[in] name of sound device to be used instead of a default one
+   @param[in] gen generator for which to open a sound system
+   @param[in] sound_system sound system to open and assign to the generator
+   @param[in] device_name name of sound device to be used instead of a default one
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE otherwise
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise
 */
-int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device)
+cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, int sound_system, const char * device_name)
 {
 	/* FIXME: this functionality is partially duplicated in
 	   src/cwutils/cw_common.c/cw_gen_new_from_config() */
@@ -862,11 +919,11 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	   the three in separate 'if' clauses, I can check all other
 	   values of sound system as well. */
 
-	const bool device_provided = (NULL != device && '\0' != device[0]);
+	const bool device_provided = (NULL != device_name && '\0' != device_name[0]);
 
 	if (sound_system == CW_AUDIO_NULL) {
 
-		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_NULL];
+		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_NULL];
 		if (cw_is_null_possible(dev)) {
 			cw_null_fill_gen_internal(gen, dev);
 			return gen->open_and_configure_sound_device(gen);
@@ -876,7 +933,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	if (sound_system == CW_AUDIO_PA
 	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_PA];
+		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_PA];
 		if (cw_is_pa_possible(dev)) {
 			cw_pa_fill_gen_internal(gen, dev);
 			return gen->open_and_configure_sound_device(gen);
@@ -886,7 +943,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	if (sound_system == CW_AUDIO_OSS
 	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_OSS];
+		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_OSS];
 		if (cw_is_oss_possible(dev)) {
 			cw_oss_fill_gen_internal(gen, dev);
 			return gen->open_and_configure_sound_device(gen);
@@ -896,7 +953,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 	if (sound_system == CW_AUDIO_ALSA
 	    || sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_ALSA];
+		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_ALSA];
 		if (cw_is_alsa_possible(dev)) {
 			cw_alsa_fill_gen_internal(gen, dev);
 			return gen->open_and_configure_sound_device(gen);
@@ -905,7 +962,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 	if (sound_system == CW_AUDIO_CONSOLE) {
 
-		const char *dev = device_provided ? device : default_sound_devices[CW_AUDIO_CONSOLE];
+		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_CONSOLE];
 		if (cw_is_console_possible(dev)) {
 			cw_console_fill_gen_internal(gen, dev);
 			return gen->open_and_configure_sound_device(gen);
@@ -920,7 +977,7 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
 
 
 /**
-   \brief Dequeue tones and push them to sound output
+   @brief Dequeue tones and push them to sound output
 
    This is a thread function.
 
@@ -928,20 +985,23 @@ int cw_gen_new_open_internal(cw_gen_t *gen, int sound_system, const char *device
    and then sends them to preconfigured sound output (soundcard, NULL
    or console).
 
-   Function dequeues tones (or waits for new tones in queue) and
-   pushes them to sound output as long as
-   generator->do_dequeue_and_generate is true.
+   Function dequeues tones (or waits for new tones in queue) and pushes them
+   to sound output as long as generator->do_dequeue_and_generate is true.
 
    The generator must be fully configured before creating thread with
    this function.
 
-   \param arg - generator (casted to (void *)) to be used for generating tones
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   \return NULL pointer
+   @param[in] arg generator (cast to (void *)) to be used for generating tones
+
+   @return NULL pointer
 */
-void *cw_gen_dequeue_and_generate_internal(void *arg)
+void * cw_gen_dequeue_and_generate_internal(void * arg)
 {
-	cw_gen_t *gen = (cw_gen_t *) arg;
+	cw_gen_t * gen = (cw_gen_t *) arg;
 
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, 0, CW_SLOPE_MODE_STANDARD_SLOPES);
@@ -990,7 +1050,7 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 
 		const bool is_empty_tone = !dequeued_now && dequeued_prev;
 
-		cw_gen_state_tracking_internal(gen, &tone, dequeued_now, dequeued_prev);
+		cw_gen_value_tracking_internal(gen, &tone, dequeued_now, dequeued_prev);
 
 #ifdef IAMBIC_KEY_HAS_TIMER
 		/* Also look at call to cw_key_ik_update_graph_state_internal()
@@ -1028,7 +1088,9 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
                      cw_tq_wait_for_end_of_current_tone_internal();
 		*/
 
-		//fprintf(stderr, MSG_PREFIX "      sending signal on dequeue, target thread id = %ld\n", gen->client.thread_id);
+#ifdef GENERATOR_CLIENT_THREAD
+		fprintf(stderr, MSG_PREFIX "      sending signal on dequeue, target thread id = %ld\n", gen->library_client.thread_id);
+#endif
 
 		pthread_mutex_lock(&gen->tq->wait_mutex);
 		/* There may be many listeners, so use broadcast(). */
@@ -1036,15 +1098,16 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 		pthread_mutex_unlock(&gen->tq->wait_mutex);
 
 
-#if 0           /* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
-		pthread_kill(gen->client.thread_id, SIGALRM);
+#ifdef GENERATOR_CLIENT_THREAD
+		/* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
+		pthread_kill(gen->library_client.thread_id, SIGALRM);
 #endif
 
-		/* Generator may be used by iambic keyer to measure
-		   periods of time (durations of Mark and Space) - this
-		   is achieved by enqueueing Marks and Spaces by keyer
-		   in generator. A soundcard playing samples is
-		   surprisingly good at measuring time intervals.
+		/* Generator may be used by iambic keyer to measure periods
+		   of time (durations of Mark and Space). This is achieved by
+		   enqueueing Marks and Spaces by keyer in generator. A
+		   soundcard playing samples is surprisingly good at
+		   measuring time intervals.
 
 		   At this point the generator has finished generating
 		   a tone of specified duration. A duration of Mark or
@@ -1095,8 +1158,9 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 	pthread_cond_broadcast(&gen->tq->wait_var);
 	pthread_mutex_unlock(&gen->tq->wait_mutex);
 
-#if 0   /* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
-	pthread_kill(gen->client.thread_id, SIGALRM);
+#ifdef GENERATOR_CLIENT_THREAD
+	/* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
+	pthread_kill(gen->library_client.thread_id, SIGALRM);
 #endif
 
 	gen->thread.running = false;
@@ -1107,10 +1171,10 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
 
 
 /**
-   \brief Calculate a fragment of sine wave
+   @brief Calculate a fragment of sine wave
 
-   Calculate a fragment of sine wave, as many samples as can be fitted
-   in generator buffer's subarea.
+   Calculate a fragment of sine wave, as many samples as can be fitted in
+   generator buffer's subarea.
 
    The function calculates values of (gen->buffer_sub_stop - gen->buffer_sub_start + 1)
    samples and puts them into gen->buffer[], starting from
@@ -1120,12 +1184,16 @@ void *cw_gen_dequeue_and_generate_internal(void *arg)
    so initial phase of new fragment of sine wave in the buffer matches
    ending phase of a sine wave generated in previous call.
 
-   \param gen - generator that generates sine wave
-   \param tone - generated tone
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
 
-   \return number of calculated samples
+   @param[in] gen generator that generates sine wave
+   @param[in/out] tone specification of samples that should be calculated
+
+   @return number of calculated samples
 */
-int cw_gen_calculate_sine_wave_internal(cw_gen_t *gen, cw_tone_t *tone)
+int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 {
 	assert (gen->buffer_sub_stop <= gen->buffer_n_samples);
 
@@ -1662,6 +1730,8 @@ void cw_gen_empty_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_
 	tone->rising_slope_n_samples = 0;
 	tone->falling_slope_n_samples = 0;
 
+	/* This is part of initialization of tone. Zero samples from the tone
+	   have been calculated and put into generator's buffer. */
 	tone->sample_iterator = 0;
 
 	//fprintf(stderr, "++++ length of padding silence = %d [samples]\n", tone->n_samples);
@@ -1720,6 +1790,8 @@ void cw_gen_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_tone_t
 		cw_assert (0, MSG_PREFIX "unknown tone slope mode %d", tone->slope_mode);
 	}
 
+	/* This is part of initialization of tone. Zero samples from the tone
+	   have been calculated and put into generator's buffer. */
 	tone->sample_iterator = 0;
 
 	return;
@@ -2670,7 +2742,7 @@ cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 
 	   Let's enqueue a beginning of mark (rising slope) +
 	   "forever" (constant) tone. The constant tone will be generated
-	   until key goes into CW_KEY_STATE_OPEN state. */
+	   until key goes into CW_KEY_VALUE_OPEN state. */
 
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.duration, CW_SLOPE_MODE_RISING_SLOPE);
@@ -3019,19 +3091,19 @@ int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
 
 
 
-static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev)
+static int cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev)
 {
-	int state = CW_KEY_STATE_OPEN;
+	cw_key_value_t value = CW_KEY_VALUE_OPEN;
 
 	if ((dequeued_now && dequeued_prev) || (dequeued_now && !dequeued_prev)) {
 		/* Flag combinations 1 and 2.
 		   A valid tone has been dequeued just now. */
-		state = tone->frequency ? CW_KEY_STATE_CLOSED : CW_KEY_STATE_OPEN;
+		value = tone->frequency ? CW_KEY_VALUE_CLOSED : CW_KEY_VALUE_OPEN;
 
 	} else if (!dequeued_now && dequeued_prev) {
 		/* Flag combination 3.
 		   Tone queue just went empty. No tone == no sound. */
-		state = CW_KEY_STATE_OPEN;
+		value = CW_KEY_VALUE_OPEN;
 	} else {
 		/* !dequeued_now && !dequeued_prev */
 		/* Flag combination 4.
@@ -3044,7 +3116,7 @@ static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone
 		cw_assert (0, MSG_PREFIX "uncaught combination of flags: dequeued_now = %d, dequeued_prev = %d",
 			   dequeued_now, dequeued_prev);
 	}
-	cw_gen_state_tracking_set_value_internal(gen, gen->key, state);
+	cw_gen_value_tracking_set_value_internal(gen, gen->key, value);
 
 	return CW_SUCCESS;
 }
@@ -3053,35 +3125,36 @@ static int cw_gen_state_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone
 
 
 /**
-   \brief Set new state of generator
+   @brief Set new value of generator
 
-   Filter successive state-off or state-on actions into a single
-   action (successive calls with the same value of \p state don't
-   change internally registered state of generator).
+   Filter successive calls with identical value of @p value single action
+   (successive calls with the same value of @p value don't change internally
+   registered value of generator).
 
-   If and only if the function registers change of generator state, an
+   If and only if the function registers change of generator value, an
    external callback function (if configured) is called.
 
-   \param gen generator for which to set new state
-   \param state state of generator to be set
+   @param[in] gen generator for which to set new value
+   @param[in] key TODO: document
+   @param[in] value value of generator to be set
 */
-void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t *key, int state)
+void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, cw_key_value_t value)
 {
-	cw_assert (key, MSG_PREFIX "tk set value: key is NULL");
+	cw_assert (NULL != key, MSG_PREFIX "tk set value: key is NULL");
 
-	if (gen->state_tracking.state == state) {
+	if (gen->value_tracking.value == value) {
 		/* This is not an error. This may happen when
 		   dequeueing 'forever' tone multiple times in a
 		   row. */
-		// fprintf(stderr, "gen: dropping the same state %d -> %d\n", gen->state_tracking.state, state); // TODO: uncomment this and see how often it's called for straight key actions in xcwcp
+		// fprintf(stderr, "gen: dropping the same value %d -> %d\n", gen->value_tracking.value, value); // TODO: uncomment this and see how often it's called for straight key actions in xcwcp
 		return;
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-		      MSG_PREFIX "set gen state: %d->%d", gen->state_tracking.state, state);
+		      MSG_PREFIX "set gen value: %d->%d", gen->value_tracking.value, value);
 
-	/* Remember the new generator state. */
-	gen->state_tracking.state = state;
+	/* Remember the new generator value. */
+	gen->value_tracking.value = value;
 
 	/*
 	  In theory client code should register either a receiver (so
@@ -3100,7 +3173,7 @@ void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
 	*/
 
 	if (false && key->rec) {
-		if (gen->state_tracking.state) {
+		if (CW_KEY_VALUE_CLOSED == gen->value_tracking.value) {
 			/* Key down. */
 			cw_rec_mark_begin(key->rec,
 #ifdef IAMBIC_KEY_HAS_TIMER
@@ -3121,11 +3194,11 @@ void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
 		}
 	}
 
-	if (gen->state_tracking.state_tracking_callback_func) {
+	if (gen->value_tracking.value_tracking_callback_func) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "set gen state: about to call state tracking callback, generator state = %d\n", gen->state_tracking.state);
+			      MSG_PREFIX "set gen value: about to call value tracking callback, generator value = %d\n", gen->value_tracking.value);
 
-		(*gen->state_tracking.state_tracking_callback_func)(gen->state_tracking.state_tracking_callback_arg, gen->state_tracking.state);
+		(*gen->value_tracking.value_tracking_callback_func)(gen->value_tracking.value_tracking_callback_arg, gen->value_tracking.value);
 	}
 
 	return;
@@ -3153,10 +3226,10 @@ void cw_gen_state_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
    \param callback_func - callback function to be called on generator state changes
    \param callback_arg - first argument to callback_func
 */
-void cw_gen_register_state_tracking_callback_internal(cw_gen_t * gen, cw_gen_state_tracking_callback_t callback_func, void * callback_arg)
+void cw_gen_register_value_tracking_callback_internal(cw_gen_t * gen, cw_gen_value_tracking_callback_t callback_func, void * callback_arg)
 {
-	gen->state_tracking.state_tracking_callback_func = callback_func;
-	gen->state_tracking.state_tracking_callback_arg = callback_arg;
+	gen->value_tracking.value_tracking_callback_func = callback_func;
+	gen->value_tracking.value_tracking_callback_arg = callback_arg;
 
 	return;
 }

@@ -12,7 +12,7 @@
   This test is verifying if callback called on each change of state of
   generator is called at proper intervals.
 
-  Client code can use cw_gen_register_state_tracking_callback_internal() to
+  Client code can use cw_gen_register_value_tracking_callback_internal() to
   register a callback. The callback will be called each time the generator
   changes it's state between mark/space. The changes of state should occur at
   time intervals specified by length of marks (dots, dashes) and spaces.
@@ -495,7 +495,7 @@ static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_da
 
 
 	callback_data_t callback_data = { 0 };
-	cw_gen_register_state_tracking_callback_internal(gen, gen_callback_fn, &callback_data);
+	cw_gen_register_value_tracking_callback_internal(gen, gen_callback_fn, &callback_data);
 
 
 	int dot_usecs, dash_usecs,

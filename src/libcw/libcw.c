@@ -192,7 +192,7 @@ static volatile cw_key_t cw_key = {
    \param sound_system - sound system to be used by the generator
    \param device - name of sound device to be used; if NULL then library will use default device.
 */
-int cw_generator_new(int sound_system, const char *device)
+int cw_generator_new(int sound_system, const char * device)
 {
 	cw_generator = cw_gen_new(sound_system, device);
 	if (!cw_generator) {
@@ -1732,7 +1732,7 @@ void cw_reset_receive(void)
 */
 void cw_register_keying_callback(void (*callback_func)(void*, int), void *callback_arg)
 {
-	cw_gen_register_state_tracking_callback_internal(cw_generator, callback_func, callback_arg);
+	cw_gen_register_value_tracking_callback_internal(cw_generator, callback_func, callback_arg);
 	return;
 }
 

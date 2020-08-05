@@ -295,10 +295,12 @@ bool cw_debug_has_flag(const cw_debug_t * debug_object, uint32_t flag)
 void cw_dev_debug_print_generator_setup(const cw_gen_t * gen)
 {
 	fprintf(stderr, "sound system:         %s\n",     cw_get_audio_system_label(gen->sound_system));
+#ifdef LIBCW_WITH_OSS
 	if (gen->sound_system == CW_AUDIO_OSS) {
 		fprintf(stderr, "OSS version           %X.%X.%X\n",
-			gen->oss_version.x, gen->oss_version.y, gen->oss_version.z);
+			gen->oss_data.version_x, gen->oss_data.version_y, gen->oss_data.version_z);
 	}
+#endif
 	fprintf(stderr, "sound device:         \"%s\"\n",  gen->sound_device);
 	fprintf(stderr, "sample rate:          %d Hz\n",  gen->sample_rate);
 

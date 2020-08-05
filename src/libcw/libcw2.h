@@ -73,17 +73,17 @@ cw_ret_t cw_get_package_version(int * major, int * minor, int * maintenance);
 
    Returned pointer is owned by caller. Use cw_gen_delete() to deallocate it.
 
-   If @p device is NULL or an empty string, then a library-default device for
+   If @p device_name is NULL or an empty string, then a library-default device for
    given @p sound_system will be used.
 
    @return pointer to new generator on success
    @return NULL on failure
 */
-cw_gen_t * cw_gen_new(int sound_system, const char * device);
+cw_gen_t * cw_gen_new(int sound_system, const char * device_name);
 
 void       cw_gen_delete(cw_gen_t ** gen);
-int        cw_gen_stop(cw_gen_t * gen);
-int        cw_gen_start(cw_gen_t * gen);
+cw_ret_t cw_gen_stop(cw_gen_t * gen);
+cw_ret_t cw_gen_start(cw_gen_t * gen);
 
 
 
@@ -178,8 +178,8 @@ int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t c
 int cw_gen_wait_for_tone(cw_gen_t * gen);
 bool cw_gen_is_queue_full(cw_gen_t const * gen);
 
-typedef void (* cw_gen_state_tracking_callback_t)(void * callback_arg, int state);
-void cw_gen_register_state_tracking_callback_internal(cw_gen_t * gen, cw_gen_state_tracking_callback_t callback_func, void * callback_arg);
+typedef void (* cw_gen_value_tracking_callback_t)(void * callback_arg, int state);
+void cw_gen_register_value_tracking_callback_internal(cw_gen_t * gen, cw_gen_value_tracking_callback_t callback_func, void * callback_arg);
 
 
 

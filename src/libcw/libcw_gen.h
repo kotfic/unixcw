@@ -9,14 +9,13 @@
 
 
 
-
 #include "libcw.h"
 #include "libcw2.h"
 #include "libcw_alsa.h"
 #include "libcw_key.h"
+#include "libcw_oss.h"
 #include "libcw_pa.h"
 #include "libcw_tq.h"
-
 
 
 
@@ -32,7 +31,12 @@
 #define CW_SLOPE_MODE_RISING_SLOPE      22
 #define CW_SLOPE_MODE_FALLING_SLOPE     23
 
-/* Duration of a single slope (rising or falling) in standard tone. [us] */
+/*
+  Duration of a single slope (rising or falling) in standard tone. [us]
+
+  TODO: check what is the duration of the shortest possible tone (at highest
+  speed) and how much of that tone would be "spent" in slopes.
+*/
 #define CW_AUDIO_SLOPE_DURATION       5000
 
 
@@ -67,8 +71,14 @@ struct cw_gen_struct {
 	   The tone queue should be created in generator's
 	   constructor, and deleted in generator's destructor using
 	   tone queue's own constructor and destructor functions - see
-	   cw_tq module for declarations of these functions. */
-	cw_tone_queue_t *tq;
+	   cw_tq module for declarations of these functions.
+
+	   TODO: maybe this doesn't have to be a pointer, perhaps this can be
+	   a regular variable. We don't need to allocate a tone queue. The tq
+	   should always exist, and there should be always just one tone
+	   queue. So why allocate it?
+	*/
+	cw_tone_queue_t * tq;
 
 
 
@@ -148,7 +158,7 @@ struct cw_gen_struct {
 	   system, in order to avoid situation when sound system waits for
 	   filling its buffer too long - this would result in errors and
 	   probably audible clicks. */
-	cw_sample_t *buffer;
+	cw_sample_t * buffer;
 
 	/* Size of data buffer, in samples.
 
@@ -244,7 +254,7 @@ struct cw_gen_struct {
 		   they can be used in forming rising slope. However
 		   they can be used in forming falling slope as well -
 		   just iterate the table from end to beginning. */
-		float *amplitudes;
+		float * amplitudes;
 
 		/* This is a secondary parameter, derived from
 		   ->duration. n_amplitudes is useful when iterating over
@@ -254,13 +264,16 @@ struct cw_gen_struct {
 
 
 
-	/* Library's client. */
-	struct {
+	/* Library's client (client code using library). */
+	struct library_client {
 		/* Main thread, existing from beginning to end of main process run.
 		   The variable is used to send signals to main app thread. */
+// #define GENERATOR_CLIENT_THREAD // Disabled on 2020-08-04
+#ifdef GENERATOR_CLIENT_THREAD
 		pthread_t thread_id;
-		char *name;
-	} client;
+#endif
+		char * name;
+	} library_client;
 
 
 
@@ -274,7 +287,7 @@ struct cw_gen_struct {
 	   Remember that the key needs to have a generator, not the
 	   other way around. TODO: explain why key requires a
 	   generator. */
-	volatile struct cw_key_struct *key;
+	volatile struct cw_key_struct * key;
 
 
 
@@ -355,33 +368,32 @@ struct cw_gen_struct {
 
 
 	/*
-	  Current state of generator, as dictated by value of the tone
-	  that has been most recently dequeued. State tracking
+	  Current value of generator, as dictated by value of the tone
+	  that has been most recently dequeued. Value tracking
 	  mechanism filters out consecutive tones with the same on/off
-	  value, providing a consistent 'current' state.
+	  value, providing a consistent 'current' value.
 
-	  The state is down/up; closed/open; generating/silent;
+	  The value is down/up; closed/open; generating/silent;
 	  on/off; mark/space; sound/no-sound.
 
 	  We also have a callback pointer. Callback can be registered
 	  by client code, and generator will call it each time the
-	  state changes.
+	  value changes.
 	*/
-	struct state_tracking {
-		int state;
+	struct value_tracking {
+		cw_key_value_t value;
 
-		cw_gen_state_tracking_callback_t state_tracking_callback_func;
-		void * state_tracking_callback_arg;
-	} state_tracking;
+		cw_gen_value_tracking_callback_t value_tracking_callback_func;
+		void * value_tracking_callback_arg;
+	} value_tracking;
 
-	/* Sound system - OSS. */
-	struct {
-		int x;
-		int y;
-		int z;
-	} oss_version;
 
 	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
+
+#ifdef LIBCW_WITH_OSS
+	/* Data used by OSS. */
+	cw_oss_data_t oss_data;
+#endif
 
 #ifdef LIBCW_WITH_ALSA
 	/* Data used by ALSA. */
@@ -398,17 +410,15 @@ struct cw_gen_struct {
 
 
 
-
-void cw_gen_get_timing_parameters_internal(cw_gen_t *gen, int *dot_duration, int *dash_duration, int *eom_space_duration, int *eoc_space_duration, int *eow_space_duration, int *additional_space_duration, int *adjustment_space_duration);
-
+void cw_gen_get_timing_parameters_internal(cw_gen_t * gen, int * dot_duration, int * dash_duration, int * eom_space_duration, int * eoc_space_duration, int * eow_space_duration, int * additional_space_duration, int * adjustment_space_duration);
 
 
 
 
 /* Generator's 'enqueue' primitives. */
-int cw_gen_enqueue_mark_internal(cw_gen_t *gen, char mark, bool is_first);
-int cw_gen_enqueue_eoc_space_internal(cw_gen_t *gen);
-int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen);
+int cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first);
+int cw_gen_enqueue_eoc_space_internal(cw_gen_t * gen);
+int cw_gen_enqueue_eow_space_internal(cw_gen_t * gen);
 
 /* These are also 'enqueue' primitives, but are intended to be used on
    hardware keying events. */
@@ -419,22 +429,22 @@ cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol
 
 
 
-
 int cw_gen_enqueue_representation_partial_internal(cw_gen_t * gen, const char * representation);
-int cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char c);
-int cw_gen_enqueue_character_partial(cw_gen_t * gen, char c);
+int cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character);
+int cw_gen_enqueue_character_partial(cw_gen_t * gen, char character);
 
 
 
 
-int    cw_gen_set_sound_device_internal(cw_gen_t *gen, const char *device);
-int    cw_gen_silence_internal(cw_gen_t *gen);
+cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_name);
+cw_ret_t cw_gen_silence_internal(cw_gen_t * gen);
 char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffer, size_t size);
 
 void cw_generator_delete_internal(void);
 
-void cw_gen_reset_parameters_internal(cw_gen_t *gen);
-void cw_gen_sync_parameters_internal(cw_gen_t *gen);
+void cw_gen_reset_parameters_internal(cw_gen_t * gen);
+void cw_gen_sync_parameters_internal(cw_gen_t * gen);
+
 
 
 

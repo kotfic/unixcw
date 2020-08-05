@@ -394,7 +394,7 @@ static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	int sample_rate = 0;
 	int error = 0;
 	gen->pa_data.simple = cw_pa_simple_new_internal(dev,
-							gen->client.name ? gen->client.name : "app",
+							gen->library_client.name ? gen->library_client.name : "app",
 							&sample_rate,
 							&error);
 

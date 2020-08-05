@@ -590,7 +590,7 @@ void tester_start_test_code(tester_t * tester)
 	cw_tq_register_low_level_callback_internal(tester->gen->tq, low_tone_queue_callback, tester, 5);
 
 	cw_key_register_generator(&tester->key, tester->gen);
-	cw_gen_register_state_tracking_callback_internal(tester->gen, test_callback_func, &g_xcwcp_receiver);
+	cw_gen_register_value_tracking_callback_internal(tester->gen, test_callback_func, &g_xcwcp_receiver);
 
 
 	/* TODO: use full range of allowed speeds. */

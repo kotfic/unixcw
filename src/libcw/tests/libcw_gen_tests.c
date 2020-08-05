@@ -200,7 +200,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 				new_failure = true;
 				break;
 			}
-			if (!cte->expect_null_pointer_errors_only(cte, gen->client.name, "initial value of generator's client name is not NULL")) {
+			if (!cte->expect_null_pointer_errors_only(cte, gen->library_client.name, "initial value of generator's client name is not NULL")) {
 				new_failure = true;
 				break;
 			}
@@ -239,7 +239,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 
 			for (int j = 0; j < repetitions_inner; j++) {
 				if (do_start) {
-					int cwret = LIBCW_TEST_FUT(cw_gen_start)(gen);
+					const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_start)(gen);
 					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "start() (loop #%d/%d - %d/%d)", i + 1, repetitions, j + 1, repetitions_inner)) {
 						start_failure = true;
 						break;
@@ -247,7 +247,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 				}
 
 				if (do_stop) {
-					int cwret = LIBCW_TEST_FUT(cw_gen_stop)(gen);
+					const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_stop)(gen);
 					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "stop() (loop #%d/%d - %d/%d)", i + 1, repetitions_inner, j + 1, repetitions_inner)) {
 						stop_failure = true;
 						break;

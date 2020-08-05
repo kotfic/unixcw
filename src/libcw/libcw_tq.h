@@ -106,7 +106,16 @@ typedef struct {
 	   consideration very long duration of tones in QRSS. */
 	int64_t n_samples;
 
-	/* Counter of samples in whole tone. */
+	/* Counter of samples from the tone that have been calculated and put
+	   into generator's buffer.
+
+	   If a tone has more samples than size of generator's buffer, then
+	   we will have to pass the same tone to generator's function few
+	   times, until whole length of tone will be re-calculated into
+	   samples and put into generator's buffer. This iterator will be
+	   advanced by generator's buffer size each time we pass it to the
+	   function.
+	 */
 	int sample_iterator;
 
 	/* a tone can start and/or end abruptly (which may result in
