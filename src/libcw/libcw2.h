@@ -68,22 +68,89 @@ cw_ret_t cw_get_package_version(int * major, int * minor, int * maintenance);
 /**
    @brief Create new generator
 
-   The generator is initialized and is ready to be started with
-   cw_gen_start().
+   Allocate new generator, set default values of generator's fields, assign a
+   sound system and device name to it, open the sound sink, return the
+   generator.
 
-   Returned pointer is owned by caller. Use cw_gen_delete() to deallocate it.
+   Returned pointer is owned by caller. Delete the allocated generator with
+   cw_gen_delete().
 
-   If @p device_name is NULL or an empty string, then a library-default device for
-   given @p sound_system will be used.
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
+
+   @param[in] sound_system sound system with which the generator should work
+   @param[in] device_name name of sound device to be used (may be NULL, library will use its default for given @p sound_system).
 
    @return pointer to new generator on success
    @return NULL on failure
 */
 cw_gen_t * cw_gen_new(int sound_system, const char * device_name);
 
-void       cw_gen_delete(cw_gen_t ** gen);
-cw_ret_t cw_gen_stop(cw_gen_t * gen);
+
+
+
+/**
+   @brief Delete a generator
+
+   Delete a generator that has been created with cw_gen_new().
+
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
+
+   @param[in,out] gen pointer to generator to delete
+*/
+void cw_gen_delete(cw_gen_t ** gen);
+
+
+
+
+/**
+   @brief Start a generator
+
+   Start given @p gen. As soon as there are tones enqueued in generator, the
+   generator will start playing them.
+
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
+
+   @param[in] gen generator to start
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on errors
+*/
 cw_ret_t cw_gen_start(cw_gen_t * gen);
+
+
+
+
+/**
+   @brief Stop a generator
+
+   1. Empty generator's tone queue.
+   2. Silence generator's sound sink.
+   3. Stop generator' "dequeue and generate" thread function.
+   4. If the thread does not stop in one second, kill it.
+
+   You have to use cw_gen_start() if you want to enqueue and
+   generate tones with the same generator again.
+
+   The function may return CW_FAILURE only when silencing of
+   generator's sound sink fails.
+   Otherwise function returns CW_SUCCESS.
+
+   @internal
+   @reviewed 2020-08-04
+   @endinternal
+
+   @param[in] gen generator to stop
+
+   @return CW_SUCCESS if all three (four) actions completed (successfully)
+   @return CW_FAILURE if any of the actions failed (see note above)
+*/
+cw_ret_t cw_gen_stop(cw_gen_t * gen);
 
 
 
@@ -108,13 +175,17 @@ cw_ret_t cw_gen_start(cw_gen_t * gen);
    logged. This is not treated as error: function will not return
    `CW_FAILURE` because of that.
 
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
    @param[in] gen generator for which to set label
    @param[in] label new label to set for given @p gen
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise (e.g. @p gen or @p label is NULL)
 */
-int cw_gen_set_label(cw_gen_t * gen, const char * label);
+cw_ret_t cw_gen_set_label(cw_gen_t * gen, const char * label);
 
 
 
@@ -134,6 +205,10 @@ int cw_gen_set_label(cw_gen_t * gen, const char * label);
    will get only as many characters of generator's label as he asked
    for.
 
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
    @param[in] gen generator from which to get label
    @param[in] label output buffer
    @param[out] size total size of output buffer @p label
@@ -141,42 +216,483 @@ int cw_gen_set_label(cw_gen_t * gen, const char * label);
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure (e.g. @p gen or @p label is NULL)
 */
-int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size);
+cw_ret_t cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size);
 
 
 
 
-int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration);
-
-/* Setters of generator's basic parameters. */
-int cw_gen_set_speed(cw_gen_t * gen, int new_value);
-int cw_gen_set_frequency(cw_gen_t * gen, int new_value);
-int cw_gen_set_volume(cw_gen_t * gen, int new_value);
-int cw_gen_set_gap(cw_gen_t * gen, int new_value);
-int cw_gen_set_weighting(cw_gen_t * gen, int new_value);
+cw_ret_t cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration);
 
 
-/* Getters of generator's basic parameters. */
+
+
+/**
+   @brief Set sending speed of generator
+
+   See libcw.h/CW_SPEED_{INITIAL|MIN|MAX} for initial/minimal/maximal value
+   of send speed.
+
+   @exception EINVAL @p new_value is out of range.
+
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
+
+   @param[in] gen generator for which to set the speed
+   @param[in] new_value new value of send speed to be assigned to generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_set_speed(cw_gen_t * gen, int new_value);
+
+
+
+
+/**
+   @brief Set frequency of generator
+
+   Set frequency of sound wave generated by generator.
+   The frequency must be within limits marked by CW_FREQUENCY_MIN
+   and CW_FREQUENCY_MAX.
+
+   See libcw.h/CW_FREQUENCY_{INITIAL|MIN|MAX} for initial/minimal/maximal
+   value of frequency.
+
+   @exception EINVAL @p new_value is out of range.
+
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
+
+   @param[in] gen generator for which to set new frequency
+   @param[in] new_value new value of frequency to be assigned to generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_set_frequency(cw_gen_t * gen, int new_value);
+
+
+
+
+/**
+   @brief Set volume of generator
+
+   Set volume of sound wave generated by generator.
+   The volume must be within limits marked by CW_VOLUME_MIN and CW_VOLUME_MAX.
+
+   Note that volume settings are not fully possible for the console speaker.
+   In this case, volume settings greater than zero indicate console speaker
+   sound is on, and setting volume to zero will turn off console speaker
+   sound.
+
+   See libcw.h/CW_VOLUME_{INITIAL|MIN|MAX} for initial/minimal/maximal
+   value of volume.
+
+   @exception EINVAL if @p new_value is out of range.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator for which to set a volume level
+   @param[in] new_value new value of volume to be assigned to generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_set_volume(cw_gen_t * gen, int new_value);
+
+
+
+
+/**
+   @brief Set sending gap of generator
+
+   See libcw.h/CW_GAP_{INITIAL|MIN|MAX} for initial/minimal/maximal
+   value of gap.
+
+   @exception EINVAL if @p new_value is out of range.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator for which to set gap
+   @param[in] new_value new value of gap to be assigned to generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_set_gap(cw_gen_t * gen, int new_value);
+
+
+
+
+/**
+   @brief Set sending weighting for generator
+
+   See libcw.h/CW_WEIGHTING_{INITIAL|MIN|MAX} for initial/minimal/maximal
+   value of weighting.
+
+   @exception EINVAL if @p new_value is out of range.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in,out] gen generator for which to set new weighting
+   @param[in] new_value new value of weighting to be assigned for generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_set_weighting(cw_gen_t * gen, int new_value);
+
+
+
+
+/**
+   @brief Get sending speed from generator
+
+   Returned value is in range CW_SPEED_MIN-CW_SPEED_MAX [wpm].
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator from which to get the parameter
+
+   @return current value of the generator's send speed
+*/
 int cw_gen_get_speed(const cw_gen_t * gen);
+
+
+
+
+/**
+   @brief Get frequency from generator
+
+   Function returns "frequency" parameter of generator,
+   even if the generator is stopped, or volume of generated sound is zero.
+
+   Returned value is in range CW_FREQUENCY_MIN-CW_FREQUENCY_MAX [Hz].
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator from which to get the parameter
+
+   @return current value of generator's frequency
+*/
 int cw_gen_get_frequency(const cw_gen_t * gen);
+
+
+
+
+/**
+   @brief Get sound volume from generator
+
+   Function returns "volume" parameter of generator, even if the
+   generator is stopped.  Returned value is in range
+   CW_VOLUME_MIN-CW_VOLUME_MAX [%].
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator from which to get the parameter
+
+   @return current value of generator's sound volume
+*/
 int cw_gen_get_volume(const cw_gen_t * gen);
+
+
+
+
+/**
+   @brief Get sending gap from generator
+
+   Returned value is in range CW_GAP_MIN-CW_GAP_MAX.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator from which to get the parameter
+
+   @return current value of generator's sending gap
+*/
 int cw_gen_get_gap(const cw_gen_t * gen);
+
+
+
+
+/**
+   @brief Get sending weighting from generator
+
+   Returned value is in range CW_WEIGHTING_MIN-CW_WEIGHTING_MAX.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator from which to get the parameter
+
+   @return current value of generator's sending weighting
+*/
 int cw_gen_get_weighting(const cw_gen_t * gen);
 
-int cw_gen_enqueue_character(cw_gen_t * gen, char c);
-int cw_gen_enqueue_string(cw_gen_t * gen, const char * string);
-int cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level);
 
+
+
+/**
+   @brief Enqueue a given ASCII character in generator, to be sent using Morse code
+
+   Inter-mark + inter-character delay is appended at the end of
+   enqueued Marks.
+
+   @exception ENOENT the given character @p character is not a valid Morse
+   character.
+
+   @exception EBUSY generator's sound sink or keying system is busy.
+
+   @exception EAGAIN generator's tone queue is full, or there is
+   insufficient space to queue the tones for the character.
+
+   This routine returns as soon as the character and trailing spaces
+   (inter-mark and inter-character spaces) have been successfully queued for
+   sending/playing by the generator, without waiting for generator to even
+   start playing the character.  The actual sending happens in background
+   processing. See cw_gen_wait_for_end_of_current_tone() and
+   cw_gen_wait_for_queue_level() for ways to check the progress of sending.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator to enqueue the character to
+   @param[in] character character to enqueue in generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_enqueue_character(cw_gen_t * gen, char character);
+
+
+
+
+
+/**
+   @brief Enqueue a given ASCII string in generator, to be sent using Morse code
+
+   For safety, clients can ensure the tone queue is empty before
+   queueing a string, or use cw_gen_enqueue_character() if they
+   need finer control.
+
+   @internal
+   TODO: how client can ensure the tone queue is empty?
+   @endinternal
+
+   This routine returns as soon as the string has been successfully queued
+   for sending/playing by the generator, without waiting for generator to
+   even start playing the string. The actual playing/sending happens in
+   background. See cw_gen_wait_for_end_of_current_tone() and
+   cw_gen_wait_for_queue() for ways to check the progress of sending.
+
+   @exception ENOENT @p string argument is invalid (one or more characters in
+   the string is not a valid Morse character). No tones from such string are
+   going to be enqueued.
+
+   @exception EBUSY generator's sound sink or keying system is busy
+
+   @exception EAGAIN generator's tone queue is full or the tone queue
+   is likely to run out of space part way through queueing the string.
+   However, an indeterminate number of the characters from the string
+   will have already been queued.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator to use
+   @param[in] string string to enqueue
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_enqueue_string(cw_gen_t * gen, const char * string);
+
+
+
+
+/**
+   @brief Wait for generator's tone queue to drain until only as many tones as given in @p level remain queued
+
+   This function is for use by programs that want to optimize
+   themselves to avoid the cleanup that happens when generator's tone
+   queue drains completely. Such programs have a short time in which
+   to add more tones to the queue.
+
+   @internal
+   TODO: in current implementation of library most of the cleanup has been removed.
+   @endinternal
+
+   The function returns when queue's level is equal or lower than @p level.
+   If at the time of function call the level of queue is already equal or
+   lower than @p level, function returns immediately.
+
+   Notice that generator must be running (started with cw_gen_start())
+   when this function is called, otherwise it will be waiting forever
+   for a change of tone queue's level that will never happen.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator on which to wait
+   @param[in] level level in queue, at which to return
+
+   @return CW_SUCCESS
+*/
+cw_ret_t cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level);
+
+
+
+
+/**
+   @brief Cancel all pending queued tones in a generator, and return to silence
+
+   If there is a tone in progress, the function will wait until this
+   last one has completed, then silence the tones.
+
+   @internal
+   TODO: verify the above comment. Do we really wait until last tone has completed?
+   @endinternal
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator to flush
+*/
 void cw_gen_flush_queue(cw_gen_t * gen);
-const char *cw_gen_get_sound_device(cw_gen_t const * gen);
-int cw_gen_get_sound_system(cw_gen_t const * gen);
-size_t cw_gen_get_queue_length(cw_gen_t const * gen);
+
+
+
+
+/**
+   @brief Get string with generator's sound device path/name
+
+   Device name is copied to @p buffer, a memory area owned by caller.
+
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
+   @param[in] gen generator from which to get sound device name
+   @param[out] buffer space for returned device name@
+   @param[in] size size of @p buffer, including space for terminating NUL
+
+   @return CW_SUCCESS
+*/
+cw_ret_t cw_gen_get_sound_device(cw_gen_t const * gen, char * buffer, size_t size);
+
+
+
+
+/**
+   @brief Get id of sound system used by given generator (one of enum cw_audio_system values)
+
+   You can use cw_get_audio_system_label() to get string corresponding
+   to value returned by this function.
+
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
+   @param[in] gen generator from which to get sound system id
+
+   @return sound system's id
+*/
+int cw_gen_get_sound_system(const cw_gen_t * gen);
+
+
+
+
+/**
+   @brief Get length of tone queue of the generator
+
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
+   @param[in] gen generator from which to get tone queue length
+
+   @return length of tone queue
+*/
+size_t cw_gen_get_queue_length(const cw_gen_t * gen);
+
+
+
 
 typedef void (* cw_queue_low_callback_t)(void *);
-int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level);
+/**
+   @brief Register a 'low level in tone queue' callback for given generator
 
-int cw_gen_wait_for_tone(cw_gen_t * gen);
+   @internal
+   See also cw_tq_register_low_level_callback_internal()
+   @endinternal
+
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
+   @param[in,out] gen generator
+   @param[in] callback_func callback function to be registered
+   @param[in] callback_arg pointer to be passed to the callback when the callback is called
+   @param[in] level level of tone queue at which the callback will be called.
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise
+*/
+cw_ret_t cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level);
+
+
+
+
+/**
+   @brief Wait for the current tone to complete
+
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
+   @param[in] gen generator to wait on
+
+   @return CW_SUCCESS
+*/
+cw_ret_t cw_gen_wait_for_end_of_current_tone(cw_gen_t * gen);
+
+
+
+
+/**
+   @brief See if generator's tone queue is full
+
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
+   @return true if the queue is full
+   @return false otherwise
+*/
 bool cw_gen_is_queue_full(cw_gen_t const * gen);
+
+
+
 
 typedef void (* cw_gen_value_tracking_callback_t)(void * callback_arg, int state);
 void cw_gen_register_value_tracking_callback_internal(cw_gen_t * gen, cw_gen_value_tracking_callback_t callback_func, void * callback_arg);

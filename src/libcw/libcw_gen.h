@@ -416,9 +416,9 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen, int * dot_duration, i
 
 
 /* Generator's 'enqueue' primitives. */
-int cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first);
-int cw_gen_enqueue_eoc_space_internal(cw_gen_t * gen);
-int cw_gen_enqueue_eow_space_internal(cw_gen_t * gen);
+cw_ret_t cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first);
+cw_ret_t cw_gen_enqueue_eoc_space_internal(cw_gen_t * gen);
+cw_ret_t cw_gen_enqueue_eow_space_internal(cw_gen_t * gen);
 
 /* These are also 'enqueue' primitives, but are intended to be used on
    hardware keying events. */
@@ -429,9 +429,9 @@ cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol
 
 
 
-int cw_gen_enqueue_representation_partial_internal(cw_gen_t * gen, const char * representation);
-int cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character);
-int cw_gen_enqueue_character_partial(cw_gen_t * gen, char character);
+cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const char * representation);
+cw_ret_t cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character);
+cw_ret_t cw_gen_enqueue_character_no_eoc(cw_gen_t * gen, char character);
 
 
 

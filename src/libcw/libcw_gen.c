@@ -18,6 +18,8 @@
 */
 
 
+
+
 /**
    @file libcw_gen.c
 
@@ -200,21 +202,6 @@ char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffe
 
 
 
-/**
-   @brief Start a generator
-
-   Start given @p gen. As soon as there are tones enqueued in generator, the
-   generator will start playing them.
-
-   @internal
-   @reviewed 2020-08-04
-   @endinternal
-
-   @param[in] gen generator to start
-
-   @return CW_SUCCESS on success
-   @return CW_FAILURE on errors
-*/
 cw_ret_t cw_gen_start(cw_gen_t * gen)
 {
 	gen->phase_offset = 0.0;
@@ -430,27 +417,6 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 
 
 
-/**
-   @brief Create new generator
-
-   Allocate new generator, set default values of generator's fields, assign a
-   sound system and device name to it, open the sound sink, return the
-   generator.
-
-   Returned pointer is owned by caller. Delete the allocated generator with
-   cw_gen_delete().
-
-   @internal
-   @reviewed 2020-08-04
-   @endinternal
-
-   @param[in] sound_system sound system with which the generator should work
-   @param[in] device_name name of sound device to be used (may be NULL, library will use its default for given @p sound_system).
-
-   @return pointer to new generator on success
-   @return NULL on failure
-
-*/
 cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 {
 #ifdef LIBCW_WITH_DEV
@@ -640,17 +606,6 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 
 
 
-/**
-   @brief Delete a generator
-
-   Delete a generator that has been created with cw_gen_new().
-
-   @internal
-   @reviewed 2020-08-04
-   @endinternal
-
-   @param[in/out] gen pointer to generator to delete
-*/
 void cw_gen_delete(cw_gen_t **gen)
 {
 	cw_assert (NULL != gen, MSG_PREFIX "generator is NULL");
@@ -706,30 +661,6 @@ void cw_gen_delete(cw_gen_t **gen)
 
 
 
-/**
-   @brief Stop a generator
-
-   1. Empty generator's tone queue.
-   2. Silence generator's sound sink.
-   3. Stop generator' "dequeue and generate" thread function.
-   4. If the thread does not stop in one second, kill it.
-
-   You have to use cw_gen_start() if you want to enqueue and
-   generate tones with the same generator again.
-
-   The function may return CW_FAILURE only when silencing of
-   generator's sound sink fails.
-   Otherwise function returns CW_SUCCESS.
-
-   @internal
-   @reviewed 2020-08-04
-   @endinternal
-
-   @param[in] gen generator to stop
-
-   @return CW_SUCCESS if all three (four) actions completed (successfully)
-   @return CW_FAILURE if any of the actions failed (see note above)
-*/
 cw_ret_t cw_gen_stop(cw_gen_t * gen)
 {
 	if (NULL == gen) {
@@ -1189,7 +1120,7 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
    @endinternal
 
    @param[in] gen generator that generates sine wave
-   @param[in/out] tone specification of samples that should be calculated
+   @param[in,out] tone specification of samples that should be calculated
 
    @return number of calculated samples
 */
@@ -1221,7 +1152,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 				* (double) tone->frequency * (double) t
 				/ (double) gen->sample_rate)
 			+ gen->phase_offset;
-		int amplitude = cw_gen_calculate_amplitude_internal(gen, tone);
+		int amplitude = cw_gen_calculate_sample_amplitude_internal(gen, tone);
 
 		gen->buffer[i] = amplitude * sin(phase);
 
@@ -1261,7 +1192,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 
 
 /**
-   \brief Calculate value of a single sample of sine wave
+   @brief Calculate value of a single sample of sine wave
 
    This function calculates an amplitude (a value) of a single sample
    in sine wave PCM data.
@@ -1275,26 +1206,28 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
    should be re-calculated each time these factors change. See
    cw_gen_set_tone_slope() for list of these factors.
 
-   A generator stores some of information needed to get an amplitude
-   of every sample in a sine wave - this is why we have \p gen.  If
-   tone's slopes are non-rectangular, the duration of slopes is defined
-   in generator. If a tone is non-silent, the volume is also defined
-   in generator.
+   A generator contains some of information needed to get an amplitude of
+   every sample in a sine wave - this is why this function needs @p gen.  If
+   tone's slopes are non-rectangular, the duration of slopes is defined in
+   generator. If a tone is non-silent, the volume is also defined in
+   generator.
 
-   However, decision tree for getting the amplitude also depends on
-   some parameters that are strictly bound to tone, such as what is
-   the shape of slopes for a given tone - this is why we have \p tone.
-   The \p also stores iterator of samples - this is how we know for
-   which sample to calculate the amplitude.
+   However, decision tree for getting the amplitude also depends on some
+   parameters that are strictly bound to tone, such as what is the shape of
+   slopes for a given tone - this is why we have @p tone.  The @p tone also
+   stores iterator of samples - this is how we know for which sample in a
+   tone to calculate the amplitude.
 
-   \reviewed on 2017-01-24
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
 
-   \param gen - generator used to generate a sine wave
-   \param tone - tone being generated
+   @param[in] gen generator used to generate a sine wave
+   @param[in] tone tone being generated
 
-   \return value of a sample of sine wave, a non-negative number
+   @return value of a sample of sine wave, a non-negative number
 */
-int cw_gen_calculate_amplitude_internal(cw_gen_t *gen, const cw_tone_t *tone)
+int cw_gen_calculate_sample_amplitude_internal(cw_gen_t * gen, const cw_tone_t * tone)
 {
 #if 0   /* Blunt algorithm for calculating amplitude. For debug purposes only. */
 
@@ -1321,7 +1254,7 @@ int cw_gen_calculate_amplitude_internal(cw_gen_t *gen, const cw_tone_t *tone)
 
 	if (tone->sample_iterator < tone->rising_slope_n_samples) {
 		/* Beginning of tone, rising slope. */
-		int i = tone->sample_iterator;
+		const int i = tone->sample_iterator;
 		amplitude = gen->tone_slope.amplitudes[i];
 		assert (amplitude >= 0);
 
@@ -1334,7 +1267,7 @@ int cw_gen_calculate_amplitude_internal(cw_gen_t *gen, const cw_tone_t *tone)
 
 	} else if (tone->sample_iterator >= tone->n_samples - tone->falling_slope_n_samples) {
 		/* Falling slope. */
-		int i = tone->n_samples - tone->sample_iterator - 1;
+		const int i = tone->n_samples - tone->sample_iterator - 1;
 		assert (i >= 0);
 		amplitude = gen->tone_slope.amplitudes[i];
 		assert (amplitude >= 0);
@@ -1360,65 +1293,68 @@ int cw_gen_calculate_amplitude_internal(cw_gen_t *gen, const cw_tone_t *tone)
 
 
 /**
-   \brief Set parameters of tones generated by generator
+   @brief Set parameters describing slopes of tones generated by generator
 
-   Most of variables related to slope of tones is in tone data type,
-   but there are still some variables that are generator-specific, as
-   they are common for all tones.  This function sets two of these
-   variables.
+   Most of variables related to slope of tones is in @p tone, but there are
+   still some variables that are generator-specific, as they are common for
+   all tones.  This function sets two of these generator-specific variables.
 
-
-   A: If you pass to function conflicting values of \p slope_shape and
-   \p slope_duration, the function will return CW_FAILURE. These
+   A: If you pass to function conflicting values of @p slope_shape and
+   @p slope_duration, the function will return CW_FAILURE. These
    conflicting values are rectangular slope shape and larger than zero
    slope length. You just can't have rectangular slopes that have
    non-zero length.
 
-
-   B: If you pass to function '-1' as value of both \p slope_shape and
-   \p slope_duration, the function won't change any of the related two
+   B: If you pass to function '-1' as value of both @p slope_shape and @p
+   slope_duration, the function won't change any of the related two
    generator's parameters.
 
+   C1: If you pass to function '-1' as value of either @p slope_shape or @p
+   slope_duration, the function will attempt to set only this generator's
+   parameter that is different than '-1'.
 
-   C1: If you pass to function '-1' as value of either \p slope_shape
-   or \p slope_duration, the function will attempt to set only this
-   generator's parameter that is different than '-1'.
-
-   C2: However, if selected slope shape is rectangular, function will
-   set generator's slope length to zero, even if value of \p
-   slope_duration is '-1'.
-
+   C2: However, if selected slope shape is rectangular, function will set
+   generator's slope length to zero, even if value of p slope_duration is
+   '-1'.
 
    D: Notice that the function allows non-rectangular slope shape with
    zero length of the slopes. The slopes will be non-rectangular, but
    just unusually short.
 
+   TODO: Seriously, these rules (A-D) for setting a slope are too
+   compilcated. Simplify them. Accept only a small subset of valid/sane
+   values. Perhaps split the function into two separate functions: for
+   setting slope shape and slope duration.
 
    The function should be called every time one of following
    parameters change:
 
-   \li shape of slope,
-   \li duration of slope,
-   \li generator's sample rate,
-   \li generator's volume.
+   @li shape of slope,
+   @li duration of slope,
+   @li generator's sample rate,
+   @li generator's volume.
 
    There are four supported shapes of slopes:
-   \li linear (the only one supported by libcw until version 4.1.1),
-   \li raised cosine (supposedly the most desired shape),
-   \li sine,
-   \li rectangular.
+   @li linear (the only one supported by libcw until version 4.1.1),
+   @li raised cosine (supposedly the most desired shape),
+   @li sine,
+   @li rectangular.
 
-   Use CW_TONE_SLOPE_SHAPE_* symbolic names as values of \p slope_shape.
+   Use CW_TONE_SLOPE_SHAPE_* symbolic names as values of @p slope_shape.
 
    FIXME: first argument of this public function is gen, but no
    function provides access to generator variable.
 
-   \param gen - generator for which to set tone slope parameters
-   \param slope_shape - shape of slope: linear, raised cosine, sine, rectangular
-   \param slope_duration - duration of slope [microseconds]
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param[in] gen generator for which to set tone slope parameters
+   @param[in] slope_shape shape of slope: linear, raised cosine, sine, rectangular
+   @param[in] slope_duration duration of slope [microseconds]
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
 int cw_generator_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
 {
@@ -1428,7 +1364,14 @@ int cw_generator_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_durat
 
 
 
-int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
+/**
+   See comment for cw_generator_set_tone_slope()
+
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
+*/
+cw_ret_t cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
 {
 	assert (gen);
 
@@ -1463,11 +1406,14 @@ int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
 
 	/* Reallocate the table of slope amplitudes only when necessary.
 
-	   In practice the function will be called foremost when user
-	   changes volume of tone (and then the function may be
-	   called several times in a row if volume is changed in
-	   steps). In such situation the size of amplitudes table
-	   doesn't change. */
+	   In practice the function will be called foremost when user changes
+	   volume of tone, and then the function may be called several times
+	   in a row if volume is changed in steps. In such situation the size
+	   of amplitudes table doesn't change.
+
+	   TODO: do we really need to change type/duration of slopes when
+	   volume changes? Perhaps a call to
+	   cw_gen_recalculate_slope_amplitudes_internal() would be enough? */
 
 	if (gen->tone_slope.n_amplitudes != slope_n_samples) {
 
@@ -1491,7 +1437,7 @@ int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
 		gen->tone_slope.n_amplitudes = slope_n_samples;
 	}
 
-	cw_gen_recalculate_slopes_internal(gen);
+	cw_gen_recalculate_slope_amplitudes_internal(gen);
 
 	return CW_SUCCESS;
 }
@@ -1500,15 +1446,17 @@ int cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_duration)
 
 
 /**
-   \brief Recalculate amplitudes of PCM samples that form tone's slopes
+   @brief Recalculate amplitudes of PCM samples that form tone's slopes
 
-   \reviewed on 2017-01-24
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
 
    TODO: consider writing unit test code for the function.
 
-   \param gen - generator
+   @param[in] gen generator
 */
-void cw_gen_recalculate_slopes_internal(cw_gen_t *gen)
+void cw_gen_recalculate_slope_amplitudes_internal(cw_gen_t * gen)
 {
 	/* The values in amplitudes[] change from zero to max (at
 	   least for any sane slope shape), so naturally they can be
@@ -1521,11 +1469,11 @@ void cw_gen_recalculate_slopes_internal(cw_gen_t *gen)
 			gen->tone_slope.amplitudes[i] = 1.0 * gen->volume_abs * i / gen->tone_slope.n_amplitudes;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_SINE) {
-			float radian = i * (M_PI / 2.0) / gen->tone_slope.n_amplitudes;
+			const float radian = i * (M_PI / 2.0) / gen->tone_slope.n_amplitudes;
 			gen->tone_slope.amplitudes[i] = sin(radian) * gen->volume_abs;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_RAISED_COSINE) {
-			float radian = i * M_PI / gen->tone_slope.n_amplitudes;
+			const float radian = i * M_PI / gen->tone_slope.n_amplitudes;
 			gen->tone_slope.amplitudes[i] = (1 - ((1 + cos(radian)) / 2)) * gen->volume_abs;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_RECTANGULAR) {
@@ -1545,17 +1493,21 @@ void cw_gen_recalculate_slopes_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Write tone to soundcard
+   @brief Write tone to soundcard
 
-   \param gen
-   \param tone - tone dequeued from queue (if dequeueing was successful); must always be non-NULL
-   \param is_empty_tone - true if dequeueing was not successful (if no tone was dequeued), false otherwise
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
 
-   \return 0
+   @param[in] gen
+   @param[in] tone tone dequeued from queue (if dequeueing was successful); must always be non-NULL
+   @param[in] is_empty_tone true if dequeueing was not successful (if no tone was dequeued), false otherwise
+
+   @return 0
 */
-int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_empty_tone)
+int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is_empty_tone)
 {
-	cw_assert (tone, MSG_PREFIX "'tone' argument should always be non-NULL, even when dequeueing failed");
+	cw_assert (NULL != tone, MSG_PREFIX "'tone' argument should always be non-NULL, even when dequeueing failed");
 
 	if (is_empty_tone) {
 		/* No valid tone dequeued from tone queue. 'tone'
@@ -1672,22 +1624,24 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t *gen, cw_tone_t *tone, bool is_e
 
 
 /**
-   \brief Construct empty tone with correct/needed values of samples count
+   @brief Construct empty tone with correct/needed values of samples count
 
-   The function sets values tone->..._n_samples fields of empty \p
-   tone based on information from \p gen (i.e. looking on how many
+   The function sets values tone->..._n_samples fields of empty @p
+   tone based on information from @p gen (i.e. looking on how many
    samples of silence need to be "created").  The sample count values
    are set in a way that allows filling remainder of generator's
    buffer with silence.
 
    After this point tone duration should not be used - it's the samples count that is correct.
 
-   \reviewed on 2017-01-22
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
 
-   \param gen
-   \param tone - tone for which to calculate samples count.
+   @param[in] gen
+   @param[in] tone tone for which to calculate samples count.
 */
-void cw_gen_empty_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_tone_t * tone)
+void cw_gen_empty_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t * tone)
 {
 	/* All tones have been already dequeued from tone queue.
 
@@ -1743,21 +1697,22 @@ void cw_gen_empty_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_
 
 
 /**
-   \brief Recalculate non-empty tone parameters from microseconds into samples
+   @brief Recalculate non-empty tone parameters from microseconds into samples
 
-   The function sets tone->..._n_samples fields of non-empty \p tone
-   based on other information from \p tone and from \p gen.
+   The function sets tone->..._n_samples fields of non-empty @p tone
+   based on other information from @p tone and from @p gen.
 
    After this point tone duration should not be used - it's the samples count that is correct.
 
-   \reviewed on 2017-01-22
+   @internal
+   @reviewed 2020-08-05
+   @endinternal
 
-   \param gen
-   \param tone - tone for which to calculate samples count.
+   @param[in] gen
+   @param[in] tone tone for which to calculate samples count.
 */
-void cw_gen_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_tone_t * tone)
+void cw_gen_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t * tone)
 {
-
 	/* 100 * 10000 = 1.000.000 usecs per second. */
 	tone->n_samples = gen->sample_rate / 100;
 	tone->n_samples *= tone->duration;
@@ -1800,23 +1755,7 @@ void cw_gen_tone_calculate_samples_size_internal(cw_gen_t const * gen, cw_tone_t
 
 
 
-/**
-   \brief Set sending speed of generator
-
-   See libcw.h/CW_SPEED_{INITIAL|MIN|MAX} for initial/minimal/maximal value
-   of send speed.
-
-   \errno EINVAL - \p new_value is out of range.
-
-   \reviewed on 2017-01-21
-
-   \param gen - generator for which to set the speed
-   \param new_value - new value of send speed to be assigned to generator
-
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
-*/
-int cw_gen_set_speed(cw_gen_t *gen, int new_value)
+cw_ret_t cw_gen_set_speed(cw_gen_t * gen, int new_value)
 {
 	if (new_value < CW_SPEED_MIN || new_value > CW_SPEED_MAX) {
 		errno = EINVAL;
@@ -1837,27 +1776,7 @@ int cw_gen_set_speed(cw_gen_t *gen, int new_value)
 
 
 
-/**
-   \brief Set frequency of generator
-
-   Set frequency of sound wave generated by generator.
-   The frequency must be within limits marked by CW_FREQUENCY_MIN
-   and CW_FREQUENCY_MAX.
-
-   See libcw.h/CW_FREQUENCY_{INITIAL|MIN|MAX} for initial/minimal/maximal
-   value of frequency.
-
-   \errno EINVAL - \p new_value is out of range.
-
-   \reviewed on 2017-01-21
-
-   \param gen - generator for which to set new frequency
-   \param new_value - new value of frequency to be assigned to generator
-
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
-*/
-int cw_gen_set_frequency(cw_gen_t *gen, int new_value)
+cw_ret_t cw_gen_set_frequency(cw_gen_t * gen, int new_value)
 {
 	if (new_value < CW_FREQUENCY_MIN || new_value > CW_FREQUENCY_MAX) {
 		errno = EINVAL;
@@ -1871,28 +1790,7 @@ int cw_gen_set_frequency(cw_gen_t *gen, int new_value)
 
 
 
-/**
-   \brief Set volume of generator
-
-   Set volume of sound wave generated by generator.
-   The volume must be within limits marked by CW_VOLUME_MIN and CW_VOLUME_MAX.
-
-   Note that volume settings are not fully possible for the console speaker.
-   In this case, volume settings greater than zero indicate console speaker
-   sound is on, and setting volume to zero will turn off console speaker
-   sound.
-
-   See libcw.h/CW_VOLUME_{INITIAL|MIN|MAX} for initial/minimal/maximal
-   value of volume.
-   errno is set to EINVAL if \p new_value is out of range.
-
-   \param gen - generator for which to set a volume level
-   \param new_value - new value of volume to be assigned to generator
-
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
-*/
-int cw_gen_set_volume(cw_gen_t *gen, int new_value)
+cw_ret_t cw_gen_set_volume(cw_gen_t * gen, int new_value)
 {
 	if (new_value < CW_VOLUME_MIN || new_value > CW_VOLUME_MAX) {
 		errno = EINVAL;
@@ -1910,20 +1808,7 @@ int cw_gen_set_volume(cw_gen_t *gen, int new_value)
 
 
 
-/**
-   \brief Set sending gap of generator
-
-   See libcw.h/CW_GAP_{INITIAL|MIN|MAX} for initial/minimal/maximal
-   value of gap.
-   errno is set to EINVAL if \p new_value is out of range.
-
-   \param gen - generator for which to set gap
-   \param new_value - new value of gap to be assigned to generator
-
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
-*/
-int cw_gen_set_gap(cw_gen_t *gen, int new_value)
+cw_ret_t cw_gen_set_gap(cw_gen_t * gen, int new_value)
 {
 	if (new_value < CW_GAP_MIN || new_value > CW_GAP_MAX) {
 		errno = EINVAL;
@@ -1943,20 +1828,7 @@ int cw_gen_set_gap(cw_gen_t *gen, int new_value)
 
 
 
-/**
-   \brief Set sending weighting for generator
-
-   See libcw.h/CW_WEIGHTING_{INITIAL|MIN|MAX} for initial/minimal/maximal
-   value of weighting.
-   errno is set to EINVAL if \p new_value is out of range.
-
-   \param gen - generator for which to set new weighting
-   \param new_value - new value of weighting to be assigned for generator
-
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
-*/
-int cw_gen_set_weighting(cw_gen_t * gen, int new_value)
+cw_ret_t cw_gen_set_weighting(cw_gen_t * gen, int new_value)
 {
 	if (new_value < CW_WEIGHTING_MIN || new_value > CW_WEIGHTING_MAX) {
 		errno = EINVAL;
@@ -1977,17 +1849,6 @@ int cw_gen_set_weighting(cw_gen_t * gen, int new_value)
 
 
 
-/**
-   \brief Get sending speed from generator
-
-   Returned value is in range CW_SPEED_MIN-CW_SPEED_MAX [wpm].
-
-   \reviewed on 2017-01-21
-
-   \param gen - generator from which to get the parameter
-
-   \return current value of the generator's send speed
-*/
 int cw_gen_get_speed(const cw_gen_t * gen)
 {
 	return gen->send_speed;
@@ -1996,20 +1857,6 @@ int cw_gen_get_speed(const cw_gen_t * gen)
 
 
 
-/**
-   \brief Get frequency from generator
-
-   Function returns "frequency" parameter of generator,
-   even if the generator is stopped, or volume of generated sound is zero.
-
-   Returned value is in range CW_FREQUENCY_MIN-CW_FREQUENCY_MAX [Hz].
-
-   \reviewed on 2017-01-21
-
-   \param gen - generator from which to get the parameter
-
-   \return current value of generator's frequency
-*/
 int cw_gen_get_frequency(const cw_gen_t * gen)
 {
 	return gen->frequency;
@@ -2018,20 +1865,6 @@ int cw_gen_get_frequency(const cw_gen_t * gen)
 
 
 
-/**
-   \brief Get sound volume from generator
-
-   Function returns "volume" parameter of generator, even if the
-   generator is stopped.  Returned value is in range
-   CW_VOLUME_MIN-CW_VOLUME_MAX [%].
-
-
-   \reviewed on 2017-01-21
-
-   \param gen - generator from which to get the parameter
-
-   \return current value of generator's sound volume
-*/
 int cw_gen_get_volume(const cw_gen_t * gen)
 {
 	return gen->volume_percent;
@@ -2040,17 +1873,6 @@ int cw_gen_get_volume(const cw_gen_t * gen)
 
 
 
-/**
-   \brief Get sending gap from generator
-
-   Returned value is in range CW_GAP_MIN-CW_GAP_MAX.
-
-   \reviewed on 2017-01-21
-
-   \param gen - generator from which to get the parameter
-
-   \return current value of generator's sending gap
-*/
 int cw_gen_get_gap(const cw_gen_t * gen)
 {
 	return gen->gap;
@@ -2059,17 +1881,6 @@ int cw_gen_get_gap(const cw_gen_t * gen)
 
 
 
-/**
-   \brief Get sending weighting from generator
-
-   Returned value is in range CW_WEIGHTING_MIN-CW_WEIGHTING_MAX.
-
-   \reviewed on 2017-01-21
-
-   \param gen - generator from which to get the parameter
-
-   \return current value of generator's sending weighting
-*/
 int cw_gen_get_weighting(const cw_gen_t * gen)
 {
 	return gen->weighting;
@@ -2079,7 +1890,7 @@ int cw_gen_get_weighting(const cw_gen_t * gen)
 
 
 /**
-   \brief Get timing parameters for sending
+   @brief Get timing parameters for sending
 
    Return the low-level timing parameters calculated from the speed,
    gap, tolerance, and weighting set.  Units of returned parameter
@@ -2087,24 +1898,27 @@ int cw_gen_get_weighting(const cw_gen_t * gen)
 
    Use NULL for the pointer argument to any parameter value not required.
 
-   \reviewed on 2017-01-21
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \param gen
-   \param dot_duration
-   \param dash_duration
-   \param eom_space_duration
-   \param eoc_space_duration
-   \param eow_space_duration
-   \param additional_space_duration
-   \param adjustment_space_duration
+   @param[in] gen
+   @param[out] dot_duration
+   @param[out] dash_duration
+   @param[out] eom_space_duration
+   @param[out] eoc_space_duration
+   @param[out] eow_space_duration
+   @param[out] additional_space_duration
+   @param[out] adjustment_space_duration
 */
-void cw_gen_get_timing_parameters_internal(cw_gen_t *gen,
-					   int *dot_duration,
-					   int *dash_duration,
-					   int *eom_space_duration,
-					   int *eoc_space_duration,
-					   int *eow_space_duration,
-					   int *additional_space_duration, int *adjustment_space_duration)
+void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
+					   int * dot_duration,
+					   int * dash_duration,
+					   int * eom_space_duration,
+					   int * eoc_space_duration,
+					   int * eow_space_duration,
+					   int * additional_space_duration,
+					   int * adjustment_space_duration)
 {
 	cw_gen_sync_parameters_internal(gen);
 
@@ -2125,7 +1939,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t *gen,
 
 
 /**
-   \brief Enqueue a mark (Dot or Dash)
+   @brief Enqueue a mark (Dot or Dash)
 
    Low level primitive to enqueue a tone for mark of the given type, followed
    by the standard inter-mark space.
@@ -2136,16 +1950,20 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t *gen,
    Function also returns CW_FAILURE if adding the element to queue of
    tones failed.
 
-   \param gen - generator to be used to enqueue a mark and inter-mark space
-   \param mark - mark to send: Dot (CW_DOT_REPRESENTATION) or Dash (CW_DASH_REPRESENTATION)
-   \param is_first - is it a first mark in a character?
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \return CW_FAILURE on failure
-   \return CW_SUCCESS on success
+   @param[in] gen generator to be used to enqueue a mark and inter-mark space
+   @param[in] mark mark to send: Dot (CW_DOT_REPRESENTATION) or Dash (CW_DASH_REPRESENTATION)
+   @param[in] is_first is it a first mark in a character?
+
+   @return CW_FAILURE on failure
+   @return CW_SUCCESS on success
 */
-int cw_gen_enqueue_mark_internal(cw_gen_t *gen, char mark, bool is_first)
+cw_ret_t cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first)
 {
-	cw_ret_t status;
+	cw_ret_t status = CW_FAILURE;
 
 	/* Synchronize low-level timings if required. */
 	cw_gen_sync_parameters_internal(gen);
@@ -2185,7 +2003,7 @@ int cw_gen_enqueue_mark_internal(cw_gen_t *gen, char mark, bool is_first)
 
 
 /**
-   \brief Enqueue inter-character space
+   @brief Enqueue inter-character space
 
    The function enqueues space of length 2 Units. The function is
    intended to be used after inter-mark space has already been enqueued.
@@ -2196,12 +2014,16 @@ int cw_gen_enqueue_mark_internal(cw_gen_t *gen, char mark, bool is_first)
 
    Inter-character adjustment space is added at the end.
 
-   \param gen
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param[in] gen generator in which to enqueue the space
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-int cw_gen_enqueue_eoc_space_internal(cw_gen_t *gen)
+cw_ret_t cw_gen_enqueue_eoc_space_internal(cw_gen_t * gen)
 {
 	/* Synchronize low-level timing parameters. */
 	cw_gen_sync_parameters_internal(gen);
@@ -2216,7 +2038,7 @@ int cw_gen_enqueue_eoc_space_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Enqueue space character (' ') in generator, to be sent using Morse code
+   @brief Enqueue space character (' ') in generator, to be sent using Morse code
 
    The function should be used to enqueue a regular ' ' character.
 
@@ -2230,12 +2052,16 @@ int cw_gen_enqueue_eoc_space_internal(cw_gen_t *gen)
 
    Inter-word adjustment space is added at the end.
 
-   \param gen
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param[in] gen generator in which to enqueue the space
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen)
+cw_ret_t cw_gen_enqueue_eow_space_internal(cw_gen_t * gen)
 {
 	/* Synchronize low-level timing parameters. */
 	cw_gen_sync_parameters_internal(gen);
@@ -2316,30 +2142,32 @@ int cw_gen_enqueue_eow_space_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Enqueue the given representation in generator, to be sent using Morse code
+   @brief Enqueue the given representation in generator, to be sent using Morse code
 
-   Function enqueues given \p representation using given \p generator.
-   *Every* mark from the \p representation is followed by a standard
+   Function enqueues given @p representation using given @p gen.  *Every*
+   mark (Dot/Dash) from the @p representation is followed by a standard
    inter-mark space.
 
    Representation is not validated by this function.
 
-   _partial_ in function's name means that the inter-character space is
+   _no_eoc_ in function's name means that the inter-character space is
    not appended at the end of Marks and Spaces enqueued in generator
    (but the last inter-mark space is).
 
-   \errno EAGAIN - there is not enough space in tone queue to enqueue
-   \p representation.
+   @exception EAGAIN there is not enough space in tone queue to enqueue @p
+   representation.
 
-   \reviewed on 2017-01-21
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \param gen - generator used to enqueue the representation
-   \param representation - representation to enqueue
+   @param[in] gen generator used to enqueue the representation
+   @param[in] representation representation to enqueue
 
-   \return CW_FAILURE on failure
-   \return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+   @return CW_SUCCESS on success
 */
-int cw_gen_enqueue_representation_partial_internal(cw_gen_t *gen, const char *representation)
+cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const char * representation)
 {
 	/* Before we let this representation loose on tone generation,
 	   we'd really like to know that all of its tones will get queued
@@ -2355,7 +2183,8 @@ int cw_gen_enqueue_representation_partial_internal(cw_gen_t *gen, const char *re
 	/* Enqueue the marks. Every mark is followed by inter-mark
 	   space. */
 	for (int i = 0; representation[i] != '\0'; i++) {
-		if (!cw_gen_enqueue_mark_internal(gen, representation[i], i == 0)) {
+		const bool is_first = i == 0;
+		if (CW_SUCCESS != cw_gen_enqueue_mark_internal(gen, representation[i], is_first)) {
 			return CW_FAILURE;
 		}
 	}
@@ -2369,29 +2198,31 @@ int cw_gen_enqueue_representation_partial_internal(cw_gen_t *gen, const char *re
 
 
 /**
-   \brief Enqueue a given valid ASCII character in generator, to be sent using Morse code
+   @brief Enqueue a given valid ASCII character in generator, to be sent using Morse code
 
-   _valid_character_ in function's name means that the function
-   expects the character \p c to be valid (\p c should be validated by
+   _valid_character_ in function's name means that the function expects the
+   character @p character to be valid (@p character should be validated by
    caller before passing it to the function).
 
-   _partial_ in function's name means that the inter-character space is
-   not appended at the end of Marks and Spaces enqueued in generator
-   (but the last inter-mark space is).
+   _no_eoc_ in function's name means that the inter-character space is not
+   appended at the end of Marks and Spaces enqueued in generator (but the
+   last inter-mark space is).
 
-   \errno ENOENT - character \p c is not a recognized character.
+   @exception ENOENT @p character is not a recognized character.
 
-   \reviewed on 2017-01-21
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \param gen - generator to be used to enqueue character
-   \param character - character to enqueue
+   @param[in] gen generator to be used to enqueue character
+   @param[in] character character to enqueue
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-int cw_gen_enqueue_valid_character_partial_internal(cw_gen_t *gen, char character)
+cw_ret_t cw_gen_enqueue_valid_character_no_eoc_internal(cw_gen_t * gen, char character)
 {
-	if (!gen) {
+	if (NULL == gen) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_ERROR,
 			      MSG_PREFIX "no generator available");
 		return CW_FAILURE;
@@ -2411,15 +2242,15 @@ int cw_gen_enqueue_valid_character_partial_internal(cw_gen_t *gen, char characte
 	const char * representation = cw_character_to_representation_internal(character);
 
 	/* This shouldn't happen since we are in _valid_character_ function... */
-	cw_assert (representation, MSG_PREFIX "failed to find representation for character '%c'/%hhx", character, character);
+	cw_assert (NULL != representation, MSG_PREFIX "failed to find representation for character '%c'/%hhx", character, character);
 
 	/* ... but fail gracefully anyway. */
-	if (!representation) {
+	if (NULL == representation) {
 		errno = ENOENT;
 		return CW_FAILURE;
 	}
 
-	if (!cw_gen_enqueue_representation_partial_internal(gen, representation)) {
+	if (CW_SUCCESS != cw_gen_enqueue_representation_no_eoc_internal(gen, representation)) {
 		return CW_FAILURE;
 	}
 
@@ -2432,33 +2263,35 @@ int cw_gen_enqueue_valid_character_partial_internal(cw_gen_t *gen, char characte
 
 
 /**
-   \brief Enqueue a given valid ASCII character in generator, to be sent using Morse code
+   @brief Enqueue a given valid ASCII character in generator, to be sent using Morse code
 
    After enqueueing last Mark (Dot or Dash) comprising a character, an
    inter-mark space is enqueued.  Inter-character space is enqueued
    after that last inter-mark space.
 
-   _valid_character_ in function's name means that the function
-   expects the character \p c to be valid (\p c should be validated by
+   _valid_character_ in function's name means that the function expects the
+   character @p character to be valid (@p character should be validated by
    caller before passing it to the function).
 
-   \errno ENOENT - character \p c is not a recognized character.
+   @exception ENOENT @p character is not a recognized character.
 
-   \reviewed on 2017-01-20
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \param gen - generator to be used to enqueue character
-   \param c - character to enqueue
+   @param[in] gen generator to be used to enqueue character
+   @param[in] character character to enqueue
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-int cw_gen_enqueue_valid_character_internal(cw_gen_t *gen, char c)
+cw_ret_t cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character)
 {
-	if (!cw_gen_enqueue_valid_character_partial_internal(gen, c)) {
+	if (CW_SUCCESS != cw_gen_enqueue_valid_character_no_eoc_internal(gen, character)) {
 		return CW_FAILURE;
 	}
 
-	if (!cw_gen_enqueue_eoc_space_internal(gen)) {
+	if (CW_SUCCESS != cw_gen_enqueue_eoc_space_internal(gen)) {
 		return CW_FAILURE;
 	}
 
@@ -2468,45 +2301,15 @@ int cw_gen_enqueue_valid_character_internal(cw_gen_t *gen, char c)
 
 
 
-/**
-   \brief Enqueue a given ASCII character in generator, to be sent using Morse code
-
-   Inter-mark + inter-character delay is appended at the end of
-   enqueued Marks.
-
-   \errno ENOENT - the given character \p c is not a valid Morse
-   character.
-
-   \errno EBUSY - generator's sound sink or keying system is busy.
-
-   \errno EAGAIN - generator's tone queue is full, or there is
-   insufficient space to queue the tones for the character.
-
-   This routine returns as soon as the character and trailing spaces
-   (inter-mark and inter-character spaces) have been successfully
-   queued for sending/playing by the generator, without waiting for
-   generator to even start playing the character.  The actual sending
-   happens in background processing. See cw_gen_wait_for_tone() and
-   cw_gen_wait_for_queue_level() for ways to check the progress of
-   sending.
-
-   \reviewed on 2017-01-20
-
-   \param gen - generator to enqueue the character to
-   \param c - character to enqueue in generator
-
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
-*/
-int cw_gen_enqueue_character(cw_gen_t * gen, char c)
+cw_ret_t cw_gen_enqueue_character(cw_gen_t * gen, char character)
 {
-	if (!cw_character_is_valid(c)) {
+	if (!cw_character_is_valid(character)) {
 		errno = ENOENT;
 		return CW_FAILURE;
 	}
 
 	/* This function adds eoc space at the end of character. */
-	if (!cw_gen_enqueue_valid_character_internal(gen, c)) {
+	if (CW_SUCCESS != cw_gen_enqueue_valid_character_internal(gen, character)) {
 		return CW_FAILURE;
 	}
 
@@ -2517,47 +2320,48 @@ int cw_gen_enqueue_character(cw_gen_t * gen, char c)
 
 
 /**
-   \brief Enqueue a given ASCII character in generator, to be sent using Morse code
+   @brief Enqueue a given ASCII character in generator, to be sent using Morse code
 
-   "partial" means that the inter-character space is not appended at
-   the end of Marks and Spaces enqueued in generator (but the last
-   inter-mark space is). This enables the formation of combination
-   characters by client code.
+   "_no_eoc" means that the inter-character space is not appended at the end
+   of Marks and Spaces enqueued in generator (but the last inter-mark space
+   is). This enables the formation of combination characters by client code.
 
-   This routine returns as soon as the character has been successfully
-   queued for sending/playing by the generator, without waiting for
-   generator to even start playing the character. The actual sending
-   happens in background processing.  See cw_gen_wait_for_tone() and
+   This routine returns as soon as the character has been successfully queued
+   for sending/playing by the generator, without waiting for generator to
+   even start playing the character. The actual sending happens in background
+   processing.  See cw_gen_wait_for_end_of_current_tone() and
    cw_gen_wait_for_queue() for ways to check the progress of sending.
 
-   \reviewed on 2017-01-20
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \errno ENOENT - given character \p c is not a valid Morse
+   @exception ENOENT given character @p character is not a valid Morse
    character.
 
-   \errno EBUSY - generator's sound sink or keying system is busy.
+   @exception EBUSY generator's sound sink or keying system is busy.
 
-   \errno EAGAIN - generator's tone queue is full, or there is
+   @exception EAGAIN generator's tone queue is full, or there is
    insufficient space to queue the tones for the character.
 
-   \param gen - generator to use
-   \param c - character to enqueue
+   @param[in] gen generator to use
+   @param[in] character character to enqueue
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-int cw_gen_enqueue_character_partial(cw_gen_t *gen, char c)
+cw_ret_t cw_gen_enqueue_character_no_eoc(cw_gen_t * gen, char character)
 {
-	if (!cw_character_is_valid(c)) {
+	if (!cw_character_is_valid(character)) {
 		errno = ENOENT;
 		return CW_FAILURE;
 	}
 
-	if (!cw_gen_enqueue_valid_character_partial_internal(gen, c)) {
+	if (CW_SUCCESS != cw_gen_enqueue_valid_character_no_eoc_internal(gen, character)) {
 		return CW_FAILURE;
 	}
 
-	/* _partial(): don't enqueue eoc space. */
+	/* _no_eoc(): don't enqueue eoc space. */
 
 	return CW_SUCCESS;
 }
@@ -2565,39 +2369,7 @@ int cw_gen_enqueue_character_partial(cw_gen_t *gen, char c)
 
 
 
-/**
-   \brief Enqueue a given ASCII string in generator, to be sent using Morse code
-
-   For safety, clients can ensure the tone queue is empty before
-   queueing a string, or use cw_gen_enqueue_character() if they
-   need finer control.
-
-   This routine returns as soon as the string has been successfully
-   queued for sending/playing by the generator, without waiting for
-   generator to even start playing the string. The actual
-   playing/sending happens in background. See cw_gen_wait_for_tone()
-   and cw_gen_wait_for_queue() for ways to check the progress of
-   sending.
-
-
-   \errno ENOENT - \p string argument is invalid (one or more
-   characters in the string is not a valid Morse character). No tones
-   from such string are going to be enqueued.
-
-   \errno EBUSY  - generator's sound sink or keying system is busy
-
-   \errno EAGAIN - generator's tone queue is full or the tone queue
-   is likely to run out of space part way through queueing the string.
-   However, an indeterminate number of the characters from the string
-   will have already been queued.
-
-   \param gen - generator to use
-   \param string - string to enqueue
-
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
-*/
-int cw_gen_enqueue_string(cw_gen_t * gen, const char * string)
+cw_ret_t cw_gen_enqueue_string(cw_gen_t * gen, const char * string)
 {
 	/* Check that the string is composed of valid characters. */
 	if (!cw_string_is_valid(string)) {
@@ -2608,7 +2380,7 @@ int cw_gen_enqueue_string(cw_gen_t * gen, const char * string)
 	/* Send every character in the string. */
 	for (int i = 0; string[i] != '\0'; i++) {
 		/* This function adds eoc space at the end of character. */
-		if (!cw_gen_enqueue_valid_character_internal(gen, string[i])) {
+		if (CW_SUCCESS != cw_gen_enqueue_valid_character_internal(gen, string[i])) {
 			return CW_FAILURE;
 		}
 	}
@@ -2620,15 +2392,19 @@ int cw_gen_enqueue_string(cw_gen_t * gen, const char * string)
 
 
 /**
-   \brief Reset generator's essential parameters to their initial values
+   @brief Reset generator's essential parameters to their initial values
 
    You need to call cw_gen_sync_parameters_internal() after call to this function.
 
-  \param gen
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator for which to reset parameters
 */
-void cw_gen_reset_parameters_internal(cw_gen_t *gen)
+void cw_gen_reset_parameters_internal(cw_gen_t * gen)
 {
-	cw_assert (gen, MSG_PREFIX "generator is NULL");
+	cw_assert (NULL != gen, MSG_PREFIX "generator is NULL");
 
 	gen->send_speed = CW_SPEED_INITIAL;
 	gen->frequency = CW_FREQUENCY_INITIAL;
@@ -2647,13 +2423,17 @@ void cw_gen_reset_parameters_internal(cw_gen_t *gen)
 
 
 /**
-   \brief Synchronize generator's low level timing parameters
+   @brief Synchronize generator's low level timing parameters
 
-   \param gen - generator
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator for which to synchronize parameters
 */
-void cw_gen_sync_parameters_internal(cw_gen_t *gen)
+void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 {
-	cw_assert (gen, MSG_PREFIX "generator is NULL");
+	cw_assert (NULL != gen, MSG_PREFIX "generator is NULL");
 
 	/* Do nothing if we are already synchronized. */
 	if (gen->parameters_in_sync) {
@@ -2664,8 +2444,8 @@ void cw_gen_sync_parameters_internal(cw_gen_t *gen)
 	   adjustment, and the length of a Dash as three Dot lengths.
 	   The weighting adjustment is by adding or subtracting a
 	   length based on 50 % as a neutral weighting. */
-	int unit_length = CW_DOT_CALIBRATION / gen->send_speed;
-	int weighting_length = (2 * (gen->weighting - 50) * unit_length) / 100;
+	const int unit_length = CW_DOT_CALIBRATION / gen->send_speed;
+	const int weighting_length = (2 * (gen->weighting - 50) * unit_length) / 100;
 	gen->dot_duration = unit_length + weighting_length;
 	gen->dash_duration = 3 * gen->dot_duration;
 
@@ -2729,12 +2509,16 @@ void cw_gen_sync_parameters_internal(cw_gen_t *gen)
    The function is called in very specific context, see cw_key module
    for details.
 
-   \param gen - generator
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param[in] gen generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
+cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t * gen)
 {
 	/* In case of straight key we don't know at all how long the
 	   tone should be (we don't know for how long the straight key
@@ -2744,16 +2528,21 @@ cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 	   "forever" (constant) tone. The constant tone will be generated
 	   until key goes into CW_KEY_VALUE_OPEN state. */
 
+
+	/* Enqueue rising slope */
+
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, gen->frequency, gen->tone_slope.duration, CW_SLOPE_MODE_RISING_SLOPE);
 	cw_ret_t cwret = cw_tq_enqueue_internal(gen->tq, &tone);
-
 	if (cwret != CW_SUCCESS) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
 			      MSG_PREFIX "enqueue begin mark: failed to enqueue rising slope: '%s'", strerror(errno));
 		/* TODO: what do we do with this error now? The cwret
 		   variable will be overwritten below. */
 	}
+
+
+	/* Enqueue plateau - forever tone. */
 
 	/* If there was an error during enqueue of rising slope of
 	   mark, assume that it was a transient error, and proceed to
@@ -2762,11 +2551,11 @@ cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
 	CW_TONE_INIT(&tone, gen->frequency, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	tone.is_forever = true;
 	cwret = cw_tq_enqueue_internal(gen->tq, &tone);
-
 	if (cwret != CW_SUCCESS) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
 			      MSG_PREFIX "enqueue begin mark: failed to enqueue forever tone: '%s'", strerror(errno));
 	}
+
 
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_DEBUG,
 		      MSG_PREFIX "enqueue begin mark: tone queue len = %zu", cw_tq_length_internal(gen->tq));
@@ -2787,12 +2576,16 @@ cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t *gen)
    The function is called in very specific context, see cw_key module
    for details.
 
-   \param gen - generator
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param[in] gen generator
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
+cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t * gen)
 {
 	if (gen->sound_system == CW_AUDIO_CONSOLE) {
 		/* FIXME: I think that enqueueing tone is not just a
@@ -2857,27 +2650,35 @@ cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t *gen)
    The function is called in very specific context, see cw_key module
    for details.
 
-   \param gen - generator
-   \param symbol - symbol to enqueue (Space/Dot/Dash)
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @param[in] gen generator
+   @param[in] symbol symbol to enqueue (Space/Dot/Dash)
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
 cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol)
 {
 	cw_tone_t tone = { 0 };
 
-	if (symbol == CW_DOT_REPRESENTATION) {
+	switch (symbol) {
+	case CW_DOT_REPRESENTATION:
 		CW_TONE_INIT(&tone, gen->frequency, gen->dot_duration, CW_SLOPE_MODE_STANDARD_SLOPES);
+		break;
 
-	} else if (symbol == CW_DASH_REPRESENTATION) {
+	case CW_DASH_REPRESENTATION:
 		CW_TONE_INIT(&tone, gen->frequency, gen->dash_duration, CW_SLOPE_MODE_STANDARD_SLOPES);
+		break;
 
-	} else if (symbol == CW_SYMBOL_SPACE) {
+	case CW_SYMBOL_SPACE:
 		CW_TONE_INIT(&tone, 0, gen->eom_space_duration, CW_SLOPE_MODE_NO_SLOPES);
-
-	} else {
+		break;
+	default:
 		cw_assert (0, MSG_PREFIX "unknown key symbol '%d'", symbol);
+		break;
 	}
 
 	return cw_tq_enqueue_internal(gen->tq, &tone);
@@ -2886,30 +2687,7 @@ cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol
 
 
 
-/**
-   \brief Wait for generator's tone queue to drain until only as many tones as given in \p level remain queued
-
-   This function is for use by programs that want to optimize
-   themselves to avoid the cleanup that happens when generator's tone
-   queue drains completely. Such programs have a short time in which
-   to add more tones to the queue.
-
-   The function returns when queue's level is equal or lower than \p
-   level.  If at the time of function call the level of queue is
-   already equal or lower than \p level, function returns immediately.
-
-   Notice that generator must be running (started with cw_gen_start())
-   when this function is called, otherwise it will be waiting forever
-   for a change of tone queue's level that will never happen.
-
-   \reviewed on 2017-01-20
-
-   \param gen - generator on which to wait
-   \param level - level in queue, at which to return
-
-   \return CW_SUCCESS
-*/
-int cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level)
+cw_ret_t cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level)
 {
 	return cw_tq_wait_for_level_internal(gen->tq, level);
 }
@@ -2917,18 +2695,14 @@ int cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level)
 
 
 
-/**
-   \brief Cancel all pending queued tones in a generator, and return to silence
-
-   If there is a tone in progress, the function will wait until this
-   last one has completed, then silence the tones.
-
-   \param gen - generator to flush
-*/
 void cw_gen_flush_queue(cw_gen_t * gen)
 {
 	/* This function locks and unlocks mutex. */
 	cw_tq_flush_internal(gen->tq);
+
+	/* TODO: we probably want to have these two functions
+	   separated. Function called cw_gen_flush_queue() probably shouldn't
+	   also silence generator. */
 
 	/* Force silence on the speaker anyway, and stop any background
 	   soundcard tone generation. */
@@ -2940,50 +2714,25 @@ void cw_gen_flush_queue(cw_gen_t * gen)
 
 
 
-/**
-   \brief Return char string with generator's sound device path/name
-
-   Returned pointer is owned by library.
-
-   \reviewed on 2017-01-20
-
-   \param gen
-
-   \return char string with generator's sound device path/name
-*/
-const char *cw_gen_get_sound_device(cw_gen_t const * gen)
+cw_ret_t cw_gen_get_sound_device(cw_gen_t const * gen, char * buffer, size_t size)
 {
-	cw_assert (gen, MSG_PREFIX "generator is NULL");
-	return gen->sound_device;
+	cw_assert (NULL != gen, MSG_PREFIX "generator is NULL");
+	snprintf(buffer, size, "%s", gen->sound_device);
+	return CW_SUCCESS;
 }
 
 
 
 
-/**
-   \brief Get id of sound system used by given generator (one of enum cw_audio_system values)
-
-   You can use cw_get_audio_system_label() to get string corresponding
-   to value returned by this function.
-
-   \reviewed on 2017-01-20
-
-   \param gen - generator from which to get sound system
-
-   \return sound system's id
-*/
 int cw_gen_get_sound_system(cw_gen_t const * gen)
 {
-	cw_assert (gen, MSG_PREFIX "generator is NULL");
+	cw_assert (NULL != gen, MSG_PREFIX "generator is NULL");
 	return gen->sound_system;
 }
 
 
 
 
-/**
-   \reviewed on 2017-01-20
-*/
 size_t cw_gen_get_queue_length(cw_gen_t const * gen)
 {
 	return cw_tq_length_internal(gen->tq);
@@ -2992,10 +2741,7 @@ size_t cw_gen_get_queue_length(cw_gen_t const * gen)
 
 
 
-/**
-   \reviewed on 2017-01-20
-*/
-int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level)
+cw_ret_t cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t callback_func, void * callback_arg, size_t level)
 {
 	return cw_tq_register_low_level_callback_internal(gen->tq, callback_func, callback_arg, level);
 }
@@ -3003,7 +2749,7 @@ int cw_gen_register_low_level_callback(cw_gen_t * gen, cw_queue_low_callback_t c
 
 
 
-int cw_gen_wait_for_tone(cw_gen_t * gen)
+cw_ret_t cw_gen_wait_for_end_of_current_tone(cw_gen_t * gen)
 {
 	return cw_tq_wait_for_end_of_current_tone_internal(gen->tq);
 }
@@ -3011,9 +2757,6 @@ int cw_gen_wait_for_tone(cw_gen_t * gen)
 
 
 
-/**
-   \reviewed on 2017-01-20
-*/
 bool cw_gen_is_queue_full(cw_gen_t const * gen)
 {
 	return cw_tq_is_full_internal(gen->tq);
@@ -3022,10 +2765,7 @@ bool cw_gen_is_queue_full(cw_gen_t const * gen)
 
 
 
-/**
-   @reviewed-on 2020-05-23
-*/
-int cw_gen_set_label(cw_gen_t * gen, const char * label)
+cw_ret_t cw_gen_set_label(cw_gen_t * gen, const char * label)
 {
 	if (NULL == gen) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
@@ -3065,10 +2805,7 @@ int cw_gen_set_label(cw_gen_t * gen, const char * label)
 
 
 
-/**
-   @reviewed-on 2020-05-23
-*/
-int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
+cw_ret_t cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
 {
 	if (NULL == gen) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_ERROR,
@@ -3091,7 +2828,21 @@ int cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
 
 
 
-static int cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev)
+/**
+   @brief Function used to set and track value of generator
+
+   @internal
+   @reviewed 2020-08-07
+   @endinternal
+
+   @param[in] gen generator
+   @param[in] tone tone dequeued from generator's tone queue
+   @param[in] dequeued_now status of dequeue attempt in current loop iteration
+   @param[in] dequeued_prev status of dequeue attempt in previous loop iteration
+
+   @return CW_SUCCESS
+*/
+static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev)
 {
 	cw_key_value_t value = CW_KEY_VALUE_OPEN;
 
@@ -3113,7 +2864,7 @@ static int cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone
 		   should be waiting there for kick
 		   from tone queue.  Us being here is
 		   an error. */
-		cw_assert (0, MSG_PREFIX "uncaught combination of flags: dequeued_now = %d, dequeued_prev = %d",
+		cw_assert (0, MSG_PREFIX "unhandled combination of flags: dequeued_now = %d, dequeued_prev = %d",
 			   dequeued_now, dequeued_prev);
 	}
 	cw_gen_value_tracking_set_value_internal(gen, gen->key, value);
@@ -3133,6 +2884,10 @@ static int cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone
 
    If and only if the function registers change of generator value, an
    external callback function (if configured) is called.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
 
    @param[in] gen generator for which to set new value
    @param[in] key TODO: document
@@ -3208,23 +2963,28 @@ void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
 
 
 /**
-   \brief Register external callback function for tracking state of generator
+   @brief Register external callback function for tracking state of generator
 
-   Register a \p callback_func function that should be called when a
-   state of a \p gen changes from "on" to "off", or vice-versa.
+   Register a @p callback_func function that should be called when a state of
+   a @p gen changes of value from CW_KEY_VALUE_OPEN to CW_KEY_VALUE_CLOSED or
+   vice-versa.
 
    The first argument passed to the registered callback function is
-   the supplied \p callback_arg, if any.
+   the supplied @p callback_arg, if any.
 
    The second argument passed to registered callback function is the
-   generator state: "on" (one/true), and "off" (zero/false).
+   generator's value: CW_KEY_VALUE_OPEN or CW_KEY_VALUE_CLOSED.
 
    Calling this routine with a NULL function address removes
    previously registered callback.
 
-   \param gen
-   \param callback_func - callback function to be called on generator state changes
-   \param callback_arg - first argument to callback_func
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @param[in] gen generator for which to register a callback
+   @param[in] callback_func callback function to be called on generator state changes
+   @param[in] callback_arg first argument to callback_func
 */
 void cw_gen_register_value_tracking_callback_internal(cw_gen_t * gen, cw_gen_value_tracking_callback_t callback_func, void * callback_arg)
 {

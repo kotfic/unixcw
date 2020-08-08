@@ -46,6 +46,10 @@ version 3.6.0 / 2020-XX-YY
     header. The function was not defined in the library, so noone could have
     used the function.
 
+  - Function cw_generator_set_tone_slope() from libcw.h is now marked as
+    depecated. The function was/is unusable because there is no way that
+    client code can pass a cw_gen_t variable as first argument.
+
   xcwcp:
 
   - program's command line option "--sound" has been changed to

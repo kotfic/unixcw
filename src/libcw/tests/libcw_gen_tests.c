@@ -330,7 +330,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		cte->assert2(cte, gen, "test A: failed to create generator");
 
 		const int slope_duration = 10;
-		const int cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RECTANGULAR, slope_duration);
+		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, CW_TONE_SLOPE_SHAPE_RECTANGULAR, slope_duration);
 		cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "test A: conflicting arguments");
 
 		cw_gen_delete(&gen);
@@ -355,7 +355,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		const int shape_before = gen->tone_slope.shape;
 		const int duration_before = gen->tone_slope.duration;
 
-		const int cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, -1, -1);
+		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_set_tone_slope)(gen, -1, -1);
 
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret,                         "test B: set tone slope <-1 -1> (cwret) ");
 		cte->expect_op_int(cte, shape_before, "==", gen->tone_slope.shape,       "test B: <-1 -1> (slope shape)");
@@ -373,7 +373,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   set only this generator's parameter that is different than
 	   '-1'." */
 	{
-		int cwret;
+		cw_ret_t cwret;
 		cw_gen_t * gen = cw_gen_new(sound_system, sound_device);
 		cte->assert2(cte, gen, "test C1: failed to create generator");
 
@@ -430,7 +430,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 		cw_gen_t * gen = cw_gen_new(sound_system, sound_device);
 		cte->assert2(cte, gen, "test C2: failed to create generator");
 
-		int cwret;
+		cw_ret_t cwret;
 
 		/* At the beginning of test these values are
 		   generator's initial values.  As test progresses,
@@ -473,7 +473,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   shape with zero duration of the slopes. The slopes will be
 	   non-rectangular, but just unusually short." */
 	{
-		int cwret;
+		cw_ret_t cwret;
 		cw_gen_t * gen = cw_gen_new(sound_system, sound_device);
 		cte->assert2(cte, gen, "test D: failed to create generator");
 
@@ -714,7 +714,7 @@ cwt_retv test_cw_gen_parameter_getters_setters(cw_test_executor_t * cte)
 		   reads back the value. */
 
 		void (* get_limits)(int * min, int * max);
-		int (* set_new_value)(cw_gen_t * gen, int new_value);
+		cw_ret_t (* set_new_value)(cw_gen_t * gen, int new_value);
 		int (* get_value)(cw_gen_t const * gen);
 
 		const int expected_min;     /* Expected value of minimum. */
@@ -882,7 +882,7 @@ cwt_retv test_cw_gen_volume_functions(cw_test_executor_t * cte)
 			CW_TONE_INIT(&tone, tone_freq, tone_duration, slope_mode);
 			cw_tq_enqueue_internal(gen->tq, &tone);
 
-			const int cwret = LIBCW_TEST_FUT(cw_gen_set_volume)(gen, vol);
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_set_volume)(gen, vol);
 			if (!cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set volume (down, vol = %d)", vol)) {
 				set_failure = true;
 				break;
@@ -931,7 +931,7 @@ cwt_retv test_cw_gen_volume_functions(cw_test_executor_t * cte)
 			CW_TONE_INIT(&tone, tone_freq, tone_duration, slope_mode);
 			cw_tq_enqueue_internal(gen->tq, &tone);
 
-			const int cwret = LIBCW_TEST_FUT(cw_gen_set_volume)(gen, vol);
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_set_volume)(gen, vol);
 			if (!cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "set volume (up, vol = %d)", vol)) {
 				set_failure = true;
 				break;
@@ -960,14 +960,14 @@ cwt_retv test_cw_gen_volume_functions(cw_test_executor_t * cte)
 	  FIXME: check behaviour of these function for empty tone
 	  queue, particularly if each of the functions is called one
 	  after another, like this:
-	  cw_gen_wait_for_tone(gen);
-	  cw_gen_wait_for_tone(gen);
+	  cw_gen_wait_for_end_of_current_tone(gen);
+	  cw_gen_wait_for_end_of_current_tone(gen);
 
 	  or this:
 	  cw_gen_wait_for_queue_level(gen, 0);
 	  cw_gen_wait_for_queue_level(gen, 0);
 	*/
-	cw_gen_wait_for_tone(gen);
+	cw_gen_wait_for_end_of_current_tone(gen);
 	cw_gen_wait_for_queue_level(gen, 0);
 #endif
 
@@ -1003,7 +1003,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	{
 		bool failure = false;
 		for (int i = 0; i < repetitions; i++) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DOT_REPRESENTATION, false);
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DOT_REPRESENTATION, false);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue mark internal(CW_DOT_REPRESENTATION) (i = %d)", i)) {
 				failure = true;
 				break;
@@ -1020,7 +1020,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	{
 		bool failure = false;
 		for (int i = 0; i < repetitions; i++) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DASH_REPRESENTATION, false);
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DASH_REPRESENTATION, false);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue mark internal(CW_DASH_REPRESENTATION) (i = %d)", i)) {
 				failure = true;
 				break;
@@ -1036,7 +1036,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	{
 		bool failure = false;
 		for (int i = 0; i < repetitions; i++) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eoc_space_internal)(gen);
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eoc_space_internal)(gen);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue eoc space internal() (i = %d)", i)) {
 				failure = true;
 				break;
@@ -1052,7 +1052,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	{
 		bool failure = false;
 		for (int i = 0; i < repetitions; i++) {
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eow_space_internal)(gen);
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eow_space_internal)(gen);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue eow space internal() (i = %d)", i)) {
 				failure = true;
 				break;
@@ -1085,7 +1085,7 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
 
 	/* Representation is valid when it contains dots and dashes
-	   only.  cw_gen_enqueue_representation_partial_internal()
+	   only.  cw_gen_enqueue_representation_no_eoc_internal()
 	   doesn't care about correct mapping of representation to a
 	   character. */
 
@@ -1102,7 +1102,7 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 		for (int rep = 0; rep < repetitions; rep++) {
 			int i = 0;
 			while (NULL != test_valid_representations[i]) {
-				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_partial_internal)(gen, test_valid_representations[i]);
+				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_no_eoc_internal)(gen, test_valid_representations[i]);
 				if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue representation internal(<valid>) (%d)", i)) {
 					failure = true;
 					break;
@@ -1124,7 +1124,7 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 		for (int rep = 0; rep < repetitions; rep++) {
 			int i = 0;
 			while (NULL != test_invalid_representations[i]) {
-				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_partial_internal)(gen, test_invalid_representations[i]);
+				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_no_eoc_internal)(gen, test_invalid_representations[i]);
 				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue representation internal(<invalid>) (%d)", i)) {
 					failure = true;
 					break;
@@ -1186,7 +1186,7 @@ cwt_retv test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 		for (int i = 0; charlist[i] != '\0'; i++) {
 			cte->log_info_cont(cte, "%c", charlist[i]);
 			cte->flush_info(cte);
-			const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_character)(gen, charlist[i]);
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_character)(gen, charlist[i]);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue character(<valid>) (i = %d)", i)) {
 				failure = true;
 				break;
@@ -1208,7 +1208,7 @@ cwt_retv test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 			const int n = sizeof (invalid_characters) / sizeof (invalid_characters[0]);
 
 			for (int i = 0; i < n; i++) {
-				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_character)(gen, invalid_characters[i]);
+				const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_character)(gen, invalid_characters[i]);
 				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue character(<invalid>) (i = %d)", i)) {
 					failure = true;
 					break;
@@ -1259,14 +1259,14 @@ cwt_retv test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 		cte->log_info(cte,
 			      "enqueue string(<valid>):\n"
 			      "       %s\n", charlist);
-		const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, charlist);
+		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, charlist);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "enqueue string(<valid>)");
 
 
 		while (cw_gen_get_queue_length(gen) > 0) {
 			cte->log_info(cte, "tone queue length %-6zu\r", cw_gen_get_queue_length(gen));
 			cte->flush_info(cte);
-			cw_gen_wait_for_tone(gen);
+			cw_gen_wait_for_end_of_current_tone(gen);
 		}
 		cte->log_info(cte, "tone queue length %-6zu\n", cw_gen_get_queue_length(gen));
 		cte->flush_info(cte);
@@ -1282,7 +1282,7 @@ cwt_retv test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 			const int n = sizeof (invalid_strings) / sizeof (invalid_strings[0]);
 
 			for (int i = 0; i < n; i++) {
-				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, invalid_strings[i]);
+				const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, invalid_strings[i]);
 				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue string(<invalid>) (i = %d)", i)) {
 					failure = true;
 					break;

@@ -309,8 +309,7 @@ void cw_generator_delete_internal(void)
 */
 int cw_set_send_speed(int new_value)
 {
-	int rv = cw_gen_set_speed(cw_generator, new_value);
-	return rv;
+	return cw_gen_set_speed(cw_generator, new_value);
 }
 
 
@@ -336,8 +335,7 @@ int cw_set_send_speed(int new_value)
 */
 int cw_set_frequency(int new_value)
 {
-	int rv = cw_gen_set_frequency(cw_generator, new_value);
-	return rv;
+	return cw_gen_set_frequency(cw_generator, new_value);
 }
 
 
@@ -366,8 +364,7 @@ int cw_set_frequency(int new_value)
 */
 int cw_set_volume(int new_value)
 {
-	int rv = cw_gen_set_volume(cw_generator, new_value);
-	return rv;
+	return cw_gen_set_volume(cw_generator, new_value);
 }
 
 
@@ -391,15 +388,15 @@ int cw_set_volume(int new_value)
 */
 int cw_set_gap(int new_value)
 {
-	int rv = cw_gen_set_gap(cw_generator, new_value);
-	if (rv != CW_FAILURE) {
+	cw_ret_t cwret = cw_gen_set_gap(cw_generator, new_value);
+	if (CW_FAILURE != cwret) {
 		/* Ideally generator and receiver should have their
 		   own, separate cw_set_gap() functions. Unfortunately
 		   this is not the case so gap should be set
 		   here for receiver as well. */
-		rv = cw_rec_set_gap(&cw_receiver, new_value);
+		cwret = cw_rec_set_gap(&cw_receiver, new_value);
 	}
-	return rv;
+	return cwret;
 }
 
 
@@ -420,8 +417,7 @@ int cw_set_gap(int new_value)
 */
 int cw_set_weighting(int new_value)
 {
-	int rv = cw_gen_set_weighting(cw_generator, new_value);
-	return rv;
+	return cw_gen_set_weighting(cw_generator, new_value);
 }
 
 
@@ -618,6 +614,11 @@ int cw_send_word_space(void)
    character; that is, all post-character delays will be added when
    the character is sent.
 
+   @internal
+   FIXME: clarify what it means "all post-character delays", given that the
+   function calls _no_eoc_ internal function.
+   @endinternal
+
    On success, the routine returns CW_SUCCESS.
    On failure, it returns CW_FAILURE, with errno set to EINVAL if any
    character of the representation is invalid, EBUSY if the sound card,
@@ -632,7 +633,7 @@ int cw_send_word_space(void)
 */
 int cw_send_representation(const char *representation)
 {
-	return cw_gen_enqueue_representation_partial_internal(cw_generator, representation);
+	return cw_gen_enqueue_representation_no_eoc_internal(cw_generator, representation);
 }
 
 
@@ -655,7 +656,7 @@ int cw_send_representation(const char *representation)
 */
 int cw_send_representation_partial(const char *representation)
 {
-	return cw_gen_enqueue_representation_partial_internal(cw_generator, representation);
+	return cw_gen_enqueue_representation_no_eoc_internal(cw_generator, representation);
 }
 
 
@@ -723,7 +724,7 @@ int cw_send_character(char c)
 */
 int cw_send_character_partial(char c)
 {
-	return cw_gen_enqueue_character_partial(cw_generator, c);
+	return cw_gen_enqueue_character_no_eoc(cw_generator, c);
 }
 
 
@@ -1732,7 +1733,8 @@ void cw_reset_receive(void)
 */
 void cw_register_keying_callback(void (*callback_func)(void*, int), void *callback_arg)
 {
-	cw_gen_register_value_tracking_callback_internal(cw_generator, callback_func, callback_arg);
+	cw_gen_value_tracking_callback_t cb = (cw_gen_value_tracking_callback_t) callback_func;
+	cw_gen_register_value_tracking_callback_internal(cw_generator, cb, callback_arg);
 	return;
 }
 

@@ -835,6 +835,7 @@ cw_ret_t cw_tq_register_low_level_callback_internal(cw_tone_queue_t * tq, cw_que
 
    TODO: add unit test for this function.
    TODO: clarify behaviour when current tone is 'forever' tone.
+   TODO: clarify what happens if there is no tone in progress.
 
    @internal
    @reviewed 2020-07-29
