@@ -1,0 +1,49 @@
+* terminology
+
+ - Use "duration" for describing how long (in microseconds or seconds) a tone
+   will last. Don't use length when speaking about how long (in microseconds
+   or seconds) a tone will last.
+ - Use "sound" when referring to sound devices, sounds systems
+   (ALSA/PulseAudio, etc.) or sound outputs (sinks). Don't use "audio" in
+   this context.
+ - Use "inter-mark-space" when referring to space between Dots and Dashes
+   within one character.  Don't use "end-of-mark space".
+
+
+* ALSA
+"plughw" device
+
+https://alsa.opensrc.org/Proc_asound_documentation
+echo 32 > /proc/asound/card0/pcm0p/sub0/prealloc
+
+
+* PulseAudio
+
+To kill pulseaudio server and prevent it from re-starting:
+emacs ~/.config/pulse/client.conf
+autospawn = no
+killall -9 pulseaudio
+* gdb
+
+export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./.libs/libcw_test_legacy_api -n legacy_api_test_low_level_gen_parameters
+
+
+* performance
+
+** callgring + kcachegrind
+
+export LD_LIBRARY_PATH="/home/acerion/tmp/unixcw/unixcw/src/libcw/.libs"
+valgrind --tool=callgrind   ./src/libcw/tests/.libs/libcw_test_all -A k -S a -N test_straight_key
+callgrind_annotate --auto=yes callgrind.out.<PID>
+kcachegrind
+
+
+** perf
+
+http://www.brendangregg.com/perf.html
+
+export LD_LIBRARY_PATH="/home/acerion/tmp/unixcw/unixcw/src/libcw/.libs"
+perf record --call-graph dwarf -F 200  -g  ./src/libcw/tests/.libs/libcw_test_all -A k -S a -N test_straight_key
+# Show data stored in ./perf.data
+perf report --stdio
+perf report
