@@ -34,8 +34,8 @@ enum { CW_DOT_CALIBRATION = 1200000 };
    "RS" stands for "Receiver State" */
 typedef enum {
 	RS_IDLE,          /* Representation buffer is empty and ready to accept data. */
-	RS_MARK,          /* Mark. */
-	RS_IMARK_SPACE,   /* Inter-mark space. */
+	RS_MARK,          /* Mark. Dot or Dash. */
+	RS_INTER_MARK_SPACE,   /* Space between Marks within one character. */
 	RS_EOC_GAP,       /* Gap after a character, without error (EOC = end-of-character). */
 	RS_EOW_GAP,       /* Gap after a word, without error (EOW = end-of-word). */
 	RS_EOC_GAP_ERR,   /* Gap after a character, with error. */
@@ -65,7 +65,7 @@ enum { CW_REC_REPRESENTATION_CAPACITY = 256 };
 
 /* TODO: what is the relationship between this constant and CW_REC_REPRESENTATION_CAPACITY?
    Both have value of 256. Coincidence? I don't think so. */
-enum { CW_REC_STATISTICS_CAPACITY = 256 };
+enum { CW_REC_DURATION_STATS_CAPACITY = 256 };
 
 
 /* Length of array used to calculate average duration of a mark. Average
@@ -78,17 +78,17 @@ enum { CW_REC_AVERAGING_DURATIONS_COUNT = 4 };
    CW_REC_STAT_NONE must be zero so that the statistics buffer is initially empty. */
 typedef enum {
 	CW_REC_STAT_NONE = 0,
-	CW_REC_STAT_DOT,           /* Dot mark. */
-	CW_REC_STAT_DASH,          /* Dash mark. */
-	CW_REC_STAT_IMARK_SPACE,   /* Inter-mark space. */
-	CW_REC_STAT_ICHAR_SPACE    /* Inter-character space. */
+	CW_REC_STAT_DOT,               /* Dot mark. */
+	CW_REC_STAT_DASH,              /* Dash mark. */
+	CW_REC_STAT_INTER_MARK_SPACE,  /* Space between Dots and Dashes within one character. */
+	CW_REC_STAT_ICHAR_SPACE        /* Inter-character space. */
 } stat_type_t;
 
 
 typedef struct {
 	stat_type_t type;    /* Record type */
 	int duration_delta;  /* Difference between actual and ideal duration of mark or space. [us] */
-} cw_rec_statistics_t;
+} cw_rec_duration_stats_point_t;
 
 
 /* A moving averages structure - circular buffer. Used for calculating
@@ -166,9 +166,9 @@ struct cw_rec_struct {
 	int dash_duration_min;         /* Minimal duration of mark that will be identified as dash. [us] */
 	int dash_duration_max;         /* Maximal duration of mark that will be identified as dash. [us] */
 
-	int eom_duration_ideal;        /* Ideal end of mark, for stats. [us] */
-	int eom_duration_min;          /* Shortest end of mark allowable. [us] */
-	int eom_duration_max;          /* Longest end of mark allowable. [us] */
+	int ims_duration_ideal;        /* Ideal inter-mark-space, for stats. [us] */
+	int ims_duration_min;          /* Shortest inter-mark-space allowable. [us] */
+	int ims_duration_max;          /* Longest inter-mark-space allowable. [us] */
 
 	int eoc_duration_ideal;        /* Ideal end of char, for stats. [us] */
 	int eoc_duration_min;          /* Shortest end of char allowable. [us] */
@@ -195,8 +195,8 @@ struct cw_rec_struct {
 	   between the actual and the ideal duration of received mark or
 	   space, tagged with the type of statistic held, and a
 	   circular buffer pointer. */
-	cw_rec_statistics_t statistics[CW_REC_STATISTICS_CAPACITY];
-	int statistics_ind;
+	cw_rec_duration_stats_point_t duration_stats[CW_REC_DURATION_STATS_CAPACITY];
+	int duration_stats_idx;
 
 
 
@@ -228,15 +228,15 @@ void cw_rec_get_parameters_internal(cw_rec_t * rec,
 				    int * dot_duration_ideal, int * dash_duration_ideal,
 				    int * dot_duration_min,   int * dot_duration_max,
 				    int * dash_duration_min,  int * dash_duration_max,
-				    int * eom_duration_min,
-				    int * eom_duration_max,
-				    int * eom_duration_ideal,
+				    int * ims_duration_min,
+				    int * ims_duration_max,
+				    int * ims_duration_ideal,
 				    int * eoc_duration_min,
 				    int * eoc_duration_max,
 				    int * eoc_duration_ideal,
 				    int * adaptive_threshold);
-void cw_rec_get_statistics_internal(cw_rec_t * rec, double * dot_sd, double * dash_sd,
-				    double * element_end_sd, double * character_end_sd);
+void cw_rec_get_statistics_internal(const cw_rec_t * rec, float * dot_sd, float * dash_sd,
+				    float * inter_mark_space_sd, float * character_end_sd);
 int cw_rec_get_buffer_length_internal(const cw_rec_t *rec);
 int cw_rec_get_receive_buffer_capacity_internal(void);
 

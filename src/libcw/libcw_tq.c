@@ -409,7 +409,7 @@ size_t cw_tq_capacity_internal(const cw_tone_queue_t * tq)
    @reviewed 2020-07-28
    @endinternal
 
-   @param tq[in] tone queue, for which you want to get high water mark
+   @param tq[in] tone queue from which to get high water mark
 
    @return high water mark of tone queue
 */

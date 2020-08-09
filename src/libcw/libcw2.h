@@ -238,8 +238,8 @@ cw_ret_t cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_durati
    @reviewed 2020-08-05
    @endinternal
 
-   @param[in] gen generator for which to set the speed
-   @param[in] new_value new value of send speed to be assigned to generator
+   @param[in] gen generator for which to set new value of parameter
+   @param[in] new_value new value of parameter to be set
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -265,8 +265,8 @@ cw_ret_t cw_gen_set_speed(cw_gen_t * gen, int new_value);
    @reviewed 2020-08-05
    @endinternal
 
-   @param[in] gen generator for which to set new frequency
-   @param[in] new_value new value of frequency to be assigned to generator
+   @param[in] gen generator for which to set new value of parameter
+   @param[in] new_value new value of parameter to be set
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -296,8 +296,8 @@ cw_ret_t cw_gen_set_frequency(cw_gen_t * gen, int new_value);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator for which to set a volume level
-   @param[in] new_value new value of volume to be assigned to generator
+   @param[in] gen generator for which to set new value of parameter
+   @param[in] new_value new value of parameter to be set
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -319,8 +319,8 @@ cw_ret_t cw_gen_set_volume(cw_gen_t * gen, int new_value);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator for which to set gap
-   @param[in] new_value new value of gap to be assigned to generator
+   @param[in] gen generator for which to set new value of parameter
+   @param[in] new_value new value of parameter to be set
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -342,8 +342,8 @@ cw_ret_t cw_gen_set_gap(cw_gen_t * gen, int new_value);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in,out] gen generator for which to set new weighting
-   @param[in] new_value new value of weighting to be assigned for generator
+   @param[in,out] gen generator for which to set new value of parameter
+   @param[in] new_value new value of parameter to be set
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -362,7 +362,7 @@ cw_ret_t cw_gen_set_weighting(cw_gen_t * gen, int new_value);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator from which to get the parameter
+   @param[in] gen generator from which to get current value of parameter
 
    @return current value of the generator's send speed
 */
@@ -383,7 +383,7 @@ int cw_gen_get_speed(const cw_gen_t * gen);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator from which to get the parameter
+   @param[in] gen generator from which to get current value of parameter
 
    @return current value of generator's frequency
 */
@@ -403,7 +403,7 @@ int cw_gen_get_frequency(const cw_gen_t * gen);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator from which to get the parameter
+   @param[in] gen generator from which to get current value of parameter
 
    @return current value of generator's sound volume
 */
@@ -421,7 +421,7 @@ int cw_gen_get_volume(const cw_gen_t * gen);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator from which to get the parameter
+   @param[in] gen generator from which to get current value of parameter
 
    @return current value of generator's sending gap
 */
@@ -439,7 +439,7 @@ int cw_gen_get_gap(const cw_gen_t * gen);
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator from which to get the parameter
+   @param[in] gen generator from which to get current value of parameter
 
    @return current value of generator's sending weighting
 */
@@ -884,7 +884,7 @@ cw_ret_t cw_rec_set_speed(cw_rec_t * rec, int new_value);
 cw_ret_t cw_rec_set_tolerance(cw_rec_t * rec, int new_value);
 cw_ret_t cw_rec_set_gap(cw_rec_t * rec, int new_value);
 cw_ret_t cw_rec_set_noise_spike_threshold(cw_rec_t * rec, int new_value);
-void cw_rec_set_adaptive_mode_internal(cw_rec_t *rec, bool adaptive);
+void cw_rec_set_adaptive_mode_internal(cw_rec_t * rec, bool adaptive);
 
 /* Getters of receiver's essential parameters. */
 float cw_rec_get_speed(const cw_rec_t * rec);

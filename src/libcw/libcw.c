@@ -67,7 +67,6 @@ static cw_rec_t cw_receiver = {
 
 	.state = RS_IDLE,
 
-
 	.speed                      = CW_SPEED_INITIAL,
 	.tolerance                  = CW_TOLERANCE_INITIAL,
 	.gap                        = CW_GAP_INITIAL,
@@ -82,44 +81,7 @@ static cw_rec_t cw_receiver = {
 	   variable in adaptive speed mode. */
 	.adaptive_speed_threshold = CW_REC_SPEED_THRESHOLD_INITIAL,
 
-
-	.mark_start = { 0, 0 },
-	.mark_end   = { 0, 0 },
-
-
-	.representation[0] = '\0',
-	.representation_ind = 0,
-
-
-	.dot_duration_ideal = 0,
-	.dot_duration_min = 0,
-	.dot_duration_max = 0,
-
-	.dash_duration_ideal = 0,
-	.dash_duration_min = 0,
-	.dash_duration_max = 0,
-
-	.eom_duration_ideal = 0,
-	.eom_duration_min = 0,
-	.eom_duration_max = 0,
-
-	.eoc_duration_ideal = 0,
-	.eoc_duration_min = 0,
-	.eoc_duration_max = 0,
-
-	.additional_delay = 0,
-	.adjustment_delay = 0,
-
-
 	.parameters_in_sync = false,
-
-
-	.statistics = { {0, 0} },
-	.statistics_ind = 0,
-
-
-	.dot_averaging  = { {0}, 0, 0, 0 },
-	.dash_averaging = { {0}, 0, 0, 0 },
 
 	.label = "global rec", /* Single global receiver visible after loading libcw library. */
 };
@@ -1302,8 +1264,8 @@ int cw_get_noise_spike_threshold(void)
 void cw_get_receive_statistics(double *dot_sd, double *dash_sd,
 			       double *element_end_sd, double *character_end_sd)
 {
-	cw_rec_get_statistics_internal(&cw_receiver, dot_sd, dash_sd,
-				       element_end_sd, character_end_sd);
+	cw_rec_get_statistics_internal(&cw_receiver, (float *) dot_sd, (float *) dash_sd,
+				       (float *) element_end_sd, (float *) character_end_sd);
 
 	return;
 }

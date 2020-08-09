@@ -285,8 +285,10 @@ int test_cw_rec_test_with_constant_speeds(cw_test_executor_t * cte)
 			cw_rec_disable_adaptive_mode(rec);
 
 			/* Verify that the test speed has been set correctly. */
-			const float diff = cw_rec_get_speed(rec) - (float) speed;
-			cte->assert2(cte, diff < 0.1f, "%s: setting speed for test %s failed: %f != %f\n", this_test_name, test_data[i].name, (double) cw_rec_get_speed(rec), (double) speed);  /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
+			const float rec_speed = cw_rec_get_speed(rec);
+			const float diff = rec_speed - speed;
+			 /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
+			cte->assert2(cte, diff < 0.1f, "%s: setting speed for test %s failed: %.3f != %.3f\n", this_test_name, test_data[i].name, (double) rec_speed, (double) speed);
 
 			/* Actual tests of receiver functions are here. */
 			bool failure = test_cw_rec_test_begin_end(cte, rec, vec);
@@ -368,8 +370,10 @@ int test_cw_rec_test_with_varying_speeds(cw_test_executor_t * cte)
 		cw_rec_enable_adaptive_mode(rec);
 
 		/* Verify that initial test speed has been set correctly. */
-		const float diff = cw_rec_get_speed(rec) - CW_SPEED_MAX;
-		cte->assert2(cte, diff < 0.1f, "%s: incorrect receive speed: %f != %f\n", this_test_name, (double) cw_rec_get_speed(rec), (double) CW_SPEED_MAX);
+		const float rec_speed = cw_rec_get_speed(rec);
+		const float diff = rec_speed - CW_SPEED_MAX;
+		/* Casting to double to avoid compiler warning about implicit conversion from float to double. */
+		cte->assert2(cte, diff < 0.1f, "%s: incorrect receive speed: %.3f != %.3f\n", this_test_name, (double) rec_speed, (double) CW_SPEED_MAX);
 
 		/* Actual tests of receiver functions are here. */
 		const bool failure = test_cw_rec_test_begin_end(cte, rec, vec);
@@ -625,11 +629,11 @@ bool test_cw_rec_test_begin_end(cw_test_executor_t * cte, cw_rec_t * rec, cw_rec
 
 
 #ifdef LIBCW_UNIT_TESTS_VERBOSE
-		float speed = cw_rec_get_speed(rec);
+		const float rec_speed = cw_rec_get_speed(rec);
 		cte->log_info(cte,
 			      "%s: received data #%d:   <%c> / <%s> @ %.2f [wpm]\n",
 			      this_test_name,
-			      i, polled_character, polled_representation, speed);
+			      i, polled_character, polled_representation, rec_speed);
 #endif
 	}
 
