@@ -91,21 +91,21 @@ static cw_rec_t cw_receiver = {
 	.representation_ind = 0,
 
 
-	.dot_len_ideal = 0,
-	.dot_len_min = 0,
-	.dot_len_max = 0,
+	.dot_duration_ideal = 0,
+	.dot_duration_min = 0,
+	.dot_duration_max = 0,
 
-	.dash_len_ideal = 0,
-	.dash_len_min = 0,
-	.dash_len_max = 0,
+	.dash_duration_ideal = 0,
+	.dash_duration_min = 0,
+	.dash_duration_max = 0,
 
-	.eom_len_ideal = 0,
-	.eom_len_min = 0,
-	.eom_len_max = 0,
+	.eom_duration_ideal = 0,
+	.eom_duration_min = 0,
+	.eom_duration_max = 0,
 
-	.eoc_len_ideal = 0,
-	.eoc_len_min = 0,
-	.eoc_len_max = 0,
+	.eoc_duration_ideal = 0,
+	.eoc_duration_min = 0,
+	.eoc_duration_max = 0,
 
 	.additional_delay = 0,
 	.adjustment_delay = 0,
@@ -1552,13 +1552,11 @@ int cw_receive_representation(const struct timeval *timestamp,
 			      /* out */ bool *is_end_of_word,
 			      /* out */ bool *is_error)
 {
-	int rv = cw_rec_poll_representation(&cw_receiver,
-					    timestamp,
-					    representation,
-					    is_end_of_word,
-					    is_error);
-
-	return rv;
+	return cw_rec_poll_representation(&cw_receiver,
+					  timestamp,
+					  representation,
+					  is_end_of_word,
+					  is_error);
 }
 
 
@@ -1607,8 +1605,7 @@ int cw_receive_character(const struct timeval *timestamp,
 			 /* out */ bool *is_end_of_word,
 			 /* out */ bool *is_error)
 {
-	int rv = cw_rec_poll_character(&cw_receiver, timestamp, c, is_end_of_word, is_error);
-	return rv;
+	return cw_rec_poll_character(&cw_receiver, timestamp, c, is_end_of_word, is_error);
 }
 
 

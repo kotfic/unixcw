@@ -876,20 +876,20 @@ int cw_rec_get_label(const cw_rec_t * rec, char * label, size_t size);
 
 
 /* Helper receive functions. */
-int  cw_rec_poll_character(cw_rec_t *rec, const struct timeval *timestamp, char *c, bool *is_end_of_word, bool *is_error);
+cw_ret_t cw_rec_poll_character(cw_rec_t * rec, const struct timeval * timestamp, char * character, bool * is_end_of_word, bool * is_error);
 
 
 /* Setters of receiver's essential parameters. */
-int  cw_rec_set_speed(cw_rec_t * rec, int new_value);
-int  cw_rec_set_tolerance(cw_rec_t * rec, int new_value);
-int  cw_rec_set_gap(cw_rec_t * rec, int new_value);
-int  cw_rec_set_noise_spike_threshold(cw_rec_t * rec, int new_value);
+cw_ret_t cw_rec_set_speed(cw_rec_t * rec, int new_value);
+cw_ret_t cw_rec_set_tolerance(cw_rec_t * rec, int new_value);
+cw_ret_t cw_rec_set_gap(cw_rec_t * rec, int new_value);
+cw_ret_t cw_rec_set_noise_spike_threshold(cw_rec_t * rec, int new_value);
 void cw_rec_set_adaptive_mode_internal(cw_rec_t *rec, bool adaptive);
 
 /* Getters of receiver's essential parameters. */
-float cw_rec_get_speed(const cw_rec_t *rec);
+float cw_rec_get_speed(const cw_rec_t * rec);
 int   cw_rec_get_tolerance(const cw_rec_t * rec);
-/* int   cw_rec_get_gap_internal(cw_rec_t *rec); */
+/* int   cw_rec_get_gap_internal(cw_rec_t * rec); */
 int   cw_rec_get_noise_spike_threshold(const cw_rec_t * rec);
 bool  cw_rec_get_adaptive_mode(const cw_rec_t * rec);
 
@@ -926,13 +926,13 @@ void cw_rec_reset_statistics(cw_rec_t * rec);
 
 
 /* Main receive functions. */
-int cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * timestamp);
-int cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp);
-int cw_rec_add_mark(cw_rec_t * rec, const volatile struct timeval * timestamp, char mark);
+cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * timestamp);
+cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp);
+cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const volatile struct timeval * timestamp, char mark);
 
 
 /* Helper receive functions. */
-int  cw_rec_poll_representation(cw_rec_t * rec, const struct timeval * timestamp, char * representation, bool * is_end_of_word, bool * is_error);
+cw_ret_t cw_rec_poll_representation(cw_rec_t * rec, const struct timeval * timestamp, char * representation, bool * is_end_of_word, bool * is_error);
 
 void cw_rec_enable_adaptive_mode(cw_rec_t * rec);
 void cw_rec_disable_adaptive_mode(cw_rec_t * rec);

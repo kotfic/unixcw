@@ -9,10 +9,8 @@
 
 
 
-
 #include <stdbool.h>
 #include <sys/time.h> /* struct timeval */
-
 
 
 
@@ -24,17 +22,17 @@
 
 
 
+/* Dot duration magic number.
 
-/* Dot length magic number.
-
-   From PARIS calibration, 1 Dot length [us] = 1200000 / speed [wpm].
+   From PARIS calibration, 1 Dot duration [us] = 1200000 / speed [wpm].
 
    This variable is used in generator code as well. */
 enum { CW_DOT_CALIBRATION = 1200000 };
 
 
-/* "RS" stands for "Receiver State" */
-enum {
+/* State of receiver state machine.
+   "RS" stands for "Receiver State" */
+typedef enum {
 	RS_IDLE,          /* Representation buffer is empty and ready to accept data. */
 	RS_MARK,          /* Mark. */
 	RS_IMARK_SPACE,   /* Inter-mark space. */
@@ -42,7 +40,7 @@ enum {
 	RS_EOW_GAP,       /* Gap after a word, without error (EOW = end-of-word). */
 	RS_EOC_GAP_ERR,   /* Gap after a character, with error. */
 	RS_EOW_GAP_ERR    /* Gap after a word, with error. */
-};
+} cw_rec_state_t;
 
 
 /* Does receiver initially adapt to varying speed of input data? */
@@ -70,10 +68,10 @@ enum { CW_REC_REPRESENTATION_CAPACITY = 256 };
 enum { CW_REC_STATISTICS_CAPACITY = 256 };
 
 
-/* Length of array used to calculate average length of a mark. Average
-   length of a mark is used in adaptive receiving mode to track speed
+/* Length of array used to calculate average duration of a mark. Average
+   duration of a mark is used in adaptive receiving mode to track speed
    of incoming Morse data. */
-enum { CW_REC_AVERAGING_ARRAY_LENGTH = 4 };
+enum { CW_REC_AVERAGING_DURATIONS_COUNT = 4 };
 
 
 /* Types of receiver's timing statistics.
@@ -88,26 +86,25 @@ typedef enum {
 
 
 typedef struct {
-	stat_type_t type;  /* Record type */
-	int delta;         /* Difference between actual and ideal length of mark or space. [us] */
+	stat_type_t type;    /* Record type */
+	int duration_delta;  /* Difference between actual and ideal duration of mark or space. [us] */
 } cw_rec_statistics_t;
 
 
 /* A moving averages structure - circular buffer. Used for calculating
-   averaged length ([us]) of dots and dashes. */
+   averaged duration ([us]) of dots and dashes. */
 typedef struct {
-	int buffer[CW_REC_AVERAGING_ARRAY_LENGTH];  /* Buffered mark lengths. */
-	int cursor;                                 /* Circular buffer cursor. */
-	int sum;                                    /* Running sum of lengths of marks. [us] */
-	int average;                                /* Averaged length of a mark. [us] */
+	int buffer[CW_REC_AVERAGING_DURATIONS_COUNT];  /* Buffered mark durations. */
+	int cursor;                                    /* Circular buffer cursor. */
+	int sum;                                       /* Running sum of durations of marks. [us] */
+	int average;                                   /* Averaged duration of a mark. [us] */
 } cw_rec_averaging_t;
 
 
+
+
 struct cw_rec_struct {
-
-	/* State of receiver state machine. */
-	int state;
-
+	cw_rec_state_t state;
 
 
 	/* Essential parameters. */
@@ -161,21 +158,21 @@ struct cw_rec_struct {
 	   recalculated each time client code demands changing some
 	   higher-level parameter of receiver.  How these values are
 	   calculated depends on receiving mode (fixed/adaptive). */
-	int dot_len_ideal;        /* Length of an ideal dot. [microseconds]/[us] */
-	int dot_len_min;          /* Minimal length of mark that will be identified as dot. [us] */
-	int dot_len_max;          /* Maximal length of mark that will be identified as dot. [us] */
+	int dot_duration_ideal;        /* Duration of an ideal dot. [microseconds]/[us] */
+	int dot_duration_min;          /* Minimal duration of mark that will be identified as dot. [us] */
+	int dot_duration_max;          /* Maximal duration of mark that will be identified as dot. [us] */
 
-	int dash_len_ideal;       /* Length of an ideal dash. [us] */
-	int dash_len_min;         /* Minimal length of mark that will be identified as dash. [us] */
-	int dash_len_max;         /* Maximal length of mark that will be identified as dash. [us] */
+	int dash_duration_ideal;       /* Duration of an ideal dash. [us] */
+	int dash_duration_min;         /* Minimal duration of mark that will be identified as dash. [us] */
+	int dash_duration_max;         /* Maximal duration of mark that will be identified as dash. [us] */
 
-	int eom_len_ideal;        /* Ideal end of mark, for stats. [us] */
-	int eom_len_min;          /* Shortest end of mark allowable. [us] */
-	int eom_len_max;          /* Longest end of mark allowable. [us] */
+	int eom_duration_ideal;        /* Ideal end of mark, for stats. [us] */
+	int eom_duration_min;          /* Shortest end of mark allowable. [us] */
+	int eom_duration_max;          /* Longest end of mark allowable. [us] */
 
-	int eoc_len_ideal;        /* Ideal end of char, for stats. [us] */
-	int eoc_len_min;          /* Shortest end of char allowable. [us] */
-	int eoc_len_max;          /* Longest end of char allowable. [us] */
+	int eoc_duration_ideal;        /* Ideal end of char, for stats. [us] */
+	int eoc_duration_min;          /* Shortest end of char allowable. [us] */
+	int eoc_duration_max;          /* Longest end of char allowable. [us] */
 
 	/* These two fields have the same function as in
 	   cw_gen_t. They are needed in function re-synchronizing
@@ -195,7 +192,7 @@ struct cw_rec_struct {
 
 	/* Receiver statistics.
 	   A circular buffer of entries indicating the difference
-	   between the actual and the ideal length of received mark or
+	   between the actual and the ideal duration of received mark or
 	   space, tagged with the type of statistic held, and a
 	   circular buffer pointer. */
 	cw_rec_statistics_t statistics[CW_REC_STATISTICS_CAPACITY];
@@ -203,8 +200,8 @@ struct cw_rec_struct {
 
 
 
-	/* Data structures for calculating averaged length of dots and
-	   dashes. The averaged lengths are used for adaptive tracking
+	/* Data structures for calculating averaged duration of dots and
+	   dashes. The averaged durations are used for adaptive tracking
 	   of receiver's speed (tracking of speed of incoming data). */
 	cw_rec_averaging_t dot_averaging;
 	cw_rec_averaging_t dash_averaging;
@@ -225,28 +222,28 @@ struct cw_rec_struct {
 
 
 /* Other helper functions. */
-void cw_rec_reset_parameters_internal(cw_rec_t *rec);
-void cw_rec_sync_parameters_internal(cw_rec_t *rec);
-void cw_rec_get_parameters_internal(cw_rec_t *rec,
-				    int *dot_len_ideal, int *dash_len_ideal,
-				    int *dot_len_min,   int *dot_len_max,
-				    int *dash_len_min,  int *dash_len_max,
-				    int *eom_len_min,
-				    int *eom_len_max,
-				    int *eom_len_ideal,
-				    int *eoc_len_min,
-				    int *eoc_len_max,
-				    int *eoc_len_ideal,
-				    int *adaptive_threshold);
-void cw_rec_get_statistics_internal(cw_rec_t *rec, double *dot_sd, double *dash_sd,
-				    double *element_end_sd, double *character_end_sd);
+void cw_rec_reset_parameters_internal(cw_rec_t * rec);
+void cw_rec_sync_parameters_internal(cw_rec_t * rec);
+void cw_rec_get_parameters_internal(cw_rec_t * rec,
+				    int * dot_duration_ideal, int * dash_duration_ideal,
+				    int * dot_duration_min,   int * dot_duration_max,
+				    int * dash_duration_min,  int * dash_duration_max,
+				    int * eom_duration_min,
+				    int * eom_duration_max,
+				    int * eom_duration_ideal,
+				    int * eoc_duration_min,
+				    int * eoc_duration_max,
+				    int * eoc_duration_ideal,
+				    int * adaptive_threshold);
+void cw_rec_get_statistics_internal(cw_rec_t * rec, double * dot_sd, double * dash_sd,
+				    double * element_end_sd, double * character_end_sd);
 int cw_rec_get_buffer_length_internal(const cw_rec_t *rec);
 int cw_rec_get_receive_buffer_capacity_internal(void);
 
 
 
 
-void CW_REC_SET_STATE(cw_rec_t * rec, int new_state, cw_debug_t * debug_object);
+void CW_REC_SET_STATE(cw_rec_t * rec, cw_rec_state_t new_state, cw_debug_t * debug_object);
 
 
 
