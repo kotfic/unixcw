@@ -926,9 +926,9 @@ void cw_rec_reset_statistics(cw_rec_t * rec);
 
 
 /* Main receive functions. */
-cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * timestamp);
-cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp);
-cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const volatile struct timeval * timestamp, char mark);
+cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const struct timeval * timestamp);
+cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp);
+cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const struct timeval * timestamp, char mark);
 
 
 /* Helper receive functions. */

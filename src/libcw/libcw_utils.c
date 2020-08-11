@@ -343,7 +343,7 @@ bool cw_dlopen_internal(const char *name, void **handle)
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
-int cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp)
+cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp)
 {
 	cw_assert (out_timestamp, MSG_PREFIX "validate timestamp: pointer to output timestamp is NULL");
 
@@ -359,6 +359,8 @@ int cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile
 			return CW_SUCCESS;
 		}
 	} else {
+		/* TODO: gettimeofday is susceptible to NTP syncs which can
+		   negatively impact measurements of time. */
 		if (gettimeofday(out_timestamp, NULL)) {
 			if (out_timestamp->tv_usec < 0) {
 				// fprintf(stderr, "Negative usecs in %s\n", __func__);

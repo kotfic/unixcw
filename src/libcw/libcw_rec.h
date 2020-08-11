@@ -34,8 +34,8 @@ enum { CW_DOT_CALIBRATION = 1200000 };
    "RS" stands for "Receiver State" */
 typedef enum {
 	RS_IDLE,          /* Representation buffer is empty and ready to accept data. */
-	RS_MARK,          /* Mark. Dot or Dash. */
-	RS_INTER_MARK_SPACE,   /* Space between Marks within one character. */
+	RS_MARK,              /* Between begin and end of Mark (Dot or Dash). */
+	RS_INTER_MARK_SPACE,  /* Space between Marks within one character. */
 	RS_EOC_GAP,       /* Gap after a character, without error (EOC = end-of-character). */
 	RS_EOW_GAP,       /* Gap after a word, without error (EOW = end-of-word). */
 	RS_EOC_GAP_ERR,   /* Gap after a character, with error. */

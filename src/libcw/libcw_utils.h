@@ -21,6 +21,8 @@ extern "C"
 
 #include <sys/time.h>
 
+#include "libcw2.h"
+
 
 
 
@@ -31,7 +33,7 @@ enum { CW_USECS_PER_SEC = 1000000 };
 
 
 int cw_timestamp_compare_internal(const struct timeval *earlier, const struct timeval *later);
-int cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp);
+cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp);
 void cw_usecs_to_timespec_internal(struct timespec *t, int usecs);
 
 

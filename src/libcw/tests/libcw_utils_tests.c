@@ -107,7 +107,7 @@ int test_cw_timestamp_validate_internal(cw_test_executor_t * cte)
 
 		/* Get current time through libcw function. */
 		struct timeval out_timestamp = { 0, 0 };
-		int cwret = LIBCW_TEST_FUT(cw_timestamp_validate_internal)(&out_timestamp, NULL);
+		cw_ret_t cwret = LIBCW_TEST_FUT(cw_timestamp_validate_internal)(&out_timestamp, NULL);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "current timestamp");
 
 		/* Check the diff between the two timestamps. On my desktop PC it's ~8us.  */
@@ -140,7 +140,7 @@ int test_cw_timestamp_validate_internal(cw_test_executor_t * cte)
 		struct timeval out = { 0, 0 };
 		errno = 0;
 
-		int cwret = LIBCW_TEST_FUT(cw_timestamp_validate_internal)(&out, &test_data[i].in);
+		cw_ret_t cwret = LIBCW_TEST_FUT(cw_timestamp_validate_internal)(&out, &test_data[i].in);
 		cte->expect_op_int(cte, test_data[i].expected_cwret, "==", cwret, "%s (cwret)", test_data[i].name);
 		cte->expect_op_int(cte, test_data[i].expected_errno, "==", errno, "%s (errno)", test_data[i].name);
 

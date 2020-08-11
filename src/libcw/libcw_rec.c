@@ -842,15 +842,22 @@ void CW_REC_SET_STATE(cw_rec_t * rec, cw_rec_state_t new_state, cw_debug_t * deb
    Set the mode of a receiver @p rec to fixed or adaptive receiving
    mode.
 
-   In adaptive receiving mode the receiver tracks the speed of the
-   received Morse code by adapting to the input stream.
+   If adaptive speed tracking is enabled, the receiver will attempt to
+   automatically adjust the receive speed setting to match the speed of the
+   incoming Morse code. If it is disabled, the receiver will use fixed speed
+   settings, and reject incoming Morse code which is not at the expected
+   speed.
+
+   Adaptive speed tracking uses a moving average length of the past N marks
+   as its baseline for tracking speeds.  The default state is adaptive speed
+   tracking disabled.
 
    @internal
-   @reviewed 2017-02-04
+   @reviewed 2020-08-09
    @endinternal
 
-   @param rec receiver for which to set the mode
-   @param adaptive value of receiver's "adaptive mode" to be set
+   @param[in,out] rec receiver for which to set the mode
+   @param[in] adaptive value of receiver's "adaptive mode" to be set
 */
 void cw_rec_set_adaptive_mode_internal(cw_rec_t * rec, bool adaptive)
 {
@@ -881,14 +888,17 @@ void cw_rec_set_adaptive_mode_internal(cw_rec_t * rec, bool adaptive)
 /**
    @brief Enable receiver's "adaptive receiving" mode
 
-   In adaptive receiving mode the receiver tracks the speed of the
-   received Morse code by adapting to the input stream.
+   See cw_rec_set_adaptive_mode_internal() for more info.
 
    @internal
-   @reviewed 2017-02-04
+   TODO: this function and cw_rec_set_adaptive_mode_internal() are redundant.
    @endinternal
 
-   @param rec receiver for which to enable the mode
+   @internal
+   @reviewed 2020-08-09
+   @endinternal
+
+   @param[in,out] rec receiver for which to enable the mode
 */
 void cw_rec_enable_adaptive_mode(cw_rec_t * rec)
 {
@@ -902,11 +912,17 @@ void cw_rec_enable_adaptive_mode(cw_rec_t * rec)
 /**
    @brief Disable receiver's "adaptive receiving" mode
 
+   See cw_rec_set_adaptive_mode_internal() for more info.
+
    @internal
-   @reviewed 2017-02-04
+   TODO: this function and cw_rec_set_adaptive_mode_internal() are redundant.
    @endinternal
 
-   @param rec receiver for which to disable the mode
+   @internal
+   @reviewed 2020-08-09
+   @endinternal
+
+   @param[in,out] rec receiver for which to disable the mode
 */
 void cw_rec_disable_adaptive_mode(cw_rec_t * rec)
 {
@@ -921,13 +937,14 @@ void cw_rec_disable_adaptive_mode(cw_rec_t * rec)
    @brief Get adaptive receive speed tracking flag
 
    The function returns state of "adaptive receive enabled" flag.
-   See documentation of cw_enable_adaptive_receive() for more information.
+
+   See cw_rec_set_adaptive_mode_internal() for more info.
 
    @internal
-   @reviewed 2017-02-04
+   @reviewed 2020-08-09
    @endinternal
 
-   @param rec receiver from which to get current value of parameter
+   @param[in] rec receiver from which to get current value of parameter
 
    @return true if adaptive speed tracking is enabled
    @return false otherwise
@@ -941,48 +958,53 @@ bool cw_rec_get_adaptive_mode(const cw_rec_t * rec)
 
 
 /**
+   @brief Inform @p rec about beginning of a Mark
+
    @internal
-   @reviewed 2017-02-04
+   @reviewed 2020-08-10
    @endinternal
 
    @exception ERANGE invalid state of receiver was discovered.
    @exception EINVAL errors while processing or getting @p timestamp
 
-   @param rec receiver
-   @param timestamp timestamp of "beginning of mark" event. May be NULL, then current time will be used.
+   @param[in,out] rec receiver which to inform about beginning of Mark
+   @param[in] timestamp timestamp of "beginning of Mark" event. May be NULL, then current time will be used.
 
    @return CW_SUCCESS when no errors occurred
    @return CW_FAILURE otherwise
 */
-cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * timestamp)
+cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const struct timeval * timestamp)
 {
 	if (rec->is_pending_inter_word_space) {
 
-		/* Beginning of mark in this situation means that
-		   we're seeing the next incoming character within the
-		   same word, so no inter-word space will be received
-		   at this point in time. The space that we were
-		   observing/waiting for, was just inter-character
-		   space.
+		/* Beginning of Mark in this situation means that we're
+		   seeing the next incoming character within the same word,
+		   so no inter-word-space will be received at this point in
+		   time. The Space that we were observing/waiting for, was
+		   just inter-character-space.
 
 		   Reset state of rec and cancel the waiting for
-		   inter-word space. */
+		   inter-word-space. */
 		cw_rec_reset_state(rec);
 	}
 
 	if (RS_IDLE != rec->state && RS_INTER_MARK_SPACE != rec->state) {
-		/* A start of mark can only happen while we are idle,
-		   or in inter-mark-space of a current character. */
+		/*
+		  A start of Mark can only happen while we are idle (waiting
+		  for beginning of a first Mark of a new character), or in
+		  inter-mark-space of a current character.
+
+		  ->state should be RS_IDLE at the beginning of new character
+		  OR
+		  ->state should be RS_INTER_MARK_SPACE in the middle of character (between Marks)
+
+		  See cw_rec_add_mark() for similar condition.
+		*/
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
 			      MSG_PREFIX "'%s': mark_begin: receive state not idle and not inter-mark-space: %s",
 			      rec->label,
 			      cw_receiver_states[rec->state]);
-
-		/*
-		  ->state should be RS_IDLE at the beginning of new character;
-		  ->state should be RS_INTER_MARK_SPACE in the middle of character (between marks).
-		*/
 
 		errno = ERANGE;
 		return CW_FAILURE;
@@ -990,20 +1012,20 @@ cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * times
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
 		      MSG_PREFIX "'%s': mark_begin: receive state: %s", rec->label, cw_receiver_states[rec->state]);
 
-	/* Validate and save the timestamp, or get one and then save
-	   it.  This is a beginning of mark. */
-	if (!cw_timestamp_validate_internal(&rec->mark_start, timestamp)) {
+	/* Validate and save the timestamp, or get one and then save it.
+	   This is a timestamp of beginning of Mark. */
+	if (CW_SUCCESS != cw_timestamp_validate_internal(&rec->mark_start, timestamp)) {
 		errno = EINVAL;
 		return CW_FAILURE;
 	}
 
 	if (RS_INTER_MARK_SPACE == rec->state) {
-		/* Measure inter-mark-space (just for statistics).
+		/* Measure duration of inter-mark-space that is about to end
+		   (just for statistics).
 
-		   rec->mark_end is timestamp of end of previous
-		   mark. It is set when receiver goes into
-		   inter-mark-space state by cw_end_receive tone() or
-		   by cw_rec_add_mark(). */
+		   rec->mark_end is timestamp of end of previous Mark. It is
+		   set when receiver goes into inter-mark-space state by
+		   cw_rec_mark_end() or by cw_rec_add_mark(). */
 		const int space_duration = cw_timestamp_compare_internal(&rec->mark_end,
 									 &rec->mark_start);
 		cw_rec_duration_stats_update_internal(rec, CW_REC_STAT_INTER_MARK_SPACE, space_duration);
@@ -1012,9 +1034,9 @@ cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * times
 		   we accept a very long space inside a character? */
 	}
 
-	/* Set state to indicate we are inside a mark. We don't know
-	   yet if it will be recognized as valid mark (it may be
-	   shorter than a threshold). */
+	/* Set state to indicate we are inside a Mark. We don't know yet if
+	   it will be recognized as valid Mark, it may be shorter than a
+	   threshold. */
 	CW_REC_SET_STATE (rec, RS_MARK, (&cw_debug_object));
 
 	return CW_SUCCESS;
@@ -1024,45 +1046,51 @@ cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const volatile struct timeval * times
 
 
 /**
+   @brief Inform @p rec about end of a Mark
+
    @internal
-   @reviewed 2017-02-04
+   @reviewed 2020-08-09
    @endinternal
+
+   If Mark is identified as Dot or Dash, it is added to receiver's
+   representation buffer.
 
    @exception ERANGE invalid state of receiver was discovered
    @exception EINVAL errors while processing or getting @p timestamp
-   @exception ECANCELED the mark has been classified as noise spike and rejected
-   @exception EBADMSG this function can't recognize the mark
+   @exception ECANCELED the Mark has been classified as noise spike and rejected
+   @exception EBADMSG this function can't recognize the Mark
    @exception ENOMEM space for representation of character has been exhausted
 
-   @param rec receiver
-   @param timestamp timestamp of "end of mark" event. May be NULL, then current time will be used.
+   @param[in,out] rec receiver which to inform about end of Mark
+   @param[in] timestamp timestamp of "end of Mark" event. May be NULL, then current time will be used.
 
    @return CW_SUCCESS when no errors occurred
    @return CW_FAILURE otherwise
 */
-cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timestamp)
+cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 {
-	/* The receive state is expected to be inside of a mark. */
+	/* The receiver state is expected to be inside of a Mark, otherwise
+	   there is nothing to end. */
 	if (RS_MARK != rec->state) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "'%s': mark_end: receive state not RS_MARK: %s", rec->label, cw_receiver_states[rec->state]);
+			      MSG_PREFIX "'%s': mark_end: receiver state not RS_MARK: %s", rec->label, cw_receiver_states[rec->state]);
 		errno = ERANGE;
 		return CW_FAILURE;
 	}
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "'%s': mark_end: receive state: %s", rec->label, cw_receiver_states[rec->state]);
+		      MSG_PREFIX "'%s': mark_end: receiver state: %s", rec->label, cw_receiver_states[rec->state]);
 
 	/* Take a safe copy of the current end timestamp, in case we need
-	   to put it back if we decide this mark is really just noise. */
+	   to put it back if we decide this Mark is really just noise. */
 	struct timeval saved_end_timestamp = rec->mark_end;
 
 	/* Save the timestamp passed in, or get one. */
-	if (!cw_timestamp_validate_internal(&rec->mark_end, timestamp)) {
+	if (CW_SUCCESS != cw_timestamp_validate_internal(&rec->mark_end, timestamp)) {
 		errno = EINVAL;
 		return CW_FAILURE;
 	}
 
-	/* Compare the timestamps to determine the duration of the mark. */
+	/* Compare the timestamps to determine the duration of the Mark. */
 	const int mark_duration = cw_timestamp_compare_internal(&rec->mark_start,
 								&rec->mark_end);
 
@@ -1079,16 +1107,15 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timesta
 		/* This pair of start()/stop() calls is just a noise,
 		   ignore it.
 
-		   Revert to state of receiver as it was before
-		   complementary cw_rec_mark_begin(). After
-		   call to mark_begin() the state was changed to
-		   mark, but what state it was before call to
-		   start()?
+		   Revert to state of receiver as it was before complementary
+		   cw_rec_mark_begin(). After call to cw_rec_mark_begin() the
+		   state was changed to RS_MARK, but what state it was before
+		   call to cw_rec_mark_begin()?
 
-		   Check position in representation buffer (how many
-		   marks are in the buffer) to see in which state the
-		   receiver was *before* mark_begin() function call,
-		   and restore this state. */
+		   To answer that question check position in representation
+		   buffer (how many Marks are in the buffer) to see in which
+		   state the receiver was *before* cw_rec_mark_begin()
+		   function call, and restore this state. */
 		CW_REC_SET_STATE (rec, (rec->representation_ind == 0 ? RS_IDLE : RS_INTER_MARK_SPACE), (&cw_debug_object));
 
 		/* Put the end-of-mark timestamp back to how it was when we
@@ -1096,7 +1123,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timesta
 		rec->mark_end = saved_end_timestamp;
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "'%s': mark_end: '%d [us]' mark identified as spike noise (threshold = '%d [us]')",
+			      MSG_PREFIX "'%s': mark_end: '%d [us]' Mark identified as spike noise (threshold = '%d [us]')",
 			      rec->label,
 			      mark_duration, rec->noise_spike_threshold);
 
@@ -1106,12 +1133,12 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timesta
 
 
 	/* This was not a noise. At this point, we have to make a
-	   decision about the mark just received.  We'll use a routine
-	   that compares duration of a mark against pre-calculated Dot
-	   and Dash duration ranges to tell us what it thinks this mark
+	   decision about the Mark just received.  We'll use a routine
+	   that compares duration of a Mark against pre-calculated Dot
+	   and Dash duration ranges to tell us what it thinks this Mark
 	   is (Dot or Dash).  If the routine can't decide, it will
 	   hand us back an error which we return to the caller.
-	   Otherwise, it returns a mark (Dot or Dash), for us to put
+	   Otherwise, it returns a Mark (Dot or Dash), for us to put
 	   in representation buffer. */
 	char mark;
 	if (CW_SUCCESS != cw_rec_identify_mark_internal(rec, mark_duration, &mark)) {
@@ -1142,16 +1169,18 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timesta
 		cw_rec_duration_stats_update_internal(rec, CW_REC_STAT_DASH, mark_duration);
 	}
 
-	/* Add the mark to the receiver's representation buffer. */
+	/* Add the Mark to the receiver's representation buffer. */
 	rec->representation[rec->representation_ind++] = mark;
-	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "'%s': mark_end: recognized representation is '%s'", rec->label, rec->representation);
 
-	/* We just added a mark to the receive buffer.  If it's full,
-	   then we have to do something, even though it's unlikely.
-	   What we'll do is make a unilateral declaration that if we
-	   get this far, we go to end-of-char error state
-	   automatically. */
+	/* Until we complete the whole character (all Dots and Dashes), this
+	   will print only part of representation. */
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
+		      MSG_PREFIX "'%s': mark_end: representation recognized so far is '%s'", rec->label, rec->representation);
+
+	/* We just added a Mark to the receive buffer.  If the buffer is
+	   full, then we have to do something, even though it's unlikely.
+	   What we'll do is make a unilateral declaration that if we get this
+	   far, we go to end-of-char error state automatically. */
 	if (rec->representation_ind == CW_REC_REPRESENTATION_CAPACITY - 1) {
 
 		CW_REC_SET_STATE (rec, RS_EOC_GAP_ERR, (&cw_debug_object));
@@ -1174,9 +1203,9 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timesta
 
 
 /**
-   @brief Analyze a mark and identify it as a Dot or Dash
+   @brief Analyze a Mark and identify it as a Dot or Dash
 
-   Identify a mark (Dot/Dash) represented by a duration of mark: @p
+   Identify a Mark (Dot/Dash) represented by a duration of mark: @p
    mark_duration.
 
    Identification is done using the duration ranges provided by the low
@@ -1185,28 +1214,28 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const volatile struct timeval * timesta
    On success function returns CW_SUCCESS and sends back either a Dot
    or a Dash through @p mark.
 
-   On failure it returns CW_FAILURE if the mark is not recognizable as
-   either a Dot or a Dash, and sets the receiver state to one of the
-   error states, depending on the duration of mark passed in.
+   On failure it returns CW_FAILURE if the Mark is not recognizable as either
+   a Dot or a Dash, and sets the receiver state to one of the error states,
+   depending on the duration of Mark passed in.
 
-   Note: for adaptive timing, the mark should _always_ be recognized
-   as a Dot or a Dash, because the duration ranges will have been set to
-   cover 0 to INT_MAX.
+   Note: for adaptive timing, the Mark should _always_ be recognized as a Dot
+   or a Dash, because the duration ranges will have been set to cover 0 to
+   INT_MAX.
 
    @internal
-   @reviewed
+   @reviewed 2020-08-10
    @endinternal
 
-   @param rec receiver
-   @param mark_duration duration of mark to analyze
-   @param mark variable to store identified mark (output variable)
+   @param[in,out] rec receiver
+   @param[in] mark_duration duration of Mark to analyze
+   @param[out] mark variable to store identified Mark
 
    @return CW_SUCCESS if a mark has been identified as either Dot or Dash
    @return CW_FAILURE otherwise
 */
-cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, /* out */ char * mark)
+cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, char * mark)
 {
-	cw_assert (mark, MSG_PREFIX "output argument is NULL");
+	cw_assert (NULL != mark, MSG_PREFIX "output argument is NULL");
 
 	/* Synchronize parameters if required */
 	cw_rec_sync_parameters_internal(rec);
@@ -1245,10 +1274,9 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, /* out
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
 		      MSG_PREFIX "'%s': identify: dash limits: %d - %d [us]", rec->label, rec->dash_duration_min, rec->dash_duration_max);
 
-	/* We should never reach here when in adaptive timing receive
-	   mode - a mark should be always recognized as Dot or Dash,
-	   and function should have returned before reaching this
-	   point. */
+	/* We should never reach here when in adaptive timing receive mode -
+	   a Mark should be always recognized as Dot or Dash, and function
+	   should have returned before reaching this point. */
 	if (rec->is_adaptive_receive_mode) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
 			      MSG_PREFIX "'%s': identify: unrecognized mark in adaptive receive", rec->label);
@@ -1263,16 +1291,17 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, /* out
 	   out of scope of this function. Move the part below to
 	   separate function. */
 
-	/* If we can't send back any result through @p mark,
-	   let's move to either "end-of-character, in error" or
-	   "end-of-word, in error" state.
+	/* If we can't send back any result through @p mark, let's move to
+	   either "end-of-character, in error" or "end-of-word, in error"
+	   state.
 
-	   We will treat @p mark_duration as duration of space.
+	   To decide which error state to choose, we will treat @p
+	   mark_duration as duration of Space.
 
-	   Depending on the duration of space, we pick which of the
-	   error states to move to, and move to it.  The comparison is
-	   against the expected end-of-char delay.  If it's larger,
-	   then fix at word error, otherwise settle on char error.
+	   Depending on the duration of Space, we pick which of the error
+	   states to move to, and move to it.  The comparison is against the
+	   expected end-of-char delay.  If it's larger, then fix at word
+	   error, otherwise settle on char error.
 
 	   TODO: reconsider this for a moment: the function has been
 	   called because client code has received a *mark*, not a
@@ -1293,15 +1322,15 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, /* out
 
    When in adaptive receiving mode, function updates the averages of
    Dot or Dash durations with given @p mark_duration, and recalculates the
-   adaptive threshold for the next receive mark.
+   adaptive threshold for the next receive Mark.
 
    @internal
-   @reviewed 2017-02-04
+   @reviewed 2020-08-10
    @endinternal
 
-   @param rec receiver
-   @param mark_duration duration of a mark (Dot or Dash)
-   @param mark CW_DOT_REPRESENTATION or CW_DASH_REPRESENTATION
+   @param[in,out] rec receiver
+   @param[in] mark_duration duration of a Mark (Dot or Dash)
+   @param[in] mark CW_DOT_REPRESENTATION or CW_DASH_REPRESENTATION
 */
 void cw_rec_update_averages_internal(cw_rec_t * rec, int mark_duration, char mark)
 {
@@ -1371,54 +1400,66 @@ void cw_rec_update_averages_internal(cw_rec_t * rec, int mark_duration, char mar
    Function adds a @p mark (either a Dot or a Dash) to the
    receiver's representation buffer.
 
-   Since we can't add a mark to the buffer without any
-   accompanying timing information, the function also accepts
-   @p timestamp of the "end of mark" event.  If the @p timestamp
-   is NULL, the timestamp for current time is used.
+   Since we can't add a Mark to the buffer without any accompanying timing
+   information, the function also accepts @p timestamp of the "end of mark"
+   event.  If the @p timestamp is NULL, the timestamp for current time is
+   used.
 
    The receiver's state is updated as if we had just received a call
    to cw_rec_mark_end().
 
    @internal
-   @reviewed
+   @reviewed 2020-08-10
    @endinternal
 
    @exception ERANGE invalid state of receiver was discovered.
    @exception EINVAL errors while processing or getting @p timestamp
    @exception ENOMEM space for representation of character has been exhausted
 
-   @param rec receiver
-   @param timestamp timestamp of "end of mark" event. May be NULL, then current time will be used.
-   @param mark mark to be inserted into receiver's representation buffer
+   @param[in,out] rec receiver
+   @param[in] timestamp timestamp of "end of mark" event. May be NULL, then current time will be used.
+   @param[in] mark Mark to be inserted into receiver's representation buffer
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
 */
-cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const volatile struct timeval * timestamp, char mark)
+cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const struct timeval * timestamp, char mark)
 {
 	/* The receiver's state is expected to be idle or
 	   inter-mark-space in order to use this routine. */
 	if (RS_IDLE != rec->state && RS_INTER_MARK_SPACE != rec->state) {
+
+		/*
+		  Adding of a Mark can only happen while we are idle (waiting
+		  for beginning of a first Mark of a new character), or in
+		  inter-mark-space of a current character.
+
+		  ->state should be RS_IDLE at the beginning of new character
+		  OR
+		  ->state should be RS_INTER_MARK_SPACE in the middle of character (between Marks)
+
+		  See cw_rec_mark_begin() for similar condition.
+		*/
 		errno = ERANGE;
 		return CW_FAILURE;
 	}
 
-	/* This routine functions as if we have just seen a mark end,
-	   yet without really seeing a mark start.
+	/* This routine functions as if we have just seen a Mark end,
+	   yet without really seeing a Mark start.
 
 	   It doesn't matter that we don't know timestamp of start of
-	   this mark: start timestamp would be needed only to
-	   determine mark duration (and from the mark duration to
-	   determine mark type (Dot/Dash)). But since the mark type
+	   this Mark: start timestamp would be needed only to
+	   determine Mark duration (and from the Mark duration to
+	   determine Mark type (Dot/Dash)). But since the Mark type
 	   has been determined by @p mark, we don't need timestamp for
-	   beginning of mark.
+	   beginning of Mark.
 
-	   What does matter is timestamp of end of this mark. This is
+	   What does matter is timestamp of end of this Mark. This is
 	   because the receiver representation routines that may be
-	   called later look at the time since the last end of mark
+	   called later look at the time since the last end of Mark
 	   to determine whether we are at the end of a word, or just
 	   at the end of a character. */
-	if (!cw_timestamp_validate_internal(&rec->mark_end, timestamp)) {
+	if (CW_SUCCESS != cw_timestamp_validate_internal(&rec->mark_end, timestamp)) {
 		errno = EINVAL;
 		return CW_FAILURE;
 	}
@@ -1426,10 +1467,9 @@ cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const volatile struct timeval * timesta
 	/* Add the mark to the receiver's representation buffer. */
 	rec->representation[rec->representation_ind++] = mark;
 
-	/* We just added a mark to the receiver's buffer.  As in
-	   cw_rec_mark_end(): if it's full, then we have to do
-	   something, even though it's unlikely to actually be
-	   full. */
+	/* We just added a Mark to the receiver's buffer.  As in
+	   cw_rec_mark_end(): if the buffer is full full, then we have to do
+	   something, even though it's unlikely to actually be full. */
 	if (rec->representation_ind == CW_REC_REPRESENTATION_CAPACITY - 1) {
 
 		CW_REC_SET_STATE (rec, RS_EOC_GAP_ERR, (&cw_debug_object));
@@ -1441,7 +1481,7 @@ cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const volatile struct timeval * timesta
 		return CW_FAILURE;
 	}
 
-	/* Since we effectively just saw the end of a mark, move to
+	/* Since we effectively just saw the end of a Mark, move to
 	   the inter-mark-space state. */
 	CW_REC_SET_STATE (rec, RS_INTER_MARK_SPACE, (&cw_debug_object));
 
@@ -1528,7 +1568,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 	   by comparing current/given timestamp with end of last
 	   mark. */
 	struct timeval now_timestamp;
-	if (!cw_timestamp_validate_internal(&now_timestamp, timestamp)) {
+	if (CW_SUCCESS != cw_timestamp_validate_internal(&now_timestamp, timestamp)) {
 		errno = EINVAL;
 		return CW_FAILURE;
 	}
