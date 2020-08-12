@@ -206,10 +206,6 @@ struct cw_rec_struct {
 	cw_rec_averaging_t dot_averaging;
 	cw_rec_averaging_t dash_averaging;
 
-#ifdef WITH_EXPERIMENTAL_RECEIVER
-	cw_rec_push_callback_t * push_callback;
-#endif
-
 	/* Flag indicating if receive polling has received a
 	   character, and may need to augment it with a word
 	   space on a later poll. */
@@ -237,7 +233,7 @@ void cw_rec_get_parameters_internal(cw_rec_t * rec,
 				    int * adaptive_threshold);
 void cw_rec_get_statistics_internal(const cw_rec_t * rec, float * dot_sd, float * dash_sd,
 				    float * inter_mark_space_sd, float * character_end_sd);
-int cw_rec_get_buffer_length_internal(const cw_rec_t *rec);
+int cw_rec_get_buffer_length_internal(const cw_rec_t * rec);
 int cw_rec_get_receive_buffer_capacity_internal(void);
 
 

@@ -210,8 +210,8 @@ cw_ret_t cw_gen_set_label(cw_gen_t * gen, const char * label);
    @endinternal
 
    @param[in] gen generator from which to get label
-   @param[in] label output buffer
-   @param[out] size total size of output buffer @p label
+   @param[out] label output buffer
+   @param[in] size total size of output buffer @p label
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure (e.g. @p gen or @p label is NULL)
@@ -776,8 +776,8 @@ cw_ret_t cw_key_set_label(cw_key_t * key, const char * label);
    get only as many characters of key's label as he asked for.
 
    @param[in] key key from which to get label
-   @param[in] label output buffer
-   @param[out] size total size of output buffer @p label
+   @param[out] label output buffer
+   @param[in] size total size of output buffer @p label
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure (e.g. @p key or @p label is NULL)
@@ -838,7 +838,7 @@ void       cw_rec_delete(cw_rec_t ** rec);
    logged. This is not treated as error: function will not return
    `CW_FAILURE` because of that.
 
-   @param[in] rec receiver for which to set label
+   @param[in,out] rec receiver for which to set label
    @param[in] label new label to set for given @p rec
 
    @return CW_SUCCESS on success
@@ -864,8 +864,8 @@ int cw_rec_set_label(cw_rec_t * rec, const char * label);
    get only as many characters of receiver's label as he asked for.
 
    @param[in] rec receiver from which to get label
-   @param[in] label output buffer
-   @param[out] size total size of output buffer @p label
+   @param[out] label output buffer
+   @param[in] size total size of output buffer @p label
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure (e.g. @p rec or @p label is NULL)
@@ -897,13 +897,15 @@ bool  cw_rec_get_adaptive_mode(const cw_rec_t * rec);
 
 
 /**
-   \brief Reset receiver's state
+   @brief Reset receiver's state machine to initial state
 
    The state includes, but is not limited to, state graph and
    representation buffer.
 
    Receiver's parameters and statistics are not reset by this function.
    To reset statistics use cw_rec_reset_statistics().
+
+   @param[in,out] rec receiver to reset
 */
 void cw_rec_reset_state(cw_rec_t * rec);
 
@@ -936,7 +938,6 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec, const struct timeval * times
 
 void cw_rec_enable_adaptive_mode(cw_rec_t * rec);
 void cw_rec_disable_adaptive_mode(cw_rec_t * rec);
-bool cw_rec_poll_is_pending_inter_word_space(cw_rec_t const * rec);
 
 
 
