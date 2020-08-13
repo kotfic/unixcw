@@ -78,10 +78,10 @@ enum { CW_REC_AVERAGING_DURATIONS_COUNT = 4 };
    CW_REC_STAT_NONE must be zero so that the statistics buffer is initially empty. */
 typedef enum {
 	CW_REC_STAT_NONE = 0,
-	CW_REC_STAT_DOT,               /* Dot mark. */
-	CW_REC_STAT_DASH,              /* Dash mark. */
-	CW_REC_STAT_INTER_MARK_SPACE,  /* Space between Dots and Dashes within one character. */
-	CW_REC_STAT_ICHAR_SPACE        /* Inter-character space. */
+	CW_REC_STAT_DOT,                    /* Dot mark. */
+	CW_REC_STAT_DASH,                   /* Dash mark. */
+	CW_REC_STAT_INTER_MARK_SPACE,       /* Space between Dots and Dashes within one character. */
+	CW_REC_STAT_INTER_CHARACTER_SPACE   /* Space between characters within one word. */
 } stat_type_t;
 
 
@@ -170,9 +170,9 @@ struct cw_rec_struct {
 	int ims_duration_min;          /* Shortest inter-mark-space allowable. [us] */
 	int ims_duration_max;          /* Longest inter-mark-space allowable. [us] */
 
-	int eoc_duration_ideal;        /* Ideal end of char, for stats. [us] */
-	int eoc_duration_min;          /* Shortest end of char allowable. [us] */
-	int eoc_duration_max;          /* Longest end of char allowable. [us] */
+	int ics_duration_ideal;        /* Ideal inter-character-space, for stats. [us] */
+	int ics_duration_min;          /* Shortest inter-character-space allowable. [us] */
+	int ics_duration_max;          /* Longest inter-character-space allowable. [us] */
 
 	/* These two fields have the same function as in
 	   cw_gen_t. They are needed in function re-synchronizing
@@ -227,12 +227,12 @@ void cw_rec_get_parameters_internal(cw_rec_t * rec,
 				    int * ims_duration_min,
 				    int * ims_duration_max,
 				    int * ims_duration_ideal,
-				    int * eoc_duration_min,
-				    int * eoc_duration_max,
-				    int * eoc_duration_ideal,
+				    int * ics_duration_min,
+				    int * ics_duration_max,
+				    int * ics_duration_ideal,
 				    int * adaptive_threshold);
 void cw_rec_get_statistics_internal(const cw_rec_t * rec, float * dot_sd, float * dash_sd,
-				    float * inter_mark_space_sd, float * character_end_sd);
+				    float * inter_mark_space_sd, float * inter_character_space_sd);
 int cw_rec_get_buffer_length_internal(const cw_rec_t * rec);
 int cw_rec_get_receive_buffer_capacity_internal(void);
 

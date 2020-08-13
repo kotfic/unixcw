@@ -8,6 +8,8 @@
    this context.
  - Use "inter-mark-space" when referring to space between Dots and Dashes
    within one character.  Don't use "end-of-mark space".
+ - Use "inter-character-space" when referring to space between characters
+   within one word. Don't use "end-of-character space".
 
 
 * ALSA

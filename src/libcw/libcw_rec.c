@@ -364,9 +364,9 @@ int cw_rec_get_tolerance(const cw_rec_t * rec)
    @param[out] ims_duration_min
    @param[out] ims_duration_max
    @param[out] ims_duration_ideal
-   @param[out] eoc_duration_min
-   @param[out] eoc_duration_max
-   @param[out] eoc_duration_ideal
+   @param[out] ics_duration_min
+   @param[out] ics_duration_max
+   @param[out] ics_duration_ideal
    @param[out] adaptive_threshold
 */
 void cw_rec_get_parameters_internal(cw_rec_t * rec,
@@ -376,9 +376,9 @@ void cw_rec_get_parameters_internal(cw_rec_t * rec,
 				    int * ims_duration_min,
 				    int * ims_duration_max,
 				    int * ims_duration_ideal,
-				    int * eoc_duration_min,
-				    int * eoc_duration_max,
-				    int * eoc_duration_ideal,
+				    int * ics_duration_min,
+				    int * ics_duration_max,
+				    int * ics_duration_ideal,
 				    int * adaptive_threshold)
 {
 	cw_rec_sync_parameters_internal(rec);
@@ -398,10 +398,10 @@ void cw_rec_get_parameters_internal(cw_rec_t * rec,
 	if (ims_duration_max)   { *ims_duration_max   = rec->ims_duration_max; }
 	if (ims_duration_ideal) { *ims_duration_ideal = rec->ims_duration_ideal; }
 
-	/* End-of-character. */
-	if (eoc_duration_min)   { *eoc_duration_min   = rec->eoc_duration_min; }
-	if (eoc_duration_max)   { *eoc_duration_max   = rec->eoc_duration_max; }
-	if (eoc_duration_ideal) { *eoc_duration_ideal = rec->eoc_duration_ideal; }
+	/* Inter-character-space. */
+	if (ics_duration_min)   { *ics_duration_min   = rec->ics_duration_min; }
+	if (ics_duration_max)   { *ics_duration_max   = rec->ics_duration_max; }
+	if (ics_duration_ideal) { *ics_duration_ideal = rec->ics_duration_ideal; }
 
 	if (adaptive_threshold) { *adaptive_threshold = rec->adaptive_speed_threshold; }
 
@@ -605,8 +605,8 @@ void cw_rec_duration_stats_update_internal(cw_rec_t * rec, stat_type_t type, int
 	case CW_REC_STAT_INTER_MARK_SPACE:
 		ideal = rec->ims_duration_ideal;
 		break;
-	case CW_REC_STAT_ICHAR_SPACE:
-		ideal = rec->eoc_duration_ideal;
+	case CW_REC_STAT_INTER_CHARACTER_SPACE:
+		ideal = rec->ics_duration_ideal;
 		break;
 	default:
 		ideal = duration;
@@ -693,10 +693,10 @@ cw_ret_t cw_rec_duration_stats_get_internal(const cw_rec_t * rec, stat_type_t ty
    These statistics may be used to obtain a measure of the accuracy of
    received Morse code.
 
-   The values @p dot_sd and @p dash_sd contain the standard deviation
-   of dot and dash durations from the ideal values, and @p
-   inter_mark_space_sd and @p character_end_sd the deviations for inter
-   element and inter character spacing.
+   The values @p dot_sd and @p dash_sd contain the standard deviation of dot
+   and dash durations from the ideal values, and @p inter_mark_space_sd and
+   @p inter_character_space_sd contain the deviations for inter-mark-space
+   and inter-character-space.
 
    Statistics are held for all timings in a 256 element circular
    buffer.  If any statistic cannot be calculated, because no records
@@ -711,10 +711,10 @@ cw_ret_t cw_rec_duration_stats_get_internal(const cw_rec_t * rec, stat_type_t ty
    @param[out] dot_sd
    @param[out] dash_sd
    @param[out] inter_mark_space_sd
-   @param[out] character_end_sd
+   @param[out] inter_character_space_sd
 */
 void cw_rec_get_statistics_internal(const cw_rec_t * rec, float * dot_sd, float * dash_sd,
-				    float * inter_mark_space_sd, float * character_end_sd)
+				    float * inter_mark_space_sd, float * inter_character_space_sd)
 {
 	/* TODO: cw_rec_get_statistics_internal() function appears to be
 	   getting standard deviations ("sd") but
@@ -732,8 +732,8 @@ void cw_rec_get_statistics_internal(const cw_rec_t * rec, float * dot_sd, float 
 	if (inter_mark_space_sd) {
 		cw_rec_duration_stats_get_internal(rec, CW_REC_STAT_INTER_MARK_SPACE, inter_mark_space_sd);
 	}
-	if (character_end_sd) {
-		cw_rec_duration_stats_get_internal(rec, CW_REC_STAT_ICHAR_SPACE, character_end_sd);
+	if (inter_character_space_sd) {
+		cw_rec_duration_stats_get_internal(rec, CW_REC_STAT_INTER_CHARACTER_SPACE, inter_character_space_sd);
 	}
 	return;
 }
@@ -1176,7 +1176,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 	/* We just added a Mark to the receive buffer.  If the buffer is
 	   full, then we have to do something, even though it's unlikely.
 	   What we'll do is make a unilateral declaration that if we get this
-	   far, we go to end-of-char error state automatically. */
+	   far, we go to inter-character-space-error state automatically. */
 	if (rec->representation_ind == CW_REC_REPRESENTATION_CAPACITY - 1) {
 
 		CW_REC_SET_STATE (rec, RS_EOC_GAP_ERR, (&cw_debug_object));
@@ -1288,7 +1288,7 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, char *
 	   separate function. */
 
 	/* If we can't send back any result through @p mark, let's move to
-	   either "end-of-character, in error" or "end-of-word, in error"
+	   either "inter-character-space, in error" or "end-of-word, in error"
 	   state.
 
 	   To decide which error state to choose, we will treat @p
@@ -1296,7 +1296,7 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, char *
 
 	   Depending on the duration of Space, we pick which of the error
 	   states to move to, and move to it.  The comparison is against the
-	   expected end-of-char delay.  If it's larger, then fix at word
+	   expected inter-character-space duration.  If it's larger, then fix at word
 	   error, otherwise settle on char error.
 
 	   TODO: reconsider this for a moment: the function has been
@@ -1305,7 +1305,7 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, char *
 	   mark_duration as duration of *space*? And do we want to
 	   move to either RS_EOW_GAP_ERR or RS_EOC_GAP_ERR pretending that
 	   this is a duration of *space*? */
-	CW_REC_SET_STATE (rec, (mark_duration > rec->eoc_duration_max ? RS_EOW_GAP_ERR : RS_EOC_GAP_ERR), (&cw_debug_object));
+	CW_REC_SET_STATE (rec, (mark_duration > rec->ics_duration_max ? RS_EOW_GAP_ERR : RS_EOC_GAP_ERR), (&cw_debug_object));
 
 	return CW_FAILURE;
 }
@@ -1582,7 +1582,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 
 	/* Receiver is in one of these states
 	   - inter-mark-space, or
-	   - end-of-character gap, or
+	   - inter-character-space, or
 	   - end-of-word gap.
 	   To see which case is true, calculate duration of this Space
 	   by comparing current/given timestamp with end of last
@@ -1605,24 +1605,23 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 	/* Synchronize parameters if required */
 	cw_rec_sync_parameters_internal(rec);
 
-	if (space_duration >= rec->eoc_duration_min
-	    && space_duration <= rec->eoc_duration_max) {
+	if (space_duration >= rec->ics_duration_min
+	    && space_duration <= rec->ics_duration_max) {
 
-		//fprintf(stderr, "EOC: space duration = %d (%d - %d)\n", space_duration, rec->eoc_duration_min, rec->eoc_duration_max);
+		//fprintf(stderr, "ICS: space duration = %d (%d - %d)\n", space_duration, rec->ics_duration_min, rec->ics_duration_max);
 
-		/* The space is, within tolerance, an end-of-character
-		   gap.
+		/* The space is, within tolerance, an inter-character-space.
 
 		   We have a complete character representation in
 		   receiver's buffer and we can return it. */
 		cw_rec_poll_representation_eoc_internal(rec, space_duration, representation, is_end_of_word, is_error);
 		return CW_SUCCESS;
 
-	} else if (space_duration > rec->eoc_duration_max) {
+	} else if (space_duration > rec->ics_duration_max) {
 
-		// fprintf(stderr, "EOW: space duration = %d (> %d) ------------- \n", space_duration, rec->eoc_duration_max);
+		// fprintf(stderr, "EOW: space duration = %d (> %d) ------------- \n", space_duration, rec->ics_duration_max);
 
-		/* The space is too long for end-of-character
+		/* The space is too long for inter-character-space
 		   state. This should be end-of-word state. We have
 		   to inform client code about this, too.
 
@@ -1631,7 +1630,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 		cw_rec_poll_representation_eow_internal(rec, representation, is_end_of_word, is_error);
 		return CW_SUCCESS;
 
-	} else { /* space_duration < rec->eoc_duration_min */
+	} else { /* space_duration < rec->ics_duration_min */
 		/* We are still inside a character (inside an
 		   inter-mark-space, to be precise). The receiver
 		   can't return a representation, because building a
@@ -1649,13 +1648,13 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 
 
 /**
-   @brief Return representation and flags of receiver that is at end-of-character Space state
+   @brief Return representation and flags of receiver that is at inter-character-space state
 
    Return representation of received character and receiver's state
-   flags after receiver has encountered end-of-character gap. The
+   flags after receiver has encountered inter-character-space. The
    representation is appended to end of @p representation.
 
-   Update receiver's state so that it matches end-of-character state.
+   Update receiver's state so that it matches inter-character-space state.
 
    Since this is _eoc_ function, @p is_end_of_word is set to false.
 
@@ -1685,7 +1684,7 @@ void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
 
 		   Update duration statistics for Space identified as
 		   inter-character-space. */
-		cw_rec_duration_stats_update_internal(rec, CW_REC_STAT_ICHAR_SPACE, space_duration);
+		cw_rec_duration_stats_update_internal(rec, CW_REC_STAT_INTER_CHARACTER_SPACE, space_duration);
 
 		/* Set the new real state of receiver. */
 		CW_REC_SET_STATE (rec, RS_EOC_GAP, (&cw_debug_object));
@@ -2008,7 +2007,7 @@ void cw_rec_sync_parameters_internal(cw_rec_t * rec)
 	rec->dot_duration_ideal = unit_duration;
 	rec->dash_duration_ideal = 3 * unit_duration;
 	rec->ims_duration_ideal = unit_duration;
-	rec->eoc_duration_ideal = 3 * unit_duration;
+	rec->ics_duration_ideal = 3 * unit_duration;
 
 	/* These two lines mimic calculations done in
 	   cw_gen_sync_parameters_internal().  See the function for
@@ -2033,21 +2032,21 @@ void cw_rec_sync_parameters_internal(cw_rec_t * rec)
 		rec->dash_duration_max = INT_MAX;
 
 #if 0
-		int debug_eoc_duration_max = rec->eoc_duration_max;
+		int debug_ics_duration_max = rec->ics_duration_max;
 #endif
 
 		/* Make the inter-mark-space be anything up to the
 		   adaptive threshold durations - that is two Dots.  And
-		   the end-of-character gap is anything longer than
+		   the inter-character-space is anything longer than
 		   that, and shorter than five Dots. */
 		rec->ims_duration_min = rec->dot_duration_min;
 		rec->ims_duration_max = rec->dot_duration_max;
-		rec->eoc_duration_min = rec->ims_duration_max;
-		rec->eoc_duration_max = 5 * rec->dot_duration_ideal;
+		rec->ics_duration_min = rec->ims_duration_max;
+		rec->ics_duration_max = 5 * rec->dot_duration_ideal;
 
 #if 0
-		if (debug_eoc_duration_max != rec->eoc_duration_max) {
-			fprintf(stderr, "eoc_duration_max changed from %d to %d --------\n", debug_eoc_duration_max, rec->eoc_duration_max);
+		if (debug_ics_duration_max != rec->ics_duration_max) {
+			fprintf(stderr, "ics_duration_max changed from %d to %d --------\n", debug_ics_duration_max, rec->ics_duration_max);
 		}
 #endif
 
@@ -2065,16 +2064,16 @@ void cw_rec_sync_parameters_internal(cw_rec_t * rec)
 		rec->ims_duration_min = rec->dot_duration_min;
 		rec->ims_duration_max = rec->dot_duration_max;
 
-		/* Make the end-of-character gap, expected to be
+		/* Make the inter-character-space, expected to be
 		   three dots, the same as dash duration range at the
 		   lower end, but make it the same as the dash duration
 		   range _plus_ the "Farnsworth" delay at the top of
 		   the duration range. */
-		rec->eoc_duration_min = rec->dash_duration_min;
-		rec->eoc_duration_max = rec->dash_duration_max
+		rec->ics_duration_min = rec->dash_duration_min;
+		rec->ics_duration_max = rec->dash_duration_max
 			+ rec->additional_delay + rec->adjustment_delay;
 
-		/* Any gap longer than eoc_duration_max is by implication
+		/* Any gap longer than ics_duration_max is by implication
 		   end-of-word gap. */
 	}
 
@@ -2085,7 +2084,7 @@ void cw_rec_sync_parameters_internal(cw_rec_t * rec)
 		      rec->dot_duration_min, rec->dot_duration_max,
 		      rec->dash_duration_min, rec->dash_duration_max,
 		      rec->ims_duration_min, rec->ims_duration_max, rec->ims_duration_ideal,
-		      rec->eoc_duration_min, rec->eoc_duration_max, rec->eoc_duration_ideal,
+		      rec->ics_duration_min, rec->ics_duration_max, rec->ics_duration_ideal,
 		      rec->adaptive_speed_threshold);
 
 	/* Receiver parameters are now in sync. */
@@ -2154,4 +2153,3 @@ int cw_rec_get_label(const cw_rec_t * rec, char * label, size_t size)
 
 	return CW_SUCCESS;
 }
-
