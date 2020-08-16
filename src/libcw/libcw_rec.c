@@ -1578,7 +1578,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 		   || RS_EOC_GAP == rec->state
 		   || RS_EOC_GAP_ERR == rec->state,
 
-		   MSG_PREFIX "poll: unexpected receiver state %d / %s", rec->state, cw_receiver_states[rec->state]);
+		   MSG_PREFIX "poll: unexpected receiver state %d", rec->state);
 
 	/* Receiver is in one of these states
 	   - inter-mark-space, or
