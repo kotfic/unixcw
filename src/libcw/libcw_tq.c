@@ -226,7 +226,7 @@ cw_tone_queue_t * cw_tq_new_internal(void)
    @reviewed 2020-07-28
    @endinternal
 
-   @param tq[in] tone queue to delete
+   @param[in] tq tone queue to delete
 */
 void cw_tq_delete_internal(cw_tone_queue_t ** tq)
 {
@@ -333,9 +333,9 @@ void cw_tq_make_empty_internal(cw_tone_queue_t * tq)
    @reviewed 2020-07-28
    @endinternal
 
-   @param tq[in] tone queue to configure
-   @param capacity[in] new capacity of queue
-   @param high_water_mark[in] high water mark for the queue
+   @param[in] tq tone queue to configure
+   @param[in] capacity new capacity of queue
+   @param[in] high_water_mark high water mark for the queue
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -387,7 +387,7 @@ cw_ret_t cw_tq_set_capacity_internal(cw_tone_queue_t * tq, size_t capacity, size
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq tone queue, for which you want to get capacity
+   @param[in] tq tone queue, for which you want to get capacity
 
    @return capacity of tone queue
 */
@@ -409,7 +409,7 @@ size_t cw_tq_capacity_internal(const cw_tone_queue_t * tq)
    @reviewed 2020-07-28
    @endinternal
 
-   @param tq[in] tone queue from which to get high water mark
+   @param[in] tq tone queue from which to get high water mark
 
    @return high water mark of tone queue
 */
@@ -430,7 +430,7 @@ size_t cw_tq_get_high_water_mark_internal(const cw_tone_queue_t * tq)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue
+   @param[in] tq tone queue
 
    @return the count of tones currently held in the tone queue
 */
@@ -458,8 +458,8 @@ size_t cw_tq_length_internal(cw_tone_queue_t * tq)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue for which to calculate previous index
-   @param ind[in] index in relation to which to calculate index of previous slot in queue
+   @param[in] tq tone queue for which to calculate previous index
+   @param[in] ind index in relation to which to calculate index of previous slot in queue
 
    @return index of previous slot in queue
 */
@@ -483,8 +483,8 @@ size_t cw_tq_prev_index_internal(const cw_tone_queue_t * tq, size_t ind)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue for which to calculate next index
-   @param ind[in] index in relation to which to calculate index of next slot in queue
+   @param[in] tq tone queue for which to calculate next index
+   @param[in] ind index in relation to which to calculate index of next slot in queue
 
    @return index of next slot in queue
 */
@@ -531,8 +531,8 @@ size_t cw_tq_next_index_internal(const cw_tone_queue_t * tq, size_t ind)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue to dequeue tone from
-   @param tone[out] dequeued tone
+   @param[in] tq tone queue to dequeue tone from
+   @param[out] tone dequeued tone
 
    @return CW_SUCCESS if a tone has been dequeued
    @return CW_FAILURE if no tone has been dequeued
@@ -599,8 +599,8 @@ cw_ret_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue to dequeue from
-   @param tone[out] dequeued tone
+   @param[in] tq tone queue to dequeue from
+   @param[out] tone dequeued tone
 
    @return true if a condition for calling "low watermark" callback is true
    @return false otherwise
@@ -696,8 +696,8 @@ bool cw_tq_dequeue_sub_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
    @exception EINVAL invalid values of @p tone
    @exception EAGAIN tone not enqueued because tone queue is full
 
-   @param tq[in] tone queue to enqueue to
-   @param tone[in] tone to enqueue
+   @param[in] tq tone queue to enqueue to
+   @param[in] tone tone to enqueue
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -803,10 +803,10 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue in which to register a callback
-   @param callback_func[in] callback function to be registered
-   @param callback_arg[in] argument for callback_func to pass return value
-   @param level[in] low level of queue triggering call of the callback
+   @param[in] tq tone queue in which to register a callback
+   @param[in] callback_func callback function to be registered
+   @param[in] callback_arg argument for callback_func to pass return value
+   @param[in] level low level of queue triggering call of the callback
 
    @return CW_SUCCESS on successful registration
    @return CW_FAILURE on failure
@@ -841,7 +841,7 @@ cw_ret_t cw_tq_register_low_level_callback_internal(cw_tone_queue_t * tq, cw_que
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue to wait on
+   @param[in] tq tone queue to wait on
 
    @return CW_SUCCESS
 */
@@ -885,8 +885,8 @@ cw_ret_t cw_tq_wait_for_end_of_current_tone_internal(cw_tone_queue_t * tq)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue to wait on
-   @param level[in] low level in queue, at which to return
+   @param[in] tq tone queue to wait on
+   @param[in] level low level in queue, at which to return
 
    @return CW_SUCCESS
 */
@@ -924,7 +924,7 @@ cw_ret_t cw_tq_wait_for_level_internal(cw_tone_queue_t * tq, size_t level)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue to check
+   @param[in] tq tone queue to check
 
    @return true if tone queue is full
    @return false if tone queue is not full
@@ -950,7 +950,7 @@ bool cw_tq_is_full_internal(const cw_tone_queue_t * tq)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq tone queue to empty
+   @param[in] tq tone queue to empty
 */
 void cw_tq_flush_internal(cw_tone_queue_t * tq)
 {
@@ -985,7 +985,7 @@ void cw_tq_flush_internal(cw_tone_queue_t * tq)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue to check
+   @param[in] tq tone queue to check
 
    @return true if queue is non-empty
    @return false otherwise
@@ -1012,7 +1012,7 @@ bool cw_tq_is_nonempty_internal(const cw_tone_queue_t * tq)
    @reviewed 2020-07-29
    @endinternal
 
-   @param tq[in] tone queue from which to remove tones
+   @param[in] tq tone queue from which to remove tones
 */
 void cw_tq_handle_backspace_internal(cw_tone_queue_t * tq)
 {

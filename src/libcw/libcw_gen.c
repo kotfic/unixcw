@@ -845,7 +845,7 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, int sound_system, const char *
 	/* This function deliberately checks all possible values of
 	   sound system name in separate 'if' clauses before it gives
 	   up and returns CW_FAILURE. PA/OSS/ALSA are combined with
-	   SOUNDCARD, so I have to check all three of them (because \p
+	   SOUNDCARD, so I have to check all three of them (because @p
 	   sound_system may be set to SOUNDCARD). And since I check
 	   the three in separate 'if' clauses, I can check all other
 	   values of sound system as well. */
@@ -1645,7 +1645,7 @@ void cw_gen_empty_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_
 {
 	/* All tones have been already dequeued from tone queue.
 
-	   \p tone does not represent a valid tone to generate. At
+	   @p tone does not represent a valid tone to generate. At
 	   first sight there is no need to write anything to
 	   soundcard. But...
 

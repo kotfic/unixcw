@@ -1526,10 +1526,10 @@ cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const struct timeval * timestamp, char 
    @exception EAGAIN function called too early, representation not ready yet
 
    @param[in,out] rec receiver
-   @param[in] timestamp, may be NULL
+   @param[in] timestamp (may be NULL)
    @param[out] representation representation of character from receiver's buffer
-   @param[out] is_end_of_word flag indicating if receiver is at end of word, may be NULL
-   @param[out] is_error flag indicating whether receiver is in error state, may be NULL
+   @param[out] is_end_of_word flag indicating if receiver is at end of word (may be NULL)
+   @param[out] is_error flag indicating whether receiver is in error state (may be NULL)
 
    @return CW_SUCCESS if a correct representation has been returned through @p representation
    @return CW_FAILURE otherwise
@@ -1665,8 +1665,8 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
    @param[in,out] rec receiver
    @param[in] space_duration duration of current inter-character-space
    @param[out] representation representation of character from receiver's buffer
-   @param[out] is_end_of_word flag indicating if receiver is at end of word, may be NULL
-   @param[out] is_error flag indicating whether receiver is in error state, may be NULL
+   @param[out] is_end_of_word flag indicating if receiver is at end of word (may be NULL)
+   @param[out] is_error flag indicating whether receiver is in error state (may be NULL)
 */
 void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
 					     int space_duration,
@@ -1737,8 +1737,8 @@ void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
 
    @param[in,out] rec receiver
    @param[out] representation representation of character from receiver's buffer
-   @param[out] is_end_of_word flag indicating if receiver is at end of word, may be NULL
-   @param[out] is_error flag indicating whether receiver is in error state, may be NULL
+   @param[out] is_end_of_word flag indicating if receiver is at end of word (may be NULL)
+   @param[out] is_error flag indicating whether receiver is in error state (may be NULL)
 */
 void cw_rec_poll_representation_eow_internal(cw_rec_t * rec,
 					     char * representation,
@@ -1813,10 +1813,10 @@ void cw_rec_poll_representation_eow_internal(cw_rec_t * rec,
    @exception ENOENT function can't convert representation retrieved from receiver into a character
 
    @param[in,out] rec receiver
-   @param[in] timestamp, may be NULL
+   @param[in] timestamp (may be NULL)
    @param[out] character character received by receiver
-   @param[out] is_end_of_word flag indicating if receiver is at end of word, may be NULL
-   @param[out] is_error flag indicating whether receiver is in error state, may be NULL
+   @param[out] is_end_of_word flag indicating if receiver is at end of word (may be NULL)
+   @param[out] is_error flag indicating whether receiver is in error state (may be NULL)
 
    @return CW_SUCCESS if a character has been recognized by receiver and is returned through @p character
    @return CW_FAILURE otherwise

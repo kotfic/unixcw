@@ -129,7 +129,7 @@ static void cw_event_debugging_flush_internal(cw_debug_t * debug_object);
    @reviewed 2020-08-01
    @endinternal
 
-   @param debug_object[in] debug object from which to flush events
+   @param[in] debug_object debug object from which to flush events
 */
 void cw_event_debugging_flush_internal(cw_debug_t * debug_object)
 {
@@ -170,8 +170,8 @@ void cw_event_debugging_flush_internal(cw_debug_t * debug_object)
    @reviewed 2020-08-01
    @endinternal
 
-   @param debug_object[in] debug object for which to set flags
-   @param flags[in] new value to be assigned to the object, a sum of one or
+   @param[in] debug_object debug object for which to set flags
+   @param[in] flags new value to be assigned to the object, a sum of one or
    more of CW_DEBUG_* flags from libcw.h
 */
 void cw_debug_set_flags(cw_debug_t * debug_object, uint32_t flags)
@@ -258,8 +258,8 @@ uint32_t cw_debug_get_flags(const cw_debug_t * debug_object)
    @reviewed 2020-08-01
    @endinternal
 
-   @param debug object[in] - debug object to be checked
-   @param flag[in] flag to be checked, one of CW_DEBUG_* flags from libcw.h
+   @param[in] debug_object debug object to be checked
+   @param[in] flag flag to be checked, one of CW_DEBUG_* flags from libcw.h
 
    @return true if given flag is set
    @return false otherwise
@@ -290,7 +290,7 @@ bool cw_debug_has_flag(const cw_debug_t * debug_object, uint32_t flag)
    @reviewed 2020-08-01
    @endinternal
 
-   @param gen[in] generator
+   @param[in] gen generator
 */
 void cw_dev_debug_print_generator_setup(const cw_gen_t * gen)
 {
@@ -369,7 +369,7 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t * gen)
    @reviewed 2020-08-01
    @endinternal
 
-   @param gen[in] generator
+   @param[in] gen generator
 
    @return CW_SUCCESS on write success
    @return CW_FAILURE otherwise
@@ -419,11 +419,11 @@ int cw_dev_debug_raw_sink_write_internal(cw_gen_t * gen)
    @reviewed 2020-08-01
    @endinternal
 
-   @param debug_object[in] debug object
-   @param flag[in] one of CW_DEBUG_* flags from libcw.h
-   @param event[in] one of CW_DEBUG_EVENT_* flags from libcw_debug.h
-   @param func[in] function where the event occurred
-   @param line[in] file line in which the event occurred
+   @param[in] debug_object debug object
+   @param[in] flag one of CW_DEBUG_* flags from libcw.h
+   @param[in] event one of CW_DEBUG_EVENT_* flags from libcw_debug.h
+   @param[in] func function where the event occurred
+   @param[in] line file line in which the event occurred
 */
 void cw_debug_event_internal(cw_debug_t * debug_object, uint32_t flag, uint32_t event, const char * func, int line)
 {

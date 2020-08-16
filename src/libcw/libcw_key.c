@@ -168,8 +168,8 @@ static cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_val
    The timer is owned by client code, and is used to measure and clock
    iambic keyer.
 
-   @param key
-   @param timer
+   @param[in] key
+   @param[in] timer
 */
 void cw_key_ik_register_timer_internal(volatile cw_key_t * key, struct timeval * timer)
 {
@@ -196,8 +196,8 @@ void cw_key_ik_register_timer_internal(volatile cw_key_t * key, struct timeval *
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in/out] key that needs to have a generator associated with it
-   @param gen[in/out] generator to be used with given keyer
+   @param[in,out] key key that needs to have a generator associated with it
+   @param[in,out] gen generator to be used with given keyer
 */
 void cw_key_register_generator(volatile cw_key_t * key, cw_gen_t * gen)
 {
@@ -243,8 +243,8 @@ void cw_key_register_generator(volatile cw_key_t * key, cw_gen_t * gen)
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in/out] key that needs to have a receiver associated with it
-   @param rec[rec] receiver to be used with given key
+   @param[in,out] key key that needs to have a receiver associated with it
+   @param[in] rec receiver to be used with given key
 */
 void cw_key_register_receiver(volatile cw_key_t * key, cw_rec_t * rec)
 {
@@ -276,8 +276,8 @@ void cw_key_register_receiver(volatile cw_key_t * key, cw_rec_t * rec)
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in] key in use
-   @param key_value[in] key value to be set
+   @param[in] key key in use
+   @param[in] key_value key value to be set
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -371,9 +371,9 @@ cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in] current key
-   @param key_value[in] key value to be set
-   @param symbol[in] symbol to enqueue (Space, Dot, Dash)
+   @param[in] key current key
+   @param[in] key_value key value to be set
+   @param[in] symbol symbol to enqueue (Space, Dot, Dash)
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -429,7 +429,7 @@ cw_ret_t cw_key_ik_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in] key for which to change the parameter
+   @param[in] key key for which to change the parameter
 */
 void cw_key_ik_enable_curtis_mode_b(volatile cw_key_t * key)
 {
@@ -447,7 +447,7 @@ void cw_key_ik_enable_curtis_mode_b(volatile cw_key_t * key)
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in] key for which to change the parameter
+   @param[in] key key for which to change the parameter
 */
 void cw_key_ik_disable_curtis_mode_b(volatile cw_key_t * key)
 {
@@ -465,7 +465,7 @@ void cw_key_ik_disable_curtis_mode_b(volatile cw_key_t * key)
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in] key to investigate
+   @param[in] key key to investigate
 
    @return true if Curtis mode is enabled for the key
    @return false otherwise
@@ -497,7 +497,7 @@ bool cw_key_ik_get_curtis_mode_b(const volatile cw_key_t *key)
    @reviewed 2020-08-01
    @endinternal
 
-   @param key[in] iambic key
+   @param[in] key iambic key
 
    @return CW_FAILURE if there is a lock and the function cannot proceed
    @return CW_SUCCESS otherwise
@@ -721,9 +721,9 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key to notify about changed values of paddles
-   @param dot_paddle_value[in] value of dot paddle
-   @param dash_paddle_value[in] value of dash paddle
+   @param[in] key key to notify about changed values of paddles
+   @param[in] dot_paddle_value value of dot paddle
+   @param[in] dash_paddle_value value of dash paddle
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -812,7 +812,7 @@ cw_ret_t cw_key_ik_notify_paddle_event(volatile cw_key_t * key, cw_key_value_t d
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key for which to initiate its work
+   @param[in] key key for which to initiate its work
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -902,8 +902,8 @@ static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t 
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key for which to change value of Dot paddle
-   @param dot_paddle_value[in] new value of Dot paddle
+   @param[in] key key for which to change value of Dot paddle
+   @param[in] dot_paddle_value new value of Dot paddle
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -927,8 +927,8 @@ cw_ret_t cw_key_ik_notify_dot_paddle_event(volatile cw_key_t * key, cw_key_value
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key for which to change value of Dash paddle
-   @param dash_paddle_value[in] new value of Dash paddle
+   @param[in] key key for which to change value of Dash paddle
+   @param[in] dash_paddle_value new value of Dash paddle
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -950,9 +950,9 @@ cw_ret_t cw_key_ik_notify_dash_paddle_event(volatile cw_key_t * key, cw_key_valu
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key from which to get values of paddles
-   @param dot_paddle_value[out] current value of Dot paddle
-   @param dash_paddle_value[out] current value of Dash paddle
+   @param[in] key key from which to get values of paddles
+   @param[out] dot_paddle_value current value of Dot paddle
+   @param[out] dash_paddle_value current value of Dash paddle
 */
 void cw_key_ik_get_paddles(const volatile cw_key_t * key, cw_key_value_t * dot_paddle_value, cw_key_value_t * dash_paddle_value)
 {
@@ -982,9 +982,9 @@ void cw_key_ik_get_paddles(const volatile cw_key_t * key, cw_key_value_t * dot_p
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key from which to get values of latches
-   @param dot_paddle_latch_state[out]: current state of Dot paddle latch. Will be updated with true or false. TODO: true/false or OPEN/CLOSED?
-   @param dash_paddle_latch_state[out]: current state of Dash paddle latch. Will be updated with true or false. TODO: true/false or OPEN/CLOSED?
+   @param[in] key key from which to get values of latches
+   @param[out] dot_paddle_latch_state current state of Dot paddle latch. Will be updated with true or false. TODO: true/false or OPEN/CLOSED?
+   @param[out] dash_paddle_latch_state current state of Dash paddle latch. Will be updated with true or false. TODO: true/false or OPEN/CLOSED?
 */
 void cw_key_ik_get_paddle_latches_internal(volatile cw_key_t * key, /* out */ int * dot_paddle_latch_state, /* out */ int * dash_paddle_latch_state)
 {
@@ -1007,7 +1007,7 @@ void cw_key_ik_get_paddle_latches_internal(volatile cw_key_t * key, /* out */ in
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key which business to check
+   @param[in] key key which business to check
 
    @return true if keyer is busy (keyer's graph state is other than IDLE)
    @return false if keyer is not busy (keyer's graph state is IDLE)
@@ -1032,7 +1032,7 @@ bool cw_key_ik_is_busy_internal(const volatile cw_key_t * key)
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key on which to wait
+   @param[in] key key on which to wait
 
    @return CW_SUCCESS
 */
@@ -1089,7 +1089,7 @@ cw_ret_t cw_key_ik_wait_for_end_of_current_element(const volatile cw_key_t * key
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key on which to wait
+   @param[in] key key on which to wait
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -1132,7 +1132,7 @@ cw_ret_t cw_key_ik_wait_for_keyer(volatile cw_key_t * key)
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key to reset
+   @param[in] key key to reset
 */
 void cw_key_ik_reset_internal(volatile cw_key_t * key)
 {
@@ -1175,8 +1175,8 @@ void cw_key_ik_reset_internal(volatile cw_key_t * key)
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key with timer to be updated
-   @param usecs[in] amount of increase (usually length of a tone) for internal timer
+   @param[in] key key with timer to be updated
+   @param[in] usecs amount of increase (usually length of a tone) for internal timer
 */
 void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs)
 {
@@ -1231,8 +1231,8 @@ void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs)
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] straight key to update
-   @param key_value[in] new value of straight key
+   @param[in] key straight key to update
+   @param[in] key_value new value of straight key
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -1261,8 +1261,8 @@ cw_ret_t cw_key_sk_set_value(volatile cw_key_t * key, cw_key_value_t key_value)
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key to get value from
-   @param key_value[out] value of key
+   @param[in] key key to get value from
+   @param[out] key_value value of key
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise (e.g. argument errors)
@@ -1289,7 +1289,7 @@ cw_ret_t cw_key_sk_get_value(const volatile cw_key_t * key, cw_key_value_t * key
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] key to reset
+   @param[in] key key to reset
 */
 void cw_key_sk_reset_internal(volatile cw_key_t * key)
 {
@@ -1368,7 +1368,7 @@ cw_key_t * cw_key_new(void)
    @reviewed 2020-08-02
    @endinternal
 
-   @param key[in] pointer to key to delete
+   @param[in] key pointer to key to delete
 */
 void cw_key_delete(cw_key_t ** key)
 {

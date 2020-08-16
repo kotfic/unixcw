@@ -128,7 +128,7 @@ static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state);
 
    @reviewed on 2020-07-14
 
-   @param device_name[in] name of console buzzer device to be used; if NULL
+   @param[in] device_name name of console buzzer device to be used; if NULL
    then the function will use library-default device name.
 
    @return true if opening console output succeeded
@@ -189,7 +189,7 @@ bool cw_is_console_possible(const char * device_name)
 
    @reviewed on 2020-07-14
 
-   @param gen[in] generator for which to open and configure buzzer device
+   @param[in] gen generator for which to open and configure buzzer device
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -230,7 +230,7 @@ static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * g
 
    @reviewed on 2020-07-14
 
-   @param gen[in] generator to silence
+   @param[in] gen generator to silence
 */
 void cw_console_silence(cw_gen_t * gen)
 {
@@ -246,7 +246,7 @@ void cw_console_silence(cw_gen_t * gen)
 
    @reviewed on 2020-07-14
 
-   @param gen[in] generator for which to close its sound device
+   @param[in] gen generator for which to close its sound device
 */
 static void cw_console_close_sound_device_internal(cw_gen_t * gen)
 {
@@ -275,8 +275,8 @@ static void cw_console_close_sound_device_internal(cw_gen_t * gen)
 
    @reviewed on 2020-07-16
 
-   @param gen[in] generator to use to play a tone
-   @param tone[in] tone to play with generator
+   @param[in] gen generator to use to play a tone
+   @param[in] tone tone to play with generator
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -331,8 +331,8 @@ static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, c
 
    @reviewed on 2020-07-16
 
-   @param gen[in] generator
-   @param state[in] flag deciding if a sound should be generated (logical true) or not (logical false)
+   @param[in] gen generator
+   @param[in] state flag deciding if a sound should be generated (logical true) or not (logical false)
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -381,8 +381,8 @@ static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state)
 
    @reviewed 2020-07-16
 
-   @param gen[in] generator structure in which to fill some fields
-   @param device_name[in] name of Console device to use
+   @param[in] gen generator structure in which to fill some fields
+   @param[in] device_name name of Console device to use
 
    @return CW_SUCCESS
 */

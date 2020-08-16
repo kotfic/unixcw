@@ -262,7 +262,7 @@ static cw_alsa_handle_t cw_alsa;
 
    @reviewed 2020-07-04
 
-   @param device_name[in] name of ALSA device to be used; if NULL then the
+   @param[in] device_name name of ALSA device to be used; if NULL then the
    function will use library-default device name.
 
    @return true if opening ALSA output succeeded
@@ -325,8 +325,8 @@ bool cw_is_alsa_possible(const char * device_name)
 
    @reviewed 2020-07-07
 
-   @param gen[in] generator structure in which to fill some fields
-   @param device_name[in] name of ALSA device to use
+   @param[in] gen generator structure in which to fill some fields
+   @param[in] device_name name of ALSA device to use
 
    @return CW_SUCCESS
 */
@@ -350,7 +350,7 @@ cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 
    @reviewed 2020-07-07
 
-   @param gen[in] generator that will write to sound device
+   @param[in] gen generator that will write to sound device
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
@@ -385,7 +385,7 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
    @reviewed 2020-07-07
 
-   @param gen[in] generator for which to open and configure PCM handle
+   @param[in] gen generator for which to open and configure PCM handle
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -478,7 +478,7 @@ static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 
    @reviewed 2020-07-07
 
-   @param gen[in] generator for which to close its sound device
+   @param[in] gen generator for which to close its sound device
 */
 static void cw_alsa_close_sound_device_internal(cw_gen_t * gen)
 {
@@ -514,8 +514,8 @@ static void cw_alsa_close_sound_device_internal(cw_gen_t * gen)
 
    @reviewed 2020-07-08
 
-   @param gen[in] generator with ALSA handle
-   @param snd_rv[in] value returned by snd_pcm_writei()
+   @param[in] gen generator with ALSA handle
+   @param[in] snd_rv value returned by snd_pcm_writei()
 
    @return CW_SUCCESS if @p snd_rv is non-error and no other write-related error was detected
    @return CW_FAILURE otherwise
@@ -549,8 +549,8 @@ static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv
 /**
    @brief Set up hardware buffer parameters of ALSA sink
 
-   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
-   @param hw_params[in] allocated hw params data structure to be used by this function
+   @param[in] gen generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param[in] hw_params allocated hw params data structure to be used by this function
 
    @reviewed 2020-07-09
 
@@ -699,8 +699,8 @@ static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params
    Function sets sample rate in @p hw_params, and also sets it in given @p
    gen.
 
-   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
-   @param hw_params[in] allocated hw params data structure to be used by this function
+   @param[in] gen generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param[in] hw_params allocated hw params data structure to be used by this function
 
    @reviewed 2020-07-09
 
@@ -759,9 +759,9 @@ static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_p
 
    TODO: this shouldn't be so complicated. The function is unclear.
 
-   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
-   @param hw_params[in] allocated hw params data structure to be used by this function
-   @param actual_period_size[out] period size that has been selected
+   @param[in] gen generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param[in] hw_params allocated hw params data structure to be used by this function
+   @param[out] actual_period_size period size that has been selected
 
    @reviewed 2020-07-09
 
@@ -865,9 +865,9 @@ static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_p
 /**
    @brief Set value of buffer size in given hw_params variable
 
-   @param gen[in] generator with opened ALSA PCM handle, for which HW parameters should be configured
-   @param hw_params[in] allocated hw params data structure to be used by this function
-   @param actual_period_size[in] period size that has been configured earlier with cw_alsa_set_hw_params_period_size_internal()
+   @param[in] gen generator with opened ALSA PCM handle, for which HW parameters should be configured
+   @param[in] hw_params allocated hw params data structure to be used by this function
+   @param[in] actual_period_size period size that has been configured earlier with cw_alsa_set_hw_params_period_size_internal()
 
    @reviewed 2020-07-09
 
@@ -925,7 +925,7 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
 
    @reviewed 2020-07-10
 
-   @param gen[in] generator variable with opened ALSA PCM handle, for which the period sizes should be tested
+   @param[in] gen generator variable with opened ALSA PCM handle, for which the period sizes should be tested
 */
 __attribute__((unused))
 static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
@@ -976,8 +976,8 @@ static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen)
 
    @reviewed 2020-07-10
 
-   @param hw_params[in] structure from which to print some fields
-   @param where[in] debug indicator used in debug messages printed by this function
+   @param[in] hw_params structure from which to print some fields
+   @param[in] where debug indicator used in debug messages printed by this function
 */
 static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, const char * where)
 {
@@ -1101,7 +1101,7 @@ static void cw_alsa_print_sw_params_internal(snd_pcm_sw_params_t * sw_params, co
 
    @reviewed 2020-07-10
 
-   @param alsa_handle[in] structure with function pointers to set
+   @param[in] alsa_handle structure with function pointers to set
 
    @return 0 on success
    @return negative value on failure, indicating which library symbol failed to load
@@ -1194,7 +1194,7 @@ static int cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle)
 
    @reviewed 2017-02-05
 
-   @param gen[in] generator with ALSA PCM handle
+   @param[in] gen generator with ALSA PCM handle
 */
 void cw_alsa_drop_internal(cw_gen_t * gen)
 {

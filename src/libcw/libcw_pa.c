@@ -134,8 +134,8 @@ static const int CW_PA_BUFFER_N_SAMPLES = 256;
 
    @reviewed 2020-07-20
 
-   @param client_device_name[in] device name provided by library's client code (may be NULL)
-   @param default_device_name[in] library's default device name
+   @param[in] client_device_name device name provided by library's client code (may be NULL)
+   @param[in] default_device_name library's default device name
 
    @return NULL allowing sound system to use default device name
    @return client_device_name otherwise
@@ -161,7 +161,7 @@ static const char * cw_pick_device_name_internal(const char * client_device_name
 
    @reviewed 2020-07-20
 
-   @param device_name[in] name of PulseAudio device to be used; if NULL then
+   @param[in] device_name name of PulseAudio device to be used; if NULL then
    the function will use library-default device name.
 
    @return true if opening PulseAudio output succeeded
@@ -220,8 +220,8 @@ bool cw_is_pa_possible(const char * device_name)
 
    @reviewed 2020-07-20
 
-   @param gen[in] generator structure in which to fill some fields
-   @param device_name[in] name of PulseAudio device to use
+   @param[in] gen generator structure in which to fill some fields
+   @param[in] device_name name of PulseAudio device to use
 
    @return CW_SUCCESS
 */
@@ -247,7 +247,7 @@ cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 
    @reviewed on 2020-07-20
 
-   @param gen[in] generator that will write to sound device
+   @param[in] gen generator that will write to sound device
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
@@ -289,10 +289,10 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
    @reviewed on 2020-07-20
 
-   @param device_name[in] name of PulseAudio device to be used, or NULL for default device
-   @param stream_name[in] descriptive name of client, passed to pa_simple_new
-   @param sample_rate[out] sample rate configured for sound sink
-   @param error[out] potential PulseAudio error code
+   @param[in] device_name name of PulseAudio device to be used, or NULL for default device
+   @param[in] stream_name descriptive name of client, passed to pa_simple_new
+   @param[out] sample_rate sample rate configured for sound sink
+   @param[out] error potential PulseAudio error code
 
    @return pointer to new PulseAudio sink on success
    @return NULL on failure
@@ -346,7 +346,7 @@ static pa_simple * cw_pa_simple_new_internal(const char * device_name, const cha
 
    @reviewed on 2020-07-20
 
-   @param cw_pa[in/out] libcw pa data structure with library handle to opened PulseAudio library
+   @param[in/out] cw_pa libcw pa data structure with library handle to opened PulseAudio library
 
    @return 0 on success
    @return negative value on failure
@@ -378,11 +378,11 @@ static int cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa)
    @brief Open and configure PulseAudio handle stored in given generator
 
    You must use cw_gen_set_sound_device_internal() before calling this
-   function. Otherwise generator \p gen won't know which device to open.
+   function. Otherwise generator @p gen won't know which device to open.
 
    @reviewed on 2020-07-20
 
-   @param gen[in/out] generator for which to open and configure sound system handle
+   @param[in/out] gen generator for which to open and configure sound system handle
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -429,7 +429,7 @@ static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 
    @reviewed on 2020-07-20
 
-   @param gen[in/out] generator for which to close its sound device
+   @param[in/out] gen generator for which to close its sound device
 */
 static void cw_pa_close_sound_device_internal(cw_gen_t * gen)
 {

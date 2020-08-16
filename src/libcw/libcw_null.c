@@ -64,8 +64,8 @@ static cw_ret_t cw_null_write_tone_to_sound_device_internal(cw_gen_t * gen, cw_t
 
    @reviewed 2020-07-12
 
-   @param gen[in] generator structure in which to fill some fields
-   @param device_name[in] name of Null device to use
+   @param[in] gen generator structure in which to fill some fields
+   @param[in] device_name name of Null device to use
 
    @return CW_SUCCESS
 */
@@ -94,7 +94,7 @@ cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 
    @reviewed on 2020-07-12
 
-   @param device_name[in] name of Null device to be used. Value is ignored
+   @param[in] device_name name of Null device to be used. Value is ignored
    for Null sound system.
 
    @return true it's always possible to write to Null device
@@ -112,7 +112,7 @@ bool cw_is_null_possible(__attribute__((unused)) const char * device_name)
 
    @reviewed on 2020-07-12
 
-   @param gen[in] generator for which to open and configure sound system handle
+   @param[in] gen generator for which to open and configure sound system handle
 
    @return CW_SUCCESS
 */
@@ -130,7 +130,7 @@ static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen)
 
    @reviewed on 2020-07-12
 
-   @param gen[in] generator for which to close its sound device
+   @param[in] gen generator for which to close its sound device
 */
 static void cw_null_close_sound_device_internal(cw_gen_t * gen)
 {
@@ -150,7 +150,8 @@ static void cw_null_close_sound_device_internal(cw_gen_t * gen)
 
    @reviewed on 2020-07-12
 
-   @param gen[in] generator that will write to sound device
+   @param[in] gen generator that will write to sound device
+   @param[in] tone tone to write to sound device
 
    @return CW_SUCCESS
 */

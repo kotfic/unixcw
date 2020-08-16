@@ -194,7 +194,7 @@ int cw_get_character_count(void)
    @reviewed 2020-07-25
    @endinternal
 
-   @param list[out] buffer for string with all characters
+   @param[out] list buffer for string with all characters
 */
 void cw_list_characters(char * list)
 {
@@ -262,7 +262,7 @@ int cw_get_maximum_representation_length(void)
    @reviewed 2020-07-25
    @endinternal
 
-   @param character[in] character to look up
+   @param[in] character character to look up
 
    @return pointer to string with representation of character on success
    @return NULL on failure (when @p character has no representation)
@@ -341,8 +341,8 @@ const char * cw_character_to_representation_internal(int character)
    @reviewed 2020-07-25
    @endinternal
 
-   @param character[in] character to look up
-   @param representation[out] pointer to space for representation of character
+   @param[in] character character to look up
+   @param[out] representation pointer to space for representation of character
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -381,7 +381,7 @@ int cw_lookup_character(char character, char * representation)
    @reviewed 2020-07-25
    @endinternal
 
-   @param character[in] character to look up
+   @param[in] character character to look up
 
    @return pointer to freshly allocated representation on success
    @return NULL on failure
@@ -438,7 +438,7 @@ char * cw_character_to_representation(int character)
    @reviewed 2020-07-26
    @endinternal
 
-   @param representation[in] string representing a character
+   @param[in] representation string representing a character
 
    @return non-zero value of hash of valid representation (in range CW_DATA_MIN_REPRESENTATION_HASH-CW_DATA_MAX_REPRESENTATION_HASH)
    @return zero for invalid representation
@@ -489,7 +489,7 @@ uint8_t cw_representation_to_hash_internal(const char * representation)
    @reviewed 2020-07-26
    @endinternal
 
-   @param representation[in] representation of a character to look up
+   @param[in] representation representation of a character to look up
 
    FIXME: function should be able to return zero as non-error value (?).
 
@@ -604,7 +604,7 @@ int cw_representation_to_character_internal(const char * representation)
    @reviewed 2020-07-26
    @endinternal
 
-   @param representation[in] representation of a character to look up
+   @param[in] representation representation of a character to look up
 
    FIXME: function should be able to return zero as non-error value (?).
 
@@ -656,7 +656,7 @@ int cw_representation_to_character_direct_internal(const char * representation)
    @reviewed 2020-07-26
    @endinternal
 
-   @param lookup[in] lookup table to be initialized
+   @param[in] lookup lookup table to be initialized
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
@@ -725,7 +725,7 @@ cw_ret_t cw_representation_lookup_init_internal(const cw_entry_t * lookup[])
    @reviewed 2020-07-26
    @endinternal
 
-   @param representation[in] representation of a character to check
+   @param[in] representation representation of a character to check
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -754,7 +754,7 @@ int cw_check_representation(const char * representation)
 
    @exception EINVAL representation is invalid
 
-   @param representation[in] representation of a character to check
+   @param[in] representation representation of a character to check
 
    @return true if representation is valid
    @return false if representation is invalid
@@ -785,9 +785,9 @@ bool cw_representation_is_valid(const char * representation)
 
    Function checks @p representation, and if it is valid and represents a
    known character, function returns CW_SUCCESS. Additionally, if @p character is
-   non-NULL, function puts the looked up character in \p character.
+   non-NULL, function puts the looked up character in @p character.
 
-   \p character should be allocated by caller. Function assumes that \p
+   @p character should be allocated by caller. Function assumes that @p
    character being NULL pointer is a valid situation, and can return
    CW_SUCCESS in such situation.
 
@@ -799,8 +799,8 @@ bool cw_representation_is_valid(const char * representation)
    @reviewed 2020-07-26
    @endinternal
 
-   @param representation[in] representation of a character to look up
-   @param character[out] location where to put looked up character
+   @param[in] representation representation of a character to look up
+   @param[out] character location where to put looked up character
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
@@ -846,7 +846,7 @@ int cw_lookup_representation(const char * representation, char * character)
    @exception EINVAL @p representation contains invalid symbol (other than Dots and Dashes)
    @exception ENOENT a character represented by @p representation could not be found
 
-   @param representation[in] representation of a character to look up
+   @param[in] representation representation of a character to look up
 
    @return non-zero character on success
    @return zero on failure
@@ -960,7 +960,7 @@ int cw_get_procedural_character_count(void)
    @reviewed 2020-07-26
    @endinternal
 
-   @param list[out] buffer for returned string
+   @param[out] list buffer for returned string
 */
 void cw_list_procedural_characters(char * list)
 {
@@ -1024,8 +1024,8 @@ int cw_get_maximum_procedural_expansion_length(void)
    @reviewed 2020-07-26
    @endinternal
 
-   @param character[in] character to look up
-   @param is_usually_expanded[out] display hint
+   @param[in] character character to look up
+   @param[out] is_usually_expanded display hint
 
    @return expansion of input character on success
    @return NULL if there is no table entry for the given character
@@ -1105,9 +1105,9 @@ const char * cw_lookup_procedural_character_internal(int character, bool * is_us
 
    @exception ENOENT procedural signal character @p character cannot be found
 
-   @param character character to look up
-   @param expansion[out] buffer to fill with expansion of the character
-   @param is_usually_expanded[out] visual hint
+   @param[in] character character to look up
+   @param[out] expansion buffer to fill with expansion of the character
+   @param[out] is_usually_expanded visual hint
 
    @return CW_FAILURE on failure (character cannot be found)
    @return CW_SUCCESS on success
@@ -1229,8 +1229,8 @@ int cw_get_maximum_phonetic_length(void)
 
    @exception ENOENT phonetic for given character cannot be found
 
-   @param character[in] character to look up
-   @param buffer[out] buffer for phonetic of a character, may be NULL
+   @param[in] character character to look up
+   @param[out] buffer buffer for phonetic of a character (may be NULL)
 
    @return CW_SUCCESS on success (phonetic has been found and - if @p buffer is non-NULL) has been copied to the buffer
    @return CW_FAILURE on failure (phonetic for given character cannot be found)
@@ -1275,7 +1275,7 @@ int cw_lookup_phonetic(char character, char * buffer)
    @reviewed 2020-07-25
    @endinternal
 
-   @param character[in] character to check
+   @param[in] character character to check
 
    @return true if character is valid
    @return false otherwise
@@ -1333,7 +1333,7 @@ int cw_check_character(char character)
    @reviewed 2020-07-25
    @endinternal
 
-   @param string[in] string to check
+   @param[in] string string to check
 
    @return true if all characters in string are valid
    @return false otherwise
@@ -1381,8 +1381,6 @@ int cw_check_string(const char * string)
    @internal
    @reviewed 2020-07-25
    @endinternal
-
-   @endhtmlonly
 */
 void cw_data_constructor_internal(void)
 {

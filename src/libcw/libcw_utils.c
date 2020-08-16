@@ -19,9 +19,9 @@
 
 
 /**
-   \file libcw_utils.c
+   @file libcw_utils.c
 
-   \brief Utility functions that should be put in a common place.
+   @brief Utility functions that should be put in a common place.
 
    One of the utilities is cw_dlopen_internal() - a function that
    allowed me to drop compile-time dependency on ALSA libs and
@@ -107,13 +107,13 @@ static void cw_finalization_clock_internal(void);
 
 
 /**
-   \brief Return version number of libcw library
+   @brief Return version number of libcw library
 
    Return the version number of the library.
    Version numbers (major and minor) are returned as an int,
    composed of major_version << 16 | minor_version.
 
-   \return library's major and minor version number encoded as single int
+   @return library's major and minor version number encoded as single int
 */
 int cw_version(void)
 {
@@ -133,10 +133,10 @@ int cw_version(void)
 
 
 /**
-   \brief Return version number of libcw library
+   @brief Return version number of libcw library
 
-   Return version number of the library, split into \p current, \p
-   revision, \p age. These three properties are described here:
+   Return version number of the library, split into @p current, @p
+   revision, @p age. These three properties are described here:
    http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 */
 cw_ret_t cw_get_lib_version(int * current, int * revision, int * age)
@@ -179,7 +179,7 @@ cw_ret_t cw_get_package_version(__attribute__((unused)) int * major, __attribute
 
 
 /**
-   \brief Print libcw's license text to stdout
+   @brief Print libcw's license text to stdout
 
    Function prints to stdout information about libcw version, followed
    by short text presenting libcw's copyright and license notice.
@@ -199,7 +199,7 @@ void cw_license(void)
 
 
 /**
-   \brief Get a readable label of given sound system
+   @brief Get a readable label of given sound system
 
    The function returns one of following strings:
    None, Null, Console, OSS, ALSA, PulseAudio, Soundcard
@@ -208,11 +208,11 @@ void cw_license(void)
 
    TODO: change the declaration to "const char *const cw_get_audio_system_label(...)"?
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param sound_system - ID of sound system
+   @param[] sound_system - ID of sound system
 
-   \return sound system's label
+   @return sound system's label
 */
 const char * cw_get_audio_system_label(int sound_system)
 {
@@ -223,18 +223,18 @@ const char * cw_get_audio_system_label(int sound_system)
 
 
 /**
-   \brief Convert microseconds to struct timespec
+   @brief Convert microseconds to struct timespec
 
-   Function fills fields of struct timespec \p t (seconds and nanoseconds)
-   based on value of \p usecs.
-   \p usecs should be non-negative.
+   Function fills fields of struct timespec @p t (seconds and nanoseconds)
+   based on value of @p usecs.
+   @p usecs should be non-negative.
 
    This function is just a simple wrapper for few lines of code.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param t - pointer to existing struct to be filled with data
-   \param usecs - value to convert to timespec
+   @param[] t - pointer to existing struct to be filled with data
+   @param[] usecs - value to convert to timespec
 */
 void cw_usecs_to_timespec_internal(struct timespec *t, int usecs)
 {
@@ -276,22 +276,22 @@ void cw_usleep_internal(int usecs)
 
 #if (defined(LIBCW_WITH_ALSA) || defined(LIBCW_WITH_PULSEAUDIO))
 /**
-   \brief Try to dynamically open shared library
+   @brief Try to dynamically open shared library
 
-   Function tries to open a shared library specified by \p name using
+   Function tries to open a shared library specified by @p name using
    dlopen() system function. On sucess, handle to open library is
-   returned via \p handle.
+   returned via @p handle.
 
    Name of the library should contain ".so" suffix, e.g.: "libasound.so.2",
    or "libpulse-simple.so".
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param name - name of library to test
-   \param handle - output argument, handle to open library
+   @param[] name - name of library to test
+   @param[] handle - output argument, handle to open library
 
-   \return true on success
-   \return false otherwise
+   @return true on success
+   @return false otherwise
 */
 bool cw_dlopen_internal(const char *name, void **handle)
 {
@@ -319,29 +319,29 @@ bool cw_dlopen_internal(const char *name, void **handle)
 
 
 /**
-   \brief Validate and return timestamp
+   @brief Validate and return timestamp
 
-   If an input timestamp \p in_timestamp is given (non-NULL pointer),
+   If an input timestamp @p in_timestamp is given (non-NULL pointer),
    validate it for correctness, and if valid, copy contents of
-   \p in_timestamp into \p out_timestamp and return CW_SUCCESS.
+   @p in_timestamp into @p out_timestamp and return CW_SUCCESS.
 
-   If \p in_timestamp is non-NULL and the timestamp is invalid, return
+   If @p in_timestamp is non-NULL and the timestamp is invalid, return
    CW_FAILURE with errno set to EINVAL.
 
-   If \p in_timestamp is not given (NULL), get current time (with
-   gettimeofday()), put it in \p out_timestamp and return
+   If @p in_timestamp is not given (NULL), get current time (with
+   gettimeofday()), put it in @p out_timestamp and return
    CW_SUCCESS. If call to gettimeofday() fails, return
    CW_FAILURE. gettimeofday() sets its own errno.
 
-   \p out_timestamp cannot be NULL.
+   @p out_timestamp cannot be NULL.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param out_timestamp - timestamp to be used by client code after the function call
-   \param in_timestamp - timestamp to be validated
+   @param[] out_timestamp - timestamp to be used by client code after the function call
+   @param[] in_timestamp - timestamp to be validated
 
-   \return CW_SUCCESS on success
-   \return CW_FAILURE on failure
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
 cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp)
 {
@@ -378,19 +378,19 @@ cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const vol
 
 
 /**
-   \brief Compare two timestamps
+   @brief Compare two timestamps
 
    Compare two timestamps and return the difference between them in
    microseconds, taking care to clamp values which would overflow an int.
 
    This routine always returns a positive integer in the range 0 to INT_MAX.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param earlier - timestamp to compare
-   \param later - timestamp to compare
+   @param[] earlier - timestamp to compare
+   @param[] later - timestamp to compare
 
-   \return difference between timestamps (in microseconds)
+   @return difference between timestamps (in microseconds)
 */
 int cw_timestamp_compare_internal(const struct timeval * earlier, const struct timeval * later)
 {
@@ -444,7 +444,7 @@ int cw_timestamp_compare_internal(const struct timeval * earlier, const struct t
 
 
 /**
-   \brief Get speed limits
+   @brief Get speed limits
 
    Get (through function's arguments) limits on speed of Morse code that
    are supported by libcw.
@@ -454,10 +454,10 @@ int cw_timestamp_compare_internal(const struct timeval * earlier, const struct t
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param min_speed - minimal allowed speed
-   \param max_speed - maximal allowed speed
+   @param[] min_speed - minimal allowed speed
+   @param[] max_speed - maximal allowed speed
 */
 void cw_get_speed_limits(int *min_speed, int *max_speed)
 {
@@ -475,7 +475,7 @@ void cw_get_speed_limits(int *min_speed, int *max_speed)
 
 
 /**
-   \brief Get frequency limits
+   @brief Get frequency limits
 
    Get (through function's arguments) limits on frequency that are
    supported by libcw.
@@ -485,10 +485,10 @@ void cw_get_speed_limits(int *min_speed, int *max_speed)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param min_frequency - minimal allowed frequency
-   \param max_frequency - maximal allowed frequency
+   @param[] min_frequency - minimal allowed frequency
+   @param[] max_frequency - maximal allowed frequency
 */
 void cw_get_frequency_limits(int *min_frequency, int *max_frequency)
 {
@@ -506,7 +506,7 @@ void cw_get_frequency_limits(int *min_frequency, int *max_frequency)
 
 
 /**
-   \brief Get volume limits
+   @brief Get volume limits
 
    Get (through function's arguments) limits on volume of sound
    supported by libcw and generated by generator.
@@ -516,10 +516,10 @@ void cw_get_frequency_limits(int *min_frequency, int *max_frequency)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param min_volume - minimal allowed volume
-   \param max_volume - maximal allowed volume
+   @param[] min_volume - minimal allowed volume
+   @param[] max_volume - maximal allowed volume
 */
 void cw_get_volume_limits(int *min_volume, int *max_volume)
 {
@@ -536,7 +536,7 @@ void cw_get_volume_limits(int *min_volume, int *max_volume)
 
 
 /**
-   \brief Get gap limits
+   @brief Get gap limits
 
    Get (through function's arguments) limits on gap in cw signal
    supported by libcw.
@@ -546,10 +546,10 @@ void cw_get_volume_limits(int *min_volume, int *max_volume)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param min_gap - minimal allowed gap
-   \param max_gap - maximal allowed gap
+   @param[] min_gap - minimal allowed gap
+   @param[] max_gap - maximal allowed gap
 */
 void cw_get_gap_limits(int *min_gap, int *max_gap)
 {
@@ -566,7 +566,7 @@ void cw_get_gap_limits(int *min_gap, int *max_gap)
 
 
 /**
-   \brief Get tolerance limits
+   @brief Get tolerance limits
 
    Get (through function's arguments) limits on "tolerance" parameter
    supported by libcw.
@@ -576,10 +576,10 @@ void cw_get_gap_limits(int *min_gap, int *max_gap)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param min_tolerance - minimal allowed tolerance
-   \param max_tolerance - maximal allowed tolerance
+   @param[] min_tolerance - minimal allowed tolerance
+   @param[] max_tolerance - maximal allowed tolerance
 */
 void cw_get_tolerance_limits(int *min_tolerance, int *max_tolerance)
 {
@@ -596,7 +596,7 @@ void cw_get_tolerance_limits(int *min_tolerance, int *max_tolerance)
 
 
 /**
-   \brief Get weighting limits
+   @brief Get weighting limits
 
    Get (through function's arguments) limits on "weighting" parameter
    supported by libcw.
@@ -606,10 +606,10 @@ void cw_get_tolerance_limits(int *min_tolerance, int *max_tolerance)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   \reviewed on 2017-02-04
+   @reviewed on 2017-02-04
 
-   \param min_weighting - minimal allowed weighting
-   \param max_weighting - maximal allowed weighting
+   @param[] min_weighting - minimal allowed weighting
+   @param[] max_weighting - maximal allowed weighting
 */
 void cw_get_weighting_limits(int *min_weighting, int *max_weighting)
 {
@@ -650,7 +650,7 @@ static volatile bool cw_is_finalization_locked_out = false;
 
 
 /**
-   \brief Tick a finalization clock
+   @brief Tick a finalization clock
 
    If finalization is pending, decrement the countdown, and if this reaches
    zero, we've waited long enough to release sound and timeouts.
@@ -741,7 +741,7 @@ void cw_finalization_cancel_internal(void)
 
 
 /**
-   \brief Reset all library features to their default states
+   @brief Reset all library features to their default states
 
    Clears the tone queue, receive buffers and retained state information,
    any current keyer activity, and any straight key activity, returns to

@@ -121,7 +121,7 @@ static void cw_oss_close_sound_device_internal(cw_gen_t * gen);
 
    @reviewed on 2020-07-19
 
-   @param device_name[in] name of OSS device to be used; if NULL then the
+   @param[in] device_name name of OSS device to be used; if NULL then the
    function will use library-default device name.
 
    @return true if opening OSS output succeeded
@@ -193,8 +193,8 @@ bool cw_is_oss_possible(const char * device_name)
 
    @reviewed 2020-07-19
 
-   @param gen[in] generator structure in which to fill some fields
-   @param device_name[in] name of OSS device to use
+   @param[in] gen generator structure in which to fill some fields
+   @param[in] device_name name of OSS device to use
 
    @return CW_SUCCESS
 */
@@ -220,7 +220,7 @@ cw_ret_t cw_oss_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 
    @reviewed 2020-07-19
 
-   @param gen[in] generator that will write to sound device
+   @param[in] gen generator that will write to sound device
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
@@ -249,11 +249,11 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    @brief Open and configure OSS handle stored in given generator
 
    You must use cw_gen_set_sound_device_internal() before calling
-   this function. Otherwise generator \p gen won't know which device to open.
+   this function. Otherwise generator @p gen won't know which device to open.
 
    @reviewed on 2020-07-19
 
-   @param gen[in] generator for which to open and configure sound system handle
+   @param[in] gen generator for which to open and configure sound system handle
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -330,8 +330,8 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 
    @reviewed on 2020-07-19
 
-   @param fd[in] file descriptor of open OSS file;
-   @param sample_rate[out] sample rate configured by ioctl calls
+   @param[in] fd file descriptor of open OSS file;
+   @param[out] sample_rate sample rate configured by ioctl calls
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -502,7 +502,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, int * sample_rate)
 
    @reviewed on 2020-07-19
 
-   @param gen[in] generator for which to close its sound device
+   @param[in] gen generator for which to close its sound device
 */
 void cw_oss_close_sound_device_internal(cw_gen_t * gen)
 {
@@ -527,10 +527,10 @@ void cw_oss_close_sound_device_internal(cw_gen_t * gen)
 
    @reviewed on 2020-07-19
 
-   @param fd[in] opened file descriptor for OSS device
-   @param x[out] first digit of OSS version
-   @param y[out] second digit of OSS version
-   @param z[out] third digit of OSS version
+   @param[in] fd opened file descriptor for OSS device
+   @param[out] x first digit of OSS version
+   @param[out] y second digit of OSS version
+   @param[out] z third digit of OSS version
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
