@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
-  Copyright (C) 2011-2019  Kamil Ignacak (acerion@wp.pl)
+  Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -16,6 +16,8 @@
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
+
+
 
 
 /**
@@ -36,14 +38,14 @@
 #include "config.h"
 
 
-#include <sys/time.h>
-#include <sys/types.h>
+#include <dlfcn.h> /* dlopen() and related symbols */
+#include <errno.h>
+#include <limits.h> /* INT_MAX, for clang. */
 #include <stdbool.h>
 #include <stdio.h>
-#include <errno.h>
-#include <dlfcn.h> /* dlopen() and related symbols */
 #include <stdlib.h> /* strtol() */
-#include <limits.h> /* INT_MAX, for clang. */
+#include <sys/time.h>
+#include <sys/types.h>
 
 #if defined(HAVE_STRING_H)
 # include <string.h>
@@ -53,7 +55,6 @@
 # include <strings.h>
 #endif
 
-
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 # include <sys/param.h>
 #endif
@@ -61,13 +62,13 @@
 
 
 
-#include "libcw.h"
-#include "libcw_gen.h"
-#include "libcw_debug.h"
-#include "libcw_utils.h"
-#include "libcw_signal.h"
 #include "cw_copyright.h"
+#include "libcw.h"
 #include "libcw2.h"
+#include "libcw_debug.h"
+#include "libcw_gen.h"
+#include "libcw_signal.h"
+#include "libcw_utils.h"
 
 
 
@@ -98,7 +99,6 @@ static const char * cw_sound_system_labels[] = {
 
 
 
-
 /* Finalization and cleanup. */
 static void cw_finalization_clock_internal(void);
 
@@ -113,15 +113,17 @@ static void cw_finalization_clock_internal(void);
    Version numbers (major and minor) are returned as an int,
    composed of major_version << 16 | minor_version.
 
+   @reviewed on 2020-08-17
+
    @return library's major and minor version number encoded as single int
 */
 int cw_version(void)
 {
-	char *endptr = NULL;
+	char * endptr = NULL;
 
 	/* LIBCW_VERSION: "current:revision:age", libtool notation. */
-	long int current = strtol(LIBCW_VERSION, &endptr, 10);
-	long int revision = strtol(endptr + 1, &endptr, 10);
+	const long int current = strtol(LIBCW_VERSION, &endptr, 10);
+	const long int revision = strtol(endptr + 1, &endptr, 10);
 	__attribute__((unused)) long int age = strtol(endptr + 1, &endptr, 10);
 
 	// fprintf(stderr, "current:revision:age: %ld:%ld:%ld\n", current, revision, age);
@@ -138,10 +140,18 @@ int cw_version(void)
    Return version number of the library, split into @p current, @p
    revision, @p age. These three properties are described here:
    http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+
+   @reviewed on 2020-08-17
+
+   @param[out] current 'current' part of library version number (may be NULL)
+   @param[out] revision 'revision' part of library version number (may be NULL)
+   @param[out] age 'age' part of library version number (may be NULL)
+
+   @return CW_SUCCESS
 */
 cw_ret_t cw_get_lib_version(int * current, int * revision, int * age)
 {
-	char *endptr = NULL;
+	char * endptr = NULL;
 
 	/* LIBCW_VERSION: "current:revision:age", libtool notation. */
 
@@ -208,9 +218,9 @@ void cw_license(void)
 
    TODO: change the declaration to "const char *const cw_get_audio_system_label(...)"?
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] sound_system - ID of sound system
+   @param[int] sound_system ID of sound system
 
    @return sound system's label
 */
@@ -231,21 +241,21 @@ const char * cw_get_audio_system_label(int sound_system)
 
    This function is just a simple wrapper for few lines of code.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] t - pointer to existing struct to be filled with data
-   @param[] usecs - value to convert to timespec
+   @param[out] ts pointer to existing struct to be filled with data
+   @param[in] usecs value to convert to timespec
 */
-void cw_usecs_to_timespec_internal(struct timespec *t, int usecs)
+void cw_usecs_to_timespec_internal(struct timespec * ts, int usecs)
 {
 	assert (usecs >= 0);
-	assert (t);
+	assert (NULL != ts);
 
-	int sec = usecs / CW_USECS_PER_SEC;
-	int usec = usecs % CW_USECS_PER_SEC;
+	const int sec = usecs / CW_USECS_PER_SEC;
+	const int usec = usecs % CW_USECS_PER_SEC;
 
-	t->tv_sec = sec;
-	t->tv_nsec = usec * 1000;
+	ts->tv_sec = sec;
+	ts->tv_nsec = usec * 1000;
 
 	return;
 }
@@ -278,39 +288,39 @@ void cw_usleep_internal(int usecs)
 /**
    @brief Try to dynamically open shared library
 
-   Function tries to open a shared library specified by @p name using
-   dlopen() system function. On sucess, handle to open library is
-   returned via @p handle.
+   Function tries to open a shared library specified by @p library_name using
+   dlopen() system function. On success, handle to open library is returned
+   via @p handle.
 
    Name of the library should contain ".so" suffix, e.g.: "libasound.so.2",
    or "libpulse-simple.so".
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] name - name of library to test
-   @param[] handle - output argument, handle to open library
+   @param[in] library_name name of library to test
+   @param[out] handle handle to opened library
 
-   @return true on success
-   @return false otherwise
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise
 */
-bool cw_dlopen_internal(const char *name, void **handle)
+cw_ret_t cw_dlopen_internal(const char * library_name, void ** handle)
 {
-	assert (name);
+	assert (NULL != library_name);
 
 	dlerror();
-	void *h = dlopen(name, RTLD_LAZY);
-	char *e = dlerror();
+	void * h = dlopen(library_name, RTLD_LAZY);
+	char * e = dlerror();
 
 	if (e) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-			      MSG_PREFIX "dlopen() fails for %s with error: %s", name, e);
-		return false;
+			      MSG_PREFIX "dlopen() fails for library %s with error: %s", library_name, e);
+		return CW_FAILURE;
 	} else {
 		*handle = h;
 
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_STDLIB, CW_DEBUG_DEBUG,
-			      MSG_PREFIX "dlopen() succeeds for %s", name);
-		return true;
+			      MSG_PREFIX "dlopen() succeeds for library %s", library_name);
+		return CW_SUCCESS;
 	}
 }
 #endif
@@ -335,17 +345,17 @@ bool cw_dlopen_internal(const char *name, void **handle)
 
    @p out_timestamp cannot be NULL.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] out_timestamp - timestamp to be used by client code after the function call
-   @param[] in_timestamp - timestamp to be validated
+   @param[out] out_timestamp timestamp to be used by client code after the function call
+   @param[in] in_timestamp timestamp to be validated
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
 */
-cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp)
+cw_ret_t cw_timestamp_validate_internal(struct timeval * out_timestamp, const struct timeval * in_timestamp)
 {
-	cw_assert (out_timestamp, MSG_PREFIX "validate timestamp: pointer to output timestamp is NULL");
+	cw_assert (NULL != out_timestamp, MSG_PREFIX "validate timestamp: pointer to output timestamp is NULL");
 
 	if (in_timestamp) {
 		if (in_timestamp->tv_sec < 0
@@ -361,7 +371,7 @@ cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const vol
 	} else {
 		/* TODO: gettimeofday is susceptible to NTP syncs which can
 		   negatively impact measurements of time. */
-		if (gettimeofday(out_timestamp, NULL)) {
+		if (0 != gettimeofday(out_timestamp, NULL)) {
 			if (out_timestamp->tv_usec < 0) {
 				// fprintf(stderr, "Negative usecs in %s\n", __func__);
 			}
@@ -385,10 +395,10 @@ cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const vol
 
    This routine always returns a positive integer in the range 0 to INT_MAX.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] earlier - timestamp to compare
-   @param[] later - timestamp to compare
+   @param[in] earlier earlier (older) timestamp to compare
+   @param[in] later later (newer) timestamp to compare
 
    @return difference between timestamps (in microseconds)
 */
@@ -454,12 +464,12 @@ int cw_timestamp_compare_internal(const struct timeval * earlier, const struct t
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] min_speed - minimal allowed speed
-   @param[] max_speed - maximal allowed speed
+   @param[out] min_speed minimal allowed speed
+   @param[out] max_speed maximal allowed speed
 */
-void cw_get_speed_limits(int *min_speed, int *max_speed)
+void cw_get_speed_limits(int * min_speed, int * max_speed)
 {
 	if (min_speed) {
 		*min_speed = CW_SPEED_MIN;
@@ -485,12 +495,12 @@ void cw_get_speed_limits(int *min_speed, int *max_speed)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] min_frequency - minimal allowed frequency
-   @param[] max_frequency - maximal allowed frequency
+   @param[out] min_frequency minimal allowed frequency
+   @param[out] max_frequency maximal allowed frequency
 */
-void cw_get_frequency_limits(int *min_frequency, int *max_frequency)
+void cw_get_frequency_limits(int * min_frequency, int * max_frequency)
 {
 	if (min_frequency) {
 		*min_frequency = CW_FREQUENCY_MIN;
@@ -516,12 +526,12 @@ void cw_get_frequency_limits(int *min_frequency, int *max_frequency)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] min_volume - minimal allowed volume
-   @param[] max_volume - maximal allowed volume
+   @param[out] min_volume minimal allowed volume
+   @param[out] max_volume maximal allowed volume
 */
-void cw_get_volume_limits(int *min_volume, int *max_volume)
+void cw_get_volume_limits(int * min_volume, int * max_volume)
 {
 	if (min_volume) {
 		*min_volume = CW_VOLUME_MIN;
@@ -546,12 +556,12 @@ void cw_get_volume_limits(int *min_volume, int *max_volume)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] min_gap - minimal allowed gap
-   @param[] max_gap - maximal allowed gap
+   @param[out] min_gap minimal allowed gap
+   @param[out] max_gap maximal allowed gap
 */
-void cw_get_gap_limits(int *min_gap, int *max_gap)
+void cw_get_gap_limits(int * min_gap, int * max_gap)
 {
 	if (min_gap) {
 		*min_gap = CW_GAP_MIN;
@@ -576,12 +586,12 @@ void cw_get_gap_limits(int *min_gap, int *max_gap)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] min_tolerance - minimal allowed tolerance
-   @param[] max_tolerance - maximal allowed tolerance
+   @param[out] min_tolerance minimal allowed tolerance
+   @param[out] max_tolerance maximal allowed tolerance
 */
-void cw_get_tolerance_limits(int *min_tolerance, int *max_tolerance)
+void cw_get_tolerance_limits(int * min_tolerance, int * max_tolerance)
 {
 	if (min_tolerance) {
 		*min_tolerance = CW_TOLERANCE_MIN;
@@ -606,12 +616,12 @@ void cw_get_tolerance_limits(int *min_tolerance, int *max_tolerance)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2017-02-04
+   @reviewed on 2020-08-17
 
-   @param[] min_weighting - minimal allowed weighting
-   @param[] max_weighting - maximal allowed weighting
+   @param[out] min_weighting minimal allowed weighting
+   @param[out] max_weighting maximal allowed weighting
 */
-void cw_get_weighting_limits(int *min_weighting, int *max_weighting)
+void cw_get_weighting_limits(int * min_weighting, int * max_weighting)
 {
 	if (min_weighting) {
 		*min_weighting = CW_WEIGHTING_MIN;

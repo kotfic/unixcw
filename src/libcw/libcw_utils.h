@@ -32,9 +32,9 @@ enum { CW_USECS_PER_SEC = 1000000 };
 
 
 
-int cw_timestamp_compare_internal(const struct timeval *earlier, const struct timeval *later);
-cw_ret_t cw_timestamp_validate_internal(struct timeval *out_timestamp, const volatile struct timeval *in_timestamp);
-void cw_usecs_to_timespec_internal(struct timespec *t, int usecs);
+int cw_timestamp_compare_internal(const struct timeval * earlier, const struct timeval * later);
+cw_ret_t cw_timestamp_validate_internal(struct timeval * out_timestamp, const struct timeval * in_timestamp);
+void cw_usecs_to_timespec_internal(struct timespec * ts, int usecs);
 
 
 
@@ -51,7 +51,7 @@ void cw_usecs_to_timespec_internal(struct timespec *t, int usecs);
    usecs if it needs to spend some time handling SIGALRM signal. Other
    restrictions from nanosleep()'s man page also apply.
 
-   @reviewed-on 2020-05-10
+   @reviewed-on 2020-08-17
 */
 void cw_usleep_internal(int usecs);
 
@@ -59,9 +59,7 @@ void cw_usleep_internal(int usecs);
 
 
 #if (defined(LIBCW_WITH_ALSA) || defined(LIBCW_WITH_PULSEAUDIO))
-#include <stdbool.h>
-
-bool cw_dlopen_internal(const char *name, void **handle);
+cw_ret_t cw_dlopen_internal(const char * library_name, void ** handle);
 #endif
 
 void cw_finalization_schedule_internal(void);

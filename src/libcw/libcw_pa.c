@@ -175,7 +175,7 @@ bool cw_is_pa_possible(const char * device_name)
 	   error. */
 
 	const char * const library_name = "libpulse-simple.so";
-	if (!cw_dlopen_internal(library_name, &g_cw_pa.lib_handle)) {
+	if (CW_SUCCESS != cw_dlopen_internal(library_name, &g_cw_pa.lib_handle)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "is possible: can't access PulseAudio library \"%s\"", library_name);
 		return false;

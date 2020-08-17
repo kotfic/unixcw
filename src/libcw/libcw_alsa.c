@@ -276,7 +276,7 @@ bool cw_is_alsa_possible(const char * device_name)
 	   error. */
 
 	const char * library_name = "libasound.so.2";
-	if (!cw_dlopen_internal(library_name, &cw_alsa.lib_handle)) {
+	if (CW_SUCCESS != cw_dlopen_internal(library_name, &cw_alsa.lib_handle)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "is possible: can't access ALSA library '%s'", library_name);
 		return false;

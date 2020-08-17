@@ -1091,10 +1091,10 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 								&rec->mark_end);
 
 #if 0
-	fprintf(stderr, "------- %d.%d - %d.%d = %d (%d)\n",
+	fprintf(stderr, "------- mark duration: %d.%d - %d.%d = %d ms\n",
 		rec->mark_end.tv_sec, rec->mark_end.tv_usec,
 		rec->mark_start.tv_sec, rec->mark_start.tv_usec,
-		mark_duration, cw_timestamp_compare_internal(&rec->mark_start, &rec->mark_end));
+		mark_duration);
 #endif
 
 	if (rec->noise_spike_threshold > 0
