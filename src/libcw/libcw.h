@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2006  Simon Baldwin (simon_baldwin@yahoo.com)
- * Copyright (C) 2011-2017  Kamil Ignacak (acerion@wp.pl)
+ * Copyright (C) 2011-2020  Kamil Ignacak (acerion@wp.pl)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,14 +20,15 @@
 #ifndef _LIBCW_H
 #define _LIBCW_H
 
-#include <sys/time.h>  /* For struct timeval */
 
-#include <stdint.h>    /* int16_t */
+
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdint.h>    /* int16_t */
+#include <sys/time.h>  /* For struct timeval */
 
 
-static const int        CW_AUDIO_CHANNELS = 1;                /* Sound in mono */
+#define CW_AUDIO_CHANNELS 1                /* Sound in mono */
 
 
 #if defined(__cplusplus)
