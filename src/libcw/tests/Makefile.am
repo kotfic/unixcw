@@ -135,7 +135,7 @@ libcw_test_all.sh:
 
 
 
-EXTRA_DIST = $(test_framework_files) $(legacy_api_test_files) $(modern_api_test_files) $(other_test_files) $(check_SCRIPTS)
+EXTRA_DIST = $(test_framework_files) $(legacy_api_test_files) $(modern_api_test_files) $(other_test_files) $(check_SCRIPTS) count_functions_under_test.py
 
 
 
