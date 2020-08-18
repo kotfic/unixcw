@@ -22,9 +22,7 @@
 #include <cstdlib>
 #include <string>
 #include <cerrno>
-#include <cctype>
 #include <sstream>
-#include <unistd.h>
 
 
 #include "application.h"
@@ -33,15 +31,20 @@
 #include "modeset.h"
 
 #include "libcw.h"
+
+#include "i18n.h"
+
+
+#ifdef REC_TEST_CODE
+#include <cctype>
+#include <unistd.h>
+
 #include "libcw2.h"
 #include "../libcw/libcw_key.h"
 #include "../libcw/libcw_gen.h"
 #include "../libcw/libcw_tq.h"
 #include "../libcw/libcw_utils.h"
-
-#include "i18n.h"
-
-
+#endif
 
 
 
@@ -438,20 +441,21 @@ void Receiver::poll_report_error()
 */
 void Receiver::poll_character()
 {
+	char c = 0;
+
 	/* Don't use receiver.main_timer - it is used exclusively for
 	   marking initial "key down" events. Use local throw-away
-	   local_timer.
+	   timer2.
 
 	   Additionally using reveiver.main_timer here would mess up time
 	   intervals measured by receiver.main_timer, and that would
 	   interfere with recognizing dots and dashes. */
-	struct timeval local_timer;
-	gettimeofday(&local_timer, NULL);
-	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
+	struct timeval timer2;
+	gettimeofday(&timer2, NULL);
+	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
 
-	char c = 0;
-	bool is_end_of_word_c;
-	if (cw_receive_character(&local_timer, &c, &is_end_of_word_c, NULL)) {
+	bool is_end_of_word;
+	if (cw_receive_character(&timer2, &c, &is_end_of_word, NULL)) {
 		/* Receiver stores full, well formed
 		   character. Display it. */
 		textarea->append(c);
@@ -464,14 +468,14 @@ void Receiver::poll_character()
 		bool is_end_of_word_r = false;
 		bool is_error_r = false;
 		char representation[20] = { 0 };
-		int cw_ret = cw_receive_representation(&local_timer, representation, &is_end_of_word_r, &is_error_r);
+		int cw_ret = cw_receive_representation(&timer2, representation, &is_end_of_word_r, &is_error_r);
 		if (CW_SUCCESS != cw_ret) {
 			fprintf(stderr, "[EE] Character: failed to get representation\n");
 			exit(EXIT_FAILURE);
 		}
 
-		if (is_end_of_word_r != is_end_of_word_c) {
-			fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, is_end_of_word_c);
+		if (is_end_of_word_r != is_end_of_word) {
+			fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, is_end_of_word);
 			exit(EXIT_FAILURE);
 		}
 
@@ -557,7 +561,7 @@ void Receiver::poll_character()
 void Receiver::poll_space()
 {
 	/* Recheck the receive buffer for end of word. */
-
+	bool is_end_of_word;
 
 	/* We expect the receiver to contain a character, but we don't
 	   ask for it this time. The receiver should also store
@@ -568,15 +572,14 @@ void Receiver::poll_space()
 
 	   Don't use receiver.main_timer - it is used eclusively for
 	   marking initial "key down" events. Use local throw-away
-	   local_timer. */
-	struct timeval local_timer;
-	gettimeofday(&local_timer, NULL);
-	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
+	   timer2. */
+	struct timeval timer2;
+	gettimeofday(&timer2, NULL);
+	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
 
 	char c = 0;
-	bool is_end_of_word_c;
-	cw_receive_character(&local_timer, &c, &is_end_of_word_c, NULL);
-	if (is_end_of_word_c) {
+	cw_receive_character(&timer2, &c, &is_end_of_word, NULL);
+	if (is_end_of_word) {
 		//fprintf(stderr, "End of word '%c'\n\n", c);
 		textarea->append(' ');
 
@@ -601,14 +604,14 @@ void Receiver::poll_space()
 		bool is_end_of_word_r = false;
 		bool is_error_r = false;
 		char representation[20] = { 0 };
-		int cw_ret = cw_receive_representation(&local_timer, representation, &is_end_of_word_r, &is_error_r);
+		int cw_ret = cw_receive_representation(&timer2, representation, &is_end_of_word_r, &is_error_r);
 		if (CW_SUCCESS != cw_ret) {
 			fprintf(stderr, "[EE] Space: Failed to get representation\n");
 			exit(EXIT_FAILURE);
 		}
 
-		if (is_end_of_word_r != is_end_of_word_c) {
-			fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, is_end_of_word_c);
+		if (is_end_of_word_r != is_end_of_word) {
+			fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, is_end_of_word);
 			exit(EXIT_FAILURE);
 		}
 

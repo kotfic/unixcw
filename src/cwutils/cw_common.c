@@ -253,13 +253,13 @@ void cw_start_beep(void)
 */
 void cw_end_beep(void)
 {
-	cw_flush_tone_queue();
-	cw_queue_tone(20000, 500);
-	cw_queue_tone(20000, 1000);
-	cw_queue_tone(20000, 500);
-	cw_queue_tone(20000, 1000);
-	cw_wait_for_tone_queue();
-	return;
+      cw_flush_tone_queue();
+      cw_queue_tone(20000, 500);
+      cw_queue_tone(20000, 1000);
+      cw_queue_tone(20000, 500);
+      cw_queue_tone(20000, 1000);
+      cw_wait_for_tone_queue();
+      return;
 }
 
 

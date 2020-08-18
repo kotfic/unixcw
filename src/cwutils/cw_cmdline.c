@@ -173,6 +173,23 @@ int combine_arguments(const char *env_variable,
 
 
 
+/**
+   \brief Check if target system supports long options
+
+   \return true the system supports long options,
+   \return false otherwise
+*/
+bool has_longopts(void)
+{
+#if defined(HAVE_GETOPT_LONG)
+	return true;
+#else
+	return false;
+#endif
+}
+
+
+
 bool cw_longopts_available(void)
 {
 #if defined(HAVE_GETOPT_LONG)
@@ -331,6 +348,17 @@ int get_option(int argc, char *const argv[],
 	return !(opt == -1);
 }
 
+
+
+
+
+/**
+   Return the value of getopt()'s optind after get_options() calls complete.
+*/
+int get_optind(void)
+{
+	return optind;
+}
 
 
 
@@ -580,6 +608,26 @@ int cw_process_program_arguments(int argc, char *const argv[], cw_config_t *conf
 }
 
 
+
+int cw_process_argv(int argc, char *const argv[], const char *options, cw_config_t *config)
+{
+	int option;
+	char *argument;
+
+	while (get_option(argc, argv, options, &option, &argument)) {
+		if (!cw_process_option(option, argument, config)) {
+			return CW_FAILURE;
+		}
+	}
+
+	if (get_optind() != argc) {
+		fprintf(stderr, "%s: expected argument after options\n", config->program_name);
+		cw_print_usage(config->program_name);
+		return CW_FAILURE;
+	} else {
+		return CW_SUCCESS;
+	}
+}
 
 
 

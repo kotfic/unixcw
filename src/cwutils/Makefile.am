@@ -23,7 +23,7 @@ check_PROGRAMS=cw_dictionary_tests
 
 
 # source code files used to build cw_dictionary_tests program
-cw_dictionary_tests_SOURCES = dictionary.c i18n.c cw_config.c cw_common.c
+cw_dictionary_tests_SOURCES = dictionary.c memory.c i18n.c cw_config.c cw_common.c
 
 # target-specific preprocessor flags (#defs and include dirs)
 cw_dictionary_tests_CPPFLAGS = $(AM_CPPFLAGS) -DCW_DICTIONARY_UNIT_TESTS
@@ -37,16 +37,16 @@ cw_dictionary_tests_CFLAGS = -rdynamic
 
 
 # no header from this dir should be installed
-# noinst_HEADERS = cw_cmdline.h cw_copyright.h cw_config.h cw_common.h cw_words.h dictionary.h i18n.h
+# noinst_HEADERS = cw_cmdline.h cw_copyright.h cw_config.h cw_common.h cw_words.h dictionary.h i18n.h memory.h
 
 # convenience libraries
 noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a lib_libcw_tests.a
 
-lib_cw_a_SOURCES          = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h
-lib_cwcp_a_SOURCES        = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
-lib_xcwcp_a_SOURCES       = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
-lib_cwgen_a_SOURCES       = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h
-lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h cw_common.c cw_common.h
+lib_cw_a_SOURCES          = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h
+lib_cwcp_a_SOURCES        = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
+lib_xcwcp_a_SOURCES       = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
+lib_cwgen_a_SOURCES       = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h
+lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h
 
 
 # Test targets; no self-test, but make sure all is built.

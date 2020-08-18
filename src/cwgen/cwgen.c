@@ -38,6 +38,8 @@
 #include "i18n.h"
 #include "cw_cmdline.h"
 #include "cw_copyright.h"
+#include "memory.h"
+
 
 
 
@@ -78,7 +80,7 @@ struct cwgen_config {
 };
 
 
-static const char * all_cmdline_options = "g:|groups,n:|groupsize,r:|repeat,x:|limit,c:|charset,h|help,v|version";
+static const char *all_options = "g:|groups,n:|groupsize,r:|repeat,x:|limit,c:|charset,h|help,v|version";
 
 static void cwgen_generate_characters(struct cwgen_config *config);
 static void cwgen_print_usage(const char *program_name);
@@ -186,7 +188,7 @@ void cwgen_generate_characters(struct cwgen_config *config)
 */
 void cwgen_print_usage(const char *program_name)
 {
-	const char *format = cw_longopts_available()
+	const char *format = has_longopts()
 		? _("Try '%s --help' for more information.\n")
 		: _("Try '%s -h' for more information.\n");
 
@@ -205,7 +207,7 @@ void cwgen_print_usage(const char *program_name)
 */
 static void cwgen_print_help(const char *program_name)
 {
-	if (!cw_longopts_available()) {
+	if (!has_longopts()) {
 		fprintf(stderr, "%s", _("Long format of options is not supported on your system\n\n"));
 	}
 
@@ -254,7 +256,7 @@ void cwgen_parse_command_line(int argc, char **argv, struct cwgen_config *config
 		exit(EXIT_FAILURE);
 	}
 
-	while (get_option(argc, argv, all_cmdline_options,
+	while (get_option(argc, argv, all_options,
 			  &option, &argument)) {
 
 		switch (option) {
@@ -336,7 +338,7 @@ void cwgen_parse_command_line(int argc, char **argv, struct cwgen_config *config
 		}
 	}
 
-	if (optind != argc) {
+	if (get_optind() != argc) {
 		cwgen_print_usage(config->program_name);
 		exit(EXIT_FAILURE);
 	}
@@ -360,11 +362,8 @@ int main(int argc, char **argv)
 	i18n_initialize();
 
 	/* Parse combined environment and command line arguments. */
-	if (CW_SUCCESS != combine_arguments(_("CWGEN_OPTIONS"), argc, argv, &combined_argc, &combined_argv)) {
-		fprintf(stderr, _("%s: failed to combine command line arguments with arguments stored in ENV\n"), cw_program_basename(argv[0]));
-		exit(EXIT_FAILURE);
-	}
-
+	combine_arguments(_("CWGEN_OPTIONS"),
+			  argc, argv, &combined_argc, &combined_argv);
 	cwgen_parse_command_line(combined_argc, combined_argv, &g_config);
 
 	if (!g_config.charset) {

@@ -44,12 +44,8 @@
 #include "cw_cmdline.h"
 #include "cw_copyright.h"
 #include "dictionary.h"
-#include "libcw_debug.h"
+#include "memory.h"
 
-
-
-
-extern cw_debug_t cw_debug_object;
 
 
 
@@ -76,7 +72,13 @@ static bool is_sending_active = false;
 
 static cw_config_t *config = NULL; /* program-specific configuration */
 static bool generator = false;     /* have we created a generator? */
-
+static const char *all_options = "s:|system,d:|device,"
+	"w:|wpm,t:|tone,v:|volume,"
+	"g:|gap,k:|weighting,"
+	"f:|infile,F:|outfile,"
+	"T:|time,"
+	/* "c:|colours,c:|colors,m|mono," */
+	"h|help,V|version";
 
 
 
@@ -105,7 +107,7 @@ static void gap_update(void);
 
 typedef enum { M_DICTIONARY, M_KEYBOARD, M_EXIT } mode_type_t;
 
-static int mode_initialize(void);
+static void mode_initialize(void);
 static void mode_clean(void);
 static bool mode_change_to_next(void);
 static bool mode_change_to_previous(void);
@@ -131,8 +133,8 @@ typedef struct mode_s *moderef_t;
 /* Modes table, current program mode, and count of modes in the table.
    The program is always in one of these modes, indicated by
    current_mode. */
-static moderef_t modes = NULL;
-static moderef_t g_current_mode = NULL;
+static moderef_t modes = NULL,
+                 g_current_mode = NULL;
 static int modes_count = 0;
 
 static int queue_get_length(void);
@@ -682,7 +684,7 @@ void timer_window_update(int elapsed, int total)
    Build up the modes from the known dictionaries, then add non-dictionary
    modes.
 */
-int mode_initialize(void)
+void mode_initialize(void)
 {
 	if (modes) {
 		/* Dispose of any pre-existing modes -- unlikely. */
@@ -696,22 +698,14 @@ int mode_initialize(void)
 	     dict;
 	     dict = cw_dictionaries_iterate(dict)) {
 
-		modes = realloc(modes, sizeof (*modes) * (count + 1));
-		if (NULL == modes) {
-			fprintf(stderr, "realloc() failure\n"); /* TODO: better error handling. */
-			return CW_FAILURE;
-		}
+		modes = safe_realloc(modes, sizeof (*modes) * (count + 1));
 		modes[count].description = cw_dictionary_get_description(dict);
 		modes[count].type = M_DICTIONARY;
 		modes[count++].dict = dict;
 	}
 
 	/* Add keyboard, exit, and null sentinel. */
-	modes = realloc(modes, sizeof (*modes) * (count + 3));
-	if (NULL == modes) {
-		fprintf(stderr, "realloc() failure\n"); /* TODO: better error handling. */
-		return CW_FAILURE;
-	}
+	modes = safe_realloc(modes, sizeof (*modes) * (count + 3));
 	modes[count].description = _("Keyboard");
 	modes[count].type = M_KEYBOARD;
 	modes[count++].dict = NULL;
@@ -726,7 +720,7 @@ int mode_initialize(void)
 	g_current_mode = modes;
 	modes_count = count;
 
-	return CW_SUCCESS;
+	return;
 }
 
 
@@ -1701,39 +1695,21 @@ int main(int argc, char **argv)
 	char **combined_argv;
 
 	/* Parse combined environment and command line arguments. */
-	if (CW_SUCCESS != combine_arguments(_("CWCP_OPTIONS"), argc, argv, &combined_argc, &combined_argv)) {
-		fprintf(stderr, _("%s: failed to combine command line arguments with arguments stored in ENV\n"), cw_program_basename(argv[0]));
-		exit(EXIT_FAILURE);
-	}
+	combine_arguments(_("CWCP_OPTIONS"), argc, argv, &combined_argc, &combined_argv);
 
 	config = cw_config_new(cw_program_basename(argv[0]));
 	if (!config) {
-		exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
-
-	config->has_feature_sound_system = true;
-	config->has_feature_speed = true;
-	config->has_feature_tone = true;
-	config->has_feature_volume = true;
-	config->has_feature_gap = true;
-	config->has_feature_weighting = true;
 	config->has_feature_practice_time = true;
-	config->has_feature_infile = true; /* TODO: do we really have this feature? */
-	config->has_feature_outfile = true; /* TODO: do we really have this feature? */
-	// config->has_feature_ui_colors = true;
+	config->has_feature_outfile = true;
 
-	if (CW_SUCCESS != cw_process_program_arguments(combined_argc, combined_argv, config)) {
+	if (!cw_process_argv(combined_argc, combined_argv, all_options, config)) {
 		fprintf(stderr, _("%s: failed to parse command line args\n"), config->program_name);
 		return EXIT_FAILURE;
 	}
 	free(combined_argv);
 	combined_argv = NULL;
-
-	/* In future we will get debug flags and level from command
-	   line, so this is the right place to configure debug
-	   objects: right after processing command-line arguments. */
-	cw_debug_set_flags(&cw_debug_object, CW_DEBUG_KEYING | CW_DEBUG_GENERATOR | CW_DEBUG_TONE_QUEUE | CW_DEBUG_RECEIVE_STATES | CW_DEBUG_KEYER_STATES | CW_DEBUG_INTERNAL| CW_DEBUG_PARAMETERS | CW_DEBUG_SOUND_SYSTEM);
-	cw_debug_object.level = CW_DEBUG_DEBUG;
 
 	if (!cw_config_is_valid(config)) {
 		fprintf(stderr, _("%s: inconsistent arguments\n"), config->program_name);
@@ -1803,6 +1779,7 @@ int main(int argc, char **argv)
 
 	return EXIT_SUCCESS;
 }
+
 
 
 

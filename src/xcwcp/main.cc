@@ -38,7 +38,7 @@
 #include "application.h"
 
 #include "libcw.h"
-#include "libcw_debug.h"
+//#include "libcw_debug.h"
 
 #include "i18n.h"
 #include "cw_cmdline.h"
@@ -46,14 +46,22 @@
 #include "dictionary.h"
 
 
-extern cw_debug_t cw_debug_object;
-extern cw_debug_t cw_debug_object_dev;
+//extern cw_debug_t cw_debug_object;
 
 void xcwcp_atexit(void);
 
 namespace {
 cw_config_t *config = NULL; /* program-specific configuration */
 bool generator = false;     /* have we created a generator? */
+std::string all_options = "s:|sound,d:|device,"
+	"w:|wpm,t:|tone,v:|volume,"
+	"g:|gap,k:|weighting,"
+	// "i:|infile,F:|outfile,"
+	// "T:|time,"
+	"h|help,V|version";
+
+
+
 
 
 
@@ -84,6 +92,10 @@ void signal_handler(int signal_number)
 int main(int argc, char **argv)
 {
 	try {
+
+		//cw_debug_set_flags(&cw_debug_object, CW_DEBUG_KEYING | CW_DEBUG_GENERATOR | CW_DEBUG_TONE_QUEUE | CW_DEBUG_RECEIVE_STATES | CW_DEBUG_KEYER_STATES | CW_DEBUG_INTERNAL| CW_DEBUG_PARAMETERS);
+		//cw_debug_object.level = CW_DEBUG_DEBUG;
+
 		atexit(xcwcp_atexit);
 
 		/* Set locale and message catalogs. */
@@ -97,49 +109,21 @@ int main(int argc, char **argv)
 		// Parse combined environment and command line arguments.  Arguments
 		// are passed to QApplication() first to allow it to extract any Qt
 		// or X11 options.
-		if (CW_SUCCESS != combine_arguments("XCWCP_OPTIONS", argc, argv, &combined_argc, &combined_argv)) {
-			fprintf(stderr, _("%s: failed to combine command line arguments with arguments stored in ENV\n"), cw_program_basename(argv[0]));
-			exit(EXIT_FAILURE);
-		}
+		combine_arguments("XCWCP_OPTIONS", argc, argv, &combined_argc, &combined_argv);
 
 		QApplication q_application (combined_argc, combined_argv);
 
 		config = cw_config_new(cw_program_basename(argv[0]));
 		if (!config) {
-			exit(EXIT_FAILURE);
+			return EXIT_FAILURE;
 		}
+		config->has_feature_practice_time = false;
+		config->has_feature_infile = false;
 
-		config->has_feature_sound_system = true;
-		config->has_feature_speed = true;
-		config->has_feature_tone = true;
-		config->has_feature_volume = true;
-		config->has_feature_gap = true;
-		config->has_feature_weighting = true;
-		//config->has_feature_infile = true;
-		//config->has_feature_outfile = true;
-
-		if (CW_SUCCESS != cw_process_program_arguments(combined_argc, combined_argv, config)) {
+		if (!cw_process_argv(argc, argv, all_options.c_str(), config)) {
 			fprintf(stderr, _("%s: failed to parse command line args\n"), config->program_name);
 			return EXIT_FAILURE;
 		}
-
-		/* In future we will get debug flags and level from command
-		   line, so this is the right place to configure debug
-		   objects: right after processing command-line arguments. */
-		cw_debug_set_flags(&cw_debug_object, CW_DEBUG_KEYING | CW_DEBUG_GENERATOR | CW_DEBUG_TONE_QUEUE | CW_DEBUG_RECEIVE_STATES | CW_DEBUG_KEYER_STATES | CW_DEBUG_INTERNAL| CW_DEBUG_PARAMETERS | CW_DEBUG_SOUND_SYSTEM);
-		cw_debug_object.level = CW_DEBUG_DEBUG;
-
-		if (1) {
-			/* This should be a default debug config for most of
-			   the time (unless a specific feature is being
-			   debugged): show all warnings an errors. */
-			cw_debug_set_flags(&cw_debug_object, CW_DEBUG_MASK);
-			cw_debug_object.level = CW_DEBUG_WARNING;
-
-			cw_debug_set_flags(&cw_debug_object_dev, CW_DEBUG_MASK);
-			cw_debug_object_dev.level = CW_DEBUG_WARNING;
-		}
-
 		if (!cw_config_is_valid(config)) {
 			fprintf(stderr, _("%s: inconsistent arguments\n"), config->program_name);
 			return EXIT_FAILURE;

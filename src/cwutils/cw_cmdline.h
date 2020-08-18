@@ -63,6 +63,7 @@ extern int combine_arguments(const char *env_variable,
    @return CW_FAILURE otherwise
 */
 extern int cw_process_program_arguments(int argc, char *const argv[], cw_config_t * config);
+extern int cw_process_argv(int argc, char *const argv[], const char *options, cw_config_t *config);
 
 
 
@@ -74,6 +75,7 @@ extern int cw_process_program_arguments(int argc, char *const argv[], cw_config_
    \return false otherwise
 */
 extern bool cw_longopts_available(void);
+extern bool has_longopts(void);
 
 
 
@@ -81,7 +83,7 @@ extern bool cw_longopts_available(void);
 extern int get_option(int argc, char *const argv[],
                       const char *descriptor,
                       int *option, char **argument);
-
+extern int get_optind(void);
 
 
 
