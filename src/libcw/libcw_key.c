@@ -173,7 +173,9 @@ static cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_val
 */
 void cw_key_ik_register_timer_internal(volatile cw_key_t * key, struct timeval * timer)
 {
+#ifdef IAMBIC_KEY_HAS_TIMER
 	key->ik.ik_timer = timer;
+#endif
 
 	return;
 }

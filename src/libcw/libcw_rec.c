@@ -1598,7 +1598,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
 			      MSG_PREFIX "'%s': poll: space duration == INT_MAX", rec->label);
 
-		errno = EINVAL;
+		errno = EAGAIN;
 		return CW_FAILURE;
 	}
 

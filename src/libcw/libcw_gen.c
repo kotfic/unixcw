@@ -2927,6 +2927,7 @@ void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
 	  executed.
 	*/
 
+#if 0
 	if (false && key->rec) {
 		if (CW_KEY_VALUE_CLOSED == gen->value_tracking.value) {
 			/* Key down. */
@@ -2948,14 +2949,15 @@ void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t 
 					);
 		}
 	}
-
+#endif
+#if 1
 	if (gen->value_tracking.value_tracking_callback_func) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYING, CW_DEBUG_INFO,
 			      MSG_PREFIX "set gen value: about to call value tracking callback, generator value = %d\n", gen->value_tracking.value);
 
 		(*gen->value_tracking.value_tracking_callback_func)(gen->value_tracking.value_tracking_callback_arg, gen->value_tracking.value);
 	}
-
+#endif
 	return;
 }
 
