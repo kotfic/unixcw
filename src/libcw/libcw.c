@@ -25,32 +25,25 @@
 
 
 
-
 #include <errno.h> /* EINVAL on FreeBSD */
 
-
-
-
 #include "libcw.h"
-#include "libcw_debug.h"
 #include "libcw_gen.h"
-#include "libcw_key.h"
 #include "libcw_rec.h"
-#include "libcw2.h"
+#include "libcw_key.h"
+#include "libcw_debug.h"
+//#include "libcw2.h"
 
 
 
-#define MSG_PREFIX "libcw: "
 
 
+/* Main container for data related to generating audible Morse code.
+   This is a global variable in legacy library. New library code
+   (with API declared in libcw2.h) will not use global generator
+   variable. */
+cw_gen_t *cw_generator = NULL;
 
-
-/*
-  Main container for data related to generating audible Morse code.  This is
-  a global variable in legacy library. New library code (with API declared in
-  libcw2.h) will not use global generator variable.
-*/
-cw_gen_t * cw_generator = NULL;
 
 
 
@@ -63,9 +56,11 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
+
 static cw_rec_t cw_receiver = {
 
 	.state = RS_IDLE,
+
 
 	.speed                      = CW_SPEED_INITIAL,
 	.tolerance                  = CW_TOLERANCE_INITIAL,
@@ -147,19 +142,19 @@ static volatile cw_key_t cw_key = {
    will return pointer to newly allocated generator, and then you
    could have as many of them as you want, but not yet.
 
-   \p sound_system can be one of following: NULL, console, OSS, ALSA,
+   \p audio_system can be one of following: NULL, console, OSS, ALSA,
    PulseAudio, soundcard. See "enum cw_audio_systems" in libcw.h for
    exact names of symbolic constants.
 
-   \param sound_system - sound system to be used by the generator
-   \param device - name of sound device to be used; if NULL then library will use default device.
+   \param audio_system - audio system to be used by the generator
+   \param device - name of audio device to be used; if NULL then library will use default device.
 */
-int cw_generator_new(int sound_system, const char * device)
+int cw_generator_new(int audio_system, const char *device)
 {
-	cw_generator = cw_gen_new(sound_system, device);
+	cw_generator = cw_gen_new(audio_system, device);
 	if (!cw_generator) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-			      MSG_PREFIX "can't create generator");
+			      "libcw: can't create generator");
 		return CW_FAILURE;
 	} else {
 		cw_gen_set_label(cw_generator, "global gen"); /* Single global generator. */
@@ -271,7 +266,8 @@ void cw_generator_delete_internal(void)
 */
 int cw_set_send_speed(int new_value)
 {
-	return cw_gen_set_speed(cw_generator, new_value);
+	int rv = cw_gen_set_speed(cw_generator, new_value);
+	return rv;
 }
 
 
@@ -297,7 +293,8 @@ int cw_set_send_speed(int new_value)
 */
 int cw_set_frequency(int new_value)
 {
-	return cw_gen_set_frequency(cw_generator, new_value);
+	int rv = cw_gen_set_frequency(cw_generator, new_value);
+	return rv;
 }
 
 
@@ -326,7 +323,8 @@ int cw_set_frequency(int new_value)
 */
 int cw_set_volume(int new_value)
 {
-	return cw_gen_set_volume(cw_generator, new_value);
+	int rv = cw_gen_set_volume(cw_generator, new_value);
+	return rv;
 }
 
 
@@ -350,15 +348,15 @@ int cw_set_volume(int new_value)
 */
 int cw_set_gap(int new_value)
 {
-	cw_ret_t cwret = cw_gen_set_gap(cw_generator, new_value);
-	if (CW_FAILURE != cwret) {
+	int rv = cw_gen_set_gap(cw_generator, new_value);
+	if (rv != CW_FAILURE) {
 		/* Ideally generator and receiver should have their
 		   own, separate cw_set_gap() functions. Unfortunately
 		   this is not the case so gap should be set
 		   here for receiver as well. */
-		cwret = cw_rec_set_gap(&cw_receiver, new_value);
+		rv = cw_rec_set_gap(&cw_receiver, new_value);
 	}
-	return cwret;
+	return rv;
 }
 
 
@@ -379,7 +377,8 @@ int cw_set_gap(int new_value)
 */
 int cw_set_weighting(int new_value)
 {
-	return cw_gen_set_weighting(cw_generator, new_value);
+	int rv = cw_gen_set_weighting(cw_generator, new_value);
+	return rv;
 }
 
 
@@ -509,7 +508,8 @@ void cw_get_send_parameters(int *dot_usecs, int *dash_usecs,
 */
 int cw_send_dot(void)
 {
-	return cw_gen_enqueue_mark_internal(cw_generator, CW_DOT_REPRESENTATION, false);
+	const bool is_first_mark = false; /* cw_send_dot() doesn't accept 'is first mark' argument, so we have to assume that it's not a first mark. */
+	return cw_gen_enqueue_mark_internal(cw_generator, CW_DOT_REPRESENTATION, is_first_mark);
 }
 
 
@@ -528,7 +528,8 @@ int cw_send_dot(void)
 */
 int cw_send_dash(void)
 {
-	return cw_gen_enqueue_mark_internal(cw_generator, CW_DASH_REPRESENTATION, false);
+	const bool is_first_mark = false; /* cw_send_dash() doesn't accept 'is first mark' argument, so we have to assume that it's not a first mark. */
+	return cw_gen_enqueue_mark_internal(cw_generator, CW_DASH_REPRESENTATION, is_first_mark);
 }
 
 
@@ -536,6 +537,7 @@ int cw_send_dash(void)
 
 
 /**
+
    The function plays space timed to exclude the expected prior
    dot/dash inter-mark gap.
    FIXME: fix this description.
@@ -553,6 +555,7 @@ int cw_send_character_space(void)
 
 
 /**
+
    The function sends space timed to exclude both the expected prior
    dot/dash inter-mark gap and the prior end of character space.
    FIXME: fix this description.
@@ -635,7 +638,7 @@ int cw_send_representation_partial(const char *representation)
 
    errno is set to ENOENT if the given character \p c is not a valid
    Morse character.
-   errno is set to EBUSY if current sound sink or keying system is
+   errno is set to EBUSY if current audio sink or keying system is
    busy.
    errno is set to EAGAIN if the generator's tone queue is full, or if
    there is insufficient space to queue the tones for the character.
@@ -671,7 +674,7 @@ int cw_send_character(char c)
 
    errno is set to ENOENT if the given character \p c is not a valid
    Morse character.
-   errno is set to EBUSY if the sound sink or keying system is busy.
+   errno is set to EBUSY if the audio sink or keying system is busy.
    errno is set to EAGAIN if the tone queue is full, or if there is
    insufficient space to queue the tones for the character.
 
@@ -699,7 +702,7 @@ int cw_send_character_partial(char c)
    errno is set to ENOENT if any character in the string is not a
    valid Morse character.
 
-   errno is set to EBUSY if sound sink or keying system is busy.
+   errno is set to EBUSY if audio sink or keying system is busy.
 
    errno is set to EAGAIN if the tone queue is full or if the tone
    queue runs out of space part way through queueing the string.
@@ -786,12 +789,12 @@ const char *cw_get_soundcard_device(void)
 
 
 /**
-   \brief Get a readable label of current sound system
+   \brief Get a readable label of current audio system
 
    The function returns one of following strings:
    None, Null, Console, OSS, ALSA, PulseAudio, Soundcard
 
-   \return sound system's label
+   \return audio system's label
 */
 const char *cw_generator_get_audio_system_label(void)
 {
@@ -1018,7 +1021,7 @@ void cw_reset_tone_queue(void)
 	//cw_finalization_schedule_internal();
 
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_TONE_QUEUE, CW_DEBUG_INFO,
-		      MSG_PREFIX "tone queue: reset");
+		      "libcw: tone queue: reset");
 
 	return;
 }
@@ -1057,9 +1060,9 @@ int cw_queue_tone(int usecs, int frequency)
 
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, frequency, usecs, CW_SLOPE_MODE_STANDARD_SLOPES);
-	cw_ret_t cwret = cw_tq_enqueue_internal(cw_generator->tq, &tone);
+	int rv = cw_tq_enqueue_internal(cw_generator->tq, &tone);
 
-	return cwret;
+	return rv;
 }
 
 
@@ -1514,11 +1517,12 @@ int cw_receive_representation(const struct timeval *timestamp,
 			      /* out */ bool *is_end_of_word,
 			      /* out */ bool *is_error)
 {
-	return cw_rec_poll_representation(&cw_receiver,
+	int rv = cw_rec_poll_representation(&cw_receiver,
 					  timestamp,
 					  representation,
 					  is_end_of_word,
 					  is_error);
+	return rv;
 }
 
 
@@ -1567,7 +1571,8 @@ int cw_receive_character(const struct timeval *timestamp,
 			 /* out */ bool *is_end_of_word,
 			 /* out */ bool *is_error)
 {
-	return cw_rec_poll_character(&cw_receiver, timestamp, c, is_end_of_word, is_error);
+	int rv = cw_rec_poll_character(&cw_receiver, timestamp, c, is_end_of_word, is_error);
+	return rv;
 }
 
 
@@ -1700,24 +1705,26 @@ void cw_register_keying_callback(void (*callback_func)(void*, int), void *callba
 
 
 
-/**
-   Most of the time libcw just passes around key_callback_arg,
-   not caring of what type it is, and not attempting to do any
-   operations on it. On one occasion however, it needs to know whether
-   key_callback_arg is of type 'struct timeval', and if so, it
-   must do some operation on it. I could pass struct with ID as
-   key_callback_arg, but that may break some old client
-   code. Instead I've created this function that has only one, very
-   specific purpose: to pass to libcw a pointer to timer.
 
-   The timer is owned by client code, and is used to measure and clock iambic
-   keyer.
+/*
+  Most of the time libcw just passes around key_callback_arg,
+  not caring of what type it is, and not attempting to do any
+  operations on it. On one occasion however, it needs to know whether
+  key_callback_arg is of type 'struct timeval', and if so, it
+  must do some operation on it. I could pass struct with ID as
+  key_callback_arg, but that may break some old client
+  code. Instead I've created this function that has only one, very
+  specific purpose: to pass to libcw a pointer to timer.
+
+  The timer is owned by client code, and is used to measure and clock
+  iambic keyer.
 */
-void cw_iambic_keyer_register_timer(struct timeval * timer)
+void cw_iambic_keyer_register_timer(struct timeval *timer)
 {
 	cw_key_ik_register_timer_internal(&cw_key, timer);
 	return;
 }
+
 
 
 

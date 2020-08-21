@@ -20,15 +20,14 @@
 #ifndef _LIBCW_H
 #define _LIBCW_H
 
-
-
-#include <pthread.h>
-#include <stdbool.h>
-#include <stdint.h>    /* int16_t */
 #include <sys/time.h>  /* For struct timeval */
 
+#include <stdint.h>    /* int16_t */
+#include <pthread.h>
+#include <stdbool.h>
 
-#define CW_AUDIO_CHANNELS 1                /* Sound in mono */
+
+static const int        CW_AUDIO_CHANNELS = 1;                /* Sound in mono */
 
 
 #if defined(__cplusplus)
@@ -41,7 +40,7 @@ enum cw_return_values {
 	CW_FAILURE = false,
 	CW_SUCCESS = true };
 
-/* Supported sound systems. */
+/* supported audio sound systems */
 enum cw_audio_systems {
 	CW_AUDIO_NONE = 0,  /* initial value; this is not the same as CW_AUDIO_NULL */
 	CW_AUDIO_NULL,      /* empty audio output (no sound, just timing); this is not the same as CW_AUDIO_NONE */
@@ -51,10 +50,6 @@ enum cw_audio_systems {
 	CW_AUDIO_PA,        /* PulseAudio */
 	CW_AUDIO_SOUNDCARD  /* OSS, ALSA or PulseAudio (PA) */
 };
-
-/* First and last distinct sound system. SOUNDCARD doesn't count as distinct sound system - it is a collective one. */
-#define CW_SOUND_SYSTEM_FIRST CW_AUDIO_NULL
-#define CW_SOUND_SYSTEM_LAST  CW_AUDIO_PA
 
 enum {
 	CW_KEY_STATE_OPEN = 0,  /* key is open, no electrical contact in key, no sound */
@@ -66,22 +61,13 @@ typedef int16_t cw_sample_t;
 
 
 
-/* Default outputs for sound systems. Used by libcw unless
+/* Default outputs for audio systems. Used by libcw unless
    client code decides otherwise. */
 #define CW_DEFAULT_NULL_DEVICE      ""
 #define CW_DEFAULT_CONSOLE_DEVICE   "/dev/console"
 #define CW_DEFAULT_OSS_DEVICE       "/dev/audio"
 #define CW_DEFAULT_ALSA_DEVICE      "default"
 #define CW_DEFAULT_PA_DEVICE        "( default )"
-
-
-
-
-/* E.g. "default", "plughw", "/dev/something"
-   Includes space for terminating NUL. */
-#define LIBCW_SOUND_DEVICE_NAME_SIZE  64
-
-
 
 
 /* Limits on values of CW send and timing parameters */
@@ -129,7 +115,7 @@ enum {
 	CW_DEBUG_KEYING               = 1 << 1,
 
 	/* Print out information related to main object generating
-	   sound (i.e. the generator). */
+	   audio (i.e. the generator). */
 	CW_DEBUG_GENERATOR            = 1 << 2,
 
 	/* Print out tone queue data. */
@@ -155,7 +141,7 @@ enum {
 
 	/* Print out information related to calls to standard library
 	   functions.  This does not include calls that are directly
-	   related to configuring sound devices (e.g. calling open()
+	   related to configuring audio devices (e.g. calling open()
 	   to open OSS device).
 
 	   Printing debug information about problems with malloc()
@@ -163,11 +149,11 @@ enum {
 	CW_DEBUG_STDLIB               = 1 << 10,
 
 	/* Print out any events directly related to sound systems: to
-	   opening sound device, configuring it, writing to it, and
+	   opening audio device, configuring it, writing to it, and
 	   closing it.  In case of e.g. OSS sound system, this may
 	   also include information about libc's open(), write() and
 	   ioctl() calls, as they are directly related to
-	   opening/configuring/writing to sound device. */
+	   opening/configuring/writing to audio device. */
 	CW_DEBUG_SOUND_SYSTEM         = 1 << 11,
 
 	/* Print out information related to internal states / errors /
@@ -180,7 +166,7 @@ enum {
 	CW_DEBUG_CLIENT_CODE          = 1 << 13,
 
 	/* Bit mask of all defined debug bits. */
-	CW_DEBUG_MASK                 = (1 << 14) - 1
+	CW_DEBUG_MASK                 = 0xffff
 };
 
 
@@ -220,23 +206,23 @@ typedef struct cw_gen_struct cw_gen_t;
 /* Functions handling library meta data */
 extern int  cw_version(void);
 extern void cw_license(void);
-extern const char *cw_get_audio_system_label(int sound_system);
+extern const char *cw_get_audio_system_label(int audio_system);
 
 
 
 /* Functions handling 'generator' */
-extern int  cw_generator_new(int sound_system, const char *device);
+extern int  cw_generator_new(int audio_system, const char *device);
 extern void cw_generator_delete(void);
 extern int  cw_generator_start(void);
 extern void cw_generator_stop(void);
 extern const char *cw_generator_get_audio_system_label(void);
-extern int  cw_generator_set_tone_slope(cw_gen_t *gen, int slope_shape, int slope_duration) __attribute__ ((deprecated)); /* You actually can't use this function since you don't have access to any gen variable. */
+extern int  cw_generator_set_tone_slope(cw_gen_t *gen, int slope_shape, int slope_usecs) __attribute__ ((deprecated)); /* You actually can't use this function since you don't have access to any gen variable. */
 
 /* Core Morse code data and lookup */
 extern int   cw_get_character_count(void);
 extern void  cw_list_characters(char *list);
 extern int   cw_get_maximum_representation_length(void);
-extern char *cw_character_to_representation(int character);
+extern char *cw_character_to_representation(int c);
 extern bool  cw_representation_is_valid(const char *representation);
 extern int   cw_representation_to_character(const char *representation);
 
@@ -246,13 +232,13 @@ extern int cw_get_procedural_character_count(void);
 extern void cw_list_procedural_characters(char *list);
 extern int cw_get_maximum_procedural_expansion_length(void);
 
-extern int cw_lookup_procedural_character(char character, char * expansion,
-					  int *is_usually_expanded);
+extern int cw_lookup_procedural_character (char c, char *representation,
+                                           int *is_usually_expanded);
 
 
 /* Phonetic alphabet */
 extern int cw_get_maximum_phonetic_length(void);
-extern int cw_lookup_phonetic(char character, char *buffer);
+extern int cw_lookup_phonetic(char c, char *phonetic);
 
 
 /* Morse code controls and timing parameters */
@@ -305,11 +291,11 @@ extern const char *cw_get_console_device(void);
 extern const char *cw_get_soundcard_device(void);
 
 
-extern bool cw_is_null_possible(const char * device_name);
-extern bool cw_is_console_possible(const char * device_name);
-extern bool cw_is_oss_possible(const char * device_name);
-extern bool cw_is_alsa_possible(const char * device_name);
-extern bool cw_is_pa_possible(const char * device_name);
+extern bool cw_is_null_possible(const char *device);
+extern bool cw_is_console_possible(const char *device);
+extern bool cw_is_oss_possible(const char *device);
+extern bool cw_is_alsa_possible(const char *device);
+extern bool cw_is_pa_possible(const char *device);
 
 
 
@@ -356,7 +342,7 @@ extern int cw_send_character(char c);
 extern int cw_send_character_partial(char c);
 extern int cw_send_string(const char *string);
 
-extern bool cw_character_is_valid(char character);
+extern bool cw_character_is_valid(char c);
 extern bool cw_string_is_valid(const char *string);
 
 
@@ -434,11 +420,11 @@ extern void cw_reset_straight_key(void);
 
 
 /* deprecated functions */
-extern int cw_check_representation(const char *representation)                   __attribute__ ((deprecated));   /* Use cw_representation_is_valid(). */
-extern int cw_lookup_representation(const char *representation, char *character) __attribute__ ((deprecated));   /* Use cw_representation_to_character(). */
-extern int cw_lookup_character(char character, char *representation)             __attribute__ ((deprecated));   /* Use cw_character_to_representation(). */
-extern int cw_check_character(char character)                                    __attribute__ ((deprecated));   /* Use cw_character_is_valid(). */
-extern int cw_check_string(const char *string)                                   __attribute__ ((deprecated));   /* Use cw_string_is_valid(). */
+extern int cw_check_representation(const char *representation)           __attribute__ ((deprecated));   /* Use cw_representation_is_valid(). */
+extern int cw_lookup_representation(const char *representation, char *c) __attribute__ ((deprecated));   /* Use cw_representation_to_character(). */
+extern int cw_lookup_character(char c, char *representation)             __attribute__ ((deprecated));   /* Use cw_character_to_representation(). */
+extern int cw_check_character(char c)                                    __attribute__ ((deprecated));   /* Use cw_character_is_valid(). */
+extern int cw_check_string(const char *string)                           __attribute__ ((deprecated));   /* Use cw_string_is_valid(). */
 
 
 #if defined(__cplusplus)

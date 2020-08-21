@@ -32,6 +32,20 @@ extern "C"
 
 
 
+/* E.g. "default", "plughw", "/dev/something"
+   Includes space for terminating NUL. */
+#define LIBCW_SOUND_DEVICE_NAME_SIZE  64
+
+
+
+
+/* First and last distinct sound system. SOUNDCARD doesn't count as distinct sound system - it is a collective one. */
+#define CW_SOUND_SYSTEM_FIRST CW_AUDIO_NULL
+#define CW_SOUND_SYSTEM_LAST  CW_AUDIO_PA
+
+
+
+
 typedef int cw_ret_t;
 
 struct cw_key_struct;
