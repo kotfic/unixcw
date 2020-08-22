@@ -43,6 +43,7 @@
 
 extern const char * test_valid_representations[];
 extern const char * test_invalid_representations[];
+extern const char * test_invalid_strings[];
 
 
 
@@ -1278,15 +1279,15 @@ cwt_retv test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 	{
 		bool failure = false;
 		for (int rep = 0; rep < repetitions; rep++) {
-			const char * invalid_strings[] = { "%INVALID%" }; /* List of invalid strings to be enqueued. */
-			const int n = sizeof (invalid_strings) / sizeof (invalid_strings[0]);
-
-			for (int i = 0; i < n; i++) {
-				const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, invalid_strings[i]);
-				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue string(<invalid>) (i = %d)", i)) {
+			int i = 0;
+			while (NULL != test_invalid_strings[i]) {
+				const char * test_string = test_invalid_strings[i];
+				const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_string)(gen, test_string);
+				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue string(<invalid>) (i = %d, string = '%s')", i, test_string)) {
 					failure = true;
 					break;
 				}
+				i++;
 			}
 			if (failure) {
 				break;

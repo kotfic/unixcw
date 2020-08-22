@@ -55,6 +55,7 @@
 extern const cw_entry_t CW_TABLE[];
 extern const char * test_valid_representations[];
 extern const char * test_invalid_representations[];
+extern const char * test_invalid_strings[];
 
 
 
@@ -187,6 +188,7 @@ int test_cw_representation_to_character_internal(cw_test_executor_t * cte)
 	cte->print_test_header(cte, __func__);
 
 	bool failure = false;
+	int i = 0;
 
 	for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
 
@@ -196,6 +198,27 @@ int test_cw_representation_to_character_internal(cw_test_executor_t * cte)
 		if (!cte->expect_op_int_errors_only(cte, char_fast_lookup, "==", char_direct, "fast lookup vs. direct method: '%s'", cw_entry->representation)) {
 			failure = true;
 			break;
+		}
+
+
+		/* Also test old version of cw_representation_to_character(). */
+		{
+			char char_old_lookup = 0;
+			int cwret = LIBCW_TEST_FUT(cw_lookup_representation)(cw_entry->representation, &char_old_lookup);
+
+			if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
+							    "fast lookup vs. old method: conversion from representation to character for #%d (representation '%s')\n",
+							    i, cw_entry->representation)) {
+				failure = true;
+				break;
+			}
+
+			if (!cte->expect_op_int_errors_only(cte, char_fast_lookup, "==", char_old_lookup, "fast lookup vs. old method: '%s'", cw_entry->representation)) {
+				failure = true;
+				break;
+			}
+
+			i++;
 		}
 	}
 
@@ -216,7 +239,7 @@ int test_cw_representation_to_character_internal(cw_test_executor_t * cte)
 
    @reviewed on 2019-10-12
 */
-int test_cw_representation_to_character_internal_speed(cw_test_executor_t * cte)
+int test_cw_representation_to_character_internal_speed_gain(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
@@ -326,21 +349,68 @@ int test_character_lookups_internal(cw_test_executor_t * cte)
 
 		for (int i = 0; charlist[i] != '\0'; i++) {
 
-			char * representation = LIBCW_TEST_FUT(cw_character_to_representation)(charlist[i]);
-			if (!cte->expect_valid_pointer_errors_only(cte, representation, "character lookup: character to representation for #%d (char '%c')\n", i, charlist[i])) {
+			const char input_character = charlist[i];
+			char * representation = LIBCW_TEST_FUT(cw_character_to_representation)(input_character);
+			if (!cte->expect_valid_pointer_errors_only(cte, representation,
+								   "character to representation: conversion from character to representation (new) for #%d (char '%c')\n",
+								   i, input_character)) {
 				c2r_failure = true;
 				break;
 			}
 
+			/* Also test the old version of cw_character_to_representation(). */
+			{
+				/* TODO: replace 32 size with (CW_DATA_MAX_REPRESENTATION_LENGTH+1). */
+				char representation_old[32] = { 0 };
+				int cwret = LIBCW_TEST_FUT(cw_lookup_character)(input_character, representation_old);
+
+				if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
+								    "character to representation: conversion from character to representation (old) for #%d (char '%c')\n",
+								    i, input_character)) {
+					c2r_failure = true;
+					break;
+				}
+
+				const int cmp = strcmp(representation, representation_old);
+				if (!cte->expect_op_int_errors_only(cte, cmp, "==", 0,
+								    "character to representation: result of new and old method for #%d: '%s' != '%s'\n",
+								    i, representation, representation_old)) {
+					c2r_failure = true;
+					break;
+				}
+			}
+
 			/* Here we convert the representation back into a character. */
-			char character = LIBCW_TEST_FUT(cw_representation_to_character)(representation);
-			if (!cte->expect_op_int_errors_only(cte, 0, "!=", character, "representation to character failed for #%d (representation '%s')\n", i, representation)) {
+			char reverse_character = LIBCW_TEST_FUT(cw_representation_to_character)(representation);
+			if (!cte->expect_op_int_errors_only(cte, 0, "!=", reverse_character,
+							    "representation to character: conversion from representation to character (new) for #%d (representation '%s')\n",
+							    i, representation)) {
 				r2c_failure = true;
 				break;
 			}
+			/* Also test old version of cw_representation_to_character(). */
+			{
+				char old_reverse_character = 0;
+				int cwret = LIBCW_TEST_FUT(cw_lookup_representation)(representation, &old_reverse_character);
+
+				if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
+								    "representation to character: conversion from representation to character (old) for #%d (representation '%s')\n",
+								    i, representation)) {
+					r2c_failure = true;
+					break;
+				}
+
+
+				if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", old_reverse_character,
+								    "representation to character: result of new and old method for #%d: '%c' != '%c'\n",
+								    i, reverse_character, old_reverse_character)) {
+					r2c_failure = true;
+					break;
+				}
+			}
 
 			/* Compare output char with input char. */
-			if (!cte->expect_op_int_errors_only(cte, character, "==", charlist[i], "character lookup: two-way lookup for #%d ('%c' -> '%s' -> '%c')\n", i, charlist[i], representation, character)) {
+			if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", input_character, "character lookup: two-way lookup for #%d ('%c' -> '%s' -> '%c')\n", i, input_character, representation, reverse_character)) {
 				two_way_failure = true;
 				break;
 			}
@@ -348,7 +418,7 @@ int test_character_lookups_internal(cw_test_executor_t * cte)
 			const int length = (int) strlen(representation);
 			const int rep_length_lower = 1; /* A representation will have at least one character. */
 			const int rep_length_upper = max_rep_length;
-			if (!cte->expect_between_int_errors_only(cte, rep_length_lower, length, rep_length_upper, "character lookup: representation length of character '%c' (#%d)", charlist[i], i)) {
+			if (!cte->expect_between_int_errors_only(cte, rep_length_lower, length, rep_length_upper, "character lookup: representation length of character '%c' (#%d)", input_character, i)) {
 				length_failure = true;
 				break;
 			}
@@ -603,9 +673,9 @@ static int test_phonetic_lookups_internal_sub(cw_test_executor_t * cte, char * p
 
 
 /**
-   Validate all supported characters individually
+   @brief Test validation of individual characters
 
-   @reviewed on 2019-10-11
+   @reviewed on 2020-08-22
 */
 int test_validate_character_internal(cw_test_executor_t * cte)
 {
@@ -621,36 +691,64 @@ int test_validate_character_internal(cw_test_executor_t * cte)
 
 	for (int i = 0; i < UCHAR_MAX; i++) {
 		if (i == '\b') {
-			/* Here we have a valid character, that is
-			   not 'sendable' but can be handled by libcw
-			   nevertheless. cw_character_is_valid() should
-			   confirm it. */
-			const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
 
-			if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character: valid character '<backspace>' / #%d not recognized as valid\n", i)) {
-				failure_valid = true;
-				break;
+			/* Here we have a valid character, that is not
+			   'sendable' but can be handled by libcw
+			   nevertheless. cw_check_character()/cw_character_is_valid()
+			   should confirm it. */
+			{
+				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_character)(i);
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (old): valid character '<backspace>' / #%d not recognized as valid\n", i)) {
+					failure_valid = true;
+					break;
+				}
+			}
+			{
+				const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (new): valid character '<backspace>' / #%d not recognized as valid\n", i)) {
+					failure_valid = true;
+					break;
+				}
 			}
 		} else if (i == ' ' || (i != 0 && strchr(charlist, toupper(i)) != NULL)) {
 
 			/* Here we have a valid character, that is
-			   recognized/supported as 'sendable' by
-			   libcw.  cw_character_is_valid() should
-			   confirm it. */
-			const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
-			if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character: valid character '%c' / #%d not recognized as valid\n", (char ) i, i)) {
-				failure_valid = true;
-				break;
+			   recognized/supported as 'sendable' by libcw.
+			   cw_check_character()/cw_character_is_valid()
+			   should confirm it. */
+			{
+				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_character)(i);
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (old): valid character '%c' / #%d not recognized as valid\n", (char ) i, i)) {
+					failure_valid = true;
+					break;
+				}
+			}
+			{
+				const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (new): valid character '%c' / #%d not recognized as valid\n", (char ) i, i)) {
+					failure_valid = true;
+					break;
+				}
 			}
 		} else {
-			/* The 'i' character is not
-			   recognized/supported by libcw.
-			   cw_character_is_valid() should return false
-			   to signify that the char is invalid. */
-			const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
-			if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character: invalid character '%c' / #%d recognized as valid\n", (char ) i, i)) {
-				failure_invalid = true;
-				break;
+			/* The 'i' character is not recognized/supported by
+			   libcw.
+			   cw_check_character()/cw_character_is_valid()
+			   should return false to signify that the char is
+			   invalid. */
+			{
+				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_character)(i);
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (old): invalid character '%c' / #%d recognized as valid\n", (char ) i, i)) {
+					failure_invalid = true;
+					break;
+				}
+			}
+			{
+				const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (new): invalid character '%c' / #%d recognized as valid\n", (char ) i, i)) {
+					failure_invalid = true;
+					break;
+				}
 			}
 		}
 	}
@@ -667,9 +765,9 @@ int test_validate_character_internal(cw_test_executor_t * cte)
 
 
 /**
-   Validate all supported characters placed in a string
+   @brief Test validation of strings: valid strings and invalid strings
 
-   @reviewed on 2019-10-11
+   @reviewed 2020-08-22
 */
 int test_validate_string_internal(cw_test_executor_t * cte)
 {
@@ -677,21 +775,43 @@ int test_validate_string_internal(cw_test_executor_t * cte)
 
 	/* Test: validation of string as a whole. */
 
-	bool are_we_valid;
-	/* Check the whole charlist item as a single string,
-	   then check a known invalid string. */
 
+	/* Check the whole library-provided character list item as a single
+	   string.
 
+	   TODO: we should have array of valid strings, like we have for
+	   invalid strings below. */
 	char charlist[UCHAR_MAX + 1];
 	cw_list_characters(charlist);
-	are_we_valid = LIBCW_TEST_FUT(cw_string_is_valid)(charlist);
-	cte->expect_op_int(cte, true, "==", are_we_valid, "validate string: valid string");
+	{
+		const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_string)(charlist);
+		cte->expect_op_int(cte, true, "==", is_valid, "validate string (old): valid string");
+	}
+	{
+		const bool is_valid = LIBCW_TEST_FUT(cw_string_is_valid)(charlist);
+		cte->expect_op_int(cte, true, "==", is_valid, "validate string (new): valid string");
+	}
 
 
 	/* Test invalid string. */
-	are_we_valid = LIBCW_TEST_FUT(cw_string_is_valid)("%INVALID%");
-	cte->expect_op_int(cte, false, "==", are_we_valid, "validate string: invalid string");
-
+	{
+		int i = 0;
+		while (NULL != test_invalid_strings[i]) {
+			const char * test_string = test_invalid_strings[i];
+			const bool is_valid = LIBCW_TEST_FUT(cw_check_string)(test_string);
+			cte->expect_op_int(cte, false, "==", is_valid, "validate string (old): invalid string %d/'%s'", i, test_string);
+			i++;
+		}
+	}
+	{
+		int i = 0;
+		while (NULL != test_invalid_strings[i]) {
+			const char * test_string = test_invalid_strings[i];
+			const bool is_valid = LIBCW_TEST_FUT(cw_string_is_valid)(test_string);
+			cte->expect_op_int(cte, false, "==", is_valid, "validate string (new): invalid string %d/'%s'", i, test_string);
+			i++;
+		}
+	}
 
 	cte->print_test_footer(cte, __func__);
 
@@ -702,9 +822,9 @@ int test_validate_string_internal(cw_test_executor_t * cte)
 
 
 /**
-   \brief Validating representations of characters
+   @brief Test validation of representations of characters
 
-   @reviewed on 2019-10-11
+   @reviewed 2020-08-22
 */
 int test_validate_representation_internal(cw_test_executor_t * cte)
 {
@@ -714,11 +834,20 @@ int test_validate_representation_internal(cw_test_executor_t * cte)
 	{
 		int i = 0;
 		bool failure = false;
-		while (test_valid_representations[i]) {
-			const int cwret = LIBCW_TEST_FUT(cw_representation_is_valid)(test_valid_representations[i]);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "valid representations (i = %d)", i)) {
-				failure = true;
-				break;
+		while (NULL != test_valid_representations[i]) {
+			{
+				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_representation)(test_valid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "valid representation (old) (i = %d)", i)) {
+					failure = true;
+					break;
+				}
+			}
+			{
+				const bool is_valid = LIBCW_TEST_FUT(cw_representation_is_valid)(test_valid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "valid representation (new) (i = %d)", i)) {
+					failure = true;
+					break;
+				}
 			}
 			i++;
 		}
@@ -730,11 +859,20 @@ int test_validate_representation_internal(cw_test_executor_t * cte)
 	{
 		int i = 0;
 		bool failure = false;
-		while (test_invalid_representations[i]) {
-			const int cwret = LIBCW_TEST_FUT(cw_representation_is_valid)(test_invalid_representations[i]);
-			if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "invalid representations (i = %d)", i)) {
-				failure = true;
-				break;
+		while (NULL != test_invalid_representations[i]) {
+			{
+				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_representation)(test_invalid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "invalid representation (old) (i = %d)", i)) {
+					failure = true;
+					break;
+				}
+			}
+			{
+				const bool is_valid = LIBCW_TEST_FUT(cw_representation_is_valid)(test_invalid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "invalid representation (new) (i = %d)", i)) {
+					failure = true;
+					break;
+				}
 			}
 			i++;
 		}

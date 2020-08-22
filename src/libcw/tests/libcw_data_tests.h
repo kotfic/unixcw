@@ -16,7 +16,7 @@
 
 int test_cw_representation_to_hash_internal(cw_test_executor_t * cte);
 int test_cw_representation_to_character_internal(cw_test_executor_t * cte);
-int test_cw_representation_to_character_internal_speed(cw_test_executor_t * cte);
+int test_cw_representation_to_character_internal_speed_gain(cw_test_executor_t * cte);
 int test_character_lookups_internal(cw_test_executor_t * cte);
 int test_prosign_lookups_internal(cw_test_executor_t * cte);
 int test_phonetic_lookups_internal(cw_test_executor_t * cte);

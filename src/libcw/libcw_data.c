@@ -452,8 +452,19 @@ uint8_t cw_representation_to_hash_internal(const char * representation)
 		return 0;
 	}
 
-	/* Build up the hash based on the dots and dashes; start at 1,
-	   the sentinel * (start) bit. */
+	/*
+	  Build up the hash based on the dots and dashes; start at 1, the
+	  sentinel * (start) bit.
+
+	  TODO: why do we need the sentinel? To distinguish between hashes
+	  of similar representations that have dots at the beginning?
+
+	  representation    hash, no sentinel    hash, with sentinel
+	  .._               0000 0001            0000 1001
+	  ..._              0000 0001            0001 0001
+	*/
+
+
 	unsigned int hash = 1; /* TODO: shouldn't this be uint8_t? */
 	for (size_t i = 0; i < length; i++) {
 		/* Left-shift everything so far. */
@@ -463,9 +474,10 @@ uint8_t cw_representation_to_hash_internal(const char * representation)
 			/* Dash is represented by '1' in hash. */
 			hash |= 1;
 		} else if (representation[i] == CW_DOT_REPRESENTATION) {
-			/* Dot is represented by '0' in hash (we don't
-			   have to do anything at this point, the zero
-			   is already in the hash). */
+			/* Dot is represented by '0' in hash. We don't have
+			   to do anything at this point, the zero bit is
+			   already at the rightmost position after
+			   left-shifting hash. */
 			;
 		} else {
 			/* Invalid element in representation string. */
@@ -498,7 +510,7 @@ uint8_t cw_representation_to_hash_internal(const char * representation)
 */
 int cw_representation_to_character_internal(const char * representation)
 {
-	static const cw_entry_t *lookup[UCHAR_MAX];   /* Fast lookup table */
+	static const cw_entry_t * lookup[UCHAR_MAX];  /* Fast lookup table */
 	static bool is_complete = true;               /* Set to false if there are any
 							 lookup table entries not in
 							 the fast lookup table */
@@ -510,7 +522,7 @@ int cw_representation_to_character_internal(const char * representation)
 		/* TODO: move the initialization to cw_data_constructor_internal(). */
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_LOOKUPS, CW_DEBUG_INFO,
 			      MSG_PREFIX "initialize hash lookup table");
-		is_complete = CW_SUCCESS == cw_representation_lookup_init_internal(lookup);
+		is_complete = CW_SUCCESS == cw_data_init_r2c_hash_table_internal(lookup);
 		is_initialized = true;
 	}
 
@@ -528,7 +540,7 @@ int cw_representation_to_character_internal(const char * representation)
 		   passes without problems for all valid representations.
 
 		   Debug message is already displayed in
-		   cw_representation_lookup_init_internal(). */
+		   cw_data_init_r2c_hash_table_internal(). */
 
 		/* The lookup table is incomplete, but it doesn't have
 		   to be that we are missing entry for this particular
@@ -627,19 +639,19 @@ int cw_representation_to_character_direct_internal(const char * representation)
 
 
 /**
-   @brief Initialize representation lookup table
+   @brief Initialize representation-to-character lookup table
 
-   Initialize @p lookup table with values from CW_TABLE (of type cw_entry_t).
+   Initialize @p table with values from CW_TABLE (of type cw_entry_t).
    The table is indexed with hashed representations of cw_entry_t->representation
    strings.
 
-   @p lookup table must be large enough to store all entries, caller must
+   @p table must be large enough to store all entries, caller must
    make sure that the condition is met.
 
    On failure function returns CW_FAILURE.
    On success the function returns CW_SUCCESS. Successful execution of
    the function is when all representations from CW_TABLE have valid
-   hashes, and all entries from CW_TABLE have been put into @p lookup.
+   hashes, and all entries from CW_TABLE have been put into @p table.
 
    First condition of function's success, mentioned above, should be
    always true because the CW_TABLE has been created once and it
@@ -656,18 +668,18 @@ int cw_representation_to_character_direct_internal(const char * representation)
    @reviewed 2020-07-26
    @endinternal
 
-   @param[in] lookup lookup table to be initialized
+   @param[in] table lookup table to be initialized
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
 */
-cw_ret_t cw_representation_lookup_init_internal(const cw_entry_t * lookup[])
+cw_ret_t cw_data_init_r2c_hash_table_internal(const cw_entry_t * table[])
 {
 	/* For each main table entry, create a hash entry.  If the
 	   hashing of any entry fails, note that the table is not
 	   complete and ignore that entry for now (for the current
 	   main table (CW_TABLE) this should not happen).  The hashed
-	   table speeds up lookups of representations by a factor of
+	   table speeds up representation-to-character lookups by a factor of
 	   5-10.
 
 	   NOTICE: Notice that the lookup table will be marked as
@@ -691,7 +703,7 @@ cw_ret_t cw_representation_lookup_init_internal(const cw_entry_t * lookup[])
 	for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
 		const uint8_t hash = cw_representation_to_hash_internal(cw_entry->representation);
 		if (hash) {
-			lookup[hash] = cw_entry;
+			table[hash] = cw_entry;
 		} else {
 			is_complete = false;
 		}

@@ -45,3 +45,9 @@ const char * test_invalid_representations[] = { "INVALID",
 						"-_-", /* This does not represent a valid letter/digit. */
 
 						NULL }; /* Guard. */
+
+/* Strings that cannot be enqueued to libcw generator and sent/played because
+   they are invalid in some way. */
+const char * test_invalid_strings[] = { "%INVALID%",
+
+					NULL }; /* Guard. */

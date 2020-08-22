@@ -20,7 +20,7 @@
 
 
 
-#define CW_DATA_MAX_REPRESENTATION_LENGTH 7 /* CHAR_BIT - 1 */
+#define CW_DATA_MAX_REPRESENTATION_LENGTH 7 /* CHAR_BIT - 1. Does not include space for terminating NUL (TODO: double check and explain why). */
 #define CW_DATA_MIN_REPRESENTATION_HASH 2
 #define CW_DATA_MAX_REPRESENTATION_HASH 255
 
@@ -38,7 +38,7 @@ typedef struct cw_entry_struct {
 
 /* Functions handling representation of a character.
    Representation looks like this: ".-" for "a", "--.." for "z", etc. */
-cw_ret_t cw_representation_lookup_init_internal(const cw_entry_t * lookup[]);
+cw_ret_t cw_data_init_r2c_hash_table_internal(const cw_entry_t * table[]);
 int cw_representation_to_character_internal(const char * representation);
 int cw_representation_to_character_direct_internal(const char * representation);
 uint8_t cw_representation_to_hash_internal(const char * representation); /* TODO: uint8_t will be enough for everyone? */

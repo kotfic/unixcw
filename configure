@@ -18627,6 +18627,10 @@ GCC_C_WARNINGS="-Wimplicit-function-declaration"
 # For silencing warnings about format with localization macro: printf(_("")).
 GCC_WARNINGS="$GCC_WARNINGS -Wno-format-nonliteral"
 
+# For silencing warnings about libcw's deprecated symbols. As long as they
+# stay in libcw I still need to use them and test them.
+GCC_WARNINGS="$GCC_WARNINGS -Wno-deprecated-declarations"
+
 # Inspired by Krister Walfridsson's blog post
 GCC_WARNINGS="$GCC_WARNINGS -Wduplicated-cond -Wlogical-op"
 GCC_WARNINGS="$GCC_WARNINGS -Wnull-dereference"

@@ -72,7 +72,7 @@ cw_test_set_t cw_test_sets[] = {
 			/* cw_data topic */
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_representation_to_hash_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_representation_to_character_internal),
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_representation_to_character_internal_speed),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_representation_to_character_internal_speed_gain),
 			LIBCW_TEST_FUNCTION_INSERT(test_character_lookups_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_prosign_lookups_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_phonetic_lookups_internal),
