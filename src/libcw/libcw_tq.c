@@ -403,7 +403,7 @@ size_t cw_tq_capacity_internal(const cw_tone_queue_t * tq)
 /**
    @brief Return high water mark of a queue
 
-   @reviewed on 2017-01-30
+   @reviewed 2017-01-30
 
    @internal
    @reviewed 2020-07-28

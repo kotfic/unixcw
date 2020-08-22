@@ -92,7 +92,7 @@ cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 /**
    @brief Check if it is possible to open Null sound output
 
-   @reviewed on 2020-07-12
+   @reviewed 2020-07-12
 
    @param[in] device_name name of Null device to be used. Value is ignored
    for Null sound system.
@@ -110,7 +110,7 @@ bool cw_is_null_possible(__attribute__((unused)) const char * device_name)
 /**
    @brief Open and configure Null sound system handle stored in given generator
 
-   @reviewed on 2020-07-12
+   @reviewed 2020-07-12
 
    @param[in] gen generator for which to open and configure sound system handle
 
@@ -128,7 +128,7 @@ static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen)
 /**
    @brief Close Null device stored in given generator
 
-   @reviewed on 2020-07-12
+   @reviewed 2020-07-12
 
    @param[in] gen generator for which to close its sound device
 */
@@ -148,7 +148,7 @@ static void cw_null_close_sound_device_internal(cw_gen_t * gen)
    sleeps for period of time that would be necessary to write the
    samples to a real sound device and play/sound them.
 
-   @reviewed on 2020-07-12
+   @reviewed 2020-07-12
 
    @param[in] gen generator that will write to sound device
    @param[in] tone tone to write to sound device

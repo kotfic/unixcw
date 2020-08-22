@@ -1368,7 +1368,7 @@ int cw_check_string(const char * string)
 
 
 
-// \cond LIBCW_INTERNAL
+// @cond LIBCW_INTERNAL
 
 /**
    @brief Constructor for 'data' module of libcw

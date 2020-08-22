@@ -42,16 +42,15 @@ void cw_usecs_to_timespec_internal(struct timespec * ts, int usecs);
 /**
    @brief Sleep for given amount of microseconds
 
-   The function uses nanosleep(), and can handle incoming SIGALRM
-   signals that cause regular nanosleep() to return. The function
-   calls nanosleep() until all time specified by @param usecs has
-   elapsed.
+   The function uses nanosleep(), and can handle incoming SIGALRM signals
+   that cause regular nanosleep() to return. The function calls nanosleep()
+   until all time specified by @p usecs has elapsed.
 
    The function may sleep a little longer than specified by @param
    usecs if it needs to spend some time handling SIGALRM signal. Other
    restrictions from nanosleep()'s man page also apply.
 
-   @reviewed-on 2020-08-17
+   @reviewed 2020-08-17
 */
 void cw_usleep_internal(int usecs);
 

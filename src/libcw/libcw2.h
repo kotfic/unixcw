@@ -932,7 +932,7 @@ void cw_rec_reset_state(cw_rec_t * rec);
    Reset the receiver's statistics by removing all records from it and
    returning it to its initial default state.
 
-   reviewed-on 2017-02-02
+   #reviewed 2017-02-02
 
    @param[in,out] rec receiver for which to reset statistics
 */

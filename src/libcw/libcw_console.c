@@ -21,9 +21,9 @@
 
 
 /**
-   \file libcw_console.c
+   @file libcw_console.c
 
-   \brief Console buzzer sound sink.
+   @brief Console buzzer sound sink.
 */
 
 
@@ -126,7 +126,7 @@ static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state);
    as every other function called to perform console operations will
    happily assume that it is allowed to perform such operations.
 
-   @reviewed on 2020-07-14
+   @reviewed 2020-07-14
 
    @param[in] device_name name of console buzzer device to be used; if NULL
    then the function will use library-default device name.
@@ -187,7 +187,7 @@ bool cw_is_console_possible(const char * device_name)
    You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator @p gen won't know which device to open.
 
-   @reviewed on 2020-07-14
+   @reviewed 2020-07-14
 
    @param[in] gen generator for which to open and configure buzzer device
 
@@ -228,7 +228,7 @@ static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * g
 /**
    @brief Stop generating sound on console buzzer using given generator
 
-   @reviewed on 2020-07-14
+   @reviewed 2020-07-14
 
    @param[in] gen generator to silence
 */
@@ -244,7 +244,7 @@ void cw_console_silence(cw_gen_t * gen)
 /**
    @brief Close console buzzer device stored in given generator
 
-   @reviewed on 2020-07-14
+   @reviewed 2020-07-14
 
    @param[in] gen generator for which to close its sound device
 */
@@ -273,7 +273,7 @@ static void cw_console_close_sound_device_internal(cw_gen_t * gen)
    After playing X microseconds of tone the function returns. The function is
    intended to behave like a blocking write() function.
 
-   @reviewed on 2020-07-16
+   @reviewed 2020-07-16
 
    @param[in] gen generator to use to play a tone
    @param[in] tone tone to play with generator
@@ -321,7 +321,7 @@ static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, c
 
 
 /**
-   \brief Start generating a sound using console buzzer
+   @brief Start generating a sound using console buzzer
 
    The function calls the KIOCSOUND ioctl to start a particular tone.
    Once started, the console tone generation needs no maintenance.
@@ -329,7 +329,7 @@ static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, c
    The function only initializes generation, you have to do another
    function call to change the tone generated.
 
-   @reviewed on 2020-07-16
+   @reviewed 2020-07-16
 
    @param[in] gen generator
    @param[in] state flag deciding if a sound should be generated (logical true) or not (logical false)

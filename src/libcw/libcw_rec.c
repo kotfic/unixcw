@@ -1924,7 +1924,7 @@ int cw_rec_get_receive_buffer_capacity_internal(void)
    @brief Get number of Marks (Dots and Dashes) currently stored in receiver's representation buffer
 
    @internal
-   @reviewed on 2020-08-11
+   @reviewed 2020-08-11
    @endinternal
 
    @param[in] rec receiver from which to get current number of Marks

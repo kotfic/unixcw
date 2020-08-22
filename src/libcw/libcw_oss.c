@@ -21,9 +21,9 @@
 
 
 /**
-   \file libcw_oss.c
+   @file libcw_oss.c
 
-   \brief OSS sound system.
+   @brief OSS sound system.
 */
 
 
@@ -119,7 +119,7 @@ static void cw_oss_close_sound_device_internal(cw_gen_t * gen);
    Function does a test opening and test configuration of OSS output,
    but it closes it before returning.
 
-   @reviewed on 2020-07-19
+   @reviewed 2020-07-19
 
    @param[in] device_name name of OSS device to be used; if NULL then the
    function will use library-default device name.
@@ -251,7 +251,7 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator @p gen won't know which device to open.
 
-   @reviewed on 2020-07-19
+   @reviewed 2020-07-19
 
    @param[in] gen generator for which to open and configure sound system handle
 
@@ -328,7 +328,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
    Wrapper function for ioctl calls that need to be done when configuring
    file descriptor @p fd for OSS playback.
 
-   @reviewed on 2020-07-19
+   @reviewed 2020-07-19
 
    @param[in] fd file descriptor of open OSS file;
    @param[out] sample_rate sample rate configured by ioctl calls
@@ -500,7 +500,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, int * sample_rate)
 /**
    @brief Close OSS device stored in given generator
 
-   @reviewed on 2020-07-19
+   @reviewed 2020-07-19
 
    @param[in] gen generator for which to close its sound device
 */
@@ -525,7 +525,7 @@ void cw_oss_close_sound_device_internal(cw_gen_t * gen)
 /**
    @brief Get version number of OSS API
 
-   @reviewed on 2020-07-19
+   @reviewed 2020-07-19
 
    @param[in] fd opened file descriptor for OSS device
    @param[out] x first digit of OSS version

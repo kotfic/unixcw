@@ -21,9 +21,9 @@
 
 
 /**
-   \file libcw_pa.c
+   @file libcw_pa.c
 
-   \brief PulseAudio sound system.
+   @brief PulseAudio sound system.
 */
 
 
@@ -245,7 +245,7 @@ cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 /**
    @brief Write generated samples to PulseAudio sound device configured and opened for generator
 
-   @reviewed on 2020-07-20
+   @reviewed 2020-07-20
 
    @param[in] gen generator that will write to sound device
 
@@ -274,7 +274,7 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
 
 /**
-   \brief Wrapper for pa_simple_new()
+   @brief Wrapper for pa_simple_new()
 
    Wrapper for pa_simple_new() and related code. The code block contained
    in the function is useful in two different places: when first probing
@@ -287,7 +287,7 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
    The function *does not* set size of sound buffer in libcw's generator.
 
-   @reviewed on 2020-07-20
+   @reviewed 2020-07-20
 
    @param[in] device_name name of PulseAudio device to be used, or NULL for default device
    @param[in] stream_name descriptive name of client, passed to pa_simple_new
@@ -344,9 +344,9 @@ static pa_simple * cw_pa_simple_new_internal(const char * device_name, const cha
    symbol that the funciton failed to resolve. Function stops and returns
    on first failure.
 
-   @reviewed on 2020-07-20
+   @reviewed 2020-07-20
 
-   @param[in/out] cw_pa libcw pa data structure with library handle to opened PulseAudio library
+   @param[in,out] cw_pa libcw pa data structure with library handle to opened PulseAudio library
 
    @return 0 on success
    @return negative value on failure
@@ -380,9 +380,9 @@ static int cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa)
    You must use cw_gen_set_sound_device_internal() before calling this
    function. Otherwise generator @p gen won't know which device to open.
 
-   @reviewed on 2020-07-20
+   @reviewed 2020-07-20
 
-   @param[in/out] gen generator for which to open and configure sound system handle
+   @param[in,out] gen generator for which to open and configure sound system handle
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
@@ -427,9 +427,9 @@ static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 /**
    @brief Close PulseAudio device stored in given generator
 
-   @reviewed on 2020-07-20
+   @reviewed 2020-07-20
 
-   @param[in/out] gen generator for which to close its sound device
+   @param[in,out] gen generator for which to close its sound device
 */
 static void cw_pa_close_sound_device_internal(cw_gen_t * gen)
 {

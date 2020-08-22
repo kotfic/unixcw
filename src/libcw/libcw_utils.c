@@ -113,7 +113,7 @@ static void cw_finalization_clock_internal(void);
    Version numbers (major and minor) are returned as an int,
    composed of major_version << 16 | minor_version.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @return library's major and minor version number encoded as single int
 */
@@ -141,7 +141,7 @@ int cw_version(void)
    revision, @p age. These three properties are described here:
    http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] current 'current' part of library version number (may be NULL)
    @param[out] revision 'revision' part of library version number (may be NULL)
@@ -218,9 +218,9 @@ void cw_license(void)
 
    TODO: change the declaration to "const char *const cw_get_audio_system_label(...)"?
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
-   @param[int] sound_system ID of sound system
+   @param[in] sound_system ID of sound system
 
    @return sound system's label
 */
@@ -241,7 +241,7 @@ const char * cw_get_audio_system_label(int sound_system)
 
    This function is just a simple wrapper for few lines of code.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] ts pointer to existing struct to be filled with data
    @param[in] usecs value to convert to timespec
@@ -295,7 +295,7 @@ void cw_usleep_internal(int usecs)
    Name of the library should contain ".so" suffix, e.g.: "libasound.so.2",
    or "libpulse-simple.so".
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[in] library_name name of library to test
    @param[out] handle handle to opened library
@@ -345,7 +345,7 @@ cw_ret_t cw_dlopen_internal(const char * library_name, void ** handle)
 
    @p out_timestamp cannot be NULL.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] out_timestamp timestamp to be used by client code after the function call
    @param[in] in_timestamp timestamp to be validated
@@ -395,7 +395,7 @@ cw_ret_t cw_timestamp_validate_internal(struct timeval * out_timestamp, const st
 
    This routine always returns a positive integer in the range 0 to INT_MAX.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[in] earlier earlier (older) timestamp to compare
    @param[in] later later (newer) timestamp to compare
@@ -464,7 +464,7 @@ int cw_timestamp_compare_internal(const struct timeval * earlier, const struct t
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] min_speed minimal allowed speed
    @param[out] max_speed maximal allowed speed
@@ -495,7 +495,7 @@ void cw_get_speed_limits(int * min_speed, int * max_speed)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] min_frequency minimal allowed frequency
    @param[out] max_frequency maximal allowed frequency
@@ -526,7 +526,7 @@ void cw_get_frequency_limits(int * min_frequency, int * max_frequency)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] min_volume minimal allowed volume
    @param[out] max_volume maximal allowed volume
@@ -556,7 +556,7 @@ void cw_get_volume_limits(int * min_volume, int * max_volume)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] min_gap minimal allowed gap
    @param[out] max_gap maximal allowed gap
@@ -586,7 +586,7 @@ void cw_get_gap_limits(int * min_gap, int * max_gap)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] min_tolerance minimal allowed tolerance
    @param[out] max_tolerance maximal allowed tolerance
@@ -616,7 +616,7 @@ void cw_get_tolerance_limits(int * min_tolerance, int * max_tolerance)
    Any of functions two arguments can be NULL - function won't update
    value of that argument.
 
-   @reviewed on 2020-08-17
+   @reviewed 2020-08-17
 
    @param[out] min_weighting minimal allowed weighting
    @param[out] max_weighting maximal allowed weighting

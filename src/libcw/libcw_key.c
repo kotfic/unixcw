@@ -1429,7 +1429,7 @@ cw_ret_t cw_key_set_label(cw_key_t * key, const char * label)
 
 
 /**
-   @reviewed-on 2020-05-23
+   @reviewed 2020-05-23
 */
 cw_ret_t cw_key_get_label(const cw_key_t * key, char * label, size_t size)
 {
