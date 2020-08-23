@@ -1033,11 +1033,14 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	}
 
 
-	/* Test: playing inter-character spaces. */
+	/* Test: playing inter-character-spaces. */
 	{
 		bool failure = false;
 		for (int i = 0; i < repetitions; i++) {
-			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eoc_space_internal)(gen);
+			/* TODO: this function adds 2-Unit space, not a
+			   regular 3-Unit inter-character-space. Be aware of
+			   this fact. */
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_2u_ics_internal)(gen);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue eoc space internal() (i = %d)", i)) {
 				failure = true;
 				break;

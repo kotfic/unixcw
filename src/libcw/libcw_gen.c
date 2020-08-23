@@ -2003,14 +2003,14 @@ cw_ret_t cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first)
 
 
 /**
-   @brief Enqueue inter-character space
+   @brief Enqueue 2-Unit inter-character-space
 
-   The function enqueues space of length 2 Units. The function is
-   intended to be used after inter-mark space has already been enqueued.
+   The function enqueues space of length 2 Units. The function is intended to
+   be used after inter-mark-space has already been enqueued.
 
-   In such situation standard inter-mark space (one Unit) and two
+   In such situation standard inter-mark-space (one Unit) and two
    Units enqueued by this function form a full standard
-   inter-character space (three Units).
+   inter-character-space (three Units).
 
    Inter-character adjustment space is added at the end.
 
@@ -2023,7 +2023,7 @@ cw_ret_t cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first)
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
 */
-cw_ret_t cw_gen_enqueue_eoc_space_internal(cw_gen_t * gen)
+cw_ret_t cw_gen_enqueue_2u_ics_internal(cw_gen_t * gen)
 {
 	/* Synchronize low-level timing parameters. */
 	cw_gen_sync_parameters_internal(gen);
@@ -2042,13 +2042,16 @@ cw_ret_t cw_gen_enqueue_eoc_space_internal(cw_gen_t * gen)
 
    The function should be used to enqueue a regular ' ' character.
 
-   The function enqueues space of length 5 Units. The function is
-   intended to be used after inter-mark space and inter-character
-   space have already been enqueued.
+   The function enqueues space of length 5 Units. The function is intended to
+   be used after inter-mark-space and inter-character-space have already been
+   enqueued.
 
-   In such situation standard inter-mark space (one Unit) and
-   inter-character space (two Units) and regular space (five units)
-   form a full standard inter-word space (seven Units).
+   In such situation standard inter-mark-space (one Unit) and
+   inter-character-space (two Units) and regular space (five units) form a
+   full standard inter-word-space (seven Units).
+
+   TODO: review this description again. This function alone doesn't send
+   space character, it sends a part of what can be seen as inter-word-space.
 
    Inter-word adjustment space is added at the end.
 
@@ -2204,9 +2207,9 @@ cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const cha
    character @p character to be valid (@p character should be validated by
    caller before passing it to the function).
 
-   _no_eoc_ in function's name means that the inter-character space is not
+   _no_ics in function's name means that the inter-character-space is not
    appended at the end of Marks and Spaces enqueued in generator (but the
-   last inter-mark space is).
+   last inter-mark-space is).
 
    @exception ENOENT @p character is not a recognized character.
 
@@ -2220,7 +2223,7 @@ cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const cha
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
 */
-cw_ret_t cw_gen_enqueue_valid_character_no_eoc_internal(cw_gen_t * gen, char character)
+cw_ret_t cw_gen_enqueue_valid_character_no_ics_internal(cw_gen_t * gen, char character)
 {
 	if (NULL == gen) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_ERROR,
@@ -2266,8 +2269,8 @@ cw_ret_t cw_gen_enqueue_valid_character_no_eoc_internal(cw_gen_t * gen, char cha
    @brief Enqueue a given valid ASCII character in generator, to be sent using Morse code
 
    After enqueueing last Mark (Dot or Dash) comprising a character, an
-   inter-mark space is enqueued.  Inter-character space is enqueued
-   after that last inter-mark space.
+   inter-mark-space is enqueued.  Inter-character-space is enqueued
+   after that last inter-mark-space.
 
    _valid_character_ in function's name means that the function expects the
    character @p character to be valid (@p character should be validated by
@@ -2276,7 +2279,7 @@ cw_ret_t cw_gen_enqueue_valid_character_no_eoc_internal(cw_gen_t * gen, char cha
    @exception ENOENT @p character is not a recognized character.
 
    @internal
-   @reviewed 2020-08-06
+   @reviewed 2020-08-23
    @endinternal
 
    @param[in] gen generator to be used to enqueue character
@@ -2287,11 +2290,14 @@ cw_ret_t cw_gen_enqueue_valid_character_no_eoc_internal(cw_gen_t * gen, char cha
 */
 cw_ret_t cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character)
 {
-	if (CW_SUCCESS != cw_gen_enqueue_valid_character_no_eoc_internal(gen, character)) {
+	/* This function will add 1 Unit of inter-mark-space at the end. */
+	if (CW_SUCCESS != cw_gen_enqueue_valid_character_no_ics_internal(gen, character)) {
 		return CW_FAILURE;
 	}
 
-	if (CW_SUCCESS != cw_gen_enqueue_eoc_space_internal(gen)) {
+	/* This function will add additional 2 Units. Together with previous
+	   1 Unit, it will form a full 3-Unit inter-character-space. */
+	if (CW_SUCCESS != cw_gen_enqueue_2u_ics_internal(gen)) {
 		return CW_FAILURE;
 	}
 
@@ -2308,7 +2314,7 @@ cw_ret_t cw_gen_enqueue_character(cw_gen_t * gen, char character)
 		return CW_FAILURE;
 	}
 
-	/* This function adds eoc space at the end of character. */
+	/* This function adds inter-character-space at the end of character. */
 	if (CW_SUCCESS != cw_gen_enqueue_valid_character_internal(gen, character)) {
 		return CW_FAILURE;
 	}
@@ -2319,49 +2325,17 @@ cw_ret_t cw_gen_enqueue_character(cw_gen_t * gen, char character)
 
 
 
-/**
-   @brief Enqueue a given ASCII character in generator, to be sent using Morse code
-
-   "_no_eoc" means that the inter-character space is not appended at the end
-   of Marks and Spaces enqueued in generator (but the last inter-mark space
-   is). This enables the formation of combination characters by client code.
-
-   This routine returns as soon as the character has been successfully queued
-   for sending/playing by the generator, without waiting for generator to
-   even start playing the character. The actual sending happens in background
-   processing.  See cw_gen_wait_for_end_of_current_tone() and
-   cw_gen_wait_for_queue() for ways to check the progress of sending.
-
-   @internal
-   @reviewed 2020-08-06
-   @endinternal
-
-   @exception ENOENT given character @p character is not a valid Morse
-   character.
-
-   @exception EBUSY generator's sound sink or keying system is busy.
-
-   @exception EAGAIN generator's tone queue is full, or there is
-   insufficient space to queue the tones for the character.
-
-   @param[in] gen generator to use
-   @param[in] character character to enqueue
-
-   @return CW_SUCCESS on success
-   @return CW_FAILURE on failure
-*/
-cw_ret_t cw_gen_enqueue_character_no_eoc(cw_gen_t * gen, char character)
+cw_ret_t cw_gen_enqueue_character_no_ics(cw_gen_t * gen, char character)
 {
 	if (!cw_character_is_valid(character)) {
 		errno = ENOENT;
 		return CW_FAILURE;
 	}
 
-	if (CW_SUCCESS != cw_gen_enqueue_valid_character_no_eoc_internal(gen, character)) {
+	/* This function doesn't add inter-character-space at the end of character. */
+	if (CW_SUCCESS != cw_gen_enqueue_valid_character_no_ics_internal(gen, character)) {
 		return CW_FAILURE;
 	}
-
-	/* _no_eoc(): don't enqueue eoc space. */
 
 	return CW_SUCCESS;
 }

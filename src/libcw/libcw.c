@@ -537,17 +537,16 @@ int cw_send_dash(void)
 
 
 /**
-
-   The function plays space timed to exclude the expected prior
-   dot/dash inter-mark gap.
-   FIXME: fix this description.
+   The function enqueues space of specific length: together with previously
+   implicitly enqueued inter-mark-space of size 1 Unit, enqueueing this space
+   will form a full inter-character-space of size 3 Units.
 
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
 int cw_send_character_space(void)
 {
-	return cw_gen_enqueue_eoc_space_internal(cw_generator);
+	return cw_gen_enqueue_2u_ics_internal(cw_generator);
 }
 
 
@@ -555,10 +554,10 @@ int cw_send_character_space(void)
 
 
 /**
-
-   The function sends space timed to exclude both the expected prior
-   dot/dash inter-mark gap and the prior end of character space.
-   FIXME: fix this description.
+   The function enqueues space of specific length: together with previously
+   implicitly enqueued inter-mark-space of size 1 Unit and implicitly or
+   explicitly enqueued inter-character-space, enqueueing this space will form
+   a full inter-word-space of size 7 Units.
 
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
@@ -655,7 +654,7 @@ int cw_send_representation_partial(const char *representation)
 */
 int cw_send_character(char c)
 {
-	return cw_gen_enqueue_valid_character_internal(cw_generator, c);
+	return cw_gen_enqueue_character(cw_generator, c);
 }
 
 
@@ -689,7 +688,7 @@ int cw_send_character(char c)
 */
 int cw_send_character_partial(char c)
 {
-	return cw_gen_enqueue_character_no_eoc(cw_generator, c);
+	return cw_gen_enqueue_character_no_ics(cw_generator, c);
 }
 
 
@@ -888,10 +887,6 @@ int cw_wait_for_tone(void)
 /**
    \brief Wait for the tone queue to drain
 
-   The routine returns CW_SUCCESS on success. If called with SIGALRM
-   blocked, the routine returns false, with errno set to EDEADLK,
-   to avoid indefinite waits.
-
    Notice that generator must be running (started with
    cw_generator_start()) when this function is called, otherwise it
    will be waiting forever for a change of tone queue's level that
@@ -916,10 +911,6 @@ int cw_wait_for_tone_queue(void)
    This routine is for use by programs that want to optimize themselves
    to avoid the cleanup that happens when the tone queue drains completely;
    such programs have a short time in which to add more tones to the queue.
-
-   The routine returns CW_SUCCESS on success.  If called with SIGALRM
-   blocked, the routine returns false, with errno set to EDEADLK, to
-   avoid indefinite waits.
 
    Notice that generator must be running (started with
    cw_generator_start()) when this function is called, otherwise it

@@ -465,11 +465,11 @@ int cw_gen_get_weighting(const cw_gen_t * gen);
 /**
    @brief Enqueue a given ASCII character in generator, to be sent using Morse code
 
-   Inter-mark + inter-character delay is appended at the end of
+   Inter-mark-space and inter-character-space is appended at the end of
    enqueued Marks.
 
-   @exception ENOENT the given character @p character is not a valid Morse
-   character.
+   @exception ENOENT the given character @p character is not a character that
+   can be represented in Morse code.
 
    @exception EBUSY generator's sound sink or keying system is busy.
 
@@ -494,6 +494,42 @@ int cw_gen_get_weighting(const cw_gen_t * gen);
    @return CW_FAILURE on failure
 */
 cw_ret_t cw_gen_enqueue_character(cw_gen_t * gen, char character);
+
+
+
+
+/**
+   @brief Enqueue a given ASCII character in generator, to be sent using Morse code
+
+   "_no_ics" means that the inter-character-space is not appended at the end
+   of Marks and Spaces enqueued in generator (but the last inter-mark space
+   is). This enables the formation of combination characters by client code.
+
+   This routine returns as soon as the character has been successfully queued
+   for sending/playing by the generator, without waiting for generator to
+   even start playing the character. The actual sending happens in background
+   processing.  See cw_gen_wait_for_end_of_current_tone() and
+   cw_gen_wait_for_queue() for ways to check the progress of sending.
+
+   @internal
+   @reviewed 2020-08-06
+   @endinternal
+
+   @exception ENOENT the given character @p character is not a character that
+   can be represented in Morse code.
+
+   @exception EBUSY generator's sound sink or keying system is busy.
+
+   @exception EAGAIN generator's tone queue is full, or there is
+   insufficient space to queue the tones for the character.
+
+   @param[in] gen generator to use
+   @param[in] character character to enqueue
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
+*/
+cw_ret_t cw_gen_enqueue_character_no_ics(cw_gen_t * gen, char character);
 
 
 
