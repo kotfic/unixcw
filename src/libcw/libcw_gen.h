@@ -419,21 +419,13 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen, int * dot_duration, i
 cw_ret_t cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first);
 cw_ret_t cw_gen_enqueue_2u_ics_internal(cw_gen_t * gen);
 cw_ret_t cw_gen_enqueue_eow_space_internal(cw_gen_t * gen);
+cw_ret_t cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character);
 
 /* These are also 'enqueue' primitives, but are intended to be used on
    hardware keying events. */
 cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t * gen);
 cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t * gen);
 cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol);
-
-
-
-
-cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const char * representation);
-cw_ret_t cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character);
-
-
-
 
 cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_name);
 cw_ret_t cw_gen_silence_internal(cw_gen_t * gen);

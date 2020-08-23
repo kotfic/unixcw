@@ -1088,10 +1088,9 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 
 	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
 
-	/* Representation is valid when it contains dots and dashes
-	   only.  cw_gen_enqueue_representation_no_eoc_internal()
-	   doesn't care about correct mapping of representation to a
-	   character. */
+	/* Representation is valid when it contains dots and dashes only.
+	   cw_gen_enqueue_representation*() doesn't check if given
+	   representation represents a supported character. */
 
 	cw_gen_t * gen = NULL;
 	if (cwt_retv_ok != gen_setup(cte, &gen)) {
@@ -1106,8 +1105,13 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 		for (int rep = 0; rep < repetitions; rep++) {
 			int i = 0;
 			while (NULL != test_valid_representations[i]) {
-				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_no_eoc_internal)(gen, test_valid_representations[i]);
-				if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue representation internal(<valid>) (%d)", i)) {
+				cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation)(gen, test_valid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue representation(<valid>) (%d)", i)) {
+					failure = true;
+					break;
+				}
+				cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_no_ics)(gen, test_valid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue representation, no ics(<valid>) (%d)", i)) {
 					failure = true;
 					break;
 				}
@@ -1128,8 +1132,13 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 		for (int rep = 0; rep < repetitions; rep++) {
 			int i = 0;
 			while (NULL != test_invalid_representations[i]) {
-				const int cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_no_eoc_internal)(gen, test_invalid_representations[i]);
-				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue representation internal(<invalid>) (%d)", i)) {
+				cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation)(gen, test_invalid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue representation(<invalid>) (%d)", i)) {
+					failure = true;
+					break;
+				}
+				cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation_no_ics)(gen, test_invalid_representations[i]);
+				if (!cte->expect_op_int_errors_only(cte, CW_FAILURE, "==", cwret, "enqueue representation, no ics(<invalid>) (%d)", i)) {
 					failure = true;
 					break;
 				}

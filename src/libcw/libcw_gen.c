@@ -2144,33 +2144,7 @@ cw_ret_t cw_gen_enqueue_eow_space_internal(cw_gen_t * gen)
 
 
 
-/**
-   @brief Enqueue the given representation in generator, to be sent using Morse code
-
-   Function enqueues given @p representation using given @p gen.  *Every*
-   mark (Dot/Dash) from the @p representation is followed by a standard
-   inter-mark space.
-
-   Representation is not validated by this function.
-
-   _no_eoc_ in function's name means that the inter-character space is
-   not appended at the end of Marks and Spaces enqueued in generator
-   (but the last inter-mark space is).
-
-   @exception EAGAIN there is not enough space in tone queue to enqueue @p
-   representation.
-
-   @internal
-   @reviewed 2020-08-06
-   @endinternal
-
-   @param[in] gen generator used to enqueue the representation
-   @param[in] representation representation to enqueue
-
-   @return CW_FAILURE on failure
-   @return CW_SUCCESS on success
-*/
-cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const char * representation)
+cw_ret_t cw_gen_enqueue_representation(cw_gen_t * gen, const char * representation)
 {
 	/* Before we let this representation loose on tone generation,
 	   we'd really like to know that all of its tones will get queued
@@ -2183,8 +2157,7 @@ cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const cha
 		return CW_FAILURE;
 	}
 
-	/* Enqueue the marks. Every mark is followed by inter-mark
-	   space. */
+	/* Enqueue the marks. Every mark is followed by inter-mark-space. */
 	for (int i = 0; representation[i] != '\0'; i++) {
 		const bool is_first = i == 0;
 		if (CW_SUCCESS != cw_gen_enqueue_mark_internal(gen, representation[i], is_first)) {
@@ -2192,7 +2165,45 @@ cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const cha
 		}
 	}
 
-	/* No inter-character space added here. */
+	/* This function will add additional 2 Units. Together with 1 Unit of
+	   inter-mark-space added after last Mark, it will form a full 3-Unit
+	   inter-character-space. */
+	if (CW_SUCCESS != cw_gen_enqueue_2u_ics_internal(gen)) {
+		return CW_FAILURE;
+	}
+
+	return CW_SUCCESS;
+}
+
+
+
+
+cw_ret_t cw_gen_enqueue_representation_no_ics(cw_gen_t * gen, const char * representation)
+{
+	/* Before we let this representation loose on tone generation,
+	   we'd really like to know that all of its tones will get queued
+	   up successfully.  The right way to do this is to calculate the
+	   number of tones in our representation, then check that the space
+	   exists in the tone queue. However, since the queue is comfortably
+	   long, we can get away with just looking for a high water mark.
+
+	   TODO: do the check the proper way.
+	   TODO: wrap this check into a function and reuse it in cw_gen_enqueue_representation()
+	*/
+	if (cw_tq_length_internal(gen->tq) >= gen->tq->high_water_mark) {
+		errno = EAGAIN;
+		return CW_FAILURE;
+	}
+
+	/* Enqueue the marks. Every mark is followed by inter-mark-space. */
+	for (int i = 0; representation[i] != '\0'; i++) {
+		const bool is_first = i == 0;
+		if (CW_SUCCESS != cw_gen_enqueue_mark_internal(gen, representation[i], is_first)) {
+			return CW_FAILURE;
+		}
+	}
+
+	/* No inter-character-space added here. */
 
 	return CW_SUCCESS;
 }
@@ -2207,7 +2218,7 @@ cw_ret_t cw_gen_enqueue_representation_no_eoc_internal(cw_gen_t * gen, const cha
    character @p character to be valid (@p character should be validated by
    caller before passing it to the function).
 
-   _no_ics in function's name means that the inter-character-space is not
+   no_ics in function's name means that the inter-character-space is not
    appended at the end of Marks and Spaces enqueued in generator (but the
    last inter-mark-space is).
 
@@ -2253,7 +2264,7 @@ cw_ret_t cw_gen_enqueue_valid_character_no_ics_internal(cw_gen_t * gen, char cha
 		return CW_FAILURE;
 	}
 
-	if (CW_SUCCESS != cw_gen_enqueue_representation_no_eoc_internal(gen, representation)) {
+	if (CW_SUCCESS != cw_gen_enqueue_representation_no_ics(gen, representation)) {
 		return CW_FAILURE;
 	}
 

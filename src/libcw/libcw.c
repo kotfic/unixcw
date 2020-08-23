@@ -578,11 +578,6 @@ int cw_send_word_space(void)
    character; that is, all post-character delays will be added when
    the character is sent.
 
-   @internal
-   FIXME: clarify what it means "all post-character delays", given that the
-   function calls _no_eoc_ internal function.
-   @endinternal
-
    On success, the routine returns CW_SUCCESS.
    On failure, it returns CW_FAILURE, with errno set to EINVAL if any
    character of the representation is invalid, EBUSY if the sound card,
@@ -597,7 +592,7 @@ int cw_send_word_space(void)
 */
 int cw_send_representation(const char *representation)
 {
-	return cw_gen_enqueue_representation_no_eoc_internal(cw_generator, representation);
+	return cw_gen_enqueue_representation(cw_generator, representation);
 }
 
 
@@ -620,7 +615,7 @@ int cw_send_representation(const char *representation)
 */
 int cw_send_representation_partial(const char *representation)
 {
-	return cw_gen_enqueue_representation_no_eoc_internal(cw_generator, representation);
+	return cw_gen_enqueue_representation_no_ics(cw_generator, representation);
 }
 
 

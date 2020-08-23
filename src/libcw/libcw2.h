@@ -463,6 +463,61 @@ int cw_gen_get_weighting(const cw_gen_t * gen);
 
 
 /**
+   @brief Enqueue the given representation in generator, to be sent using Morse code
+
+   Function enqueues given @p representation using given @p gen.  *Every*
+   mark (Dot/Dash) from the @p representation is followed by a standard
+   inter-mark-space. Inter-character-space is added at the end.
+
+   Representation is not validated by this function.
+
+   @exception EAGAIN there is not enough space in tone queue to enqueue @p
+   representation.
+
+   @internal
+   @reviewed 2020-08-23
+   @endinternal
+
+   @param[in] gen generator used to enqueue the representation
+   @param[in] representation representation to enqueue
+
+   @return CW_FAILURE on failure
+   @return CW_SUCCESS on success
+*/
+cw_ret_t cw_gen_enqueue_representation(cw_gen_t * gen, const char * representation);
+
+
+
+
+/**
+   @brief Enqueue the given representation in generator, to be sent using Morse code
+
+   Function enqueues given @p representation using given @p gen.  *Every*
+   mark (Dot/Dash) from the @p representation is followed by a standard
+   inter-mark-space. Inter-character-space is NOT added at the end (hence
+   no_ics in function's name).
+
+   Representation is not validated by this function.
+
+   @exception EAGAIN there is not enough space in tone queue to enqueue @p
+   representation.
+
+   @internal
+   @reviewed 2020-08-23
+   @endinternal
+
+   @param[in] gen generator used to enqueue the representation
+   @param[in] representation representation to enqueue
+
+   @return CW_FAILURE on failure
+   @return CW_SUCCESS on success
+*/
+cw_ret_t cw_gen_enqueue_representation_no_ics(cw_gen_t * gen, const char * representation);
+
+
+
+
+/**
    @brief Enqueue a given ASCII character in generator, to be sent using Morse code
 
    Inter-mark-space and inter-character-space is appended at the end of
