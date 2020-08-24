@@ -61,11 +61,20 @@ extern cw_test_set_t cw_test_sets[];
 
 
 
+static void cleanup(void);
 static void cw_test_print_stats_wrapper(void);
 static void signal_handler(int signal_number);
 static void register_signal_handler(void);
 
 static cw_test_executor_t g_tests_executor;
+
+
+
+
+static void deinit_executor(void)
+{
+	cw_test_deinit(&g_tests_executor);
+}
 
 
 
@@ -91,6 +100,7 @@ int main(int argc, char * const argv[])
 
 	cw_test_executor_t * cte = &g_tests_executor;
 	cw_test_init(cte, stdout, stderr, "libcw/tests");
+	atexit(deinit_executor);
 
 	cte->config->has_feature_libcw_test_specific = true;
 	cte->config->has_feature_test_repetitions = true;

@@ -58,6 +58,14 @@ extern const unsigned int cw_supported_sample_rates[];
 
 
 
+/*
+  Call additional ALSA function to free some resources, so that valgrind doesn't complain.
+  https://git.alsa-project.org/?p=alsa-lib.git;a=blob;f=MEMORY-LEAK;hb=HEAD
+*/
+#define WITH_ALSA_FREE_GLOBAL_CONFIG 1
+
+
+
 
 #include <dlfcn.h> /* dlopen() and related symbols */
 #include <alsa/asoundlib.h>
@@ -97,6 +105,9 @@ struct cw_alsa_handle_t {
 	int (* snd_pcm_prepare)(snd_pcm_t * pcm);
 	int (* snd_pcm_drop)(snd_pcm_t * pcm);
 	snd_pcm_sframes_t (* snd_pcm_writei)(snd_pcm_t * pcm, const void * buffer, snd_pcm_uframes_t size);
+#if WITH_ALSA_FREE_GLOBAL_CONFIG
+	int (* snd_config_update_free_global)(void);
+#endif
 
 
 
@@ -310,6 +321,9 @@ bool cw_is_alsa_possible(const char * device_name)
 		  symbols will be used by library code in this file.
 		*/
 		cw_alsa.snd_pcm_close(pcm);
+#if WITH_ALSA_FREE_GLOBAL_CONFIG
+		cw_alsa.snd_config_update_free_global();
+#endif
 		return true;
 	}
 }
@@ -485,6 +499,9 @@ static void cw_alsa_close_sound_device_internal(cw_gen_t * gen)
 	/* "Stop a PCM dropping pending frames. " */
 	cw_alsa.snd_pcm_drop(gen->alsa_data.pcm_handle);
 	cw_alsa.snd_pcm_close(gen->alsa_data.pcm_handle);
+#if WITH_ALSA_FREE_GLOBAL_CONFIG
+	cw_alsa.snd_config_update_free_global();
+#endif
 
 	gen->sound_device_is_open = false;
 
@@ -1118,6 +1135,10 @@ static int cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle)
 	if (!alsa_handle->snd_pcm_drop)            return -4;
 	*(void **) &(alsa_handle->snd_pcm_writei)  = dlsym(alsa_handle->lib_handle, "snd_pcm_writei");
 	if (!alsa_handle->snd_pcm_writei)          return -5;
+#if WITH_ALSA_FREE_GLOBAL_CONFIG
+	*(void **) &(alsa_handle->snd_config_update_free_global)  = dlsym(alsa_handle->lib_handle, "snd_config_update_free_global");
+	if (!alsa_handle->snd_config_update_free_global)          return -6;
+#endif
 
 	*(void **) &(alsa_handle->snd_strerror) = dlsym(alsa_handle->lib_handle, "snd_strerror");
 	if (!alsa_handle->snd_strerror)         return -10;
