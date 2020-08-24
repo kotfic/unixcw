@@ -428,14 +428,6 @@ cw_ret_t cw_console_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __
 
 
 
-static cw_ret_t cw_console_write_tone_to_sound_device_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) cw_tone_t * tone)
-{
-	return CW_FAILURE;
-}
-
-
-
-
 void cw_console_silence(__attribute__((unused)) cw_gen_t * gen)
 {
 	return;
