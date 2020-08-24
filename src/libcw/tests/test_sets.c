@@ -39,7 +39,130 @@
 
 
 
+#define WITH_LIBCW_LEGACY_API 1
+
+
+
+
 cw_test_set_t cw_test_sets[] = {
+#if WITH_LIBCW_LEGACY_API
+	{
+		LIBCW_TEST_SET_VALID,
+		LIBCW_TEST_API_LEGACY,
+
+		{ LIBCW_TEST_TOPIC_TQ, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+
+		{
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup),
+
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_cw_wait_for_tone),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_cw_wait_for_tone_queue),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_cw_queue_tone),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_empty_tone_queue),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_full_tone_queue),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_tone_queue_callback),
+
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown),
+
+			LIBCW_TEST_FUNCTION_INSERT(NULL),
+		}
+	},
+	{
+		LIBCW_TEST_SET_VALID,
+		LIBCW_TEST_API_LEGACY,
+
+		{ LIBCW_TEST_TOPIC_GEN, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+
+		{
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup),
+
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_volume_functions),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_send_primitives),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_send_character_and_string),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_representations),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown),
+
+			/* This function creates and deletes a
+			   generator on its own, so it has to be put
+			   after legacy_api_test_teardown() that
+			   deletes a generator. */
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_basic_gen_operations),
+
+			LIBCW_TEST_FUNCTION_INSERT(NULL),
+		}
+	},
+	{
+		LIBCW_TEST_SET_VALID,
+		LIBCW_TEST_API_LEGACY,
+
+		{ LIBCW_TEST_TOPIC_KEY, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+
+		{
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup),
+
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_dot),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_dash),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_alternating),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_none),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_straight_key),
+
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown),
+
+			LIBCW_TEST_FUNCTION_INSERT(NULL),
+		}
+	},
+	{
+		LIBCW_TEST_SET_VALID,
+		LIBCW_TEST_API_LEGACY,
+
+		{ LIBCW_TEST_TOPIC_OTHER, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+
+		{
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup),
+
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_low_level_gen_parameters),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_parameter_ranges),
+			//LIBCW_TEST_FUNCTION_INSERT(legacy_api_cw_test_delayed_release),
+			//LIBCW_TEST_FUNCTION_INSERT(legacy_api_cw_test_signal_handling), /* FIXME - not sure why this test fails :( */
+
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown),
+
+			LIBCW_TEST_FUNCTION_INSERT(NULL),
+		}
+	},
+	{
+		LIBCW_TEST_SET_VALID,
+		LIBCW_TEST_API_LEGACY,
+
+		{ LIBCW_TEST_TOPIC_OTHER, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+
+		{
+			/* This test does its own generator setup and deconfig. */
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_tq_short_space),
+
+			LIBCW_TEST_FUNCTION_INSERT(NULL),
+		}
+	},
+	{
+		LIBCW_TEST_SET_VALID,
+		LIBCW_TEST_API_LEGACY,
+
+		{ LIBCW_TEST_TOPIC_REC, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+
+		{
+			/* This test does its own generator setup and deconfig. */
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_rec_poll),
+
+			LIBCW_TEST_FUNCTION_INSERT(NULL),
+		}
+	},
+#endif /* #if WITH_LIBCW_LEGACY_API */
 	{
 		LIBCW_TEST_SET_VALID,
 		LIBCW_TEST_API_MODERN,
@@ -176,11 +299,6 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(NULL)
 		}
 	},
-
-
-	/* "Import" test sets from another file. That file is shared
-	   between two test binaries. */
-#include "libcw_legacy_api_sets.inc"
 
 
 	/* Guard. */

@@ -18,11 +18,25 @@
 
 -include $(top_builddir)/Makefile.inc
 
+
+
+
+TESTS = $(check_SCRIPTS)
+
 # targets to be built in this directory
-check_PROGRAMS = libcw_test_legacy_api libcw_test_all
+check_PROGRAMS = libcw_tests
+
+# run test programs
+check_SCRIPTS = libcw_test_all.sh
+
+libcw_test_all.sh:
+# empty
+
+
+
 
 # List of files that implement tests of specific bug fixes.
-LIBCW_BUG_TEST_FILES = \
+bug_test_files = \
 	libcw_test_tq_short_space.c \
 	libcw_test_tq_short_space.h
 
@@ -31,14 +45,6 @@ test_framework_files = \
 	test_framework.h \
 	test_framework_tools.c \
 	test_framework_tools.h
-
-legacy_api_test_files = \
-	libcw_legacy_api_tests.c \
-	libcw_legacy_api_tests.h \
-	libcw_legacy_api_tests_rec_poll.c \
-	libcw_legacy_api_tests_rec_poll.h \
-	libcw_legacy_api_sets.c \
-	libcw_legacy_api_sets.inc
 
 modern_api_test_files = \
 	libcw_data_tests.c \
@@ -58,84 +64,36 @@ modern_api_test_files = \
 	libcw_tq_tests.c \
 	libcw_tq_tests.h
 
-other_test_files = \
-	$(LIBCW_BUG_TEST_FILES)
-
-
-
-
-# target: libcw_test_legacy_api: a test program testing only public
-# API of libcw library
-# This test tests library's public API, so the target should depend on
-# a regular shared library file found in build directory. It shouldn't
-# compile all *.c files that are used to create library, it should
-# compile only test files and "link" them with this library file.
-libcw_test_legacy_api_SOURCES = \
+legacy_api_test_files = \
 	libcw_legacy_api_tests.c \
-	libcw_legacy_api_sets.c \
+	libcw_legacy_api_tests.h \
 	libcw_legacy_api_tests_rec_poll.c \
-	libcw_legacy_api_tests_rec_poll.h \
-	$(LIBCW_BUG_TEST_FILES) \
-	test_framework.c \
-	test_framework_tools.c \
+	libcw_legacy_api_tests_rec_poll.h
+
+
+
+
+libcw_tests_SOURCES = \
+	$(legacy_api_test_files) \
+	$(modern_api_test_files) \
+	$(bug_test_files) \
+	$(test_framework_files) \
 	test_data.c \
+	test_sets.c \
 	test_main.c
 
-# target-specific preprocessor flags (#defs and include dirs)
-libcw_test_legacy_api_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
-#libcw_test_legacy_api_CFLAGS = -I../..
+libcw_tests_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
+#libcw_tests_CFLAGS = -I../../
 
-# Target-specific linker flags (objects to link).
-#
-# We are testing public and original (legacy) API of libcw, so we have
-# to have access only to "regular" libcw library with only public
-# symbols (functions) provided by the library. Therefore link the test
-# executable with the library through "-lcw".
-libcw_test_legacy_api_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw $(top_builddir)/src/cwutils/lib_libcw_tests.a
+libcw_tests_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test $(top_builddir)/src/cwutils/lib_libcw_tests.a
 
 
 
 
-libcw_test_all_SOURCES = \
-	test_data.c \
-	test_all_sets.c \
-	libcw_utils_tests.c \
-	libcw_data_tests.c \
-	libcw_debug_tests.c \
-	libcw_tq_tests.c \
-	libcw_gen_tests.c \
-	libcw_gen_tests_state_callback.c \
-	libcw_key_tests.c \
-	libcw_rec_tests.c \
-	libcw_legacy_api_tests.c \
-	libcw_legacy_api_tests_rec_poll.c \
-	$(LIBCW_BUG_TEST_FILES) \
-	test_framework.c \
-	test_framework_tools.c \
-	test_main.c
+EXTRA_DIST = \
+	$(check_SCRIPTS) \
+	count_functions_under_test.py
 
-libcw_test_all_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
-#libcw_test_all_CFLAGS = -I../../
-
-libcw_test_all_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test $(top_builddir)/src/cwutils/lib_libcw_tests.a
-
-
-
-
-TESTS = $(check_SCRIPTS)
-
-# run test programs
-check_SCRIPTS = libcw_test_legacy_api.sh libcw_test_all.sh
-
-libcw_test_legacy_api.sh:
-# empty
-
-libcw_test_all.sh:
-# empty
-
-
-
-EXTRA_DIST = $(test_framework_files) $(legacy_api_test_files) $(modern_api_test_files) $(other_test_files) $(check_SCRIPTS) count_functions_under_test.py
 
 
 
