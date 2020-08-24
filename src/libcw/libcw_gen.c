@@ -2247,12 +2247,6 @@ cw_ret_t cw_gen_enqueue_valid_character_no_ics_internal(cw_gen_t * gen, char cha
 		return cw_gen_enqueue_eow_space_internal(gen);
 	}
 
-	/* backspace character (0x08) is also a special case. */
-	if (character == '\b') {
-		cw_tq_handle_backspace_internal(gen->tq);
-		return CW_SUCCESS;
-	}
-
 	const char * representation = cw_character_to_representation_internal(character);
 
 	/* This shouldn't happen since we are in _valid_character_ function... */
@@ -2694,6 +2688,14 @@ void cw_gen_flush_queue(cw_gen_t * gen)
 	cw_gen_silence_internal(gen);
 
 	return;
+}
+
+
+
+
+cw_ret_t cw_gen_remove_last_character(cw_gen_t * gen)
+{
+	return cw_tq_remove_last_character_internal(gen->tq);
 }
 
 

@@ -35,6 +35,7 @@ int legacy_api_test_send_primitives(cw_test_executor_t * cte);
 int legacy_api_test_send_character_and_string(cw_test_executor_t * cte);
 int legacy_api_test_representations(cw_test_executor_t * cte);
 int legacy_api_test_basic_gen_operations(cw_test_executor_t * cte);
+cwt_retv legacy_api_test_gen_remove_last_character(cw_test_executor_t * cte);
 
 /* "Morse key" topic. */
 int legacy_api_test_iambic_key_dot(cw_test_executor_t * cte);

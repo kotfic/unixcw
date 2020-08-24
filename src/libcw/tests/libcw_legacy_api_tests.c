@@ -1686,3 +1686,53 @@ int legacy_api_test_basic_gen_operations(cw_test_executor_t * cte)
 
 	return 0;
 }
+
+
+
+
+/**
+   @brief Test removing a character from end of enqueued characters
+
+   @reviewed on 2020-08-24
+*/
+cwt_retv legacy_api_test_gen_remove_last_character(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, "%s", __func__);
+
+	legacy_api_test_setup(cte);
+
+	const int n = 4;
+	bool failure = false;
+	for (int to_remove = 0; to_remove <= n; to_remove++) {
+
+		cte->log_info(cte, "You will now hear 'oooo' followed by %d 's' characters\n", n - to_remove);
+		cw_send_string("oooo" "ssss");
+
+		/* Remove N characters from end. */
+		for (int i = 0; i < to_remove; i++) {
+			cw_ret_t cwret = LIBCW_TEST_FUT(cw_generator_remove_last_character());
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret,
+							    "remove last %d characters, removing %d-th character",
+							    to_remove, i)) {
+				failure = true;
+				break;
+			}
+		}
+
+		cw_wait_for_tone_queue();
+		cw_usleep_internal(1000 * 1000);
+
+		if (failure) {
+			break;
+		}
+	}
+
+	legacy_api_test_teardown(cte);
+
+	cte->expect_op_int(cte, false, "==", failure, "remove last character");
+
+	cte->print_test_footer(cte, __func__);
+
+	return cwt_retv_ok;
+}
+

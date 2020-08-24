@@ -799,6 +799,32 @@ const char *cw_generator_get_audio_system_label(void)
 
 
 
+/**
+   \brief Remove last character from queue of already enqueued characters
+
+   If the character is not actually played by sound sink yet, library may be
+   able to remove the character. The character's Dots and Dashes won't be
+   played.
+
+   This function may be useful if user presses backspace in UI to remove/undo
+   a character.
+
+   If your application doesn't enqueue whole characters or strings of
+   characters but is using low-level cw_send_dot()/cw_send_dash() functions
+   to enqueue individual Marks, don't use this function. This function won't
+   be able to recognize whole characters and is likely to remove more tones
+   than expected.
+
+   \return CW_SUCCESS if function managed to remove a last character before it has been played
+   \return CW_FAILURE otherwise
+*/
+int cw_generator_remove_last_character(void)
+{
+	return cw_gen_remove_last_character(cw_generator);
+}
+
+
+
 
 /* ******************************************************************** */
 /*                             Tone queue                               */

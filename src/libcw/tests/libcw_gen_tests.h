@@ -29,6 +29,7 @@ int test_cw_gen_enqueue_primitives(cw_test_executor_t * cte);
 int test_cw_gen_enqueue_representations(cw_test_executor_t * cte);
 int test_cw_gen_enqueue_character(cw_test_executor_t * cte);
 int test_cw_gen_enqueue_string(cw_test_executor_t * cte);
+cwt_retv test_cw_gen_remove_last_character(cw_test_executor_t * cte);
 
 
 

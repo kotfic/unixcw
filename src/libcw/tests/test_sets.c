@@ -84,11 +84,12 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_representations),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown),
 
-			/* This function creates and deletes a
-			   generator on its own, so it has to be put
+			/* These functions create and delete a
+			   generator on their own, so they have to be put
 			   after legacy_api_test_teardown() that
 			   deletes a generator. */
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_basic_gen_operations),
+			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_gen_remove_last_character),
 
 			LIBCW_TEST_FUNCTION_INSERT(NULL),
 		}
@@ -260,6 +261,7 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_enqueue_representations),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_enqueue_character),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_enqueue_string),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_remove_last_character),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_forever_internal),
 
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_gen_state_callback),

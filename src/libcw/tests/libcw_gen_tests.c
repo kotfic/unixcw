@@ -1314,3 +1314,61 @@ cwt_retv test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 
 	return cwt_retv_ok;
 }
+
+
+
+
+/**
+   @brief Test removing a character from end of enqueued characters
+
+   @reviewed on 2020-08-24
+*/
+cwt_retv test_cw_gen_remove_last_character(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, "%s", __func__);
+
+	cw_gen_t * gen = NULL;
+	if (cwt_retv_ok != gen_setup(cte, &gen)) {
+		cte->log_error(cte, "%s:%d: Failed to create generator\n", __func__, __LINE__);
+		return cwt_retv_err;
+	}
+	cw_gen_start(gen);
+
+
+	const int n = 4;
+	bool failure = false;
+	for (int to_remove = 0; to_remove <= n; to_remove++) {
+		cw_gen_start(gen);
+
+		cte->log_info(cte, "You will now hear 'oooo' followed by %d 's' characters\n", n - to_remove);
+		cw_gen_enqueue_string(gen, "oooo" "ssss");
+
+		/* Remove N characters from end. */
+		for (int i = 0; i < to_remove; i++) {
+			cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_remove_last_character(gen));
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret,
+							    "remove last %d characters, removing %d-th character",
+							    to_remove, i)) {
+				failure = true;
+				break;
+			}
+		}
+
+		cw_gen_wait_for_queue_level(gen, 0);
+		cw_usleep_internal(1000 * 1000);
+		cw_gen_stop(gen);
+
+		if (failure) {
+			break;
+		}
+	}
+
+	gen_destroy(&gen);
+
+	cte->expect_op_int(cte, false, "==", failure, "remove last character");
+
+	cte->print_test_footer(cte, __func__);
+
+	return cwt_retv_ok;
+}
+

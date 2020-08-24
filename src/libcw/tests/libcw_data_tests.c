@@ -691,21 +691,27 @@ int test_validate_character_internal(cw_test_executor_t * cte)
 
 	for (int i = 0; i < UCHAR_MAX; i++) {
 		if (i == '\b') {
+			/* For a short moment in development of post-3.5.1 I
+			   had a code that treated backspace as special
+			   character that removed last/previous character
+			   from the queue. This special behaviour has been
+			   removed before post-3.5.1 was published.
 
-			/* Here we have a valid character, that is not
-			   'sendable' but can be handled by libcw
-			   nevertheless. cw_check_character()/cw_character_is_valid()
-			   should confirm it. */
+			   Backspace should be handled in User Interface,
+			   e.g. by calling cw_gen_remove_last_character(),
+			   not in internals of library.
+
+			   Test that backspace is not treated as valid character. */
 			{
 				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_character)(i);
-				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (old): valid character '<backspace>' / #%d not recognized as valid\n", i)) {
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (old): valid character <backspace> / #%d\n", i)) {
 					failure_valid = true;
 					break;
 				}
 			}
 			{
 				const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
-				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (new): valid character '<backspace>' / #%d not recognized as valid\n", i)) {
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (new): character <backspace> / #%d\n", i)) {
 					failure_valid = true;
 					break;
 				}

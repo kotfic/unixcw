@@ -91,8 +91,8 @@ typedef struct {
 	   "forever" tones. */
 	bool is_forever;
 
-	/* Is this the first tone of a character?
-	   Used to backspace in the queue. */
+	/* Is this the first tone of a character?  Used to remove full
+	   character (all tones constituting a character) from the queue. */
 	bool is_first;
 
 	/* Type of slope. */
@@ -269,7 +269,7 @@ cw_ret_t cw_tq_wait_for_end_of_current_tone_internal(cw_tone_queue_t * tq);
 void cw_tq_reset_internal(cw_tone_queue_t * tq);
 bool cw_tq_is_full_internal(const cw_tone_queue_t * tq);
 
-void cw_tq_handle_backspace_internal(cw_tone_queue_t * tq);
+cw_ret_t cw_tq_remove_last_character_internal(cw_tone_queue_t * tq);
 
 
 

@@ -53,6 +53,24 @@ version 3.6.0 / 2020-XX-YY
   - Replacing some usages of double type with float type. There is noting in
     the library that would require precision or range of double.
 
+  - Adding new function: cw_generator_remove_last_character().  The function
+    removes last character enqueued to generator, it can be called multiple
+    times to remove a group of characters. The function can be used e.g. in
+    reaction to Backspace character pressed in User Interface.
+
+    This functionality was implemented by Zoltan Csahok and merged here:
+    https://sourceforge.net/p/unixcw/code/merge-requests/1/, but it has been
+    rewritten a bit: removing of character must be explicit, through the
+    function call.
+
+    The initial solution was affecting which characters are classified by
+    libcw as valid and which aren't, and it may have broken some legacy
+    code. Also using Backspace to remove a character is a User Interface
+    concept, which in cwcp and xcwcp is handled explicitly by UI code, not
+    implicitly by library code. Therefore I decided to rework the initial
+    solution and add the new function to library.
+
+
   xcwcp:
 
   - program's command line option "--sound" has been changed to

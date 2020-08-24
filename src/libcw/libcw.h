@@ -342,6 +342,8 @@ extern int cw_send_character(char c);
 extern int cw_send_character_partial(char c);
 extern int cw_send_string(const char *string);
 
+extern int cw_generator_remove_last_character(void);
+
 extern bool cw_character_is_valid(char c);
 extern bool cw_string_is_valid(const char *string);
 

@@ -1009,13 +1009,18 @@ bool cw_tq_is_nonempty_internal(const cw_tone_queue_t * tq)
    TODO: write tests for this function
 
    @internal
-   @reviewed 2020-07-29
+   @reviewed 2020-08-24
    @endinternal
 
    @param[in] tq tone queue from which to remove tones
+
+   @return CW_SUCCESS if a character has been removed successfully
+   @return CW_FAILURE otherwise
 */
-void cw_tq_handle_backspace_internal(cw_tone_queue_t * tq)
+cw_ret_t cw_tq_remove_last_character_internal(cw_tone_queue_t * tq)
 {
+	cw_ret_t cwret = CW_FAILURE;
+
 	pthread_mutex_lock(&tq->mutex);
 
 	size_t len = tq->len;
@@ -1034,7 +1039,10 @@ void cw_tq_handle_backspace_internal(cw_tone_queue_t * tq)
 	if (is_found) {
 		tq->len = len;
 		tq->tail = idx;
+		cwret = CW_SUCCESS;
 	}
 
 	pthread_mutex_unlock(&tq->mutex);
+
+	return cwret;
 }

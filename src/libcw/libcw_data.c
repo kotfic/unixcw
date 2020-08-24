@@ -1271,8 +1271,9 @@ int cw_lookup_phonetic(char character, char * buffer)
 /**
    @brief Check if given character is valid
 
-   Check that a given character is valid and can be converted to Morse code
-   symbols by libcw and sent a Morse character.
+   Check that a given character is valid, i.e. it is present in library's
+   character-to-representation lookup table and can be represented with Dots
+   and Dashes.
 
    Space character (' ') is also considered to be a valid character.
 
@@ -1284,7 +1285,7 @@ int cw_lookup_phonetic(char character, char * buffer)
    reasons.
 
    @internal
-   @reviewed 2020-07-25
+   @reviewed 2020-08-24
    @endinternal
 
    @param[in] character character to check
@@ -1294,13 +1295,9 @@ int cw_lookup_phonetic(char character, char * buffer)
 */
 bool cw_character_is_valid(char character)
 {
-	/* If the character is the Space/Backspace special-case, or it is in
-	   the lookup table, return success.
-
-	   FIXME FIXME FIXME: backspace character should not be treated as
-	   valid character. It has been introduced here as a fix for some
-	   issue. */
-	if (character == ' ' || character == '\b' || cw_character_to_representation_internal(character)) {
+	/* If the character is the Space special-case, or it is in the
+	   lookup table, return success. */
+	if (character == ' ' || NULL != cw_character_to_representation_internal(character)) {
 		return true;
 	} else {
 		errno = ENOENT;

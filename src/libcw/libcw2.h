@@ -689,6 +689,34 @@ void cw_gen_flush_queue(cw_gen_t * gen);
 
 
 /**
+   @brief Remove one last character from queue of already enqueued characters
+
+   If the character is not actually played by sound sink yet, library may be
+   able to remove the character. The character's Dots and Dashes won't be
+   played.
+
+   This function may be useful if user presses backspace in UI to remove/undo
+   a character.
+
+   If your application doesn't enqueue whole characters or strings of
+   characters but is using low-level cw_gen_enqueue_mark_internal() functions
+   to enqueue individual Marks, don't use this function. This function won't
+   be able to recognize whole characters and is likely to remove more tones
+   than expected.
+
+   @reviewed 2020-08-24
+
+   @param[in] gen generator from which to remove the last character
+
+   @return CW_SUCCESS if function managed to remove a last character before it has been played
+   @return CW_FAILURE otherwise
+*/
+cw_ret_t cw_gen_remove_last_character(cw_gen_t * gen);
+
+
+
+
+/**
    @brief Get string with generator's sound device path/name
 
    Device name is copied to @p buffer, a memory area owned by caller.
