@@ -33,6 +33,7 @@
 #include "test_framework.h"
 #include "test_framework_tools.h"
 #include "cw_common.h"
+#include "libcw_legacy_api_tests_rec_poll.h"
 
 
 
@@ -61,6 +62,17 @@
    (polled from receiver) characters.
 */
 #define REC_TEST_BUFFER_SIZE 4096
+
+
+
+
+typedef struct received_data {
+	char character;
+	char representation[20];
+	bool is_iws; /* Is receiver in 'found inter-word-space' state? */
+	bool is_error;
+} received_data;
+
 
 
 
@@ -135,6 +147,8 @@ typedef struct Receiver {
 	   application instance, and the other to another
 	   instance. */
 	volatile bool tracked_key_state;
+
+	bool c_r;
 } Receiver;
 
 static Receiver g_xcwcp_receiver;
@@ -146,15 +160,17 @@ static Receiver g_xcwcp_receiver;
 void xcwcp_handle_libcw_keying_event(void * timer, int key_state);
 void low_tone_queue_callback(void * arg);
 
-int legacy_api_test_rec_poll(cw_test_executor_t * cte);
+static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_r);
 void * receiver_input_generator_fn(void * arg);
 void receiver_sk_event(Receiver * xcwcp_receiver, bool is_down);
 
 /* Main poll function and its helpers. */
 void receiver_poll_receiver(Receiver * xcwcp_receiver);
 void receiver_poll_report_error(Receiver * xcwcp_receiver);
-void receiver_poll_character(Receiver * xcwcp_receiver);
-void receiver_poll_space(Receiver * xcwcp_receiver);
+void receiver_poll_character_c_r(Receiver * xcwcp_receiver);
+void receiver_poll_character_r_c(Receiver * xcwcp_receiver);
+void receiver_poll_space_c_r(Receiver * xcwcp_receiver);
+void receiver_poll_space_r_c(Receiver * xcwcp_receiver);
 
 void test_callback_func(void * arg, int key_state);
 void tester_start_test_code(tester_t * tester);
@@ -179,18 +195,34 @@ void receiver_poll_receiver(Receiver * xcwcp_receiver)
 	if (xcwcp_receiver->is_pending_inter_word_space) {
 		/* Check if receiver received the pending inter-word
 		   space. */
-		receiver_poll_space(xcwcp_receiver);
+		if (xcwcp_receiver->c_r) {
+			/* Poll character, then poll representation. */
+			receiver_poll_space_c_r(xcwcp_receiver);
+		} else {
+			/* First poll representation, then character. */
+			receiver_poll_space_r_c(xcwcp_receiver);
+		}
 
 		if (!xcwcp_receiver->is_pending_inter_word_space) {
 			/* We received the pending space. After it the
 			   receiver may have received another
 			   character.  Try to get it too. */
-			receiver_poll_character(xcwcp_receiver);
+			if (xcwcp_receiver->c_r) {
+				/* Poll character, then poll representation. */
+				receiver_poll_character_c_r(xcwcp_receiver);
+			} else {
+				receiver_poll_character_r_c(xcwcp_receiver);
+			}
 		}
 	} else {
 		/* Not awaiting a possible space, so just poll the
 		   next possible received character. */
-		receiver_poll_character(xcwcp_receiver);
+		if (xcwcp_receiver->c_r) {
+			/* Poll character, then poll representation. */
+			receiver_poll_character_c_r(xcwcp_receiver);
+		} else {
+			receiver_poll_character_r_c(xcwcp_receiver);
+		}
 	}
 
 	return;
@@ -247,7 +279,7 @@ void xcwcp_handle_libcw_keying_event(void * timer, int key_state)
 
 		/* The tone start means that we're seeing the next
 		   incoming character within the same word, so no
-		   inter-word space is possible at this point in
+		   inter-word-space is possible at this point in
 		   time. The space that we were observing/waiting for,
 		   was just inter-character space. */
 		g_xcwcp_receiver.is_pending_inter_word_space = false;
@@ -313,8 +345,13 @@ void receiver_poll_report_error(Receiver * xcwcp_receiver)
 
 /**
    \brief Receive any new character from the CW library.
+
+   The function is called c_r because primary function in production code
+   polls character, and only then in test code a representation is polled.
+
+   @reviewed 2020-08-27
 */
-void receiver_poll_character(Receiver * xcwcp_receiver)
+void receiver_poll_character_c_r(Receiver * xcwcp_receiver)
 {
 	/* Don't use xcwcp_receiver.main_timer - it is used exclusively for
 	   marking initial "key down" events. Use local throw-away
@@ -331,58 +368,76 @@ void receiver_poll_character(Receiver * xcwcp_receiver)
 	const bool debug_errnos = false;
 	static int prev_errno = 0;
 
-	char c = 0;
-	bool is_end_of_word_c;
-	if (cw_receive_character(&local_timer, &c, &is_end_of_word_c, NULL)) {
+	received_data prod = { 0 };
+	cw_ret_t cwret = LIBCW_TEST_FUT(cw_receive_character)(&local_timer, &prod.character, &prod.is_iws, NULL);
+	if (CW_SUCCESS == cwret) {
 
 		prev_errno = 0;
 
 		/* Receiver stores full, well formed  character. Display it. */
-		fprintf(stderr, "[II] Character: '%c'\n", c);
+		fprintf(stderr, "[II] Polled character '%c'\n", prod.character);
 
-		{ /* Actual test code. */
+		{ /* Verification code. */
 
 			bool failure = false;
-			g_tester.received_string[g_tester.received_string_i++] = c;
+			received_data test = { 0 };
+			cw_test_executor_t * cte = xcwcp_receiver->cte;
 
-			bool is_end_of_word_r = false;
-			bool is_error_r = false;
-			char representation[20] = { 0 };
-			int cw_ret = cw_receive_representation(&local_timer, representation, &is_end_of_word_r, &is_error_r);
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, cw_ret, "==", CW_SUCCESS, "receive representation for character")) {
+			cwret = cw_receive_representation(&local_timer, test.representation, &test.is_iws, &test.is_error);
+			if (!cte->expect_op_int_errors_only(cte,
+							    cwret, "==", CW_SUCCESS,
+							    "Test poll representation (c_r)")) {
 				failure = true;
 			}
 
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, is_end_of_word_r, "==", is_end_of_word_c, "'is end of word' markers mismatch: %d != %d", is_end_of_word_r, is_end_of_word_c)) {
+			if (!cte->expect_op_int_errors_only(cte,
+							    test.is_iws, "==", prod.is_iws,
+							    "Comparing 'is inter-word-space' flags: %d, %d",
+							    test.is_iws, prod.is_iws)) {
 				failure = true;
 			}
 
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, is_end_of_word_r, "==", false, "'is end of word' marker is unexpectedly 'true'")) {
+			/* We are polling a character here, so we expect that
+			   receiver will set 'is inter-word-space' flag to
+			   false. */
+			if (!cte->expect_op_int_errors_only(cte,
+							    test.is_iws, "==", false,
+							    "Evaluating 'is inter-word-space' flag")) {
 				failure = true;
 			}
 
-			const char looked_up = cw_representation_to_character(representation);
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, 0, "!=", looked_up, "Failed to look up character for representation")) {
+			test.character = cw_representation_to_character(test.representation);
+			if (!cte->expect_op_int_errors_only(cte,
+							    0, "!=", test.character,
+							    "Lookup character for representation")) {
 				failure = true;
 			}
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, c, "==", looked_up, "Looked up character is different than received: %c != %c\n", looked_up, c)) {
+			if (!cte->expect_op_int_errors_only(cte,
+							    prod.character, "==", test.character,
+							    "Compare polled and looked up character: %c, %c\n",
+							    prod.character, test.character)) {
 				failure = true;
 			}
 
-			fprintf(stderr, "[II] Character: Representation: %c -> '%s'\n", c, representation);
+			fprintf(stderr, "[II] Poll character: %c -> '%s' -> %c\n",
+				prod.character, test.representation, test.character);
 
-			xcwcp_receiver->cte->expect_op_int(xcwcp_receiver->cte, failure, "==", false, "Polling character");
+			cte->expect_op_int(cte,
+					   failure, "==", false,
+					   "Polling character");
+
+			g_tester.received_string[g_tester.received_string_i++] = prod.character;
 		}
 
 		/* A full character has been received. Directly after
 		   it comes a space. Either a short inter-character
 		   space followed by another character (in this case
 		   we won't display the inter-character space), or
-		   longer inter-word space - this space we would like
+		   longer inter-word-space - this space we would like
 		   to catch and display.
 
 		   Set a flag indicating that next poll may result in
-		   inter-word space. */
+		   inter-word-space. */
 		xcwcp_receiver->is_pending_inter_word_space = true;
 
 	} else {
@@ -430,14 +485,157 @@ void receiver_poll_character(Receiver * xcwcp_receiver)
 
 
 
+/**
+   \brief Receive any new character from the CW library.
+
+   The function is called r_c because primary function in production code
+   polls representation, and only then in test code a character is polled.
+
+   @reviewed 2020-08-27
+*/
+void receiver_poll_character_r_c(Receiver * xcwcp_receiver)
+{
+	/* Don't use xcwcp_receiver.main_timer - it is used exclusively for
+	   marking initial "key down" events. Use local throw-away
+	   local_timer.
+
+	   Additionally using xcwcp_receiver.main_timer here would mess up
+	   time intervals measured by xcwcp_receiver.main_timer, and that
+	   would interfere with recognizing dots and dashes. */
+	struct timeval local_timer;
+	gettimeofday(&local_timer, NULL);
+	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
+
+
+	const bool debug_errnos = false;
+	static int prev_errno = 0;
+
+	received_data prod = { 0 };
+	cw_ret_t cwret = LIBCW_TEST_FUT(cw_receive_representation)(&local_timer, prod.representation, &prod.is_iws, &prod.is_error);
+	if (CW_SUCCESS == cwret) {
+
+		prev_errno = 0;
+
+		/* Receiver stores full, well formed representation. Display it. */
+		fprintf(stderr, "[II] Polled representation '%s'\n", prod.representation);
+
+		{ /* Verification code. */
+
+			bool failure = false;
+			received_data test = { 0 };
+			cw_test_executor_t * cte = xcwcp_receiver->cte;
+
+			cwret = cw_receive_character(&local_timer, &test.character, &test.is_iws, &test.is_error);
+			if (!cte->expect_op_int_errors_only(cte,
+							    cwret, "==", CW_SUCCESS,
+							    "Test poll character (in r_c)")) {
+				failure = true;
+			}
+
+			if (!cte->expect_op_int_errors_only(cte,
+							    test.is_iws, "==", prod.is_iws,
+							    "Comparing 'is inter-word-space' flags: %d, %d",
+							    test.is_iws, prod.is_iws)) {
+				failure = true;
+			}
+
+			/* We are polling a character here, so we expect that
+			   receiver will set 'is inter-word-space' flag to
+			   false. */
+			if (!cte->expect_op_int_errors_only(cte,
+							    test.is_iws, "==", false,
+							    "Evaluating 'is inter-word-space' flag")) {
+				failure = true;
+			}
+
+			const char * looked_up_representation = cw_character_to_representation(test.character);
+			if (!cte->expect_valid_pointer_errors_only(cte, looked_up_representation,
+								   "Lookup representation of character")) {
+				failure = true;
+			}
+			const int cmp = strcmp(prod.representation, looked_up_representation);
+			if (!cte->expect_op_int_errors_only(cte,
+							    cmp, "==", 0,
+							    "Compare polled and looked up representation: '%s', '%s'\n",
+							    prod.representation, looked_up_representation)) {
+				failure = true;
+			}
+
+			fprintf(stderr, "[II] Poll representation: '%s' -> %c -> '%s'\n", prod.representation, test.character, looked_up_representation);
+
+			cte->expect_op_int(cte, failure, "==", false, "Poll representation");
+
+			g_tester.received_string[g_tester.received_string_i++] = test.character;
+		}
+
+		/* A full character has been received. Directly after
+		   it comes a space. Either a short inter-character
+		   space followed by another character (in this case
+		   we won't display the inter-character space), or
+		   longer inter-word-space - this space we would like
+		   to catch and display.
+
+		   Set a flag indicating that next poll may result in
+		   inter-word-space. */
+		xcwcp_receiver->is_pending_inter_word_space = true;
+
+	} else {
+		/* Handle receive error detected on trying to read a character. */
+		switch (errno) {
+		case EAGAIN:
+			/* Call made too early, receiver hasn't
+			   received a full character yet. Try next
+			   time. */
+
+			if (debug_errnos && prev_errno != EAGAIN) {
+				fprintf(stderr, "[NN] poll_receive_representation: %d -> EAGAIN\n", prev_errno);
+				prev_errno = EAGAIN;
+			}
+			break;
+
+		case ERANGE:
+			/* Call made not in time, or not in proper
+			   sequence. Receiver hasn't received any
+			   character (yet). Try harder. */
+			if (debug_errnos && prev_errno != ERANGE) {
+				fprintf(stderr, "[NN] poll_receive_representation: %d -> RANGE\n", prev_errno);
+				prev_errno = ERANGE;
+			}
+
+			break;
+
+		case ENOENT:
+			/* Invalid character in receiver's buffer. */
+			if (debug_errnos && prev_errno != ENOENT) {
+				fprintf(stderr, "[NN] poll_receive_representation: %d -> ENONENT\n", prev_errno);
+				prev_errno = ENOENT;
+			}
+			cw_clear_receive_buffer();
+			break;
+
+		default:
+			perror("cw_receive_representation");
+			abort();
+		}
+	}
+
+	return;
+}
+
+
 
 
 /**
    If we received a character on an earlier poll, check again to see
    if we need to revise the decision about whether it is the end of a
    word too.
+
+   The function is called c_r because primary function in production code
+   polls character, and only then in test code a representation is polled.
+
+   @reviewed 2020-08-27
 */
-void receiver_poll_space(Receiver * xcwcp_receiver)
+void receiver_poll_space_c_r(Receiver * xcwcp_receiver)
 {
 	/* Recheck the receive buffer for end of word. */
 
@@ -445,8 +643,8 @@ void receiver_poll_space(Receiver * xcwcp_receiver)
 	   ask for it this time. The receiver should also store
 	   information about an inter-character space. If it is longer
 	   than a regular inter-character space, then the receiver
-	   will treat it as inter-word space, and communicate it over
-	   is_end_of_word.
+	   will treat it as inter-word-space, and communicate it over
+	   is_iws.
 
 	   Don't use xcwcp_receiver.main_timer - it is used eclusively for
 	   marking initial "key down" events. Use local throw-away
@@ -455,16 +653,17 @@ void receiver_poll_space(Receiver * xcwcp_receiver)
 	gettimeofday(&local_timer, NULL);
 	//fprintf(stderr, "receiver_poll_space(): %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
 
-	char c = 0;
-	bool is_end_of_word_c;
-	cw_receive_character(&local_timer, NULL, &is_end_of_word_c, NULL);
-	if (is_end_of_word_c) {
-		fprintf(stderr, "[II] Space:\n");
+	received_data prod = { 0 };
+	LIBCW_TEST_FUT(cw_receive_character)(&local_timer, NULL, &prod.is_iws, NULL);
+	if (prod.is_iws) {
+		fprintf(stderr, "[II] Polled inter-word-space\n");
 
-		{ /* Actual test code. */
+		{ /* Verification code. */
 
 			bool failure = false;
-
+			received_data test = { 0 };
+			cw_test_executor_t * cte = xcwcp_receiver->cte;
+#if 0
 			/* cw_receive_character() will return through
 			   'c' variable the last character that was
 			   polled before space.
@@ -472,30 +671,39 @@ void receiver_poll_space(Receiver * xcwcp_receiver)
 			   Maybe this is good, maybe this is bad, but
 			   this is the legacy behaviour that we will
 			   keep supporting. */
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, c, "!=", ' ', "returned character should not be space")) {
+			if (!cte->expect_op_int_errors_only(cte, c, "!=", ' ', "returned character should not be space")) {
+				failure = true;
+			}
+#endif
+
+			cw_ret_t cwret = cw_receive_representation(&local_timer, test.representation, &test.is_iws, &test.is_error);
+			if (!cte->expect_op_int_errors_only(cte,
+							    cwret, "==", CW_SUCCESS,
+							    "Getting representation during space")) {
 				failure = true;
 			}
 
+			if (!cte->expect_op_int_errors_only(cte,
+							    test.is_iws, "==", prod.is_iws,
+							    "Comparing 'is inter-word-space' flags: %d, %d",
+							    test.is_iws, prod.is_iws)) {
+				failure = true;
+			}
+
+			/* We are polling ' ' space here, so we expect that
+			   receiver will set 'is inter-word-space' flag to
+			   true. */
+			if (!cte->expect_op_int_errors_only(cte,
+							    true, "==", test.is_iws,
+							    "Evaluating 'is inter-word-space' flag")) {
+				failure = true;
+			}
+
+			cte->expect_op_int(cte,
+					   false, "==", failure,
+					   "Polling inter-word-space");
 
 			g_tester.received_string[g_tester.received_string_i++] = ' ';
-
-			bool is_end_of_word_r = false;
-			bool is_error_r = false;
-			char representation[20] = { 0 };
-			int cw_ret = cw_receive_representation(&local_timer, representation, &is_end_of_word_r, &is_error_r);
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, cw_ret, "==", CW_SUCCESS, "Failed to get representation of space")) {
-				failure = true;
-			}
-
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, is_end_of_word_r, "==", is_end_of_word_c, "'is end of word' markers mismatch: %d != %d", is_end_of_word_r, is_end_of_word_c)) {
-				failure = true;
-			}
-
-			if (!xcwcp_receiver->cte->expect_op_int_errors_only(xcwcp_receiver->cte, true, "==", is_end_of_word_r, "'is end of word' marker is unexpectedly 'false'")) {
-				failure = true;
-			}
-
-			xcwcp_receiver->cte->expect_op_int(xcwcp_receiver->cte, false, "==", failure, "Polling inter-word space");
 		}
 
 		cw_clear_receive_buffer();
@@ -503,11 +711,115 @@ void receiver_poll_space(Receiver * xcwcp_receiver)
 	} else {
 		/* We don't reset is_pending_inter_word_space. The
 		   space that currently lasts, and isn't long enough
-		   to be considered inter-word space, may grow to
-		   become the inter-word space. Or not.
+		   to be considered inter-word-space, may grow to
+		   become the inter-word-space. Or not.
 
 		   This growing of inter-character space into
-		   inter-word space may be terminated by incoming next
+		   inter-word-space may be terminated by incoming next
+		   tone (key down event) - the tone will mark
+		   beginning of new character within the same
+		   word. And since a new character begins, the flag
+		   will be reset (elsewhere). */
+	}
+
+	return;
+}
+
+
+
+
+/**
+   If we received a character on an earlier poll, check again to see
+   if we need to revise the decision about whether it is the end of a
+   word too.
+
+   The function is called r_c because primary function in production code
+   polls representation, and only then in test code a character is polled.
+
+   @reviewed 2020-08-27
+*/
+void receiver_poll_space_r_c(Receiver * xcwcp_receiver)
+{
+	/* Recheck the receive buffer for end of word. */
+
+	/* We expect the receiver to contain a character, but we don't
+	   ask for it this time. The receiver should also store
+	   information about an inter-character space. If it is longer
+	   than a regular inter-character space, then the receiver
+	   will treat it as inter-word-space, and communicate it over
+	   is_iws.
+
+	   Don't use xcwcp_receiver.main_timer - it is used eclusively for
+	   marking initial "key down" events. Use local throw-away
+	   local_timer. */
+	struct timeval local_timer;
+	gettimeofday(&local_timer, NULL);
+	//fprintf(stderr, "receiver_poll_space_r_c(): %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
+
+
+	received_data prod = { 0 };
+	LIBCW_TEST_FUT(cw_receive_representation)(&local_timer, prod.representation, &prod.is_iws, NULL);
+	if (prod.is_iws) {
+		fprintf(stderr, "[II] Polled inter-word-space\n");
+
+		{ /* Verification code. */
+
+			bool failure = false;
+			received_data test = { 0 };
+			cw_test_executor_t * cte = xcwcp_receiver->cte;
+#if 0
+			/* cw_receive_character() will return through
+			   'c' variable the last character that was
+			   polled before space.
+
+			   Maybe this is good, maybe this is bad, but
+			   this is the legacy behaviour that we will
+			   keep supporting. */
+			if (!cte->expect_op_int_errors_only(cte, c, "!=", ' ', "returned character should not be space")) {
+				failure = true;
+			}
+#endif
+
+			cw_ret_t cwret = cw_receive_character(&local_timer, &test.character, &test.is_iws, &test.is_error);
+			if (!cte->expect_op_int_errors_only(cte,
+							    cwret, "==", CW_SUCCESS,
+							    "Getting character during space")) {
+				failure = true;
+			}
+
+			if (!cte->expect_op_int_errors_only(cte,
+							    test.is_iws, "==", prod.is_iws,
+							    "Comparing 'is inter-word-space' flags: %d, %d",
+							    test.is_iws, prod.is_iws)) {
+				failure = true;
+			}
+
+			/* We are polling ' ' space here, so we expect that
+			   receiver will set 'is inter-word-space' flag to
+			   true. */
+			if (!cte->expect_op_int_errors_only(cte,
+							    true, "==", test.is_iws,
+							    "Evaluating 'is inter-word-space' flag")) {
+				failure = true;
+			}
+
+			cte->expect_op_int(cte,
+					   false, "==", failure,
+					   "Polling inter-word-space");
+
+			g_tester.received_string[g_tester.received_string_i++] = ' ';
+		}
+
+		cw_clear_receive_buffer();
+		xcwcp_receiver->is_pending_inter_word_space = false;
+	} else {
+		/* We don't reset is_pending_inter_word_space. The
+		   space that currently lasts, and isn't long enough
+		   to be considered inter-word-space, may grow to
+		   become the inter-word-space. Or not.
+
+		   This growing of inter-character space into
+		   inter-word-space may be terminated by incoming next
 		   tone (key down event) - the tone will mark
 		   beginning of new character within the same
 		   word. And since a new character begins, the flag
@@ -742,18 +1054,46 @@ void test_callback_func(void * arg, int key_state)
 
 
 
-int legacy_api_test_rec_poll(cw_test_executor_t * cte)
+/**
+   @reviewed 2020-08-27
+*/
+cwt_retv legacy_api_test_rec_poll(cw_test_executor_t * cte)
+{
+	if (cwt_retv_ok == legacy_api_test_rec_poll_inner(cte, true)
+	    && cwt_retv_ok == legacy_api_test_rec_poll_inner(cte, false)) {
+
+		return cwt_retv_ok;
+	} else {
+		return cwt_retv_err;
+	}
+}
+
+
+
+
+static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_r)
 {
 	cte->print_test_header(cte, __func__);
 
+	if (c_r) {
+		cte->log_info(cte, "Test mode: poll character, verify by polling representation\n");
+	} else {
+		cte->log_info(cte, "Test mode: poll representation, verify by polling character\n");
+	}
+
 	if (CW_SUCCESS != cw_generator_new(CW_AUDIO_PA, NULL)) {
 		fprintf(stderr, "failed to create generator\n");
-		return -1;
+		return cwt_retv_err;
 	}
 
 
 	/* Configure test parameters. */
 	g_tester.characters_to_enqueue = 5;
+
+	/* TODO: more thorough reset of tester. */
+	g_tester.input_string_i = 0;
+	g_tester.received_string[0] = '\0';
+	g_tester.received_string_i = 0;
 
 
 	cw_clear_receive_buffer();
@@ -779,6 +1119,7 @@ int legacy_api_test_rec_poll(cw_test_executor_t * cte)
 	/* Prepare xcwcp_receiver object. */
 	memset(&g_xcwcp_receiver, 0, sizeof (g_xcwcp_receiver));
 	g_xcwcp_receiver.cte = cte;
+	g_xcwcp_receiver.c_r = c_r;
 
 
 	/* Start thread with test code. */
@@ -812,7 +1153,7 @@ int legacy_api_test_rec_poll(cw_test_executor_t * cte)
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 

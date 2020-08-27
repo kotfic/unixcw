@@ -15,7 +15,7 @@
 
 
 /* 'Receiver' test area - poll interface as used in xcwcp from package 3.5.1 and earlier. */
-int legacy_api_test_rec_poll(cw_test_executor_t * cte);
+cwt_retv legacy_api_test_rec_poll(cw_test_executor_t * cte);
 
 
 
