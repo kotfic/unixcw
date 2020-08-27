@@ -971,6 +971,7 @@ bool cw_rec_get_adaptive_mode(const cw_rec_t * rec)
 */
 cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const struct timeval * timestamp)
 {
+#if REC_HAS_PENDING_INTER_WORD_SPACE_FLAG
 	if (rec->is_pending_inter_word_space) {
 
 		/* Beginning of Mark in this situation means that we're
@@ -983,6 +984,7 @@ cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const struct timeval * timestamp)
 		   inter-word-space. */
 		cw_rec_reset_state(rec);
 	}
+#endif
 
 	if (RS_IDLE != rec->state && RS_INTER_MARK_SPACE != rec->state) {
 		/*
@@ -1849,6 +1851,7 @@ cw_ret_t cw_rec_poll_character(cw_rec_t * rec,
 		return CW_FAILURE;
 	}
 
+#if REC_HAS_PENDING_INTER_WORD_SPACE_FLAG
 	/* A full character has been received. Directly after it comes a
 	   Space. Either a short inter-character-space followed by another
 	   character (in this case we won't display the
@@ -1863,6 +1866,7 @@ cw_ret_t cw_rec_poll_character(cw_rec_t * rec,
 	if (!end_of_word) {
 		rec->is_pending_inter_word_space = true;
 	}
+#endif
 
 	/* If we got this far, all is well, so return what we received. */
 	if (character) {
@@ -1890,7 +1894,9 @@ void cw_rec_reset_state(cw_rec_t * rec)
 	memset(rec->representation, 0, sizeof (rec->representation));
 	rec->representation_ind = 0;
 
+#if REC_HAS_PENDING_INTER_WORD_SPACE_FLAG
 	rec->is_pending_inter_word_space = false;
+#endif
 
 	CW_REC_SET_STATE (rec, RS_IDLE, (&cw_debug_object));
 

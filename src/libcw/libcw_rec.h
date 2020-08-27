@@ -206,10 +206,13 @@ struct cw_rec_struct {
 	cw_rec_averaging_t dot_averaging;
 	cw_rec_averaging_t dash_averaging;
 
+#define REC_HAS_PENDING_INTER_WORD_SPACE_FLAG 0
+#if REC_HAS_PENDING_INTER_WORD_SPACE_FLAG
 	/* Flag indicating if receive polling has received a
 	   character, and may need to augment it with a word
 	   space on a later poll. */
 	bool is_pending_inter_word_space;
+#endif
 
 	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
 };
