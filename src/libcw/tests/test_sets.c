@@ -197,7 +197,12 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_representation_to_hash_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_representation_to_character_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_representation_to_character_internal_speed_gain),
-			LIBCW_TEST_FUNCTION_INSERT(test_character_lookups_internal),
+
+			LIBCW_TEST_FUNCTION_INSERT(test_data_main_table_get_count),
+			LIBCW_TEST_FUNCTION_INSERT(test_data_main_table_get_contents),
+			LIBCW_TEST_FUNCTION_INSERT(test_data_main_table_get_representation_len_max),
+			LIBCW_TEST_FUNCTION_INSERT(test_data_main_table_lookups),
+
 			LIBCW_TEST_FUNCTION_INSERT(test_prosign_lookups_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_phonetic_lookups_internal),
 			LIBCW_TEST_FUNCTION_INSERT(test_validate_character_internal),

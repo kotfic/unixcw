@@ -350,10 +350,11 @@ const char * cw_character_to_representation_internal(int character)
 int cw_lookup_character(char character, char * representation)
 {
 	/* Lookup the character, and if found, return the string. */
-	const char * retval = cw_character_to_representation_internal(character);
-	if (retval) {
+	const char * looked_up = cw_character_to_representation_internal(character);
+	if (looked_up) {
 		if (representation) {
-			strncpy(representation, retval, g_main_table_maximum_representation_length);
+			strncpy(representation, looked_up, g_main_table_maximum_representation_length);
+			representation[g_main_table_maximum_representation_length] = '\0';
 		}
 		return CW_SUCCESS;
 	}
@@ -390,13 +391,13 @@ char * cw_character_to_representation(int character)
 {
 	/* Lookup representation of the character, and if found, return copy of the representation. */
 
-	const char * representation = cw_character_to_representation_internal(character);
-	if (NULL == representation) {
+	const char * looked_up = cw_character_to_representation_internal(character);
+	if (NULL == looked_up) {
 		errno = ENOENT;
 		return NULL;
 	}
 
-	char * r = strdup(representation);
+	char * r = strdup(looked_up);
 	if (NULL == r) {
 		errno = ENOMEM;
 		return NULL;
@@ -443,7 +444,7 @@ char * cw_character_to_representation(int character)
    @return non-zero value of hash of valid representation (in range CW_DATA_MIN_REPRESENTATION_HASH-CW_DATA_MAX_REPRESENTATION_HASH)
    @return zero for invalid representation
 */
-uint8_t cw_representation_to_hash_internal(const char * representation)
+unsigned int cw_representation_to_hash_internal(const char * representation)
 {
 	/* Our algorithm can handle only 7 characters of representation.
 	   And we insist on there being at least one character, too.  */
@@ -527,7 +528,8 @@ int cw_representation_to_character_internal(const char * representation)
 	}
 
 	/* Hash the representation to get an index for the fast lookup. */
-	const uint8_t hash = cw_representation_to_hash_internal(representation);
+	/* TODO: shouldn't this be uint8_t? */
+	unsigned int hash = cw_representation_to_hash_internal(representation);
 
 	const cw_entry_t * cw_entry = NULL;
 	/* If the hashed lookup table is complete, we can simply believe any
@@ -701,7 +703,8 @@ cw_ret_t cw_data_init_r2c_hash_table_internal(const cw_entry_t * table[])
 
 	bool is_complete = true;
 	for (const cw_entry_t * cw_entry = CW_TABLE; cw_entry->character; cw_entry++) {
-		const uint8_t hash = cw_representation_to_hash_internal(cw_entry->representation);
+		/* TODO: uint8_t instead of unsigned int. */
+		unsigned int hash = cw_representation_to_hash_internal(cw_entry->representation);
 		if (hash) {
 			table[hash] = cw_entry;
 		} else {
@@ -744,8 +747,8 @@ cw_ret_t cw_data_init_r2c_hash_table_internal(const cw_entry_t * table[])
 */
 int cw_check_representation(const char * representation)
 {
-	const bool v = cw_representation_is_valid(representation);
-	return v ? CW_SUCCESS : CW_FAILURE;
+	const bool valid = cw_representation_is_valid(representation);
+	return valid ? CW_SUCCESS : CW_FAILURE;
 }
 
 
@@ -1132,7 +1135,8 @@ int cw_lookup_procedural_character(char character, char *expansion, int * is_usu
 	const char * retval = cw_lookup_procedural_character_internal(character, &is_expanded);
 	if (retval) {
 		if (expansion) {
-			strncpy(expansion, retval, g_prosign_table_maximum_expansion_length + 1);
+			strncpy(expansion, retval, g_prosign_table_maximum_expansion_length);
+			expansion[g_prosign_table_maximum_expansion_length] = '\0';
 		}
 		if (is_usually_expanded) {
 			*is_usually_expanded = is_expanded;
@@ -1253,9 +1257,10 @@ int cw_lookup_phonetic(char character, char * buffer)
 	character = toupper(character);
 	if (character >= 'A' && character <= 'Z') {
 		if (NULL != buffer) {
-			strncpy(buffer, g_phonetics_table[character - 'A'], g_phonetics_table_maximum_phonetic_length + 1);
+			strncpy(buffer, g_phonetics_table[character - 'A'], g_phonetics_table_maximum_phonetic_length);
+			buffer[g_phonetics_table_maximum_phonetic_length] = '\0';
 		} else {
-			/* Simply ignore the fact that caller didn't specify output buffer. */
+			/* Simply ignore the fact that caller didn't provide output buffer. */
 		}
 		return CW_SUCCESS;
 	}

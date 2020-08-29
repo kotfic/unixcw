@@ -61,6 +61,7 @@ extern const char * test_invalid_strings[];
 
 
 static int test_phonetic_lookups_internal_sub(cw_test_executor_t * cte, char * phonetic_buffer);
+static bool representation_is_valid(const char * representation);
 
 
 
@@ -284,158 +285,269 @@ int test_cw_representation_to_character_internal_speed_gain(cw_test_executor_t *
 
 
 /**
-   \brief Test functions looking up characters and their representation.
+   @brief Test getting number of characters known to libcw
 
-   @reviewed on 2019-10-12
+   @reviewed 2020-08-29
 */
-int test_character_lookups_internal(cw_test_executor_t * cte)
+cwt_retv test_data_main_table_get_count(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, __func__);
+
+	/*
+	  libcw doesn't define a constant describing the number of
+	  known/supported/recognized characters, but there is a function
+	  calculating the number.
+
+	  Two things are certain
+	  - the number is larger than zero,
+	  - it's not larger than ASCII table size.
+	*/
+	const int count = LIBCW_TEST_FUT(cw_get_character_count)();
+
+	const int lower_inclusive = 1;
+	const int upper_inclusive = 127;
+	cte->expect_between_int(cte,
+				lower_inclusive, count, upper_inclusive,
+				"character count %d",
+				count);
+
+	cte->print_test_footer(cte, __func__);
+
+	return cwt_retv_ok;
+}
+
+
+
+
+/**
+   @brief Test getting list of characters supported by libcw
+
+   @reviewed 2020-08-29
+*/
+cwt_retv test_data_main_table_get_contents(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
 
-	/* Test: get number of characters known to libcw. */
-	{
-		/* libcw doesn't define a constant describing the
-		   number of known/supported/recognized characters,
-		   but there is a function calculating the number. One
-		   thing is certain: the number is larger than
-		   zero. */
-		const int extracted_count = LIBCW_TEST_FUT(cw_get_character_count)();
-		cte->expect_op_int(cte, 0, "<", extracted_count, "character count (%d)", extracted_count);
+	char charlist[UCHAR_MAX + 1] = { 0 };
+	LIBCW_TEST_FUT(cw_list_characters)(charlist);
+	cte->log_info(cte, "list of characters: %s\n", charlist);
+
+	/* Length of the list must match the character count returned by
+	   library. */
+	const int extracted_count = cw_get_character_count();
+	const int extracted_len = (int) strlen(charlist);
+	cte->expect_op_int(cte,
+			   extracted_len, "==", extracted_count,
+			   "character count = %d, list length = %d",
+			   extracted_count, extracted_len);
+
+
+	/* The 'sanity' of count of characters in charlist has been already
+	   indirectly tested in tests of cw_get_character_count(). */
+
+	cte->print_test_footer(cte, __func__);
+
+	return cwt_retv_ok;
+}
+
+
+
+
+/**
+   @brief Test getting maximum length of a representation (a string of Dots/Dashes)
+
+   @reviewed on 2020-08-29
+*/
+cwt_retv test_data_main_table_get_representation_len_max(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, __func__);
+
+	const int max_rep_length = LIBCW_TEST_FUT(cw_get_maximum_representation_length)();
+
+	const int lower_inclusive = CW_DATA_MIN_REPRESENTATION_LENGTH;
+	const int upper_inclusive = CW_DATA_MAX_REPRESENTATION_LENGTH;
+	cte->expect_between_int(cte,
+				lower_inclusive, max_rep_length, upper_inclusive,
+				"maximum representation length (%d)",
+				max_rep_length);
+
+	cte->print_test_footer(cte, __func__);
+
+	return cwt_retv_ok;
+}
+
+
+
+
+/* Simple helper function for validating string with representation. */
+static bool representation_is_valid(const char * representation)
+{
+	if (NULL == representation) {
+		return false;
 	}
+
+	const size_t len = strlen(representation);
+	if (len < CW_DATA_MIN_REPRESENTATION_LENGTH) {
+		return false;
+	}
+	if (len > CW_DATA_MAX_REPRESENTATION_LENGTH) {
+		return false;
+	}
+
+	for (size_t i = 0; i < len; i++) {
+		if (CW_DOT_REPRESENTATION != representation[i] && CW_DASH_REPRESENTATION != representation[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+
+
+/**
+   @brief Test functions looking up characters and their representation
+
+   @reviewed on 2019-10-12
+*/
+cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, __func__);
 
 
 	char charlist[UCHAR_MAX + 1] = { 0 };
-	/* Test: get list of characters supported by libcw. */
-	{
-		/* Of course length of the list must match the
-		   character count returned by library. */
+	cw_list_characters(charlist);
 
-		LIBCW_TEST_FUT(cw_list_characters)(charlist);
-
-		const int extracted_count = cw_get_character_count();
-		const int extracted_len = (int) strlen(charlist);
-
-		cte->log_info(cte, "list of characters: %s\n", charlist);
-
-		cte->expect_op_int(cte, extracted_len, "==", extracted_count, "character count = %d, list length = %d", extracted_count, extracted_len);
-	}
+	const int max_rep_length = cw_get_maximum_representation_length();
 
 
+	bool c2r_failure = false;
+	bool r2c_failure = false;
+	bool two_way_failure = false;
+	bool length_failure = false;
 
-	/* Test: get maximum length of a representation (a string of dots/dashes). */
-	int max_rep_length = 0;
-	{
-		/* This test is rather not related to any other, but
-		   since we are doing tests of other functions related
-		   to representations, let's do this as well. */
+	/* For each character, look up its representation, the
+	   look up each representation in the opposite
+	   direction. */
 
-		max_rep_length = LIBCW_TEST_FUT(cw_get_maximum_representation_length)();
-		cte->expect_op_int(cte, 0, "<", max_rep_length, "maximum representation length (%d)", max_rep_length);
-	}
+	for (int i = 0; charlist[i] != '\0'; i++) {
+
+		const char input_character = charlist[i];
+		char * representation = LIBCW_TEST_FUT(cw_character_to_representation)(input_character);
+		if (!cte->expect_valid_pointer_errors_only(cte, representation,
+							   "character to representation: conversion from character to representation (new) for #%d (char '%c')\n",
+							   i, input_character)) {
+			c2r_failure = true;
+			break;
+		}
+
+		bool is_valid = representation_is_valid(representation);
+		if (!cte->expect_op_int_errors_only(cte,
+						    is_valid, "==", true,
+						    "character to representation: validity of representation (new) for #%d (char '%c')\n",
+						    i, input_character)) {
+			c2r_failure = true;
+			break;
+		}
 
 
+		/* Also test the old version of cw_character_to_representation(). */
+		{
+			/*
+			  Two things on purpose:
+			  - size larger than
+			    (CW_DATA_MAX_REPRESENTATION_LENGTH+1) to be able
+			    to look at how much is copied to the buffer.
+			  - initialization with something other than NUL to
+                            be able to look at what is copied to the buffer.
+			*/
+			char representation_old[2 * (CW_DATA_MAX_REPRESENTATION_LENGTH + 1)];
+			memset(representation_old, 'a', sizeof (representation_old));
 
-	/* Test: character <--> representation lookup. */
-	{
-		bool c2r_failure = false;
-		bool r2c_failure = false;
-		bool two_way_failure = false;
-		bool length_failure = false;
+			int cwret = LIBCW_TEST_FUT(cw_lookup_character)(input_character, representation_old);
 
-		/* For each character, look up its representation, the
-		   look up each representation in the opposite
-		   direction. */
-
-		for (int i = 0; charlist[i] != '\0'; i++) {
-
-			const char input_character = charlist[i];
-			char * representation = LIBCW_TEST_FUT(cw_character_to_representation)(input_character);
-			if (!cte->expect_valid_pointer_errors_only(cte, representation,
-								   "character to representation: conversion from character to representation (new) for #%d (char '%c')\n",
-								   i, input_character)) {
+			if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
+							    "character to representation: conversion from character to representation (old) for #%d (char '%c')\n",
+							    i, input_character)) {
 				c2r_failure = true;
 				break;
 			}
 
-			/* Also test the old version of cw_character_to_representation(). */
-			{
-				/* TODO: replace 32 size with (CW_DATA_MAX_REPRESENTATION_LENGTH+1). */
-				char representation_old[32] = { 0 };
-				int cwret = LIBCW_TEST_FUT(cw_lookup_character)(input_character, representation_old);
-
-				if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
-								    "character to representation: conversion from character to representation (old) for #%d (char '%c')\n",
-								    i, input_character)) {
-					c2r_failure = true;
-					break;
-				}
-
-				const int cmp = strcmp(representation, representation_old);
-				if (!cte->expect_op_int_errors_only(cte, cmp, "==", 0,
-								    "character to representation: result of new and old method for #%d: '%s' != '%s'\n",
-								    i, representation, representation_old)) {
-					c2r_failure = true;
-					break;
-				}
+			is_valid = representation_is_valid(representation_old);
+			if (!cte->expect_op_int_errors_only(cte,
+							    is_valid, "==", true,
+							    "character to representation: validity of representation (old) for #%d (char '%c')\n",
+							    i, input_character)) {
+				c2r_failure = true;
+				break;
 			}
 
-			/* Here we convert the representation back into a character. */
-			char reverse_character = LIBCW_TEST_FUT(cw_representation_to_character)(representation);
-			if (!cte->expect_op_int_errors_only(cte, 0, "!=", reverse_character,
-							    "representation to character: conversion from representation to character (new) for #%d (representation '%s')\n",
+			const int cmp = strcmp(representation, representation_old);
+			if (!cte->expect_op_int_errors_only(cte, cmp, "==", 0,
+							    "character to representation: result of new and old method for #%d: '%s' != '%s'\n",
+							    i, representation, representation_old)) {
+				c2r_failure = true;
+				break;
+			}
+		}
+
+		/* Here we convert the representation back into a character. */
+		char reverse_character = LIBCW_TEST_FUT(cw_representation_to_character)(representation);
+		if (!cte->expect_op_int_errors_only(cte, 0, "!=", reverse_character,
+						    "representation to character: conversion from representation to character (new) for #%d (representation '%s')\n",
+						    i, representation)) {
+			r2c_failure = true;
+			break;
+		}
+		/* Also test old version of cw_representation_to_character(). */
+		{
+			char old_reverse_character = 0;
+			int cwret = LIBCW_TEST_FUT(cw_lookup_representation)(representation, &old_reverse_character);
+
+			if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
+							    "representation to character: conversion from representation to character (old) for #%d (representation '%s')\n",
 							    i, representation)) {
 				r2c_failure = true;
 				break;
 			}
-			/* Also test old version of cw_representation_to_character(). */
-			{
-				char old_reverse_character = 0;
-				int cwret = LIBCW_TEST_FUT(cw_lookup_representation)(representation, &old_reverse_character);
-
-				if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
-								    "representation to character: conversion from representation to character (old) for #%d (representation '%s')\n",
-								    i, representation)) {
-					r2c_failure = true;
-					break;
-				}
 
 
-				if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", old_reverse_character,
-								    "representation to character: result of new and old method for #%d: '%c' != '%c'\n",
-								    i, reverse_character, old_reverse_character)) {
-					r2c_failure = true;
-					break;
-				}
-			}
-
-			/* Compare output char with input char. */
-			if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", input_character, "character lookup: two-way lookup for #%d ('%c' -> '%s' -> '%c')\n", i, input_character, representation, reverse_character)) {
-				two_way_failure = true;
+			if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", old_reverse_character,
+							    "representation to character: result of new and old method for #%d: '%c' != '%c'\n",
+							    i, reverse_character, old_reverse_character)) {
+				r2c_failure = true;
 				break;
 			}
-
-			const int length = (int) strlen(representation);
-			const int rep_length_lower = 1; /* A representation will have at least one character. */
-			const int rep_length_upper = max_rep_length;
-			if (!cte->expect_between_int_errors_only(cte, rep_length_lower, length, rep_length_upper, "character lookup: representation length of character '%c' (#%d)", input_character, i)) {
-				length_failure = true;
-				break;
-			}
-
-			free(representation);
-			representation = NULL;
 		}
 
-		cte->expect_op_int(cte, false, "==", c2r_failure, "character lookup: char to representation");
-		cte->expect_op_int(cte, false, "==", r2c_failure, "character lookup: representation to char");
-		cte->expect_op_int(cte, false, "==", two_way_failure, "character lookup: two-way lookup");
-		cte->expect_op_int(cte, false, "==", length_failure, "character lookup: length");
+		/* Compare output char with input char. */
+		if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", input_character, "character lookup: two-way lookup for #%d ('%c' -> '%s' -> '%c')\n", i, input_character, representation, reverse_character)) {
+			two_way_failure = true;
+			break;
+		}
+
+		const int length = (int) strlen(representation);
+		const int rep_length_lower = 1; /* A representation will have at least one character. */
+		const int rep_length_upper = max_rep_length;
+		if (!cte->expect_between_int_errors_only(cte, rep_length_lower, length, rep_length_upper, "character lookup: representation length of character '%c' (#%d)", input_character, i)) {
+			length_failure = true;
+			break;
+		}
+
+		free(representation);
+		representation = NULL;
 	}
+
+	cte->expect_op_int(cte, false, "==", c2r_failure, "character lookup: char to representation");
+	cte->expect_op_int(cte, false, "==", r2c_failure, "character lookup: representation to char");
+	cte->expect_op_int(cte, false, "==", two_way_failure, "character lookup: two-way lookup");
+	cte->expect_op_int(cte, false, "==", length_failure, "character lookup: length");
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 
