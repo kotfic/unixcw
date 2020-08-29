@@ -316,7 +316,7 @@ cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_na
 /**
    @brief Silence the generator
 
-   Force an sound sink currently used by generator @p gen to go
+   Force a sound sink currently used by generator @p gen to go
    silent.
 
    The function does not clear/flush tone queue, nor does it stop the
@@ -511,7 +511,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 
 	/* pthread */
 	{
-		gen->thread.id = -1;
+		gen->thread.id = -1; /* FIXME: thread id type is opaque. Don't assign -1. */
 		pthread_attr_init(&gen->thread.attr);
 		/* Thread must be joinable in order to make a safe call to
 		   pthread_kill(thread_id, 0). pthreads are joinable by
@@ -1015,8 +1015,8 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 		     cw_tq_wait_for_level_internal();
 
 		   - allows client code to observe any dequeue event
-                     by waiting for signal in
-                     cw_tq_wait_for_end_of_current_tone_internal();
+		     by waiting for signal in
+		     cw_tq_wait_for_end_of_current_tone_internal();
 		*/
 
 #ifdef GENERATOR_CLIENT_THREAD
@@ -2136,7 +2136,9 @@ cw_ret_t cw_gen_enqueue_eow_space_internal(cw_gen_t * gen)
 	}
 	enqueued++;
 
-	cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "enqueued %d tones per iw space, tq len = %zu", enqueued, cw_tq_length_internal(gen->tq));
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG,
+		      MSG_PREFIX "enqueued %d tones per iw space, tq len = %zu",
+		      enqueued, cw_tq_length_internal(gen->tq));
 
 	return CW_SUCCESS;
 }
@@ -2146,6 +2148,11 @@ cw_ret_t cw_gen_enqueue_eow_space_internal(cw_gen_t * gen)
 
 cw_ret_t cw_gen_enqueue_representation(cw_gen_t * gen, const char * representation)
 {
+	if (!cw_representation_is_valid(representation)) {
+		errno = EINVAL;
+		return CW_FAILURE;
+	}
+
 	/* Before we let this representation loose on tone generation,
 	   we'd really like to know that all of its tones will get queued
 	   up successfully.  The right way to do this is to calculate the
@@ -2180,6 +2187,11 @@ cw_ret_t cw_gen_enqueue_representation(cw_gen_t * gen, const char * representati
 
 cw_ret_t cw_gen_enqueue_representation_no_ics(cw_gen_t * gen, const char * representation)
 {
+	if (!cw_representation_is_valid(representation)) {
+		errno = EINVAL;
+		return CW_FAILURE;
+	}
+
 	/* Before we let this representation loose on tone generation,
 	   we'd really like to know that all of its tones will get queued
 	   up successfully.  The right way to do this is to calculate the
@@ -2242,7 +2254,7 @@ cw_ret_t cw_gen_enqueue_valid_character_no_ics_internal(cw_gen_t * gen, char cha
 		return CW_FAILURE;
 	}
 
-	/* ' ' character (i.e. regular space) is a special case. */
+	/* ' ' character (i.e. inter-word-space) is a special case. */
 	if (character == ' ') {
 		return cw_gen_enqueue_eow_space_internal(gen);
 	}

@@ -49,10 +49,9 @@
 
 
 
-#define MSG_PREFIX_QK "libcw/qk: "
 #define MSG_PREFIX_SK "libcw/sk: "
 #define MSG_PREFIX_IK "libcw/ik: "
-#define MSG_PREFIX "libcw/key: "
+#define MSG_PREFIX    "libcw/key: "
 
 
 
@@ -243,7 +242,7 @@ void cw_key_register_generator(volatile cw_key_t * key, cw_gen_t * gen)
    other way around.
 
    @internal
-   @reviewed 2020-08-01
+   @reviewed 2020-08-29
    @endinternal
 
    @param[in,out] key key that needs to have a receiver associated with it
@@ -255,7 +254,7 @@ void cw_key_register_receiver(volatile cw_key_t * key, cw_rec_t * rec)
 		key->rec = rec;
 	} else {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_CLIENT_CODE, CW_DEBUG_WARNING,
-			      MSG_PREFIX "Passed NULL rec pointer");
+			      MSG_PREFIX "Passed NULL key pointer");
 	}
 
 	return;
@@ -287,8 +286,8 @@ void cw_key_register_receiver(volatile cw_key_t * key, cw_rec_t * rec)
 */
 cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t key_value)
 {
-	cw_assert (key, MSG_PREFIX "key is NULL");
-	cw_assert (key->gen, MSG_PREFIX "gen is NULL");
+	cw_assert (key, MSG_PREFIX_SK "key is NULL");
+	cw_assert (key->gen, MSG_PREFIX_SK "gen is NULL");
 
 #if 0 /* Disabled on 2020-08-03. Timer moved to iambic keyer only. */
 	struct timeval t;
@@ -304,7 +303,7 @@ cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-		      MSG_PREFIX "sk set value %d->%d", key->sk.key_value, key_value);
+		      MSG_PREFIX_SK "sk set value %d->%d", key->sk.key_value, key_value);
 
 	/* Remember the new key value. */
 	key->sk.key_value = key_value;
@@ -327,7 +326,7 @@ cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 		   (audible tone) to Space (silence). */
 		cwret = cw_gen_enqueue_begin_space_internal(key->gen);
 	}
-	cw_assert (CW_SUCCESS == cwret, MSG_PREFIX "failed to enqueue key value %d", key->sk.key_value);
+	cw_assert (CW_SUCCESS == cwret, MSG_PREFIX_SK "failed to enqueue key value %d", key->sk.key_value);
 	return cwret;
 }
 
@@ -383,8 +382,8 @@ cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 */
 cw_ret_t cw_key_ik_set_value_internal(volatile cw_key_t * key, cw_key_value_t key_value, char symbol)
 {
-	cw_assert (key, MSG_PREFIX "key is NULL");
-	cw_assert (key->gen, MSG_PREFIX "gen is NULL");
+	cw_assert (key, MSG_PREFIX_IK "key is NULL");
+	cw_assert (key->gen, MSG_PREFIX_IK "gen is NULL");
 
 	if (key->ik.key_value == key_value) {
 		/* This is not an error. This may happen when
@@ -394,7 +393,7 @@ cw_ret_t cw_key_ik_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-		      MSG_PREFIX "ik set value %d->%d (symbol '%c')", key->ik.key_value, key_value, symbol);
+		      MSG_PREFIX_IK "ik set value %d->%d (symbol '%c')", key->ik.key_value, key_value, symbol);
 
 	/* Remember the new key value. */
 	key->ik.key_value = key_value;
@@ -403,7 +402,7 @@ cw_ret_t cw_key_ik_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 	  change, you should call it here. */
 
 	cw_ret_t cwret = cw_gen_enqueue_symbol_no_eom_space_internal(key->gen, symbol);
-	cw_assert (CW_SUCCESS == cwret, MSG_PREFIX "failed to key symbol '%c'", symbol);
+	cw_assert (CW_SUCCESS == cwret, MSG_PREFIX_IK "failed to key symbol '%c'", symbol);
 	return cwret;
 }
 
@@ -517,20 +516,20 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 		   that less functions are called before silently
 		   discovering that key doesn't exist. */
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_INTERNAL, CW_DEBUG_DEBUG,
-			      MSG_PREFIX "ik update: NULL key, silently accepting");
+			      MSG_PREFIX_IK "ik update: NULL key, silently accepting");
 		return CW_SUCCESS;
 	}
 
 	/* Iambic keyer needs a generator to measure times, so the generator
 	   must exist. Be paranoid and check it, just in case. */
-	cw_assert (key->gen, MSG_PREFIX "gen is NULL");
+	cw_assert (key->gen, MSG_PREFIX_IK "gen is NULL");
 
 
 	/* TODO: this is not the safest locking in the world.
 	   TODO: why do we need the locking at all? */
 	if (key->ik.lock) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_INTERNAL, CW_DEBUG_ERROR,
-			      MSG_PREFIX "ik update: lock in thread %ld", (long) pthread_self());
+			      MSG_PREFIX_IK "ik update: lock in thread %ld", (long) pthread_self());
 		return CW_FAILURE;
 	}
 	key->ik.lock = true;
@@ -561,7 +560,7 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 		   sync.  We are *at the end* of Mark (Dot), so key should
 		   be (still) closed. */
 		cw_assert (key->ik.key_value == CW_KEY_VALUE_CLOSED,
-			   MSG_PREFIX "inconsistency between keyer graph state (%s) ad key value (%d)",
+			   MSG_PREFIX_IK "inconsistency between keyer graph state (%s) and key value (%d)",
 			   cw_iambic_keyer_graph_states[key->ik.graph_state], key->ik.key_value);
 
 		/* We are ending a Dot, so turn off tone and begin the
@@ -577,7 +576,7 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 		   sync.  We are *at the end* of Mark (Dash), so key should
 		   be (still) closed. */
 		cw_assert (key->ik.key_value == CW_KEY_VALUE_CLOSED,
-			   MSG_PREFIX "inconsistency between keyer graph state (%s) ad key value (%d)",
+			   MSG_PREFIX_IK "inconsistency between keyer graph state (%s) and key value (%d)",
 			   cw_iambic_keyer_graph_states[key->ik.graph_state], key->ik.key_value);
 
 		/* We are ending a Dash, so turn off tone and begin
@@ -593,7 +592,7 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 		   sync.  We are *at the end* of Space, so key should
 		   be (still) open. */
 		cw_assert (key->ik.key_value == CW_KEY_VALUE_OPEN,
-			   MSG_PREFIX "inconsistency between keyer graph state (%s) ad key value (%d)",
+			   MSG_PREFIX_IK "inconsistency between keyer graph state (%s) and key value (%d)",
 			   cw_iambic_keyer_graph_states[key->ik.graph_state], key->ik.key_value);
 
 		/* If we have just finished a Dot or a Dash and its
@@ -641,7 +640,7 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 		   sync.  We are *at the end* of Space, so key should
 		   be (still) open. */
 		cw_assert (key->ik.key_value == CW_KEY_VALUE_OPEN,
-			   MSG_PREFIX "inconsistency between keyer graph state (%s) ad key value (%d)",
+			   MSG_PREFIX_IK "inconsistency between keyer graph state (%s) and key value (%d)",
 			   cw_iambic_keyer_graph_states[key->ik.graph_state], key->ik.key_value);
 
 		if (CW_KEY_VALUE_OPEN == key->ik.dash_paddle_value) {
@@ -684,15 +683,16 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 		break;
 	default:
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "ik update: invalid keyer graph state %d",
+			      MSG_PREFIX_IK "ik update: invalid keyer graph state %d",
 			      key->ik.graph_state);
 		key->ik.lock = false;
 		return CW_FAILURE;
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "ik update: keyer graph state: %s -> %s",
-		      cw_iambic_keyer_graph_states[old_graph_state], cw_iambic_keyer_graph_states[key->ik.graph_state]);
+		      MSG_PREFIX_IK "ik update: keyer graph state: %s -> %s",
+		      cw_iambic_keyer_graph_states[old_graph_state],
+		      cw_iambic_keyer_graph_states[key->ik.graph_state]);
 
 	key->ik.lock = false;
 	return CW_SUCCESS;
@@ -778,7 +778,7 @@ cw_ret_t cw_key_ik_notify_paddle_event(volatile cw_key_t * key, cw_key_value_t d
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "ik notify: paddles %d,%d, latches %d,%d, curtis_b %d",
+		      MSG_PREFIX_IK "ik notify: paddles %d,%d, latches %d,%d, curtis_b %d",
 		      key->ik.dot_paddle_value, key->ik.dash_paddle_value,
 		      key->ik.dot_latch, key->ik.dash_latch, key->ik.curtis_b_latch);
 
@@ -822,8 +822,8 @@ cw_ret_t cw_key_ik_notify_paddle_event(volatile cw_key_t * key, cw_key_value_t d
 */
 static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t * key)
 {
-	cw_assert (key, MSG_PREFIX "key is NULL");
-	cw_assert (key->gen, MSG_PREFIX "gen is NULL");
+	cw_assert (key, MSG_PREFIX_IK "key is NULL");
+	cw_assert (key->gen, MSG_PREFIX_IK "gen is NULL");
 
 #ifdef IAMBIC_KEY_HAS_TIMER
 	if (NULL != key->ik.ik_timer) {
@@ -840,7 +840,7 @@ static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t 
 		   event. But the function shouldn't have been called
 		   in that situation. */
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYER_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "ik update initial: called the function when both paddles are open");
+			      MSG_PREFIX_IK "ik update initial: called the function when both paddles are open");
 
 		/* Silently accept.
 		   TODO: maybe it's a good idea, or maybe bad one to
@@ -867,8 +867,9 @@ static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t 
 	}
 
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYER_STATES, CW_DEBUG_DEBUG,
-		      MSG_PREFIX "ik update initial: keyer graph state: %s -> %s",
-		      cw_iambic_keyer_graph_states[old_graph_state], cw_iambic_keyer_graph_states[key->ik.graph_state]);
+		      MSG_PREFIX_IK "ik update initial: keyer graph state: %s -> %s",
+		      cw_iambic_keyer_graph_states[old_graph_state],
+		      cw_iambic_keyer_graph_states[key->ik.graph_state]);
 
 
 	/* Here comes the "real" initial transition - this is why we
@@ -877,13 +878,13 @@ static cw_ret_t cw_key_ik_update_graph_state_initial_internal(volatile cw_key_t 
 	cw_ret_t cwret = cw_key_ik_update_graph_state_internal(key);
 	if (CW_FAILURE == cwret) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_ERROR,
-			      MSG_PREFIX "ik update initial: call to update_graph_state_initial() failed first time");
+			      MSG_PREFIX_IK "ik update initial: call to update_graph_state_initial() failed first time");
 		/* Just try again, once. */
 		usleep(1000);
 		cwret = cw_key_ik_update_graph_state_internal(key);
 		if (CW_FAILURE == cwret) {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_ERROR,
-				      MSG_PREFIX "ik update initial: call to update_graph_state_initial() failed twice");
+				      MSG_PREFIX_IK "ik update initial: call to update_graph_state_initial() failed twice");
 		}
 	}
 
@@ -1140,7 +1141,7 @@ cw_ret_t cw_key_ik_wait_for_keyer(volatile cw_key_t * key)
 void cw_key_ik_reset_internal(volatile cw_key_t * key)
 {
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_DEBUG,
-		      MSG_PREFIX "ik reset: keyer graph state %s -> KS_IDLE", cw_iambic_keyer_graph_states[key->ik.graph_state]);
+		      MSG_PREFIX_IK "ik reset: keyer graph state %s -> KS_IDLE", cw_iambic_keyer_graph_states[key->ik.graph_state]);
 	key->ik.graph_state = KS_IDLE;
 
 	key->ik.key_value = CW_KEY_VALUE_OPEN;
@@ -1157,7 +1158,8 @@ void cw_key_ik_reset_internal(volatile cw_key_t * key)
 	cw_finalization_schedule_internal(); /* TODO: do we still need this? */
 
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYER_STATES, CW_DEBUG_DEBUG,
-		      MSG_PREFIX "ik reset: keyer graph state -> %s (reset)", cw_iambic_keyer_graph_states[key->ik.graph_state]);
+		      MSG_PREFIX_IK "ik reset: keyer graph state -> %s (reset)",
+		      cw_iambic_keyer_graph_states[key->ik.graph_state]);
 
 	return;
 }
@@ -1189,7 +1191,7 @@ void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs)
 		   applications a generator exists, but a keyer does
 		   not exist.  Silently accept this situation. */
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_INTERNAL, CW_DEBUG_DEBUG,
-			      MSG_PREFIX "ik increment: NULL key, silently accepting");
+			      MSG_PREFIX_IK "ik increment: NULL key, silently accepting");
 		return;
 	}
 
@@ -1202,7 +1204,7 @@ void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs)
 		   a straight key with this. */
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_INFO,
-			      MSG_PREFIX "ik increment: incrementing timer by %d [us]\n", usecs);
+			      MSG_PREFIX_IK "ik increment: incrementing timer by %d [us]\n", usecs);
 
 		key->ik.ik_timer->tv_usec += usecs % CW_USECS_PER_SEC;
 		key->ik.ik_timer->tv_sec  += usecs / CW_USECS_PER_SEC + key->ik.ik_timer->tv_usec / CW_USECS_PER_SEC;
@@ -1303,7 +1305,7 @@ void cw_key_sk_reset_internal(volatile cw_key_t * key)
 	//cw_finalization_schedule_internal();
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_STRAIGHT_KEY_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "sk: key value ->OPEN (reset)");
+		      MSG_PREFIX_SK "sk: key value ->OPEN (reset)");
 
 	return;
 }

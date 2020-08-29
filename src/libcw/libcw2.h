@@ -469,13 +469,15 @@ int cw_gen_get_weighting(const cw_gen_t * gen);
    mark (Dot/Dash) from the @p representation is followed by a standard
    inter-mark-space. Inter-character-space is added at the end.
 
-   Representation is not validated by this function.
+   @p representation must be valid, i.e. it must meet criteria of
+   cw_representation_is_valid().
 
    @exception EAGAIN there is not enough space in tone queue to enqueue @p
    representation.
+   @exception EINVAL representation is not valid.
 
    @internal
-   @reviewed 2020-08-23
+   @reviewed 2020-08-29
    @endinternal
 
    @param[in] gen generator used to enqueue the representation
@@ -497,13 +499,15 @@ cw_ret_t cw_gen_enqueue_representation(cw_gen_t * gen, const char * representati
    inter-mark-space. Inter-character-space is NOT added at the end (hence
    no_ics in function's name).
 
-   Representation is not validated by this function.
+   @p representation must be valid, i.e. it must meet criteria of
+   cw_representation_is_valid().
 
    @exception EAGAIN there is not enough space in tone queue to enqueue @p
    representation.
+   @exception EINVAL representation is not valid.
 
    @internal
-   @reviewed 2020-08-23
+   @reviewed 2020-08-29
    @endinternal
 
    @param[in] gen generator used to enqueue the representation
