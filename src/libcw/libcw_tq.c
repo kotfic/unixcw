@@ -18,6 +18,8 @@
 */
 
 
+
+
 /**
    @file libcw_tq.c
 
@@ -69,7 +71,6 @@
 #include <inttypes.h> /* "PRIu32" */
 #include <pthread.h>
 #include <stdlib.h>
-#include <unistd.h> /* sleep() */
 
 
 
@@ -201,7 +202,6 @@ cw_tone_queue_t * cw_tq_new_internal(void)
 	tq->low_water_mark = 0;
 	tq->low_water_callback = NULL;
 	tq->low_water_callback_arg = NULL;
-	tq->call_callback = false;
 
 	tq->gen = (cw_gen_t *) NULL; /* This field will be set by generator code. */
 
@@ -347,7 +347,7 @@ cw_ret_t cw_tq_set_capacity_internal(cw_tone_queue_t * tq, size_t capacity, size
 		return CW_FAILURE;
 	}
 
-	if (high_water_mark == 0 || high_water_mark > CW_TONE_QUEUE_HIGH_WATER_MARK_MAX) {
+	if (0 == high_water_mark || high_water_mark > CW_TONE_QUEUE_HIGH_WATER_MARK_MAX) {
 		/* If we allowed high water mark to be zero, the queue
 		   would not accept any new tones: it would constantly
 		   be full. Any attempt to enqueue any tone would
@@ -357,7 +357,7 @@ cw_ret_t cw_tq_set_capacity_internal(cw_tone_queue_t * tq, size_t capacity, size
 		return CW_FAILURE;
 	}
 
-	if (capacity == 0 || capacity > CW_TONE_QUEUE_CAPACITY_MAX) {
+	if (0 == capacity || capacity > CW_TONE_QUEUE_CAPACITY_MAX) {
 		/* Tone queue of capacity zero doesn't make much
 		   sense, so capacity == 0 is not allowed. */
 		errno = EINVAL;
@@ -535,7 +535,7 @@ size_t cw_tq_next_index_internal(const cw_tone_queue_t * tq, size_t ind)
    @param[out] tone dequeued tone
 
    @return CW_SUCCESS if a tone has been dequeued
-   @return CW_FAILURE if no tone has been dequeued
+   @return CW_FAILURE if no tone has been dequeued. TODO it's not a failure to be unable to dequeue tone from empty queue. Revise the type.
 */
 cw_ret_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
 {
@@ -789,18 +789,24 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
    @brief Register callback for low queue state
 
    Register a function to be called automatically by the dequeue routine
-   whenever the tone queue falls to a given @p level. To be more precise: the
-   callback is called by queue's dequeue function if, after dequeueing a
-   tone, the function notices that tone queue length has become equal or less
-   than @p level.
+   whenever the count of tones in tone queue falls to a given @p level. To be
+   more precise: the callback is called by queue's dequeue function if, after
+   dequeueing a tone, the function notices that tone queue length has become
+   equal or less than @p level.
 
-   @p callback_arg may be used to give a value passed back on callback calls.
-   A NULL function pointer suppresses callbacks.
+   @p level can't be equal to or larger than tone queue capacity.
+
+   If @p level is zero, the behaviour of the mechanism is not guaranteed to
+   work correctly.
+
+   If @p callback_func is NULL then the mechanism becomes disabled.
+
+   @p callback_arg will be passed to @p callback_func.
 
    @exception EINVAL @p level is invalid
 
    @internal
-   @reviewed 2020-07-29
+   @reviewed 2020-08-31
    @endinternal
 
    @param[in] tq tone queue in which to register a callback
@@ -931,6 +937,7 @@ cw_ret_t cw_tq_wait_for_level_internal(cw_tone_queue_t * tq, size_t level)
 */
 bool cw_tq_is_full_internal(const cw_tone_queue_t * tq)
 {
+	/* TODO: shouldn't we lock tq when making the comparison? */
 	return tq->len == tq->capacity;
 }
 
@@ -992,6 +999,7 @@ void cw_tq_flush_internal(cw_tone_queue_t * tq)
 */
 bool cw_tq_is_nonempty_internal(const cw_tone_queue_t * tq)
 {
+	/* TODO: shouldn't we lock tq when making the comparison? */
 	return CW_TQ_NONEMPTY == tq->state;
 }
 
@@ -1040,6 +1048,10 @@ cw_ret_t cw_tq_remove_last_character_internal(cw_tone_queue_t * tq)
 		tq->len = len;
 		tq->tail = idx;
 		cwret = CW_SUCCESS;
+
+		if (0 == tq->len) {
+			tq->state = CW_TQ_EMPTY;
+		}
 	}
 
 	pthread_mutex_unlock(&tq->mutex);

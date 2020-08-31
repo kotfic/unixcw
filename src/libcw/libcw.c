@@ -838,17 +838,23 @@ int cw_generator_remove_last_character(void)
    \brief Register callback for low queue state
 
    Register a function to be called automatically by the dequeue routine
-   whenever the tone queue falls to a given \p level. To be more precise:
-   the callback is called by queue manager if, after dequeueing a tone,
-   the manager notices that tone queue length has become equal or less
-   than \p level.
+   whenever the count of tones in tone queue falls to a given @p level. To be
+   more precise: the callback is called by queue's dequeue function if, after
+   dequeueing a tone, the function notices that tone queue length has become
+   equal or less than \p level.
 
-   \p callback_arg may be used to give a value passed back on callback
-   calls.  A NULL function pointer suppresses callbacks.  On success,
-   the routine returns CW_SUCCESS.
+   \p level can't be negative.
 
-   If \p level is invalid, the routine returns CW_FAILURE with errno set to
-   EINVAL.  Any callback supplied will be called in signal handler context.
+   \p level can't be equal to or larger than tone queue capacity.
+
+   If \p level is zero, the behaviour of the mechanism is not guaranteed to
+   work correctly.
+
+   If \p callback_func is NULL then the mechanism becomes disabled.
+
+   \p callback_arg will be passed to \p callback_func.
+
+   errno is set to EINVAL when \p level is invalid.
 
    \param callback_func - callback function to be registered
    \param callback_arg - argument for callback_func to pass return value
@@ -859,6 +865,9 @@ int cw_generator_remove_last_character(void)
 */
 int cw_register_tone_queue_low_callback(void (*callback_func)(void*), void *callback_arg, int level)
 {
+	if (level < 0) {
+		return CW_FAILURE;
+	}
 	return cw_tq_register_low_level_callback_internal(cw_generator->tq, callback_func, callback_arg, level);
 }
 

@@ -212,7 +212,7 @@ typedef struct {
 	   from the queue as a first one. */
 	volatile size_t head;
 
-	cw_queue_state_t state; /* TODO: replace this with 'bool is_empty' flag. */
+	cw_queue_state_t state; /* TODO: remove, use cw_tone_queue_t::len instead. */
 
 	size_t capacity;
 	size_t high_water_mark;
@@ -225,11 +225,6 @@ typedef struct {
 	volatile size_t low_water_mark;
 	void     (* low_water_callback)(void *);
 	void     * low_water_callback_arg;
-	/* Set to true when conditions for calling low water callback
-	   are true. The flag is set in cw_tq module, but the callback
-	   itself may be called outside of the module, e.g. by cw_gen
-	   code. */
-	bool         call_callback;
 
 
 	/* IPC */
