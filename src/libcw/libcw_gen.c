@@ -360,11 +360,11 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 	   moment. To have a "gentle" silencing of generator, we shouldn't
 	   interrupt in the middle of current tone. What we should do is:
 	   - remove all tones ahead of current tone (perhaps starting from
-             the end).
+	   the end).
 	   - see how long the current tone is. If it's relatively short, let
-             it play to the end, but if it's long tone, interrupt it.
+	   it play to the end, but if it's long tone, interrupt it.
 	   - see if the current tone is "forever" tone. If it is, end the
-             "forever" tone using method suitable for such tone.
+	   "forever" tone using method suitable for such tone.
 	   - only after all this you can enqueue a tone silent that will
 	     ensure that a key is not in "down" state.
 
@@ -592,14 +592,16 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 		}
 	}
 
-	/* State tracking. */
+	/* Tracking of generator's value. */
 	{
 		gen->value_tracking.value = CW_KEY_VALUE_OPEN;
 		gen->value_tracking.value_tracking_callback_func = NULL;
 		gen->value_tracking.value_tracking_callback_arg = NULL;
 	}
-
-	cw_sigalrm_install_top_level_handler_internal(); /* TODO: still needed? */
+#if 0
+	/* Part of old inter-thread comm. Disabled on 2020-09-01. */
+	cw_sigalrm_install_top_level_handler_internal();
+#endif
 	return gen;
 }
 
@@ -971,7 +973,8 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			pthread_cond_wait(&gen->tq->dequeue_var, &gen->tq->dequeue_mutex);
 			pthread_mutex_unlock(&(gen->tq->dequeue_mutex));
 
-#if 0                   /* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
+#if 0
+			/* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
 			/* TODO: can we / should we specify on which
 			   signal exactly we are waiting for? */
 			cw_signal_wait_internal();
@@ -1570,8 +1573,8 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 		const int buffer_sub_n_samples = gen->buffer_sub_stop - gen->buffer_sub_start + 1;
 
 
-#if 0           /* Debug code. */
-
+#if 0
+		/* Debug code. */
 		fprintf(stderr, MSG_PREFIX "       loop #%d, buffer_sub_n_samples = %d\n", ++n_loops, buffer_sub_n_samples);
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG,
 			      MSG_PREFIX "sub start: %d, sub stop: %d, sub size: %d / %d", gen->buffer_sub_start, gen->buffer_sub_stop, buffer_sub_n_samples, samples_to_write);
@@ -1599,13 +1602,15 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 
 			gen->buffer_sub_start = gen->buffer_sub_stop + 1;
 
-			cw_assert (gen->buffer_sub_start <= gen->buffer_n_samples - 1, MSG_PREFIX "sub start out of range: sub start = %d, buffer n samples = %d", gen->buffer_sub_start, gen->buffer_n_samples);
+			cw_assert (gen->buffer_sub_start <= gen->buffer_n_samples - 1,
+				   MSG_PREFIX "sub start out of range: sub start = %d, buffer n samples = %d",
+				   gen->buffer_sub_start, gen->buffer_n_samples);
 		}
 
 		samples_to_write -= buffer_sub_n_samples;
 
-#if 0           /* Debug code. */
-
+#if 0
+		/* Debug code. */
 		if (samples_to_write < 0) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "samples left = %d", samples_to_write);
 		}
@@ -1613,7 +1618,8 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 
 	} /* while (samples_to_write > 0) { */
 
-#if 0   /* Debug code. */
+#if 0
+	/* Debug code. */
 	fprintf(stderr, MSG_PREFIX "left loop, %d / %.1f loops, samples left = %d\n", n_loops, n_loops_expected, (int) samples_to_write);
 #endif
 
@@ -2234,7 +2240,7 @@ cw_ret_t cw_gen_enqueue_representation_no_ics(cw_gen_t * gen, const char * repre
    appended at the end of Marks and Spaces enqueued in generator (but the
    last inter-mark-space is).
 
-   @exception ENOENT @p character is not a recognized character.
+   @exception ENOENT @p character is not a valid character.
 
    @internal
    @reviewed 2020-08-06
@@ -2293,7 +2299,7 @@ cw_ret_t cw_gen_enqueue_valid_character_no_ics_internal(cw_gen_t * gen, char cha
    character @p character to be valid (@p character should be validated by
    caller before passing it to the function).
 
-   @exception ENOENT @p character is not a recognized character.
+   @exception ENOENT @p character is not a valid character.
 
    @internal
    @reviewed 2020-08-23

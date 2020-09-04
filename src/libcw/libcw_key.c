@@ -297,8 +297,11 @@ cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 #endif
 
 	if (key->sk.key_value == key_value) {
-		/* This may happen when dequeueing 'forever' tone
-		   multiple times in a row. */
+		/* This may happen when dequeueing 'forever' tone multiple
+		   times in a row.  TODO: in what situations do we call this
+		   function when dequeueing 'forever' tone? It seems that
+		   dequeueing 'forever' tone shouldn't lead to calling this
+		   function. */
 		return CW_SUCCESS;
 	}
 
@@ -344,7 +347,7 @@ cw_ret_t cw_key_sk_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
    specific time periods. Iambic keyer needs to be notified whenever a
    specific time period has elapsed.
 
-   Lengths of the enqueued periods are determined by type of @p symbol
+   Durations of the enqueued periods are determined by type of @p symbol
    (Space, Dot, Dash).
 
    Generator and its tone queue is used to implement this mechanism.
@@ -386,9 +389,11 @@ cw_ret_t cw_key_ik_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 	cw_assert (key->gen, MSG_PREFIX_IK "gen is NULL");
 
 	if (key->ik.key_value == key_value) {
-		/* This is not an error. This may happen when
-		   dequeueing 'forever' tone multiple times in a
-		   row. */
+		/* This is not an error. This may happen when dequeueing
+		   'forever' tone multiple times in a row. TODO: in what
+		   situations do we call this function when dequeueing
+		   'forever' tone? It seems that dequeueing 'forever' tone
+		   shouldn't lead to calling this function. */*/
 		return CW_SUCCESS;
 	}
 
@@ -1181,7 +1186,7 @@ void cw_key_ik_reset_internal(volatile cw_key_t * key)
    @endinternal
 
    @param[in] key key with timer to be updated
-   @param[in] usecs amount of increase (usually length of a tone) for internal timer
+   @param[in] usecs amount of increase (usually duration of a tone) for internal timer
 */
 void cw_key_ik_increment_timer_internal(volatile cw_key_t * key, int usecs)
 {

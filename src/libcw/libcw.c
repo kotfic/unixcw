@@ -866,6 +866,7 @@ int cw_generator_remove_last_character(void)
 int cw_register_tone_queue_low_callback(void (*callback_func)(void*), void *callback_arg, int level)
 {
 	if (level < 0) {
+		errno = EINVAL; /* cw_tq_register_low_level_callback_internal() won't recognize negative level. */
 		return CW_FAILURE;
 	}
 	return cw_tq_register_low_level_callback_internal(cw_generator->tq, callback_func, callback_arg, level);

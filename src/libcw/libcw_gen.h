@@ -41,7 +41,8 @@
 
 
 
-/* Symbolic name for inter-mark space. */
+/* Symbolic name for inter-mark space. TODO: this should not be a space
+   character. Space character is reserved for inter-character-space.*/
 enum { CW_SYMBOL_SPACE = ' ' };
 
 
@@ -219,7 +220,7 @@ struct cw_gen_struct {
 	/* Used to calculate sine wave.
 	   Phase offset needs to be stored between consecutive calls to
 	   function calculating consecutive fragments of sine wave. */
-	double phase_offset;
+	double phase_offset; /* TODO: change to float. */
 
 
 

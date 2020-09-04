@@ -136,7 +136,7 @@ bool cw_is_oss_possible(const char * device_name)
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 			      MSG_PREFIX "is possible: open(%s): '%s'", dev, strerror(errno));
 		return false;
-        }
+	}
 
 	{
 		int x = 0, y = 0, z = 0;
@@ -264,7 +264,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	   cw_oss_open_and_configure_sound_device_internal() and is_possible() function. */
 
 	/* Open the given soundcard device file, for write only. */
-        gen->sound_sink_fd = open(gen->sound_device, O_WRONLY);
+	gen->sound_sink_fd = open(gen->sound_device, O_WRONLY);
 	if (-1 == gen->sound_sink_fd) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: open(%s): '%s'", gen->sound_device, strerror(errno));
