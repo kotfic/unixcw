@@ -536,7 +536,7 @@ cw_ret_t cw_gen_enqueue_representation_no_ics(cw_gen_t * gen, const char * repre
    insufficient space to queue the tones for the character.
 
    This routine returns as soon as the character and trailing spaces
-   (inter-mark and inter-character spaces) have been successfully queued for
+   (inter-mark-space and inter-character-space) have been successfully queued for
    sending/playing by the generator, without waiting for generator to even
    start playing the character.  The actual sending happens in background
    processing. See cw_gen_wait_for_end_of_current_tone() and
@@ -561,7 +561,7 @@ cw_ret_t cw_gen_enqueue_character(cw_gen_t * gen, char character);
    @brief Enqueue a given ASCII character in generator, to be sent using Morse code
 
    "_no_ics" means that the inter-character-space is not appended at the end
-   of Marks and Spaces enqueued in generator (but the last inter-mark space
+   of Marks and Spaces enqueued in generator (but the last inter-mark-space
    is). This enables the formation of combination characters by client code.
 
    This routine returns as soon as the character has been successfully queued

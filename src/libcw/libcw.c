@@ -498,11 +498,11 @@ void cw_get_send_parameters(int *dot_usecs, int *dash_usecs,
 
 
 /**
-   \brief Low-level primitive for sending a dot mark
+   \brief Low-level primitive for sending a Dot Mark
 
-   Low-level primitive function able to play/send single dot mark. The
-   function appends to a tone queue a normal inter-mark gap after the
-   dot mark.
+   Low-level primitive function able to play/send single Dot Mark. The
+   function appends to a tone queue a normal inter-mark-space after the
+   Dot Mark.
 
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
@@ -518,11 +518,11 @@ int cw_send_dot(void)
 
 
 /**
-   \brief Low-level primitive for sending a dash mark
+   \brief Low-level primitive for sending a Dash Mark
 
-   Low-level primitive function able to play/send single dash mark.
-   The function appends to a tone queue a normal inter-mark gap after
-   the dash mark.
+   Low-level primitive function able to play/send single Dash Mark.  The
+   function appends to a tone queue a normal inter-mark-space after the Dash
+   Mark.
 
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure

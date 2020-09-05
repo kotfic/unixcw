@@ -406,7 +406,7 @@ cw_ret_t cw_key_ik_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 	/* TODO: if you want to have a per-key callback called on each key value
 	  change, you should call it here. */
 
-	cw_ret_t cwret = cw_gen_enqueue_symbol_no_eom_space_internal(key->gen, symbol);
+	cw_ret_t cwret = cw_gen_enqueue_symbol_no_ims_internal(key->gen, symbol);
 	cw_assert (CW_SUCCESS == cwret, MSG_PREFIX_IK "failed to key symbol '%c'", symbol);
 	return cwret;
 }

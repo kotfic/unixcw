@@ -461,7 +461,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 		/* Generator's timing parameters. */
 		gen->dot_duration = 0;
 		gen->dash_duration = 0;
-		gen->eom_space_duration = 0;
+		gen->ims_duration = 0;
 		gen->eoc_space_duration = 0;
 		gen->eow_space_duration = 0;
 
@@ -1911,7 +1911,7 @@ int cw_gen_get_weighting(const cw_gen_t * gen)
    @param[in] gen
    @param[out] dot_duration
    @param[out] dash_duration
-   @param[out] eom_space_duration
+   @param[out] ims_duration duration of inter-mark-space
    @param[out] eoc_space_duration
    @param[out] eow_space_duration
    @param[out] additional_space_duration
@@ -1920,7 +1920,7 @@ int cw_gen_get_weighting(const cw_gen_t * gen)
 void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
 					   int * dot_duration,
 					   int * dash_duration,
-					   int * eom_space_duration,
+					   int * ims_duration,
 					   int * eoc_space_duration,
 					   int * eow_space_duration,
 					   int * additional_space_duration,
@@ -1931,7 +1931,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
 	if (dot_duration)   { *dot_duration = gen->dot_duration; }
 	if (dash_duration)  { *dash_duration = gen->dash_duration; }
 
-	if (eom_space_duration)   { *eom_space_duration = gen->eom_space_duration; }
+	if (ims_duration)   { *ims_duration = gen->ims_duration; }
 	if (eoc_space_duration)   { *eoc_space_duration = gen->eoc_space_duration; }
 	if (eow_space_duration)   { *eow_space_duration = gen->eow_space_duration; }
 
@@ -1948,7 +1948,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
    @brief Enqueue a mark (Dot or Dash)
 
    Low level primitive to enqueue a tone for mark of the given type, followed
-   by the standard inter-mark space.
+   by the standard inter-mark-space.
 
    Function sets errno to EINVAL if an argument is invalid, and
    returns CW_FAILURE.
@@ -1960,7 +1960,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
    @reviewed 2020-08-06
    @endinternal
 
-   @param[in] gen generator to be used to enqueue a mark and inter-mark space
+   @param[in] gen generator to be used to enqueue a mark and inter-mark-space
    @param[in] mark mark to send: Dot (CW_DOT_REPRESENTATION) or Dash (CW_DASH_REPRESENTATION)
    @param[in] is_first is it a first mark in a character?
 
@@ -1995,9 +1995,9 @@ cw_ret_t cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first)
 		return CW_FAILURE;
 	}
 
-	/* Send the inter-mark space. */
+	/* Send the inter-mark-space. */
 	cw_tone_t tone;
-	CW_TONE_INIT(&tone, 0, gen->eom_space_duration, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, 0, gen->ims_duration, CW_SLOPE_MODE_NO_SLOPES);
 	if (CW_SUCCESS != cw_tq_enqueue_internal(gen->tq, &tone)) {
 		return CW_FAILURE;
 	} else {
@@ -2446,27 +2446,35 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 	gen->dot_duration = unit_length + weighting_length;
 	gen->dash_duration = 3 * gen->dot_duration;
 
-	/* End-of-mark space length is one Unit, perhaps adjusted.
-	   End-of-character space length is three Units total.
-	   End-of-word space length is seven Units total.
+	/* In proper Morse code timing the following three rules are given:
+	   1. Duration of inter-mark-space is one Unit, perhaps adjusted.
+	   2. Duration of inter-character-space (eoc) is three Units total.
+	   3. Duration of inter-word-space (eow) is seven Units total.
 
-	   WARNING: notice how the eoc and eow spaces are
-	   calculated. They aren't full 3 units and 7 units. They are
-	   2 units (which takes into account preceding eom space
-	   length), and 5 units (which takes into account preceding
-	   eom *and* eoc space length). So these two lengths are
-	   *additional* ones, i.e. in addition to (already existing)
-	   eom and/or eoc space.  Whether this is good or bad idea to
-	   calculate them like this is a separate topic. Just be aware
-	   of this fact.
+	   eoc_space_duration and eow_space_duration variables are
+	   *additional* durations.  Notice how they are calculated
+	   below. They aren't full 3 units and 7 units.
+	   eoc: is 2 Units, which takes into account preceding one
+	   inter-mark-space added after a Mark,
+	   eow: is 5 Units, which takes into account preceding eoc space.
 
-	   The end-of-mark length is adjusted by 28/22 times
+	   So these two durations are *additional* ones, i.e. in addition to
+	   (already existing) inter-mark-space or eoc space.  Whether this is
+	   good or bad idea to calculate them like this is a separate
+	   topic. Just be aware of this fact.
+
+	   TODO: make sure that we never add inter-word-space after
+	   inter-character-space which was added after inter-mark-space. That
+	   would sum up to 8 Units total, and a proper inter-word-space is 7
+	   Units.
+
+	   The duration of inter-mark-space is adjusted by 28/22 times
 	   weighting length to keep PARIS calibration correctly
 	   timed (PARIS has 22 full units, and 28 empty ones).
-	   End-of-mark and end of character delays take
+	   Inter-mark-space and end of character delays take
 	   weightings into account. */
-	gen->eom_space_duration = unit_length - (28 * weighting_length) / 22;  /* End-of-mark space, a.k.a. regular inter-mark space. */
-	gen->eoc_space_duration = 3 * unit_length - gen->eom_space_duration;
+	gen->ims_duration = unit_length - (28 * weighting_length) / 22;
+	gen->eoc_space_duration = 3 * unit_length - gen->ims_duration;
 	gen->eow_space_duration = 7 * unit_length - gen->eoc_space_duration;
 	gen->additional_space_duration = gen->gap * unit_length;
 
@@ -2482,9 +2490,9 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 	gen->adjustment_space_duration = (7 * gen->additional_space_duration) / 3;
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_PARAMETERS, CW_DEBUG_INFO,
-		      MSG_PREFIX "send usec timings <%d [wpm]>: dot: %d, dash: %d, %d, %d, %d, %d, %d",
+		      MSG_PREFIX "gen durations [us] at speed %d [wpm]: dot: %d, dash: %d, ims: %d, %d, %d, %d, %d",
 		      gen->send_speed, gen->dot_duration, gen->dash_duration,
-		      gen->eom_space_duration, gen->eoc_space_duration,
+		      gen->ims_duration, gen->eoc_space_duration,
 		      gen->eow_space_duration, gen->additional_space_duration, gen->adjustment_space_duration);
 
 	/* Generator parameters are now in sync. */
@@ -2641,8 +2649,7 @@ cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t * gen)
    length. This means that the function should be called for events
    from iambic keyer.
 
-   The function doesn't add any end-of-mark spaces (hence "no_eom_space" in
-   name).
+   The function doesn't add any inter-mark-space (hence "no_ims" in name).
 
    The function is called in very specific context, see cw_key module
    for details.
@@ -2657,7 +2664,7 @@ cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t * gen)
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
 */
-cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol)
+cw_ret_t cw_gen_enqueue_symbol_no_ims_internal(cw_gen_t * gen, char symbol)
 {
 	cw_tone_t tone = { 0 };
 
@@ -2670,8 +2677,8 @@ cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol
 		CW_TONE_INIT(&tone, gen->frequency, gen->dash_duration, CW_SLOPE_MODE_STANDARD_SLOPES);
 		break;
 
-	case CW_SYMBOL_SPACE:
-		CW_TONE_INIT(&tone, 0, gen->eom_space_duration, CW_SLOPE_MODE_NO_SLOPES);
+	case CW_SYMBOL_SPACE: /* TODO: how come we enqueue IMS in "no_ims" function? */
+		CW_TONE_INIT(&tone, 0, gen->ims_duration, CW_SLOPE_MODE_NO_SLOPES);
 		break;
 	default:
 		cw_assert (0, MSG_PREFIX "unknown key symbol '%d'", symbol);

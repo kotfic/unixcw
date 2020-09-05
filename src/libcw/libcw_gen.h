@@ -41,7 +41,7 @@
 
 
 
-/* Symbolic name for inter-mark space. TODO: this should not be a space
+/* Symbolic name for inter-mark-space. TODO: this should not be a space
    character. Space character is reserved for inter-character-space.*/
 enum { CW_SYMBOL_SPACE = ' ' };
 
@@ -91,7 +91,7 @@ struct cw_gen_struct {
 	int frequency;      /* The frequency of generated sound. [Hz] */
 	int volume_percent; /* Level of sound in percents of maximum allowable level. */
 	int volume_abs;     /* Level of sound in absolute terms; height of PCM samples. */
-	int gap;            /* Inter-mark gap. [number of dot lengths]. */
+	int gap;            /* Inter-mark-space. [number of dot durations]. */
 	int weighting;      /* Dot/dash weighting. */
 
 
@@ -101,23 +101,13 @@ struct cw_gen_struct {
 	/* These are basic timing parameters which should be
 	   recalculated each time client code demands changing some
 	   higher-level parameter of generator (e.g. changing of
-	   sending speed). */
-	/* Watch out for "additional" key word.
-	   WARNING: notice how the eoc and eow spaces are
-	   calculated. They aren't full 3 units and 7 units. They are
-	   2 units (which takes into account preceding eom space
-	   length), and 5 units (which takes into account preceding
-	   eom *and* eoc space length). So these two lengths are
-	   *additional* ones, i.e. in addition to (already existing)
-	   eom and/or eoc space.  Whether this is good or bad idea to
-	   calculate them like this is a separate topic. Just be aware
-	   of this fact.
+	   sending speed).
 
-	   Search the word "*additional*" in libcw_gen.c for
-	   implementation */
+	   Be sure to read comment in cw_gen_sync_parameters_internal() on
+	   calculation of values of these parameters. */
 	int dot_duration;              /* Duration of a dot Mark. [us] */
 	int dash_duration;             /* Duration of a dash Mark. [us] */
-	int eom_space_duration;        /* Duration of inter-mark space (i.e. the Space). [us] */
+	int ims_duration;              /* Duration of inter-mark-space (i.e. the Space). [us] */
 	int eoc_space_duration;        /* Duration of *additional* inter-character space. [us] */
 	int eow_space_duration;        /* Duration of *additional* inter-word space. [us] */
 
@@ -411,7 +401,7 @@ struct cw_gen_struct {
 
 
 
-void cw_gen_get_timing_parameters_internal(cw_gen_t * gen, int * dot_duration, int * dash_duration, int * eom_space_duration, int * eoc_space_duration, int * eow_space_duration, int * additional_space_duration, int * adjustment_space_duration);
+void cw_gen_get_timing_parameters_internal(cw_gen_t * gen, int * dot_duration, int * dash_duration, int * ims_duration, int * eoc_space_duration, int * eow_space_duration, int * additional_space_duration, int * adjustment_space_duration);
 
 
 
@@ -426,7 +416,7 @@ cw_ret_t cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character)
    hardware keying events. */
 cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t * gen);
 cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t * gen);
-cw_ret_t cw_gen_enqueue_symbol_no_eom_space_internal(cw_gen_t * gen, char symbol);
+cw_ret_t cw_gen_enqueue_symbol_no_ims_internal(cw_gen_t * gen, char symbol);
 
 cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_name);
 cw_ret_t cw_gen_silence_internal(cw_gen_t * gen);

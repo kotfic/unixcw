@@ -647,7 +647,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 
 	int dot_duration = initial;
 	int dash_duration = initial;
-	int eom_space_duration = initial;
+	int ims_duration = initial;
 	int eoc_space_duration = initial;
 	int eow_space_duration = initial;
 	int additional_space_duration = initial;
@@ -665,7 +665,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 	LIBCW_TEST_FUT(cw_gen_get_timing_parameters_internal)(gen,
 							      &dot_duration,
 							      &dash_duration,
-							      &eom_space_duration,
+							      &ims_duration,
 							      &eoc_space_duration,
 							      &eow_space_duration,
 							      &additional_space_duration,
@@ -673,7 +673,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 
 	bool failure = (dot_duration == initial)
 		|| (dash_duration == initial)
-		|| (eom_space_duration == initial)
+		|| (ims_duration == initial)
 		|| (eoc_space_duration == initial)
 		|| (eow_space_duration == initial)
 		|| (additional_space_duration == initial)
