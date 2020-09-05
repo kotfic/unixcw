@@ -242,7 +242,7 @@ int cw_rec_get_receive_buffer_capacity_internal(void);
 
 
 
-void CW_REC_SET_STATE(cw_rec_t * rec, cw_rec_state_t new_state, cw_debug_t * debug_object);
+void cw_rec_set_state_internal(cw_rec_t * rec, cw_rec_state_t new_state);
 
 
 

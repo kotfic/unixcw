@@ -43,7 +43,7 @@
    functions from first method.
 
    Currently there is only one method of passing received data (characters)
-   from receiver to client code. This is done by client code cyclically
+   from receiver to client code. This is done by client code periodically
    polling the receiver with cw_rec_poll_representation() or
    cw_rec_poll_character() (which itself is built on top of
    cw_rec_poll_representation()).
@@ -186,7 +186,7 @@ cw_rec_t * cw_rec_new(void)
    @brief Delete a generator
 
    Deallocate all memory and free all resources associated with given
-   receiver that was allocated with cw_rec_new()
+   receiver that was allocated with cw_rec_new().
 
    @internal
    @reviewed 2020-08-09
@@ -585,7 +585,7 @@ void cw_rec_update_average_internal(cw_rec_averaging_t * avg, int mark_duration)
 
    @param[in,out] rec receiver for which to update stats
    @param[in] type type of statistics to update
-   @param[in] duration duration of a Mark or Space
+   @param[in] duration duration of a symbol specified by @p type
 */
 void cw_rec_duration_stats_update_internal(cw_rec_t * rec, stat_type_t type, int duration)
 {
@@ -819,9 +819,9 @@ void cw_rec_reset_statistics(cw_rec_t * rec)
 
 
 
-void CW_REC_SET_STATE(cw_rec_t * rec, cw_rec_state_t new_state, cw_debug_t * debug_object)
+void cw_rec_set_state_internal(cw_rec_t * rec, cw_rec_state_t new_state)
 {
-	cw_debug_msg ((debug_object),
+	cw_debug_msg (&cw_debug_object,
 		      CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
 		      MSG_PREFIX "'%s': state: %s -> %s @ %s:%d",
 		      (rec)->label,
@@ -1035,7 +1035,7 @@ cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const struct timeval * timestamp)
 	/* Set state to indicate we are inside a Mark. We don't know yet if
 	   it will be recognized as valid Mark, it may be shorter than a
 	   threshold. */
-	CW_REC_SET_STATE (rec, RS_MARK, (&cw_debug_object));
+	cw_rec_set_state_internal(rec, RS_MARK);
 
 	return CW_SUCCESS;
 }
@@ -1053,11 +1053,11 @@ cw_ret_t cw_rec_mark_begin(cw_rec_t * rec, const struct timeval * timestamp)
    If Mark is identified as Dot or Dash, it is added to receiver's
    representation buffer.
 
-   @exception ERANGE invalid state of receiver was discovered
+   @exception ERANGE invalid state of receiver was discovered (e.g. the call was not preceded by a cw_rec_mark_begin() call)
    @exception EINVAL errors while processing or getting @p timestamp
-   @exception ECANCELED the Mark has been classified as noise spike and rejected
-   @exception EBADMSG this function can't recognize the Mark
-   @exception ENOMEM space for representation of character has been exhausted
+   @exception ENOENT function can't tell from duration of the Mark if it's Dot or Dash,
+   @exception ENOMEM the receiver's representation buffer is full
+   @exception EAGAIN the Mark has been classified as noise spike and rejected
 
    @param[in,out] rec receiver which to inform about end of Mark
    @param[in] timestamp timestamp of "end of Mark" event. May be NULL, then current time will be used.
@@ -1114,7 +1114,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 		   buffer (how many Marks are in the buffer) to see in which
 		   state the receiver was *before* cw_rec_mark_begin()
 		   function call, and restore this state. */
-		CW_REC_SET_STATE (rec, (rec->representation_ind == 0 ? RS_IDLE : RS_INTER_MARK_SPACE), (&cw_debug_object));
+		cw_rec_set_state_internal(rec, (rec->representation_ind == 0 ? RS_IDLE : RS_INTER_MARK_SPACE));
 
 		/* Put the end-of-mark timestamp back to how it was when we
 		   came in to the routine. */
@@ -1125,7 +1125,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 			      rec->label,
 			      mark_duration, rec->noise_spike_threshold);
 
-		errno = ECANCELED;
+		errno = EAGAIN;
 		return CW_FAILURE;
 	}
 
@@ -1140,7 +1140,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 	   in representation buffer. */
 	char mark;
 	if (CW_SUCCESS != cw_rec_identify_mark_internal(rec, mark_duration, &mark)) {
-		errno = EBADMSG;
+		errno = ENOENT;
 		return CW_FAILURE;
 	}
 
@@ -1181,7 +1181,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 	   far, we go to inter-character-space-error state automatically. */
 	if (rec->representation_ind == CW_REC_REPRESENTATION_CAPACITY - 1) {
 
-		CW_REC_SET_STATE (rec, RS_EOC_GAP_ERR, (&cw_debug_object));
+		cw_rec_set_state_internal(rec, RS_EOC_GAP_ERR);
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
 			      MSG_PREFIX "'%s': mark_end: receiver's representation buffer is full", rec->label);
@@ -1192,7 +1192,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 
 	/* All is well.  Move to the more normal inter-mark-space
 	   state. */
-	CW_REC_SET_STATE (rec, RS_INTER_MARK_SPACE, (&cw_debug_object));
+	cw_rec_set_state_internal(rec, RS_INTER_MARK_SPACE);
 
 	return CW_SUCCESS;
 }
@@ -1307,7 +1307,7 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, char *
 	   mark_duration as duration of *space*? And do we want to
 	   move to either RS_EOW_GAP_ERR or RS_EOC_GAP_ERR pretending that
 	   this is a duration of *space*? */
-	CW_REC_SET_STATE (rec, (mark_duration > rec->ics_duration_max ? RS_EOW_GAP_ERR : RS_EOC_GAP_ERR), (&cw_debug_object));
+	cw_rec_set_state_internal(rec, (mark_duration > rec->ics_duration_max ? RS_EOW_GAP_ERR : RS_EOC_GAP_ERR));
 
 	return CW_FAILURE;
 }
@@ -1412,7 +1412,7 @@ void cw_rec_update_averages_internal(cw_rec_t * rec, int mark_duration, char mar
 
    @exception ERANGE invalid state of receiver was discovered.
    @exception EINVAL errors while processing or getting @p timestamp
-   @exception ENOMEM space for representation of character has been exhausted
+   @exception ENOMEM the receiver's representation buffer is full
 
    @param[in,out] rec receiver
    @param[in] timestamp timestamp of "end of mark" event. May be NULL, then current time will be used.
@@ -1470,7 +1470,7 @@ cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const struct timeval * timestamp, char 
 	   something, even though it's unlikely to actually be full. */
 	if (rec->representation_ind == CW_REC_REPRESENTATION_CAPACITY - 1) {
 
-		CW_REC_SET_STATE (rec, RS_EOC_GAP_ERR, (&cw_debug_object));
+		cw_rec_set_state_internal(rec, RS_EOC_GAP_ERR);
 
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_ERROR,
 			      MSG_PREFIX "'%s': add_mark: receiver's representation buffer is full", rec->label);
@@ -1481,7 +1481,7 @@ cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const struct timeval * timestamp, char 
 
 	/* Since we effectively just saw the end of a Mark, move to
 	   the inter-mark-space state. */
-	CW_REC_SET_STATE (rec, RS_INTER_MARK_SPACE, (&cw_debug_object));
+	cw_rec_set_state_internal(rec, RS_INTER_MARK_SPACE);
 
 	return CW_SUCCESS;
 }
@@ -1523,7 +1523,7 @@ cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const struct timeval * timestamp, char 
    @reviewed 2020-08-11
    @endinternal
 
-   @exception ERANGE invalid state of receiver was discovered.
+   @exception ERANGE invalid state of receiver was discovered
    @exception EINVAL errors while processing or getting @p timestamp
    @exception EAGAIN function called too early, representation not ready yet
 
@@ -1689,7 +1689,7 @@ void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
 		cw_rec_duration_stats_update_internal(rec, CW_REC_STAT_INTER_CHARACTER_SPACE, space_duration);
 
 		/* Set the new real state of receiver. */
-		CW_REC_SET_STATE (rec, RS_EOC_GAP, (&cw_debug_object));
+		cw_rec_set_state_internal(rec, RS_EOC_GAP);
 	} else {
 		cw_assert (RS_EOC_GAP == rec->state || RS_EOC_GAP_ERR == rec->state,
 			   MSG_PREFIX "poll eoc: unexpected state of receiver: %d / %s",
@@ -1748,10 +1748,10 @@ void cw_rec_poll_representation_eow_internal(cw_rec_t * rec,
 					     bool * is_error)
 {
 	if (RS_EOC_GAP == rec->state || RS_INTER_MARK_SPACE == rec->state) {
-		CW_REC_SET_STATE (rec, RS_EOW_GAP, (&cw_debug_object)); /* Transition of state. */
+		cw_rec_set_state_internal(rec, RS_EOW_GAP); /* Transition of state. */
 
 	} else if (RS_EOC_GAP_ERR == rec->state) {
-		CW_REC_SET_STATE (rec, RS_EOW_GAP_ERR, (&cw_debug_object)); /* Transition of state with preserving error. */
+		cw_rec_set_state_internal(rec, RS_EOW_GAP_ERR); /* Transition of state with preserving error. */
 
 	} else if (RS_EOW_GAP_ERR == rec->state || RS_EOW_GAP == rec->state) {
 		; /* No need to change state. */
@@ -1898,7 +1898,7 @@ void cw_rec_reset_state(cw_rec_t * rec)
 	rec->is_pending_inter_word_space = false;
 #endif
 
-	CW_REC_SET_STATE (rec, RS_IDLE, (&cw_debug_object));
+	cw_rec_set_state_internal(rec, RS_IDLE);
 
 	return;
 }

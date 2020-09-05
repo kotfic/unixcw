@@ -66,6 +66,8 @@
 
 
 
+/* TODO: move this type to libcw_rec.h and use it to pass arguments to
+   functions such as cw_rec_poll_representation_eoc_internal(). */
 typedef struct received_data {
 	char character;
 	char representation[20];
@@ -310,13 +312,13 @@ void xcwcp_handle_libcw_keying_event(void * timer, int key_state)
 				   was shorter than noise threshold).
 				   No problem, not an error. */
 				break;
-
 			case ENOMEM:
+			case ERANGE:
+			case EINVAL:
 			case ENOENT:
 				g_xcwcp_receiver.libcw_receive_errno = errno;
 				cw_clear_receive_buffer();
 				break;
-
 			default:
 				perror("cw_end_receive_tone");
 				abort();
@@ -474,6 +476,15 @@ void receiver_poll_character_c_r(Receiver * xcwcp_receiver)
 			cw_clear_receive_buffer();
 			break;
 
+		case EINVAL:
+			/* Timestamp error. */
+			if (debug_errnos && prev_errno != EINVAL) {
+				fprintf(stderr, "[NN] poll_receive_char: %d -> EINVAL\n", prev_errno);
+				prev_errno = EINVAL;
+			}
+			cw_clear_receive_buffer();
+			break;
+
 		default:
 			perror("cw_receive_character");
 			abort();
@@ -604,11 +615,11 @@ void receiver_poll_character_r_c(Receiver * xcwcp_receiver)
 
 			break;
 
-		case ENOENT:
-			/* Invalid character in receiver's buffer. */
-			if (debug_errnos && prev_errno != ENOENT) {
-				fprintf(stderr, "[NN] poll_receive_representation: %d -> ENONENT\n", prev_errno);
-				prev_errno = ENOENT;
+		case EINVAL:
+			/* Invalid timestamp. */
+			if (debug_errnos && prev_errno != EINVAL) {
+				fprintf(stderr, "[NN] poll_receive_representation: %d -> EINVAL\n", prev_errno);
+				prev_errno = EINVAL;
 			}
 			cw_clear_receive_buffer();
 			break;

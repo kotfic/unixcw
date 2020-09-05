@@ -379,13 +379,13 @@ void Receiver::handle_libcw_keying_event(struct timeval *t, int key_state)
 				   was shorter than noise threshold).
 				   No problem, not an error. */
 				break;
-
 			case ENOMEM:
+			case ERANGE:
+			case EINVAL:
 			case ENOENT:
 				libcw_receive_errno = errno;
 				cw_clear_receive_buffer();
 				break;
-
 			default:
 				perror("cw_end_receive_tone");
 				abort();
@@ -423,9 +423,24 @@ void Receiver::clear()
 void Receiver::poll_report_error()
 {
 	/* Handle any receive errors detected on tone end but delayed until here. */
-	app->show_status(libcw_receive_errno == ENOENT
-			 ? _("Badly formed CW element")
-			 : _("Receive buffer overrun"));
+
+	switch (libcw_receive_errno) {
+	case ENOMEM:
+		app->show_status(_("Representation buffer too small"));
+		break;
+	case ERANGE:
+		app->show_status(_("Internal error"));
+		break;
+	case EINVAL:
+		app->show_status(_("Internal timestamp error"));
+		break;
+	case ENOENT:
+		app->show_status(_("Badly formed CW element"));
+		break;
+	default:
+		app->show_status(_("Internal problem"));
+		break;
+	}
 
 	libcw_receive_errno = 0;
 
@@ -533,11 +548,17 @@ void Receiver::poll_character()
 			   character (yet). Try harder. */
 			break;
 
-		case ENOENT:
-			/* Invalid character in receiver's buffer. */
+		case ENOENT: /* Invalid character in receiver's buffer. */
 			cw_clear_receive_buffer();
 			textarea->append('?');
 			app->show_status(QString(_("Unknown character received at %1 WPM")).arg(cw_get_receive_speed()));
+			break;
+
+		case EINVAL:
+			/* Timestamp error. */
+			cw_clear_receive_buffer();
+			textarea->append('?');
+			app->show_status(QString(_("Internal error")));
 			break;
 
 		default:

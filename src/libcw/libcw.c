@@ -1417,8 +1417,7 @@ int cw_start_receive_tone(const struct timeval *timestamp)
    On failure, it returns CW_FAIURE, with errno set to:
    ERANGE if the call was not preceded by a cw_start_receive_tone() call,
    EINVAL if the timestamp passed in is not valid,
-   ENOENT if the mark length was out of bounds for the permissible
-   dot and dash lengths and fixed speed receiving is selected,
+   ENOENT if function can't tell from duration of the Mark if it's Dot or Dash,
    ENOMEM if the receiver's representation buffer is full,
    EAGAIN if the mark was shorter than the threshold for noise and was
    therefore ignored.
@@ -1454,11 +1453,12 @@ int cw_end_receive_tone(const struct timeval *timestamp)
    On success, the relevant mark is added to the receiver's
    representation buffer.
 
-   On failure, the routines return CW_FAILURE, with errno set to
+   On failure, the routines return CW_FAILURE and set errno:
    ERANGE if preceded by a cw_start_receive_tone() call with no matching
    cw_end_receive_tone() or if an error condition currently exists
-   within the receiver's buffer, or ENOMEM if the receiver's
-   representation buffer is full.
+   within the receiver's buffer,
+   EINVAL if the timestamp passed in is not valid,
+   ENOMEM if the receiver's representation buffer is full.
 
    \param timestamp - timestamp of "end of dot" event
 
@@ -1623,7 +1623,7 @@ void cw_clear_receive_buffer(void)
 	memset(cw_receiver.representation, 0, sizeof (cw_receiver.representation));
 	cw_receiver.representation_ind = 0;
 
-	CW_REC_SET_STATE (&cw_receiver, RS_IDLE, (&cw_debug_object));
+	cw_rec_set_state_internal(&cw_receiver, RS_IDLE);
 
 	return;
 }
@@ -1680,7 +1680,7 @@ void cw_reset_receive(void)
 
 	memset(cw_receiver.representation, 0, sizeof (cw_receiver.representation));
 	cw_receiver.representation_ind = 0;
-	CW_REC_SET_STATE ((&cw_receiver), RS_IDLE, (&cw_debug_object));
+	cw_rec_set_state_internal(&cw_receiver, RS_IDLE);
 
 	cw_rec_reset_statistics(&cw_receiver);
 

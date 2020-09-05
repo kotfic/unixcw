@@ -54,8 +54,9 @@ version 3.6.0 / 2020-XX-YY
     depecated. The function was/is unusable because there is no way that
     client code can pass a cw_gen_t variable as first argument.
 
-  - Replacing some usages of double type with float type. There is noting in
-    the library that would require precision or range of double.
+  - Replacing some usages of double type with float type. There is very
+    little (or maybe even nothing) in the library that would require
+    precision or range of double.
 
   - Adding new function: cw_generator_remove_last_character().  The function
     removes last character enqueued to generator, it can be called multiple
@@ -74,6 +75,20 @@ version 3.6.0 / 2020-XX-YY
     implicitly by library code. Therefore I decided to rework the initial
     solution and add the new function to library.
 
+  - modifications to receiver functions:
+
+    cw_receive_character(), cw_receive_representation(),
+    cw_start_receive_tone() and cw_end_receive_tone() are now actually
+    setting errno to EINVAL (as described in documentation) when they detect
+    that input timestamp (when the timestamp is non-NULL) is in some way
+    invalid.
+
+    cw_receive_buffer_dot() and cw_receive_buffer_dash() set additional value
+    of errno (EINVAL) when they detect that input timestamp (when the
+    timestamp is non-NULL) is in some way invalid.
+
+    Please review information in man page about errno values set by these
+    functions.
 
   xcwcp:
 
