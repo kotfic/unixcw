@@ -108,7 +108,7 @@ struct cw_gen_struct {
 	int dot_duration;              /* Duration of a dot Mark. [us] */
 	int dash_duration;             /* Duration of a dash Mark. [us] */
 	int ims_duration;              /* Duration of inter-mark-space (i.e. the Space). [us] */
-	int eoc_space_duration;        /* Duration of *additional* inter-character space. [us] */
+	int ics_duration;              /* Duration of *additional* inter-character-space. [us] */
 	int eow_space_duration;        /* Duration of *additional* inter-word space. [us] */
 
 	int additional_space_duration; /* Duration of additional space at the end of a character. [us] */
@@ -401,7 +401,14 @@ struct cw_gen_struct {
 
 
 
-void cw_gen_get_timing_parameters_internal(cw_gen_t * gen, int * dot_duration, int * dash_duration, int * ims_duration, int * eoc_space_duration, int * eow_space_duration, int * additional_space_duration, int * adjustment_space_duration);
+void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
+					   int * dot_duration,
+					   int * dash_duration,
+					   int * ims_duration,
+					   int * ics_duration,
+					   int * eow_space_duration,
+					   int * additional_space_duration,
+					   int * adjustment_space_duration);
 
 
 

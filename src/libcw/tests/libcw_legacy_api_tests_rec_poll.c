@@ -67,7 +67,7 @@
 
 
 /* TODO: move this type to libcw_rec.h and use it to pass arguments to
-   functions such as cw_rec_poll_representation_eoc_internal(). */
+   functions such as cw_rec_poll_representation_ics_internal(). */
 typedef struct received_data {
 	char character;
 	char representation[20];
@@ -283,7 +283,7 @@ void xcwcp_handle_libcw_keying_event(void * timer, int key_state)
 		   incoming character within the same word, so no
 		   inter-word-space is possible at this point in
 		   time. The space that we were observing/waiting for,
-		   was just inter-character space. */
+		   was just inter-character-space. */
 		g_xcwcp_receiver.is_pending_inter_word_space = false;
 	}
 
@@ -431,12 +431,12 @@ void receiver_poll_character_c_r(Receiver * xcwcp_receiver)
 			g_tester.received_string[g_tester.received_string_i++] = prod.character;
 		}
 
-		/* A full character has been received. Directly after
-		   it comes a space. Either a short inter-character
-		   space followed by another character (in this case
-		   we won't display the inter-character space), or
-		   longer inter-word-space - this space we would like
-		   to catch and display.
+		/* A full character has been received. Directly after it
+		   comes a space. Either a short inter-character-space
+		   followed by another character (in this case we won't
+		   display the inter-character-space), or longer
+		   inter-word-space - this space we would like to catch and
+		   display.
 
 		   Set a flag indicating that next poll may result in
 		   inter-word-space. */
@@ -579,12 +579,12 @@ void receiver_poll_character_r_c(Receiver * xcwcp_receiver)
 			g_tester.received_string[g_tester.received_string_i++] = test.character;
 		}
 
-		/* A full character has been received. Directly after
-		   it comes a space. Either a short inter-character
-		   space followed by another character (in this case
-		   we won't display the inter-character space), or
-		   longer inter-word-space - this space we would like
-		   to catch and display.
+		/* A full character has been received. Directly after it
+		   comes a space. Either a short inter-character-space
+		   followed by another character (in this case we won't
+		   display the inter-character-space), or longer
+		   inter-word-space - this space we would like to catch and
+		   display.
 
 		   Set a flag indicating that next poll may result in
 		   inter-word-space. */
@@ -652,8 +652,8 @@ void receiver_poll_space_c_r(Receiver * xcwcp_receiver)
 
 	/* We expect the receiver to contain a character, but we don't
 	   ask for it this time. The receiver should also store
-	   information about an inter-character space. If it is longer
-	   than a regular inter-character space, then the receiver
+	   information about an inter-character-space. If it is longer
+	   than a regular inter-character-space, then the receiver
 	   will treat it as inter-word-space, and communicate it over
 	   is_iws.
 
@@ -725,7 +725,7 @@ void receiver_poll_space_c_r(Receiver * xcwcp_receiver)
 		   to be considered inter-word-space, may grow to
 		   become the inter-word-space. Or not.
 
-		   This growing of inter-character space into
+		   This growing of inter-character-space into
 		   inter-word-space may be terminated by incoming next
 		   tone (key down event) - the tone will mark
 		   beginning of new character within the same
@@ -755,8 +755,8 @@ void receiver_poll_space_r_c(Receiver * xcwcp_receiver)
 
 	/* We expect the receiver to contain a character, but we don't
 	   ask for it this time. The receiver should also store
-	   information about an inter-character space. If it is longer
-	   than a regular inter-character space, then the receiver
+	   information about an inter-character-space. If it is longer
+	   than a regular inter-character-space, then the receiver
 	   will treat it as inter-word-space, and communicate it over
 	   is_iws.
 
@@ -829,7 +829,7 @@ void receiver_poll_space_r_c(Receiver * xcwcp_receiver)
 		   to be considered inter-word-space, may grow to
 		   become the inter-word-space. Or not.
 
-		   This growing of inter-character space into
+		   This growing of inter-character-space into
 		   inter-word-space may be terminated by incoming next
 		   tone (key down event) - the tone will mark
 		   beginning of new character within the same

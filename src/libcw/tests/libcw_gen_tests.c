@@ -648,7 +648,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 	int dot_duration = initial;
 	int dash_duration = initial;
 	int ims_duration = initial;
-	int eoc_space_duration = initial;
+	int ics_duration = initial;
 	int eow_space_duration = initial;
 	int additional_space_duration = initial;
 	int adjustment_space_duration = initial;
@@ -666,7 +666,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 							      &dot_duration,
 							      &dash_duration,
 							      &ims_duration,
-							      &eoc_space_duration,
+							      &ics_duration,
 							      &eow_space_duration,
 							      &additional_space_duration,
 							      &adjustment_space_duration);
@@ -674,7 +674,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 	bool failure = (dot_duration == initial)
 		|| (dash_duration == initial)
 		|| (ims_duration == initial)
-		|| (eoc_space_duration == initial)
+		|| (ics_duration == initial)
 		|| (eow_space_duration == initial)
 		|| (additional_space_duration == initial)
 		|| (adjustment_space_duration == initial);
@@ -1041,14 +1041,14 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 			   regular 3-Unit inter-character-space. Be aware of
 			   this fact. */
 			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_2u_ics_internal)(gen);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue eoc space internal() (i = %d)", i)) {
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue ics internal() (i = %d)", i)) {
 				failure = true;
 				break;
 			}
 		}
 		cw_gen_wait_for_queue_level(gen, 0);
 
-		cte->expect_op_int(cte, false, "==", failure, "enqueue eoc space internal()");
+		cte->expect_op_int(cte, false, "==", failure, "enqueue ics internal()");
 	}
 
 

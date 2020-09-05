@@ -500,24 +500,24 @@ static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_da
 
 	int dot_usecs, dash_usecs,
 		end_of_element_usecs,
-		end_of_character_usecs, end_of_word_usecs,
+		ics_usecs, end_of_word_usecs,
 		additional_usecs, adjustment_usecs;
 	cw_gen_get_timing_parameters_internal(gen,
 					      &dot_usecs, &dash_usecs,
 					      &end_of_element_usecs,
-					      &end_of_character_usecs, &end_of_word_usecs,
+					      &ics_usecs, &end_of_word_usecs,
 					      &additional_usecs, &adjustment_usecs);
 	fprintf(stderr,
 		"[II] dot duration  = %6d us\n"
 		"[II] dash duration = %6d us\n"
 		"[II] eoe duration  = %6d us\n"
-		"[II] eoc duration  = %6d us\n"
+		"[II] ics duration  = %6d us\n"
 		"[II] eow duration  = %6d us\n"
 		"[II] additional duration = %6d us\n"
 		"[II] adjustment duration = %6d us\n",
 		dot_usecs, dash_usecs,
 		end_of_element_usecs,
-		end_of_character_usecs, end_of_word_usecs,
+		ics_usecs, end_of_word_usecs,
 		additional_usecs, adjustment_usecs);
 	fprintf(stderr, "[II] speed = %d WPM\n", test_data->speed);
 

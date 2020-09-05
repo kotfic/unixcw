@@ -462,7 +462,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 		gen->dot_duration = 0;
 		gen->dash_duration = 0;
 		gen->ims_duration = 0;
-		gen->eoc_space_duration = 0;
+		gen->ics_duration = 0;
 		gen->eow_space_duration = 0;
 
 		gen->additional_space_duration = 0;
@@ -1912,7 +1912,7 @@ int cw_gen_get_weighting(const cw_gen_t * gen)
    @param[out] dot_duration
    @param[out] dash_duration
    @param[out] ims_duration duration of inter-mark-space
-   @param[out] eoc_space_duration
+   @param[out] ics_duration duration of inter-character-space
    @param[out] eow_space_duration
    @param[out] additional_space_duration
    @param[out] adjustment_space_duration
@@ -1921,7 +1921,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
 					   int * dot_duration,
 					   int * dash_duration,
 					   int * ims_duration,
-					   int * eoc_space_duration,
+					   int * ics_duration,
 					   int * eow_space_duration,
 					   int * additional_space_duration,
 					   int * adjustment_space_duration)
@@ -1932,7 +1932,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
 	if (dash_duration)  { *dash_duration = gen->dash_duration; }
 
 	if (ims_duration)   { *ims_duration = gen->ims_duration; }
-	if (eoc_space_duration)   { *eoc_space_duration = gen->eoc_space_duration; }
+	if (ics_duration)   { *ics_duration = gen->ics_duration; }
 	if (eow_space_duration)   { *eow_space_duration = gen->eow_space_duration; }
 
 	if (additional_space_duration)    { *additional_space_duration = gen->additional_space_duration; }
@@ -2034,9 +2034,9 @@ cw_ret_t cw_gen_enqueue_2u_ics_internal(cw_gen_t * gen)
 	/* Synchronize low-level timing parameters. */
 	cw_gen_sync_parameters_internal(gen);
 
-	/* Enqueue standard inter-character space, plus any additional inter-character gap. */
+	/* Enqueue standard inter-character-space, plus any additional inter-character gap. */
 	cw_tone_t tone;
-	CW_TONE_INIT(&tone, 0, gen->eoc_space_duration + gen->additional_space_duration, CW_SLOPE_MODE_NO_SLOPES);
+	CW_TONE_INIT(&tone, 0, gen->ics_duration + gen->additional_space_duration, CW_SLOPE_MODE_NO_SLOPES);
 	return cw_tq_enqueue_internal(gen->tq, &tone);
 }
 
@@ -2280,7 +2280,7 @@ cw_ret_t cw_gen_enqueue_valid_character_no_ics_internal(cw_gen_t * gen, char cha
 		return CW_FAILURE;
 	}
 
-	/* No inter-character space here. */
+	/* No inter-character-space here. */
 
 	return CW_SUCCESS;
 }
@@ -2376,7 +2376,7 @@ cw_ret_t cw_gen_enqueue_string(cw_gen_t * gen, const char * string)
 
 	/* Send every character in the string. */
 	for (int i = 0; string[i] != '\0'; i++) {
-		/* This function adds eoc space at the end of character. */
+		/* This function adds inter-character-space at the end of character. */
 		if (CW_SUCCESS != cw_gen_enqueue_valid_character_internal(gen, string[i])) {
 			return CW_FAILURE;
 		}
@@ -2448,20 +2448,21 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 
 	/* In proper Morse code timing the following three rules are given:
 	   1. Duration of inter-mark-space is one Unit, perhaps adjusted.
-	   2. Duration of inter-character-space (eoc) is three Units total.
+	   2. Duration of inter-character-space is three Units total.
 	   3. Duration of inter-word-space (eow) is seven Units total.
 
-	   eoc_space_duration and eow_space_duration variables are
+	   ics_duration and eow_space_duration variables are
 	   *additional* durations.  Notice how they are calculated
 	   below. They aren't full 3 units and 7 units.
-	   eoc: is 2 Units, which takes into account preceding one
-	   inter-mark-space added after a Mark,
-	   eow: is 5 Units, which takes into account preceding eoc space.
+	   inter-character-space: is 2 Units, which takes into account
+	   preceding one inter-mark-space added after a Mark,
+	   inter-word-space: is 5 Units, which takes into account preceding
+	   inter-character-space.
 
 	   So these two durations are *additional* ones, i.e. in addition to
-	   (already existing) inter-mark-space or eoc space.  Whether this is
-	   good or bad idea to calculate them like this is a separate
-	   topic. Just be aware of this fact.
+	   (already existing) inter-mark-space or inter-character-space.
+	   Whether this is good or bad idea to calculate them like this is a
+	   separate topic. Just be aware of this fact.
 
 	   TODO: make sure that we never add inter-word-space after
 	   inter-character-space which was added after inter-mark-space. That
@@ -2474,8 +2475,8 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 	   Inter-mark-space and end of character delays take
 	   weightings into account. */
 	gen->ims_duration = unit_length - (28 * weighting_length) / 22;
-	gen->eoc_space_duration = 3 * unit_length - gen->ims_duration;
-	gen->eow_space_duration = 7 * unit_length - gen->eoc_space_duration;
+	gen->ics_duration = 3 * unit_length - gen->ims_duration;
+	gen->eow_space_duration = 7 * unit_length - gen->ics_duration;
 	gen->additional_space_duration = gen->gap * unit_length;
 
 	/* For "Farnsworth", there also needs to be an adjustment
@@ -2492,7 +2493,7 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_PARAMETERS, CW_DEBUG_INFO,
 		      MSG_PREFIX "gen durations [us] at speed %d [wpm]: dot: %d, dash: %d, ims: %d, %d, %d, %d, %d",
 		      gen->send_speed, gen->dot_duration, gen->dash_duration,
-		      gen->ims_duration, gen->eoc_space_duration,
+		      gen->ims_duration, gen->ics_duration,
 		      gen->eow_space_duration, gen->additional_space_duration, gen->adjustment_space_duration);
 
 	/* Generator parameters are now in sync. */

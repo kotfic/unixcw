@@ -32,8 +32,8 @@
    First of them is to notify receiver about "begin of Mark" and "end of
    Mark" events. Receiver then tries to figure out how long a Mark or Space
    is, what type of Mark (Dot/Dash) or Space (inter-mark-space,
-   inter-character, inter-word) it is, and when a full character has been
-   received.
+   inter-character-space, inter-word-space) it is, and when a full character
+   has been received.
 
    This is done with cw_rec_mark_begin() and cw_rec_mark_end() functions.
 
@@ -777,15 +777,15 @@ void cw_rec_reset_statistics(cw_rec_t * rec)
  *        +-----------<------- RS_EOW_GAP_ERR ------------<--------------+
  *        |(clear)                    ^                                  |
  *        |                (pull() +  |                                  |
- *        |       space dur > eoc dur)|                                  |
+ *        |       space dur > ics dur)|                                  |
  *        |                           |                                  |
  *        +-----------<-------- RS_EOC_GAP_ERR <---------------+         |
  *        |(clear)                    ^  |                     |         |
  *        |                           |  +---------------------+         |(error,
- *        |                           |    (pull() +                     |space dur > eoc dur)
- *        |                           |    space dur = eoc dur)          |
+ *        |                           |    (pull() +                     |space dur > ics dur)
+ *        |                           |    space dur = ics dur)          |
  *        v                    (error,|                                  |
- *        |       space dur = eoc dur)|  +------------->-----------------+
+ *        |       space dur = ics dur)|  +------------->-----------------+
  *        |                           |  |
  *        +-----------<------------+  |  |
  *        |                        |  |  |
@@ -796,18 +796,18 @@ void cw_rec_reset_statistics(cw_rec_t * rec)
  *     v  ^                              ^                          v v v ^ |               |
  *     |  |                              |    (begin mark)          | | | | |               |
  *     |  |     (pull() +                +-------------<------------+ | | | +---------------+
- *     |  |     space dur = eoc dur)                                  | | |      (not ready,
+ *     |  |     space dur = ics dur)                                  | | |      (not ready,
  *     |  |     +-----<------------+          (pull() +               | | |      buffer dot,
- *     |  |     |                  |          space dur = eoc dur)    | | |      buffer dash)
+ *     |  |     |                  |          space dur = ics dur)    | | |      buffer dash)
  *     |  |     +-----------> RS_EOC_GAP <-------------<--------------+ | |
  *     |  |                     |  |                                    | |
  *     |  |(clear)              |  |                                    | |
  *     |  +-----------<---------+  |                                    | |
  *     |  |                        |                                    | |
  *     |  |              (pull() + |                                    | |
- *     |  |    space dur > eoc dur)|                                    | |
+ *     |  |    space dur > ics dur)|                                    | |
  *     |  |                        |          (pull() +                 | |
- *     |  |(clear)                 v          space dur > eoc dur)      | |
+ *     |  |(clear)                 v          space dur > ics dur)      | |
  *     |  +-----------<------ RS_EOW_GAP <-------------<----------------+ |
  *     |                                                                  |
  *     |                                                                  |
@@ -1616,7 +1616,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 
 		   We have a complete character representation in
 		   receiver's buffer and we can return it. */
-		cw_rec_poll_representation_eoc_internal(rec, space_duration, representation, is_end_of_word, is_error);
+		cw_rec_poll_representation_ics_internal(rec, space_duration, representation, is_end_of_word, is_error);
 		return CW_SUCCESS;
 
 	} else if (space_duration > rec->ics_duration_max) {
@@ -1658,7 +1658,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 
    Update receiver's state so that it matches inter-character-space state.
 
-   Since this is _eoc_ function, @p is_end_of_word is set to false.
+   Since this is _ics_ function, @p is_end_of_word is set to false.
 
    @internal
    @reviewed 2020-08-11
@@ -1670,7 +1670,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
    @param[out] is_end_of_word flag indicating if receiver is at end of word (may be NULL)
    @param[out] is_error flag indicating whether receiver is in error state (may be NULL)
 */
-void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
+void cw_rec_poll_representation_ics_internal(cw_rec_t * rec,
 					     int space_duration,
 					     char * representation,
 					     bool * is_end_of_word,
@@ -1682,7 +1682,7 @@ void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
 		   to be a bit longer than acceptable inter-mark-space
 		   (duration of Space indicates that it's
 		   inter-character-space). This is why this function is
-		   called _eoc_.
+		   called _ics_.
 
 		   Update duration statistics for Space identified as
 		   inter-character-space. */
@@ -1692,14 +1692,14 @@ void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
 		cw_rec_set_state_internal(rec, RS_EOC_GAP);
 	} else {
 		cw_assert (RS_EOC_GAP == rec->state || RS_EOC_GAP_ERR == rec->state,
-			   MSG_PREFIX "poll eoc: unexpected state of receiver: %d / %s",
+			   MSG_PREFIX "poll ics: unexpected state of receiver: %d / %s",
 			   rec->state, cw_receiver_states[rec->state]);
 
 		/* We are already in RS_EOC_GAP or RS_EOC_GAP_ERR, so nothing to do. */
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "'%s': poll eoc: state: %s", rec->label, cw_receiver_states[rec->state]);
+		      MSG_PREFIX "'%s': poll ics: state: %s", rec->label, cw_receiver_states[rec->state]);
 
 	/* Return receiver's state. */
 	if (is_end_of_word) {
@@ -1713,7 +1713,7 @@ void cw_rec_poll_representation_eoc_internal(cw_rec_t * rec,
 	*representation = '\0';
 	strncat(representation, rec->representation, rec->representation_ind);
 
-	/* Since we are in eoc state, there will be no more Dots or Dashes added to current representation. */
+	/* Since we are in ics state, there will be no more Dots or Dashes added to current representation. */
 	rec->representation[rec->representation_ind] = '\0';
 
 	return;

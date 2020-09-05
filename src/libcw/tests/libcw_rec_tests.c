@@ -1218,9 +1218,9 @@ int test_cw_rec_get_receive_parameters(cw_test_executor_t * cte)
 	int ims_len_max = 0;
 	int ims_len_ideal = 0;
 
-	int eoc_len_min = 0;
-	int eoc_len_max = 0;
-	int eoc_len_ideal = 0;
+	int ics_len_min = 0;
+	int ics_len_max = 0;
+	int ics_len_ideal = 0;
 
 	int adaptive_speed_threshold = 0;
 
@@ -1231,13 +1231,13 @@ int test_cw_rec_get_receive_parameters(cw_test_executor_t * cte)
 	LIBCW_TEST_FUT(cw_rec_get_parameters_internal)(rec,
 						       &dot_len_ideal, &dash_len_ideal, &dot_len_min, &dot_len_max, &dash_len_min, &dash_len_max,
 						       &ims_len_min, &ims_len_max, &ims_len_ideal,
-						       &eoc_len_min, &eoc_len_max, &eoc_len_ideal,
+						       &ics_len_min, &ics_len_max, &ics_len_ideal,
 						       &adaptive_speed_threshold);
 	cw_rec_delete(&rec);
 
 	cte->log_info(cte, "%s: dot/dash:  %d, %d, %d, %d, %d, %d\n", this_test_name, dot_len_ideal, dash_len_ideal, dot_len_min, dot_len_max, dash_len_min, dash_len_max);
 	cte->log_info(cte, "%s: ims:       %d, %d, %d\n", this_test_name, ims_len_min, ims_len_max, ims_len_ideal);
-	cte->log_info(cte, "%s: eoc:       %d, %d, %d\n", this_test_name, eoc_len_min, eoc_len_max, eoc_len_ideal);
+	cte->log_info(cte, "%s: ics:       %d, %d, %d\n", this_test_name, ics_len_min, ics_len_max, ics_len_ideal);
 	cte->log_info(cte, "%s: adaptive threshold: %d\n", this_test_name, adaptive_speed_threshold);
 
 	bool failure = (dot_len_ideal <= 0
@@ -1251,9 +1251,9 @@ int test_cw_rec_get_receive_parameters(cw_test_executor_t * cte)
 			|| ims_len_max <= 0
 			|| ims_len_ideal <= 0
 
-			|| eoc_len_min <= 0
-			|| eoc_len_max <= 0
-			|| eoc_len_ideal <= 0
+			|| ics_len_min <= 0
+			|| ics_len_max <= 0
+			|| ics_len_ideal <= 0
 
 			|| adaptive_speed_threshold <= 0);
 	cte->expect_op_int(cte, false, "==", failure, "cw_rec_get_parameters_internal()");
@@ -1270,15 +1270,15 @@ int test_cw_rec_get_receive_parameters(cw_test_executor_t * cte)
 	cte->expect_op_int(cte, dash_len_max, ">", dash_len_ideal, "%s: dash len consistency c (%d/%d/%d)", this_test_name, dash_len_min, dash_len_ideal, dash_len_max);
 
 
-	cte->expect_op_int(cte, ims_len_max, "<", eoc_len_min, "%s: max ims len < min eoc len (%d/%d)", this_test_name, ims_len_max, eoc_len_min);
+	cte->expect_op_int(cte, ims_len_max, "<", ics_len_min, "%s: max ims len < min ics len (%d/%d)", this_test_name, ims_len_max, ics_len_min);
 
 	cte->expect_op_int(cte, ims_len_min, "<", ims_len_max,   "%s: ims len consistency A (%d/%d)",    this_test_name, ims_len_min, ims_len_max);
 	cte->expect_op_int(cte, ims_len_min, "<", ims_len_ideal, "%s: ims len consistency B (%d/%d/%d)", this_test_name, ims_len_min, ims_len_ideal, ims_len_max);
 	cte->expect_op_int(cte, ims_len_max, ">", ims_len_ideal, "%s: ims len consistency C (%d/%d/%d)", this_test_name, ims_len_min, ims_len_ideal, ims_len_max);
 
-	cte->expect_op_int(cte, eoc_len_min, "<", eoc_len_max, "%s: eoc len consistency A (%d/%d)", this_test_name, eoc_len_min, eoc_len_max);
-	cte->expect_op_int(cte, eoc_len_min, "<", eoc_len_ideal, "%s: eoc len consistency B (%d/%d/%d)", this_test_name, eoc_len_min, eoc_len_ideal, eoc_len_max);
-	cte->expect_op_int(cte, eoc_len_max, ">", eoc_len_ideal, "%s: eoc len consistency C (%d/%d/%d)", this_test_name, eoc_len_min, eoc_len_ideal, eoc_len_max);
+	cte->expect_op_int(cte, ics_len_min, "<", ics_len_max,   "%s: ics len consistency A (%d/%d)",    this_test_name, ics_len_min, ics_len_max);
+	cte->expect_op_int(cte, ics_len_min, "<", ics_len_ideal, "%s: ics len consistency B (%d/%d/%d)", this_test_name, ics_len_min, ics_len_ideal, ics_len_max);
+	cte->expect_op_int(cte, ics_len_max, ">", ics_len_ideal, "%s: ics len consistency C (%d/%d/%d)", this_test_name, ics_len_min, ics_len_ideal, ics_len_max);
 
 
 	cte->print_test_footer(cte, __func__);
