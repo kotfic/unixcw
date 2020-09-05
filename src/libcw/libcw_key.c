@@ -393,7 +393,7 @@ cw_ret_t cw_key_ik_set_value_internal(volatile cw_key_t * key, cw_key_value_t ke
 		   'forever' tone multiple times in a row. TODO: in what
 		   situations do we call this function when dequeueing
 		   'forever' tone? It seems that dequeueing 'forever' tone
-		   shouldn't lead to calling this function. */*/
+		   shouldn't lead to calling this function. */
 		return CW_SUCCESS;
 	}
 
