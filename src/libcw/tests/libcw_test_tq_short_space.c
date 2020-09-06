@@ -39,15 +39,15 @@
 /* This test checks presence of a specific bug in tone queue. The bug
    occurs when the application has registered low-tone-queue callback,
    the threshold for the callback is set to 1, and a single
-   end-of-word space has been enqueued by client application.
+   inter-word-space has been enqueued by client application.
 
-   When the eow space is enqueued as a single tone-queue tone (or even
+   When the inter-word-space is enqueued as a single tone-queue tone (or even
    as two tones) ("short space"), libcw may miss the event of passing
    of tone queue level from 2 to 1 and will not call the
    callback. This "miss" is probably caused by the fact that the first
    tone is deqeued and played before the second one gets enqueued.
 
-   The solution in libcw is to enqueue eow space as more than two
+   The solution in libcw is to enqueue inter-word-space as more than two
    tones (three tones seem to be ok).
 
    The bug sits at the border between tone queue and generator, but

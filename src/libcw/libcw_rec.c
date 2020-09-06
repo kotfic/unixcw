@@ -1290,7 +1290,7 @@ cw_ret_t cw_rec_identify_mark_internal(cw_rec_t * rec, int mark_duration, char *
 	   separate function. */
 
 	/* If we can't send back any result through @p mark, let's move to
-	   either "inter-character-space, in error" or "end-of-word, in error"
+	   either "inter-character-space, in error" or "inter-word-space, in error"
 	   state.
 
 	   To decide which error state to choose, we will treat @p
@@ -1558,7 +1558,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 		   or representation buffer (the EOW space can't turn into
 		   even longer space). */
 
-		cw_rec_poll_representation_eow_internal(rec, representation, is_end_of_word, is_error);
+		cw_rec_poll_representation_iws_internal(rec, representation, is_end_of_word, is_error);
 		return CW_SUCCESS;
 
 	} else if (RS_IDLE == rec->state || RS_MARK == rec->state) {
@@ -1585,7 +1585,7 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 	/* Receiver is in one of these states
 	   - inter-mark-space, or
 	   - inter-character-space, or
-	   - end-of-word gap.
+	   - inter-word-space.
 	   To see which case is true, calculate duration of this Space
 	   by comparing current/given timestamp with end of last
 	   Mark. */
@@ -1624,12 +1624,12 @@ cw_ret_t cw_rec_poll_representation(cw_rec_t * rec,
 		// fprintf(stderr, "EOW: space duration = %d (> %d) ------------- \n", space_duration, rec->ics_duration_max);
 
 		/* The space is too long for inter-character-space
-		   state. This should be end-of-word state. We have
+		   state. This should be inter-word-space state. We have
 		   to inform client code about this, too.
 
 		   We have a complete character representation in
 		   receiver's buffer and we can return it. */
-		cw_rec_poll_representation_eow_internal(rec, representation, is_end_of_word, is_error);
+		cw_rec_poll_representation_iws_internal(rec, representation, is_end_of_word, is_error);
 		return CW_SUCCESS;
 
 	} else { /* space_duration < rec->ics_duration_min */
@@ -1723,15 +1723,15 @@ void cw_rec_poll_representation_ics_internal(cw_rec_t * rec,
 
 
 /**
-   @brief Return representation and flags of receiver that is at end-of-word Space state
+   @brief Return representation and flags of receiver that is at inter-word-space state
 
    Return representation of received character and receiver's state
-   flags after receiver has encountered end-of-word gap. The
+   flags after receiver has encountered inter-word-space. The
    representation is appended to end of @p representation.
 
-   Update receiver's state so that it matches end-of-word state.
+   Update receiver's state so that it matches inter-word-space state.
 
-   Since this is _eow_ function, @p is_end_of_word is set to true.
+   Since this is _iws_ function, @p is_end_of_word is set to true.
 
    @internal
    @reviewed 2020-08-11
@@ -1742,7 +1742,7 @@ void cw_rec_poll_representation_ics_internal(cw_rec_t * rec,
    @param[out] is_end_of_word flag indicating if receiver is at end of word (may be NULL)
    @param[out] is_error flag indicating whether receiver is in error state (may be NULL)
 */
-void cw_rec_poll_representation_eow_internal(cw_rec_t * rec,
+void cw_rec_poll_representation_iws_internal(cw_rec_t * rec,
 					     char * representation,
 					     bool * is_end_of_word,
 					     bool * is_error)
@@ -1757,11 +1757,11 @@ void cw_rec_poll_representation_eow_internal(cw_rec_t * rec,
 		; /* No need to change state. */
 
 	} else {
-		cw_assert (0, MSG_PREFIX "poll eow: unexpected receiver state %d / %s", rec->state, cw_receiver_states[rec->state]);
+		cw_assert (0, MSG_PREFIX "poll iws: unexpected receiver state %d / %s", rec->state, cw_receiver_states[rec->state]);
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_RECEIVE_STATES, CW_DEBUG_INFO,
-		      MSG_PREFIX "'%s': poll eow: state: %s", rec->label, cw_receiver_states[rec->state]);
+		      MSG_PREFIX "'%s': poll iws: state: %s", rec->label, cw_receiver_states[rec->state]);
 
 	/* Return receiver's state. */
 	if (is_end_of_word) {
@@ -1775,7 +1775,7 @@ void cw_rec_poll_representation_eow_internal(cw_rec_t * rec,
 	*representation = '\0';
 	strncat(representation, rec->representation, rec->representation_ind);
 
-	/* Since we are in eow state, there will be no more Dots or Dashes added to current representation. */
+	/* Since we are in iws state, there will be no more Dots or Dashes added to current representation. */
 	rec->representation[rec->representation_ind] = '\0';
 
 	return;
@@ -1855,11 +1855,11 @@ cw_ret_t cw_rec_poll_character(cw_rec_t * rec,
 	/* A full character has been received. Directly after it comes a
 	   Space. Either a short inter-character-space followed by another
 	   character (in this case we won't display the
-	   inter-character-space), or longer inter-word space - this Space we
+	   inter-character-space), or longer inter-word-space - this Space we
 	   would like to catch and display.
 
 	   Set a flag indicating that next poll may result in
-	   inter-word space.
+	   inter-word-space.
 
 	   FIXME: why we don't set this flag in
 	   cw_rec_poll_representation()? */
@@ -2079,8 +2079,8 @@ void cw_rec_sync_parameters_internal(cw_rec_t * rec)
 		rec->ics_duration_max = rec->dash_duration_max
 			+ rec->additional_delay + rec->adjustment_delay;
 
-		/* Any gap longer than ics_duration_max is by implication
-		   end-of-word gap. */
+		/* Any space longer than ics_duration_max is by implication
+		   inter-word-space. */
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_PARAMETERS, CW_DEBUG_INFO,

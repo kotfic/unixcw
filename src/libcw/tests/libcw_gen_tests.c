@@ -649,7 +649,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 	int dash_duration = initial;
 	int ims_duration = initial;
 	int ics_duration = initial;
-	int eow_space_duration = initial;
+	int iws_duration = initial;
 	int additional_space_duration = initial;
 	int adjustment_space_duration = initial;
 
@@ -667,7 +667,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 							      &dash_duration,
 							      &ims_duration,
 							      &ics_duration,
-							      &eow_space_duration,
+							      &iws_duration,
 							      &additional_space_duration,
 							      &adjustment_space_duration);
 
@@ -675,7 +675,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 		|| (dash_duration == initial)
 		|| (ims_duration == initial)
 		|| (ics_duration == initial)
-		|| (eow_space_duration == initial)
+		|| (iws_duration == initial)
 		|| (additional_space_duration == initial)
 		|| (adjustment_space_duration == initial);
 	cte->expect_op_int(cte, false, "==", failure, "get timing parameters");
@@ -1052,19 +1052,19 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	}
 
 
-	/* Test: playing inter-word spaces. */
+	/* Test: playing inter-word-spaces. */
 	{
 		bool failure = false;
 		for (int i = 0; i < repetitions; i++) {
-			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_eow_space_internal)(gen);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue eow space internal() (i = %d)", i)) {
+			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_iws_internal)(gen);
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue iws internal() (i = %d)", i)) {
 				failure = true;
 				break;
 			}
 		}
 		cw_gen_wait_for_queue_level(gen, 0);
 
-		cte->expect_op_int(cte, false, "==", failure, "enqueue eow space internal()");
+		cte->expect_op_int(cte, false, "==", failure, "enqueue iws internal()");
 	}
 
 	gen_destroy(&gen);
@@ -1371,4 +1371,3 @@ cwt_retv test_cw_gen_remove_last_character(cw_test_executor_t * cte)
 
 	return cwt_retv_ok;
 }
-

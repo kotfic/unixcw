@@ -105,11 +105,11 @@ struct cw_gen_struct {
 
 	   Be sure to read comment in cw_gen_sync_parameters_internal() on
 	   calculation of values of these parameters. */
-	int dot_duration;              /* Duration of a dot Mark. [us] */
-	int dash_duration;             /* Duration of a dash Mark. [us] */
-	int ims_duration;              /* Duration of inter-mark-space (i.e. the Space). [us] */
-	int ics_duration;              /* Duration of *additional* inter-character-space. [us] */
-	int eow_space_duration;        /* Duration of *additional* inter-word space. [us] */
+	int dot_duration;   /* Duration of a dot Mark. [us] */
+	int dash_duration;  /* Duration of a dash Mark. [us] */
+	int ims_duration;   /* Duration of inter-mark-space (i.e. the Space). [us] */
+	int ics_duration;   /* Duration of *additional* inter-character-space. [us] */
+	int iws_duration;   /* Duration of *additional* inter-word-space. [us] */
 
 	int additional_space_duration; /* Duration of additional space at the end of a character. [us] */
 	int adjustment_space_duration; /* Duration of adjustment space at the end of a word. [us] */
@@ -406,7 +406,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
 					   int * dash_duration,
 					   int * ims_duration,
 					   int * ics_duration,
-					   int * eow_space_duration,
+					   int * iws_duration,
 					   int * additional_space_duration,
 					   int * adjustment_space_duration);
 
@@ -416,7 +416,7 @@ void cw_gen_get_timing_parameters_internal(cw_gen_t * gen,
 /* Generator's 'enqueue' primitives. */
 cw_ret_t cw_gen_enqueue_mark_internal(cw_gen_t * gen, char mark, bool is_first);
 cw_ret_t cw_gen_enqueue_2u_ics_internal(cw_gen_t * gen);
-cw_ret_t cw_gen_enqueue_eow_space_internal(cw_gen_t * gen);
+cw_ret_t cw_gen_enqueue_iws_internal(cw_gen_t * gen);
 cw_ret_t cw_gen_enqueue_valid_character_internal(cw_gen_t * gen, char character);
 
 /* These are also 'enqueue' primitives, but are intended to be used on

@@ -512,7 +512,7 @@ static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_da
 		"[II] dash duration = %6d us\n"
 		"[II] eoe duration  = %6d us\n"
 		"[II] ics duration  = %6d us\n"
-		"[II] eow duration  = %6d us\n"
+		"[II] iws duration  = %6d us\n"
 		"[II] additional duration = %6d us\n"
 		"[II] adjustment duration = %6d us\n",
 		dot_usecs, dash_usecs,

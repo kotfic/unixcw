@@ -101,7 +101,7 @@ typedef struct cw_rec_test_point {
 	size_t n_tone_durations;                /* Number of duration values encoding given representation of given character. */
 	float send_speed;                       /* Send speed (speed at which the character is incoming). */
 
-	bool is_last_in_word;                   /* Is this character a last character in a word? (is it followed by end-of-word space?) */
+	bool is_last_in_word;                   /* Is this character a last character in a word? (is it followed by inter-word-space?) */
 } cw_rec_test_point;
 static cw_rec_test_point * cw_rec_test_point_new(cw_test_executor_t * cte);
 static void cw_rec_test_point_delete(cw_rec_test_point ** point);
@@ -480,8 +480,8 @@ bool test_cw_rec_test_begin_end(cw_test_executor_t * cte, cw_rec_t * rec, cw_rec
 
 			}
 			/* If we exit the loop at this point, the last
-			   'tv' with duration of end-of-character
-			   space will be used below in
+			   'tv' with duration of inter-character-space
+			   will be used below in
 			   cw_rec_poll_representation(). */
 		}
 		if (begin_end_failure) {
@@ -518,11 +518,11 @@ bool test_cw_rec_test_begin_end(cw_test_executor_t * cte, cw_rec_t * rec, cw_rec
 			/* Notice that we call the function with last
 			   timestamp (tv) from input data. The last
 			   timestamp in the input data represents end
-			   of final end-of-character space.
+			   of final inter-character-space.
 
 			   With this final passing of "end of space"
 			   timestamp to libcw the test code informs
-			   receiver that end-of-character space has
+			   receiver that inter-character-space has
 			   occurred, i.e. a full character has been
 			   passed to receiver.
 
@@ -550,7 +550,7 @@ bool test_cw_rec_test_begin_end(cw_test_executor_t * cte, cw_rec_t * rec, cw_rec
 
 
 			/* If the last space in character's data is
-			   end-of-word space (which is indicated by
+			   inter-word-space (which is indicated by
 			   is_last_in_word flag in test point), then
 			   is_word should be set by poll() to
 			   true. Otherwise both values should be
@@ -572,7 +572,7 @@ bool test_cw_rec_test_begin_end(cw_test_executor_t * cte, cw_rec_t * rec, cw_rec
 
 #if 0
 			/* Debug code. Print times of character with
-			   end-of-word space to verify duration of the
+			   inter-word-space to verify duration of the
 			   space. */
 			if (point->is_last_in_word) {
 				cte->log_info(cte, "Character '%c' is last in word:\n", point->character);
@@ -747,7 +747,7 @@ cw_characters_list * cw_characters_list_new_random(cw_test_executor_t * cte)
 	/*
 	  First character in input data can't be a space. Two reasons:
 	  1. we can't start a receiver's state machine with space.
-	  2. when a end-of-word space appears in test string, it is
+	  2. when a inter-word-space appears in test string, it is
 	  added as last duration value at the end of duration values
 	  table for "previous char". We couldn't do this (i.e. modify
 	  table of duration of "previous char") for 1st char in test
@@ -921,11 +921,11 @@ void cw_send_speeds_delete(cw_send_speeds ** speeds)
    representations, you have to use some other function.
 
    For each character the last duration parameter represents
-   end-of-character space or end-of-word space. The next duration
+   inter-character-space or inter-word-space. The next duration
    parameter after that space is zero. For character 'A' that would
    look like this:
 
-   .-    ==   40000 (dot mark); 40000 (inter-mark space); 120000 (dash mark); 240000 (end-of-word space); 0 (guard, zero duration)
+   .-    ==   40000 (dot mark); 40000 (inter-mark-space); 120000 (dash mark); 240000 (inter-word-space); 0 (guard, zero duration)
 
    Last element in the created table (a guard "pseudo-character") has
    'representation' field set to NULL.
@@ -959,7 +959,7 @@ cw_rec_test_vector * cw_rec_test_vector_factory(cw_test_executor_t * cte, charac
 
 
 		/*
-		  First handle a special case: end-of-word space. This
+		  First handle a special case: inter-word-space. This
 		  long space will be put at the end of table of time
 		  values for previous representation. The space in
 		  character list is never transformed into separate
@@ -972,12 +972,12 @@ cw_rec_test_vector * cw_rec_test_vector_factory(cw_test_executor_t * cte, charac
 		if (characters_list->values[in_idx] == ' ') {
 			/* We don't want to affect *current* output
 			   point (we don't create a vector point for
-			   space). We want to turn end-of-char space
-			   of previous point into end-of-word space,
+			   space). We want to turn inter-character-space
+			   of previous point into inter-word-space,
 			   hence 'out_idx - 1'. */
 			cw_rec_test_point * prev_point = vec->points[out_idx - 1];
-			const int space_idx = prev_point->n_tone_durations - 1;   /* Index of last space (end-of-char, to become end-of-word). */
-			prev_point->tone_durations[space_idx] = dot_duration * 6; /* dot_duration * 5 is the minimal end-of-word space. */
+			const int space_idx = prev_point->n_tone_durations - 1;   /* Index of last space (inter-character-space, to become inter-word-space). */
+			prev_point->tone_durations[space_idx] = dot_duration * 6; /* dot_duration * 5 is the minimal inter-word-space. */
 			prev_point->is_last_in_word = true;
 
 			continue;
@@ -1034,7 +1034,7 @@ cw_rec_test_vector * cw_rec_test_vector_factory(cw_test_executor_t * cte, charac
 
 
 		/* Graduate that last space (inter-mark space) into
-		   end-of-character space. */
+		   inter-character-space. */
 		point->tone_durations[n_tone_durations - 1] = (dot_duration * 3) + (dot_duration / 2);
 
 		/* Guard. */

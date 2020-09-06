@@ -565,7 +565,7 @@ int cw_send_character_space(void)
 */
 int cw_send_word_space(void)
 {
-	return cw_gen_enqueue_eow_space_internal(cw_generator);
+	return cw_gen_enqueue_iws_internal(cw_generator);
 }
 
 
@@ -1507,14 +1507,14 @@ int cw_receive_buffer_dash(const struct timeval *timestamp)
    EINVAL if the timestamp passed in is invalid,
    EAGAIN if the call is made too early to determine whether a
    complete representation has yet been placed in the buffer (that is,
-   less than the end-of-character gap period elapsed since the last
+   less than the inter-character-space duration elapsed since the last
    cw_end_receive_tone() or cw_receive_buffer_dot/dash call). This is
    not a *hard* error, just an information that the caller should try
    to get the representation later.
 
    \p is_end_of_word indicates that the space after the last mark
-   received is longer that the end-of-character gap, so it must be
-   qualified as end-of-word gap.
+   received is longer that the inter-character-space, so it must be
+   qualified as inter-word-space.
 
    \p is_error indicates that the representation was terminated by an
    error condition.
@@ -1527,7 +1527,7 @@ int cw_receive_buffer_dash(const struct timeval *timestamp)
    time stamp at function call). The receiver needs to know the "end
    of space" event - thus the \p timestamp parameter.
 
-   \param timestamp - timestamp of event that ends "end-of-character" gap or "end-of-word" gap
+   \param timestamp - timestamp of event that ends inter-character-space or inter-word-space
    \param representation - buffer for representation (output parameter)
    \param is_end_of_word - buffer for "is end of word" state (output parameter)
    \param is_error - buffer for "error" state (output parameter)
@@ -1570,18 +1570,18 @@ int cw_receive_representation(const struct timeval *timestamp,
    EINVAL if the timestamp passed in is invalid, or
    EAGAIN if the call is made too early to determine whether a
    complete character has yet been placed in the buffer (that is, less
-   than the end-of-character gap period elapsed since the last
+   than the inter-character-space duration elapsed since the last
    cw_end_receive_tone() or cw_receive_buffer_dot/dash call).
    ENOENT if character stored in receiver cannot be recognized as valid
 
    \p is_end_of_word indicates that the space after the last mark
-   received is longer that the end-of-character gap, so it must be
-   qualified as end-of-word gap.
+   received is longer that the inter-character-space, so it must be
+   qualified as inter-word-space.
 
    \p is_error indicates that the character was terminated by an error
    condition.
 
-   \param timestamp - timestamp of event that ends end-of-character gap or end-of-word gap
+   \param timestamp - timestamp of event that ends inter-character-space or inter-word-space
    \param c - buffer for character (output parameter)
    \param is_end_of_word - buffer for "is end of word" state (output parameter)
    \param is_error - buffer for "error" state (output parameter)

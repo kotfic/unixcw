@@ -195,8 +195,7 @@ void receiver_poll_receiver(Receiver * xcwcp_receiver)
 	}
 
 	if (xcwcp_receiver->is_pending_inter_word_space) {
-		/* Check if receiver received the pending inter-word
-		   space. */
+		/* Check if receiver received the pending inter-word-space. */
 		if (xcwcp_receiver->c_r) {
 			/* Poll character, then poll representation. */
 			receiver_poll_space_c_r(xcwcp_receiver);
@@ -272,8 +271,8 @@ void xcwcp_handle_libcw_keying_event(void * timer, int key_state)
 		g_xcwcp_receiver.tracked_key_state = key_state;
 	}
 
-	/* If this is a tone start and we're awaiting an inter-word
-	   space, cancel that wait and clear the receive buffer. */
+	/* If this is a tone start and we're awaiting an inter-word-space,
+	   cancel that wait and clear the receive buffer. */
 	if (key_state && g_xcwcp_receiver.is_pending_inter_word_space) {
 		/* Tell receiver to prepare (to make space) for
 		   receiving new character. */
