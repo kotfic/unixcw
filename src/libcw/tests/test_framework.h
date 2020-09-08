@@ -426,7 +426,8 @@ typedef enum cw_test_api_tested {
 
 typedef	struct cw_test_object_t {
 	cw_test_function_t test_function;
-	const char * name; /* Unique label/name of test function, used to execute only one test function from whole set. Can be empty/NULL. */
+	const char * name;                 /* Unique label/name of test function, used to execute only one test function from whole set. Can be empty/NULL. */
+	bool is_quick;                     /* Is the execution of the function quick? Is the time short enough to execute the function during "make check" target during builds? */
 } cw_test_object_t;
 
 
@@ -452,7 +453,7 @@ typedef struct cw_test_set_t {
 
 #define LIBCW_TEST_STRINGIFY(x) #x
 #define LIBCW_TEST_TOSTRING(x) LIBCW_TEST_STRINGIFY(x)
-#define LIBCW_TEST_FUNCTION_INSERT(function_pointer) { .test_function = (function_pointer), .name = LIBCW_TEST_TOSTRING(function_pointer) }
+#define LIBCW_TEST_FUNCTION_INSERT(function_pointer, _is_quick_) { .test_function = (function_pointer), .name = LIBCW_TEST_TOSTRING(function_pointer), .is_quick = _is_quick_ }
 
 /* FUT = "Function under test". A function from libcw library that is
    the subject of a test. */

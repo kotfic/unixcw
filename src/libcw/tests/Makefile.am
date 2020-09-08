@@ -27,9 +27,9 @@ TESTS = $(check_SCRIPTS)
 check_PROGRAMS = libcw_tests
 
 # run test programs
-check_SCRIPTS = libcw_test_all.sh
+check_SCRIPTS = libcw_test_quick.sh
 
-libcw_test_all.sh:
+libcw_test_quick.sh:
 # empty
 
 

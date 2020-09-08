@@ -549,7 +549,7 @@ top_srcdir = @top_srcdir@
 TESTS = $(check_SCRIPTS)
 
 # run test programs
-check_SCRIPTS = libcw_test_all.sh
+check_SCRIPTS = libcw_test_quick.sh
 # empty
 
 # List of files that implement tests of specific bug fixes.
@@ -1117,9 +1117,9 @@ recheck: all $(check_PROGRAMS) $(check_SCRIPTS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
-libcw_test_all.sh.log: libcw_test_all.sh
-	@p='libcw_test_all.sh'; \
-	b='libcw_test_all.sh'; \
+libcw_test_quick.sh.log: libcw_test_quick.sh
+	@p='libcw_test_quick.sh'; \
+	b='libcw_test_quick.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1300,7 +1300,7 @@ uninstall-am:
 
 -include $(top_builddir)/Makefile.inc
 
-libcw_test_all.sh:
+libcw_test_quick.sh:
 
 # sources, references
 #

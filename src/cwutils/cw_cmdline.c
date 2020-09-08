@@ -455,7 +455,8 @@ void cw_print_help(cw_config_t *config)
 
 	if (config->has_feature_libcw_test_specific
 	    || config->has_feature_test_repetitions
-	    || config->has_feature_test_name) {
+	    || config->has_feature_test_name
+	    || config->has_feature_test_quick_only) {
 
 		fprintf(stderr, "%s",     _("Options specific to test programs:\n"));
 
@@ -485,6 +486,10 @@ void cw_print_help(cw_config_t *config)
 		if (config->has_feature_test_name) {
 			fprintf(stderr, "%s", _("  -N, --test_name=NAME\n"));
 			fprintf(stderr, "%s", _("        execute only a test function specified by NAME\n"));
+		}
+		if (config->has_feature_test_quick_only) {
+			fprintf(stderr, "%s", _("  -Q, --test_quick_only\n"));
+			fprintf(stderr, "%s", _("        execute only test functions that take short time\n"));
 		}
 
 		if (config->has_feature_libcw_test_specific) {
@@ -567,6 +572,9 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 	}
 	if (config->has_feature_test_name) {
 		append_option(buffer, size, &n, "N:|test_name");
+	}
+	if (config->has_feature_test_quick_only) {
+		append_option(buffer, size, &n, "Q|test_quick_only");
 	}
 
 	if (true) {
@@ -932,6 +940,10 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 
 	case 'R':
 		config->test_repetitions = atoi(optarg);
+		break;
+
+	case 'Q':
+		config->test_quick_only = true;
 		break;
 
 	case 'X':

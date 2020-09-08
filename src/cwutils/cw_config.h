@@ -102,6 +102,7 @@ typedef struct cw_config_t {
 
 	bool has_feature_test_repetitions; /* Does the test program allow specifying count of repetitions of each test function? */
 	bool has_feature_test_name;        /* Does the test program allow specifying single one test function to be executed? */
+	bool has_feature_test_quick_only;   /* Does the test program allow selection of tests that can be executed in short time? */
 	bool has_feature_libcw_test_specific;
 
 	/*
@@ -122,8 +123,9 @@ typedef struct cw_config_t {
 	/* These fields are used in libcw tests only. */
 	cw_sound_system tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1]; /* List of distinct sound systems, indexed from zero. End of values is marked by CW_AUDIO_NONE guard. */
 	int tested_areas[LIBCW_TEST_TOPIC_MAX + 1];
-	char test_function_name[128];  /* Execute only a test function with this name. */
-	int test_repetitions; /* How many times a single test function should be repeated? */
+	char test_function_name[128];    /* Execute only a test function with this name. */
+	int test_repetitions;            /* How many times a single test function should be repeated? */
+	bool test_quick_only;            /* Execute tests that are flagged as 'quick enough to make <make check> target run in short time'. */
 
 	/* Names of specific sound devices that should be used for tests. If
 	   a test should be executed for a group of sound systems, we may

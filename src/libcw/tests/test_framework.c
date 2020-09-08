@@ -1327,6 +1327,9 @@ static cwt_retv iterate_over_test_objects(cw_test_executor_t * cte, cw_test_obje
 				execute = false;
 			}
 		}
+		if (cte->config->test_quick_only && !test_obj->is_quick) {
+			continue;
+		}
 
 		if (!execute) {
 			continue;
