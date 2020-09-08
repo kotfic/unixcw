@@ -900,10 +900,6 @@ bool cw_is_tone_busy(void)
 /**
    \brief Wait for the current tone to complete
 
-   The routine returns CW_SUCCESS on success.  If called with SIGALRM
-   blocked, the routine returns CW_FAILURE, with errno set to EDEADLK,
-   to avoid indefinite waits.
-
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
@@ -1007,11 +1003,6 @@ int cw_get_tone_queue_length(void)
 
    If there is a tone in progress, the function will wait until this
    last one has completed, then silence the tones.
-
-   This function may be called with SIGALRM blocked, in which case it
-   will empty the queue as best it can, then return without waiting for
-   the final tone to complete.  In this case, it may not be possible to
-   guarantee silence after the call.
 */
 void cw_flush_tone_queue(void)
 {
@@ -1919,15 +1910,12 @@ bool cw_is_keyer_busy(void)
 
    Waits until the end of the current element, dot or dash, from the keyer.
 
-   On error the function returns CW_FAILURE, with errno set to
-   EDEADLK if SIGALRM is blocked.
-
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
 */
 int cw_wait_for_keyer_element(void)
 {
-	/* TODO: update function description: errno and and return values. */
+	/* TODO: update function description about return values. */
 	return cw_key_ik_wait_for_end_of_current_element(&cw_key);
 }
 
@@ -1937,10 +1925,6 @@ int cw_wait_for_keyer_element(void)
 
 /**
    \brief Wait for the current keyer cycle to complete
-
-   The routine returns CW_SUCCESS on success.  On error, it returns
-   CW_FAILURE, with errno set to EDEADLK if SIGALRM is blocked or if
-   either paddle state is true.
 
    \return CW_SUCCESS on success
    \return CW_FAILURE on failure
