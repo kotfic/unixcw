@@ -945,6 +945,9 @@ int cw_wait_for_tone_queue(void)
    will be waiting forever for a change of tone queue's level that
    will never happen.
 
+   If \p level is negative, function sets errno to EINVAL and returns
+   CW_FAILURE.
+
    \param level - low level in queue, at which to return
 
    \return CW_SUCCESS on success
@@ -952,6 +955,10 @@ int cw_wait_for_tone_queue(void)
 */
 int cw_wait_for_tone_queue_critical(int level)
 {
+	if (level < 0) {
+		errno = EINVAL;
+		return CW_FAILURE;
+	}
 	return cw_tq_wait_for_level_internal(cw_generator->tq, (size_t) level);
 }
 
@@ -1915,7 +1922,7 @@ bool cw_is_keyer_busy(void)
 */
 int cw_wait_for_keyer_element(void)
 {
-	/* TODO: update function description about return values. */
+	/* TODO: update function description: errno and return values. */
 	return cw_key_ik_wait_for_end_of_current_element(&cw_key);
 }
 

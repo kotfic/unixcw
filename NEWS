@@ -47,11 +47,11 @@ version 3.6.0 / 2020-XX-YY
     future.
 
   - Declaration of cw_debug_print_flags() has been removed from libcw_debug.h
-    header. The function was not defined in the library, so noone could have
+    header. The function was not defined in the library, so no one could have
     used the function.
 
   - Function cw_generator_set_tone_slope() from libcw.h is now marked as
-    depecated. The function was/is unusable because there is no way that
+    deprecated. The function was/is unusable because there is no way that
     client code can pass a cw_gen_t variable as first argument.
 
   - Replacing some usages of double type with float type. There is very
@@ -89,6 +89,9 @@ version 3.6.0 / 2020-XX-YY
 
     Please review information in man page about errno values set by these
     functions.
+
+  - cw_wait_for_tone_queue_critical() now sets errno to EINVAL and returns
+    CW_FAILURE if function's argument is negative.
 
   xcwcp:
 
