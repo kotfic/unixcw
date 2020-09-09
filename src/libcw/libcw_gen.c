@@ -1399,6 +1399,7 @@ cw_ret_t cw_gen_set_tone_slope(cw_gen_t * gen, int slope_shape, int slope_durati
 
 	/* Override of slope duration. */
 	if (slope_shape == CW_TONE_SLOPE_SHAPE_RECTANGULAR) {
+		/* TODO: what's going on here? Why do we set this to zero? */
 		gen->tone_slope.duration = 0;
 	}
 
@@ -1482,6 +1483,9 @@ void cw_gen_recalculate_slope_amplitudes_internal(cw_gen_t * gen)
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_RECTANGULAR) {
 			/* CW_TONE_SLOPE_SHAPE_RECTANGULAR is covered
 			   before entering this "for" loop. */
+			/* TODO: to avoid treating
+			   CW_TONE_SLOPE_SHAPE_RECTANGULAR as special case,
+			   add the calculation here. */
 			cw_assert (0, MSG_PREFIX "we shouldn't be here, calculating rectangular slopes");
 
 		} else {

@@ -61,7 +61,6 @@ extern cw_test_set_t cw_test_sets[];
 
 
 
-static void cleanup(void);
 static void cw_test_print_stats_wrapper(void);
 static void signal_handler(int signal_number);
 static void register_signal_handler(void);

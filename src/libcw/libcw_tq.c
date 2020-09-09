@@ -287,8 +287,15 @@ void cw_tq_delete_internal(cw_tone_queue_t ** tq)
 */
 void cw_tq_make_empty_internal(cw_tone_queue_t * tq)
 {
-	int rv = pthread_mutex_trylock(&tq->mutex);
-	cw_assert (rv == EBUSY, MSG_PREFIX "make empty: resetting tq state outside of mutex!");
+	{
+		/* TODO: this should be enabled only in dev builds. */
+		/* clang-tidy will complain about this attempt to lock mutex:
+		   "This lock has already been acquired"
+		   but this call is made on purpose to test that the mutex is acquired.
+		   http://clang.llvm.org/extra/clang-tidy/#suppressing-undesired-diagnostics */
+		const int rv = pthread_mutex_trylock(&tq->mutex); // NOLINT(clang-analyzer-alpha.unix.PthreadLock)
+		cw_assert (rv == EBUSY, MSG_PREFIX "make empty: resetting tq state outside of mutex!");
+	}
 
 	pthread_mutex_lock(&tq->wait_mutex);
 

@@ -18631,6 +18631,8 @@ GCC_WARNINGS="$GCC_WARNINGS -Wno-format-nonliteral"
 # stay in libcw I still need to use them and test them.
 GCC_WARNINGS="$GCC_WARNINGS -Wno-deprecated-declarations"
 
+GCC_WARNINGS="$GCC_WARNINGS -Wswitch-enum"
+
 # Inspired by Krister Walfridsson's blog post
 GCC_WARNINGS="$GCC_WARNINGS -Wduplicated-cond -Wlogical-op"
 GCC_WARNINGS="$GCC_WARNINGS -Wnull-dereference"

@@ -608,6 +608,7 @@ void cw_rec_duration_stats_update_internal(cw_rec_t * rec, stat_type_t type, int
 	case CW_REC_STAT_INTER_CHARACTER_SPACE:
 		ideal = rec->ics_duration_ideal;
 		break;
+	case CW_REC_STAT_NONE:
 	default:
 		ideal = duration;
 		break;

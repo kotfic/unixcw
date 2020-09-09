@@ -79,6 +79,19 @@ enum {
 
 
 
+/* If there are any slopes in a tone, there can be only rising slope (without
+   falling slope), falling slope (without rising slope), or both slopes
+   (i.e. standard slopes).  These values don't tell anything about shape of
+   slopes (unless you consider 'no slopes' a shape). */
+typedef enum cw_tone_slope_mode_t {
+	CW_SLOPE_MODE_STANDARD_SLOPES,
+	CW_SLOPE_MODE_NO_SLOPES,
+	CW_SLOPE_MODE_RISING_SLOPE,
+	CW_SLOPE_MODE_FALLING_SLOPE
+} cw_tone_slope_mode_t;
+
+
+
 
 typedef struct {
 	/* Frequency of a tone, in Hz. */
@@ -95,8 +108,8 @@ typedef struct {
 	   character (all tones constituting a character) from the queue. */
 	bool is_first;
 
-	/* Type of slope. */
-	int slope_mode;
+	/* Type/mode of slope(s) in a tone. */
+	cw_tone_slope_mode_t slope_mode;
 
 	/* Duration of a tone, in samples.
 	   This is a derived value, a function of duration and sample rate. */

@@ -1229,13 +1229,13 @@ int cw_get_maximum_phonetic_length(void)
    @brief Look up the phonetic of a given character
 
    On success the routine copies a phonetic corresponding to @p character
-   into @p buffer. @p buffer is managed and owned by caller.
+   into @p phonetic. @p phonetic is managed and owned by caller.
 
-   It is NOT considered an error if @p buffer is NULL. In such case the
+   It is NOT considered an error if @p phonetic is NULL. In such case the
    function will just verify if @p character can be represented by a
    phonetic, i.e. if @p character is a letter.
 
-   If non-NULL, the size of @p buffer must be greater by at least 1 than the
+   If non-NULL, the size of @p phonetic must be greater by at least 1 than the
    longest phonetic held in the phonetic lookup table, as returned by
    cw_get_maximum_phonetic_length().
 
@@ -1246,19 +1246,19 @@ int cw_get_maximum_phonetic_length(void)
    @exception ENOENT phonetic for given character cannot be found
 
    @param[in] character character to look up
-   @param[out] buffer buffer for phonetic of a character (may be NULL)
+   @param[out] phonetic buffer for phonetic of a character (may be NULL)
 
-   @return CW_SUCCESS on success (phonetic has been found and - if @p buffer is non-NULL) has been copied to the buffer
+   @return CW_SUCCESS on success (phonetic has been found and - if @p phonetic is non-NULL) has been copied to the buffer
    @return CW_FAILURE on failure (phonetic for given character cannot be found)
 */
-int cw_lookup_phonetic(char character, char * buffer)
+int cw_lookup_phonetic(char character, char * phonetic)
 {
 	/* Coerce to uppercase, and verify the input argument. */
 	character = toupper(character);
 	if (character >= 'A' && character <= 'Z') {
-		if (NULL != buffer) {
-			strncpy(buffer, g_phonetics_table[character - 'A'], g_phonetics_table_maximum_phonetic_length);
-			buffer[g_phonetics_table_maximum_phonetic_length] = '\0';
+		if (NULL != phonetic) {
+			strncpy(phonetic, g_phonetics_table[character - 'A'], g_phonetics_table_maximum_phonetic_length);
+			phonetic[g_phonetics_table_maximum_phonetic_length] = '\0';
 		} else {
 			/* Simply ignore the fact that caller didn't provide output buffer. */
 		}

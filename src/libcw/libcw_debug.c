@@ -109,7 +109,7 @@ cw_debug_t cw_debug_object_ev = {
 
 
 
-static void cw_event_debugging_flush_internal(cw_debug_t * debug_object);
+static void cw_event_debugging_flush_internal(cw_debug_t * debug_object) __attribute__((unused));
 
 
 
@@ -425,7 +425,7 @@ int cw_dev_debug_raw_sink_write_internal(cw_gen_t * gen)
    @param[in] func function where the event occurred
    @param[in] line file line in which the event occurred
 */
-void cw_debug_event_internal(cw_debug_t * debug_object, uint32_t flag, uint32_t event, const char * func, int line)
+void cw_debug_event_internal(cw_debug_t * debug_object, uint32_t flag, uint32_t event, const char * func __attribute__((unused)), int line __attribute__((unused)))
 {
 	if (NULL == debug_object) {
 		return;

@@ -29,12 +29,10 @@
 #include <string.h>
 
 #include "libcw.h"
-#include "libcw_gen.h"
-#include "libcw_rec.h"
-#include "libcw_key.h"
 #include "libcw_debug.h"
-//#include "libcw2.h"
-
+#include "libcw_gen.h"
+#include "libcw_key.h"
+#include "libcw_rec.h"
 
 
 
@@ -1718,8 +1716,7 @@ void cw_reset_receive(void)
 */
 void cw_register_keying_callback(void (*callback_func)(void*, int), void *callback_arg)
 {
-	cw_gen_value_tracking_callback_t cb = (cw_gen_value_tracking_callback_t) callback_func;
-	cw_gen_register_value_tracking_callback_internal(cw_generator, cb, callback_arg);
+	cw_gen_register_value_tracking_callback_internal(cw_generator, callback_func, callback_arg);
 	return;
 }
 

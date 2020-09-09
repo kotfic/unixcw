@@ -20,17 +20,6 @@
 
 
 
-/* Allowed values of cw_tone_t.slope_mode.  This is to decide whether
-   a tone has slopes at all. If there are any slopes in a tone, there
-   can be only rising slope (without falling slope), falling slope
-   (without rising slope), or both slopes (i.e. standard slopes).
-   These values don't tell anything about shape of slopes (unless you
-   consider 'no slopes' a shape ;) ). */
-#define CW_SLOPE_MODE_STANDARD_SLOPES   20
-#define CW_SLOPE_MODE_NO_SLOPES         21
-#define CW_SLOPE_MODE_RISING_SLOPE      22
-#define CW_SLOPE_MODE_FALLING_SLOPE     23
-
 /*
   Duration of a single slope (rising or falling) in standard tone. [us]
 
