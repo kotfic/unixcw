@@ -136,8 +136,9 @@ am_libcw_tests_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	libcw_tests-test_main.$(OBJEXT)
 libcw_tests_OBJECTS = $(am_libcw_tests_OBJECTS)
 am__DEPENDENCIES_1 =
-libcw_tests_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(top_builddir)/src/cwutils/lib_libcw_tests.a
+libcw_tests_DEPENDENCIES =  \
+	$(top_builddir)/src/cwutils/lib_libcw_tests.a \
+	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -598,7 +599,11 @@ libcw_tests_SOURCES = \
 
 libcw_tests_CPPFLAGS = $(AM_CPPFLAGS) -DLIBCW_UNIT_TESTS
 #libcw_tests_CFLAGS = -I../../
-libcw_tests_LDADD = -lm -lpthread $(DL_LIB) -L../.libs -lcw_test $(top_builddir)/src/cwutils/lib_libcw_tests.a
+
+# Target-specific linker flags (objects to link). Order is important:
+# first static library then dynamic. Otherwise linker may not find
+# symbols from the dynamic library.
+libcw_tests_LDADD = $(top_builddir)/src/cwutils/lib_libcw_tests.a -lm -lpthread $(DL_LIB) -L../.libs -lcw_test 
 EXTRA_DIST = \
 	$(check_SCRIPTS) \
 	count_functions_under_test.py

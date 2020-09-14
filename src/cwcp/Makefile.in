@@ -360,8 +360,10 @@ top_srcdir = @top_srcdir@
 cwcp_SOURCES = cwcp.c
 # target-specific preprocessor flags (#defs and include dirs)
 #cwcp_CPPFLAGS = -I$(top_srcdir)/src/cwutils/ -I$(top_srcdir)/src/libcw/
-# target-specific linker flags (objects to link)
-cwcp_LDADD = -lcurses -L$(top_builddir)/src/libcw/.libs -lcw $(top_builddir)/src/cwutils/lib_cwcp.a
+# Target-specific linker flags (objects to link). Order is important:
+# first static library then dynamic. Otherwise linker may not find
+# symbols from the dynamic library.
+cwcp_LDADD = $(top_builddir)/src/cwutils/lib_cwcp.a -lcurses -L$(top_builddir)/src/libcw/.libs -lcw
 
 # copy man page to proper directory during installation
 man_MANS = cwcp.1
