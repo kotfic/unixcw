@@ -322,7 +322,7 @@ void cwgen_parse_command_line(int argc, char **argv, struct cwgen_config *config
 
 		case 'h':
 			cwgen_print_help(config->program_name);
-
+			/* Fallthrough. */
 		case 'v':
 			printf(_("%s version %s\n%s\n"),
 			       config->program_name, PACKAGE_VERSION, _(CW_COPYRIGHT));

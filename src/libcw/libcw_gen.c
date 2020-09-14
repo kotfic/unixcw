@@ -98,9 +98,8 @@
 
 
 
-#ifndef M_PI  /* C99 may not define M_PI */
-#define M_PI  3.14159265358979323846
-#endif
+/* Our own definition, to have it as a float. */
+static const float CW_PI = 3.14159265358979323846F;
 
 
 
@@ -158,7 +157,7 @@ static const char * default_sound_devices[] = {
 
 /* Generic constants - common for all sound systems (or not used in some of systems). */
 
-static const long int CW_AUDIO_VOLUME_RANGE = (1 << 15);  /* 2^15 = 32768 */
+static const int CW_AUDIO_VOLUME_RANGE = (1U << 15U);  /* 2^15 = 32768 */
 
 /* Shortest duration of time (in microseconds) that is used by libcw for
    idle waiting and idle loops. If a libcw function needs to wait for
@@ -793,7 +792,8 @@ cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
 #define CW_DEBUG_TIMING_JOIN 1
 
 #if CW_DEBUG_TIMING_JOIN   /* Debug code to measure how long it takes to join threads. */
-	struct timeval before, after;
+	struct timeval before;
+	struct timeval after;
 	gettimeofday(&before, NULL);
 #endif
 
@@ -803,7 +803,9 @@ cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
 
 #if CW_DEBUG_TIMING_JOIN   /* Debug code to measure how long it takes to join threads. */
 	gettimeofday(&after, NULL);
-	cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO, MSG_PREFIX "joining thread took %d us", cw_timestamp_compare_internal(&before, &after));
+	const int delta = cw_timestamp_compare_internal(&before, &after);
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
+		      MSG_PREFIX "joining thread took %d us", delta);
 #endif
 
 
@@ -1151,7 +1153,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 	int t = 0;
 
 	for (int i = gen->buffer_sub_start; i <= gen->buffer_sub_stop; i++) {
-		phase = (2.0 * M_PI
+		phase = (2.0F * CW_PI
 				* (double) tone->frequency * (double) t
 				/ (double) gen->sample_rate)
 			+ gen->phase_offset;
@@ -1164,7 +1166,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 		t++;
 	}
 
-	phase = (2.0 * M_PI
+	phase = (2.0F * CW_PI
 		 * (double) tone->frequency * (double) t
 		 / (double) gen->sample_rate)
 		+ gen->phase_offset;
@@ -1185,8 +1187,8 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 	   fragment (during next function call). It will be added phase of
 	   every sample calculated in next function call. */
 
-	int n_periods = floor(phase / (2.0 * M_PI));
-	gen->phase_offset = phase - n_periods * 2.0 * M_PI;
+	int n_periods = floor(phase / (2.0F * CW_PI));
+	gen->phase_offset = phase - n_periods * 2.0F * CW_PI;
 
 	return t;
 }
@@ -1243,7 +1245,7 @@ int cw_gen_calculate_sample_amplitude_internal(cw_gen_t * gen, const cw_tone_t *
 	}
 
 
-	int amplitude = 0;
+	float amplitude = 0.0F;
 
 	/* Every tone, regardless of slope mode (CW_SLOPE_MODE_*), has
 	   three components. It has rising slope + plateau + falling
@@ -1265,19 +1267,19 @@ int cw_gen_calculate_sample_amplitude_internal(cw_gen_t * gen, const cw_tone_t *
 		   && tone->sample_iterator < tone->n_samples - tone->falling_slope_n_samples) {
 
 		/* Middle of tone, plateau, constant amplitude. */
-		amplitude = gen->volume_abs;
+		amplitude = 1.0F * gen->volume_abs;
 		assert (amplitude >= 0);
 
 	} else if (tone->sample_iterator >= tone->n_samples - tone->falling_slope_n_samples) {
 		/* Falling slope. */
-		const int i = tone->n_samples - tone->sample_iterator - 1;
+		const cw_sample_iter_t i = tone->n_samples - tone->sample_iterator - 1;
 		assert (i >= 0);
 		amplitude = gen->tone_slope.amplitudes[i];
 		assert (amplitude >= 0);
 
 	} else {
 		cw_assert (0, MSG_PREFIX "->sample_iterator out of bounds:\n"
-			   "tone->sample_iterator: %d\n"
+			   "tone->sample_iterator: %ld\n"
 			   "tone->n_samples: %"PRId64"\n"
 			   "tone->rising_slope_n_samples: %d\n"
 			   "tone->falling_slope_n_samples: %d\n",
@@ -1287,8 +1289,8 @@ int cw_gen_calculate_sample_amplitude_internal(cw_gen_t * gen, const cw_tone_t *
 			   tone->falling_slope_n_samples);
 	}
 
-	assert (amplitude >= 0);
-	return amplitude;
+	assert (amplitude >= 0.0);
+	return (int) amplitude;
 #endif
 }
 
@@ -1470,15 +1472,15 @@ void cw_gen_recalculate_slope_amplitudes_internal(cw_gen_t * gen)
 	for (int i = 0; i < gen->tone_slope.n_amplitudes; i++) {
 
 		if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_LINEAR) {
-			gen->tone_slope.amplitudes[i] = 1.0 * gen->volume_abs * i / gen->tone_slope.n_amplitudes;
+			gen->tone_slope.amplitudes[i] = 1.0F * gen->volume_abs * i / gen->tone_slope.n_amplitudes;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_SINE) {
-			const float radian = i * (M_PI / 2.0) / gen->tone_slope.n_amplitudes;
-			gen->tone_slope.amplitudes[i] = sin(radian) * gen->volume_abs;
+			const float radian = i * (CW_PI / 2.0F) / (float) gen->tone_slope.n_amplitudes;
+			gen->tone_slope.amplitudes[i] = sinf(radian) * 1.0F * gen->volume_abs;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_RAISED_COSINE) {
-			const float radian = i * M_PI / gen->tone_slope.n_amplitudes;
-			gen->tone_slope.amplitudes[i] = (1 - ((1 + cos(radian)) / 2)) * gen->volume_abs;
+			const float radian = i * CW_PI / gen->tone_slope.n_amplitudes;
+			gen->tone_slope.amplitudes[i] = (1 - ((1 + cosf(radian)) / 2)) * gen->volume_abs;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_RECTANGULAR) {
 			/* CW_TONE_SLOPE_SHAPE_RECTANGULAR is covered
@@ -1731,7 +1733,7 @@ void cw_gen_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t
 	//fprintf(stderr, MSG_PREFIX "length of regular tone = %d [samples]\n", tone->n_samples);
 
 	/* Length of a single slope (rising or falling). */
-	int slope_n_samples = gen->sample_rate / 100;
+	cw_sample_iter_t slope_n_samples = gen->sample_rate / 100;
 	slope_n_samples *= gen->tone_slope.duration;
 	slope_n_samples /= 10000;
 

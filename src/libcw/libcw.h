@@ -22,9 +22,9 @@
 
 #include <sys/time.h>  /* For struct timeval */
 
-#include <stdint.h>    /* int16_t */
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdint.h>    /* int16_t */
 
 
 static const int        CW_AUDIO_CHANNELS = 1;                /* Sound in mono */
@@ -109,35 +109,35 @@ enum { CW_DOT_REPRESENTATION = '.', CW_DASH_REPRESENTATION = '-' };
 enum {
 	/* Suppress KIOCSOUND ioctls.
 	   The flag is unused at the moment in libcw.c. */
-	CW_DEBUG_SILENT               = 1 << 0,
+	CW_DEBUG_SILENT               = 1U << 0U,
 
 	/* Print out keying control data (key open / key closed). */
-	CW_DEBUG_KEYING               = 1 << 1,
+	CW_DEBUG_KEYING               = 1U << 1U,
 
 	/* Print out information related to main object generating
 	   audio (i.e. the generator). */
-	CW_DEBUG_GENERATOR            = 1 << 2,
+	CW_DEBUG_GENERATOR            = 1U << 2U,
 
 	/* Print out tone queue data. */
-	CW_DEBUG_TONE_QUEUE           = 1 << 3,
+	CW_DEBUG_TONE_QUEUE           = 1U << 3U,
 
 	/* Print out send and receive timing parameters. */
-	CW_DEBUG_PARAMETERS           = 1 << 4,
+	CW_DEBUG_PARAMETERS           = 1U << 4U,
 
 	/* Print out changes of 'receive state'. */
-	CW_DEBUG_RECEIVE_STATES       = 1 << 5,
+	CW_DEBUG_RECEIVE_STATES       = 1U << 5U,
 
 	/* Print out iambic keyer information. */
-	CW_DEBUG_KEYER_STATES         = 1 << 6,
+	CW_DEBUG_KEYER_STATES         = 1U << 6U,
 
 	/* Print out straight key information. */
-	CW_DEBUG_STRAIGHT_KEY_STATES  = 1 << 7,
+	CW_DEBUG_STRAIGHT_KEY_STATES  = 1U << 7U,
 
 	/* Print out table lookup results. */
-	CW_DEBUG_LOOKUPS              = 1 << 8,
+	CW_DEBUG_LOOKUPS              = 1U << 8U,
 
 	/* Print out finalization actions. */
-	CW_DEBUG_FINALIZATION         = 1 << 9,
+	CW_DEBUG_FINALIZATION         = 1U << 9U,
 
 	/* Print out information related to calls to standard library
 	   functions.  This does not include calls that are directly
@@ -146,7 +146,7 @@ enum {
 
 	   Printing debug information about problems with malloc()
 	   seems to be most common use case for this flag. */
-	CW_DEBUG_STDLIB               = 1 << 10,
+	CW_DEBUG_STDLIB               = 1U << 10U,
 
 	/* Print out any events directly related to sound systems: to
 	   opening audio device, configuring it, writing to it, and
@@ -154,16 +154,16 @@ enum {
 	   also include information about libc's open(), write() and
 	   ioctl() calls, as they are directly related to
 	   opening/configuring/writing to audio device. */
-	CW_DEBUG_SOUND_SYSTEM         = 1 << 11,
+	CW_DEBUG_SOUND_SYSTEM         = 1U << 11U,
 
 	/* Print out information related to internal states / errors /
 	   inconsistencies of libcw library. */
-	CW_DEBUG_INTERNAL             = 1 << 12,
+	CW_DEBUG_INTERNAL             = 1U << 12U,
 
 	/* Errors made by client code (code calling libcw functions):
 	   NULL function arguments, function arguments out of range,
 	   etc. */
-	CW_DEBUG_CLIENT_CODE          = 1 << 13,
+	CW_DEBUG_CLIENT_CODE          = 1U << 13U,
 
 	/* Bit mask of all defined debug bits. */
 	CW_DEBUG_MASK                 = 0xffff

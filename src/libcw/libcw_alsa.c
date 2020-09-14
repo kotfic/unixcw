@@ -67,15 +67,15 @@ extern const unsigned int cw_supported_sample_rates[];
 
 
 
-#include <dlfcn.h> /* dlopen() and related symbols */
 #include <alsa/asoundlib.h>
+#include <dlfcn.h> /* dlopen() and related symbols */
 
 
 
 
 #include "libcw.h"
-#include "libcw_utils.h"
 #include "libcw_gen.h"
+#include "libcw_utils.h"
 
 
 
@@ -457,7 +457,7 @@ static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	}
 
 	/* Get size for generator's data buffer */
-	snd_pcm_uframes_t period_size; /* period size in frames */
+	snd_pcm_uframes_t period_size = 0; /* period size in frames */
 	int dir = 1; /* TODO: why 1? Shouldn't it be zero? */
 	snd_rv = cw_alsa.snd_pcm_hw_params_get_period_size(hw_params, &period_size, &dir);
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,

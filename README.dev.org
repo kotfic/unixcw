@@ -51,3 +51,9 @@ perf record --call-graph dwarf -F 200  -g  ./src/libcw/tests/.libs/libcw_test_al
 # Show data stored in ./perf.data
 perf report --stdio
 perf report
+
+
+* TODO
+
+** Use suseconds_t for duration variables?
+

@@ -122,13 +122,13 @@ int cw_version(void)
 	char * endptr = NULL;
 
 	/* LIBCW_VERSION: "current:revision:age", libtool notation. */
-	const long int current = strtol(LIBCW_VERSION, &endptr, 10);
-	const long int revision = strtol(endptr + 1, &endptr, 10);
-	__attribute__((unused)) long int age = strtol(endptr + 1, &endptr, 10);
+	const unsigned long int current = strtoul(LIBCW_VERSION, &endptr, 10);
+	const unsigned long int revision = strtoul(endptr + 1, &endptr, 10);
+	__attribute__((unused)) unsigned long int age = strtoul(endptr + 1, &endptr, 10);
 
-	// fprintf(stderr, "current:revision:age: %ld:%ld:%ld\n", current, revision, age);
+	fprintf(stderr, "current:revision:age: %lu:%lu:%lu\n", current, revision, age);
 
-	return ((int) current) << 16 | ((int) revision);
+	return (int) ((current) << 16U | revision);
 }
 
 
@@ -196,7 +196,9 @@ cw_ret_t cw_get_package_version(__attribute__((unused)) int * major, __attribute
 */
 void cw_license(void)
 {
-	int current, revision, age;
+	int current = 0;
+	int revision = 0;
+	int age = 0;
 	cw_get_lib_version(&current, &revision, &age);
 
 	printf("libcw version %d.%d.%d\n", current, revision, age);
@@ -425,7 +427,7 @@ int cw_timestamp_compare_internal(const struct timeval * earlier, const struct t
 	   probably be a better thought-out structure. */
 
 	/* Calculate an initial delta, possibly with overflow. */
-	int delta_usec = (later->tv_sec - earlier->tv_sec) * CW_USECS_PER_SEC
+	long delta_usec = (later->tv_sec - earlier->tv_sec) * CW_USECS_PER_SEC
 		+ later->tv_usec - earlier->tv_usec;
 
 	/* Check specifically for overflow, and clamp if it did. */
@@ -440,7 +442,7 @@ int cw_timestamp_compare_internal(const struct timeval * earlier, const struct t
 	/* TODO: add somewhere a debug message informing that we are
 	   returning INT_MAX. */
 
-	return delta_usec;
+	return (int) delta_usec; /* TODO: remove casting. */
 }
 
 

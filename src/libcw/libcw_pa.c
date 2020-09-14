@@ -436,7 +436,7 @@ static void cw_pa_close_sound_device_internal(cw_gen_t * gen)
 {
 	if (gen->pa_data.simple) {
 		/* Make sure that every single sample was played */
-		int error;
+		int error = 0;
 		if (g_cw_pa.pa_simple_drain(gen->pa_data.simple, &error) < 0) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 				      MSG_PREFIX "close device: pa_simple_drain() failed: %s", g_cw_pa.pa_strerror(error));

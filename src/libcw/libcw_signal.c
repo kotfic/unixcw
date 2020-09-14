@@ -35,17 +35,18 @@
 #include "config.h"
 
 
-#include <signal.h>
+
 #include <errno.h>
+#include <signal.h>
 #include <stdlib.h>
 
 
 
 
 #include "libcw.h"
-#include "libcw_signal.h"
 #include "libcw_debug.h"
 #include "libcw_gen.h"
+#include "libcw_signal.h"
 #include "libcw_utils.h"
 
 
@@ -212,7 +213,7 @@ int cw_timer_run_with_handler_internal(int usecs, void (*sigalrm_handler)(void))
 	   of the lower level SIGALRM handler to the list of known
 	   handlers. */
 	if (sigalrm_handler) {
-		int handler;
+		int handler = 0;
 
 		/* Search for this handler, or the first free entry,
 		   stopping at the last entry in the table even if it's
@@ -349,7 +350,8 @@ int cw_sigalrm_restore_internal(void)
 */
 bool cw_sigalrm_is_blocked_internal(void)
 {
-	sigset_t empty_set, current_set;
+	sigset_t empty_set;
+	sigset_t current_set;
 
 	/* Prepare empty set of signals */
 	int status = sigemptyset(&empty_set);
@@ -461,7 +463,8 @@ void cw_block_callback(int block)
 */
 int cw_signal_wait_internal(void)
 {
-	sigset_t empty_set, current_set;
+	sigset_t empty_set;
+	sigset_t current_set;
 
 	/* Prepare empty set of signals */
 	int status = sigemptyset(&empty_set);
@@ -591,7 +594,8 @@ int cw_register_signal_handler(int signal_number, void (*callback_func)(int))
 	}
 
 	/* Install our handler as the actual handler. */
-	struct sigaction action, original_disposition;
+	struct sigaction action;
+	struct sigaction original_disposition;
 	action.sa_handler = cw_signal_main_handler_internal;
 	action.sa_flags = SA_RESTART;
 	sigemptyset(&action.sa_mask);

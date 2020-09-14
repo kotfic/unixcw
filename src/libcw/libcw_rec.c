@@ -249,9 +249,9 @@ cw_ret_t cw_rec_set_speed(cw_rec_t * rec, int new_value)
 		return CW_FAILURE;
 	}
 
-	const float diff = fabsf((1.0f * new_value) - rec->speed);
-	if (diff >= 0.5f) { /* TODO: verify this comparison. */
-		rec->speed = new_value;
+	const float diff = fabsf(((float) new_value) - rec->speed);
+	if (diff >= 0.5F) { /* TODO: verify this comparison. */
+		rec->speed = (float) new_value;
 
 		/* Changes of receive speed require resynchronization. */
 		rec->parameters_in_sync = false;
@@ -678,9 +678,9 @@ cw_ret_t cw_rec_duration_stats_get_internal(const cw_rec_t * rec, stat_type_t ty
 	}
 
 	if (0 == count) {
-		*result = 0.0;
+		*result = 0.0F;
 	} else {
-		*result = sqrtf(sum_of_squares / (float) count);
+		*result = sqrtf((float) sum_of_squares / (float) count);
 	}
 	return CW_SUCCESS;
 }
@@ -1094,7 +1094,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 								&rec->mark_end);
 
 #if 0
-	fprintf(stderr, "------- mark duration: %d.%d - %d.%d = %d ms\n",
+	fprintf(stderr, "------- mark duration: %ld.%ld - %ld.%ld = %d ms\n",
 		rec->mark_end.tv_sec, rec->mark_end.tv_usec,
 		rec->mark_start.tv_sec, rec->mark_start.tv_usec,
 		mark_duration);
@@ -1139,7 +1139,7 @@ cw_ret_t cw_rec_mark_end(cw_rec_t * rec, const struct timeval * timestamp)
 	   hand us back an error which we return to the caller.
 	   Otherwise, it returns a Mark (Dot or Dash), for us to put
 	   in representation buffer. */
-	char mark;
+	char mark = 0;
 	if (CW_SUCCESS != cw_rec_identify_mark_internal(rec, mark_duration, &mark)) {
 		errno = ENOENT;
 		return CW_FAILURE;
@@ -1833,7 +1833,8 @@ cw_ret_t cw_rec_poll_character(cw_rec_t * rec,
 	/* TODO: in theory we don't need these intermediate bool
 	   variables, since is_end_of_word and is_error won't be
 	   modified by any function on !success. */
-	bool end_of_word, error;
+	bool end_of_word = false;
+	bool error = false;
 
 	char representation[CW_REC_REPRESENTATION_CAPACITY + 1];
 
@@ -2001,10 +2002,10 @@ void cw_rec_sync_parameters_internal(cw_rec_t * rec)
 	/* FIXME: shouldn't we move the calculation of unit_duration (that
 	   depends on rec->speed) after the calculation of
 	   rec->speed? */
-	const int unit_duration = CW_DOT_CALIBRATION / rec->speed;
+	const int unit_duration = (int) floorf((float) CW_DOT_CALIBRATION / rec->speed);
 
 	if (rec->is_adaptive_receive_mode) {
-		rec->speed = CW_DOT_CALIBRATION	/ (rec->adaptive_speed_threshold / 2.0);
+		rec->speed = CW_DOT_CALIBRATION	/ ((float) rec->adaptive_speed_threshold / 2.0F);
 	} else {
 		rec->adaptive_speed_threshold = 2 * unit_duration;
 	}

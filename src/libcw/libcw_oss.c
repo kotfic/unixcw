@@ -104,7 +104,7 @@ extern const unsigned int cw_supported_sample_rates[];
 static const int CW_OSS_SETFRAGMENT = 7;              /* Sound fragment size, 2^7 samples. */
 static const int CW_OSS_SAMPLE_FORMAT = AFMT_S16_NE;  /* Sound format AFMT_S16_NE = signed 16 bit, native endianess; LE = Little endianess. */
 
-static cw_ret_t cw_oss_open_device_ioctls_internal(int fd, int * sample_rate);
+static cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate);
 static cw_ret_t cw_oss_get_version_internal(int fd, int * x, int * y, int * z);
 static cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen);
@@ -139,7 +139,9 @@ bool cw_is_oss_possible(const char * device_name)
 	}
 
 	{
-		int x = 0, y = 0, z = 0;
+		int x = 0;
+		int y = 0;
+		int z = 0;
 		cw_ret_t cw_ret = cw_oss_get_version_internal(soundcard, &x, &y, &z);
 		if (cw_ret == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
@@ -168,7 +170,7 @@ bool cw_is_oss_possible(const char * device_name)
 	  doesn't specifically look for EINVAL, it only checks return
 	  values from ioctl() and returns CW_FAILURE if one of ioctls()
 	  returns -1. */
-	int dummy;
+	unsigned int dummy = 0;
 	cw_ret_t cw_ret = cw_oss_open_device_ioctls_internal(soundcard, &dummy);
 	close(soundcard);
 	if (cw_ret != CW_SUCCESS) {
@@ -230,9 +232,9 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_OSS);
 
-	int n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
-	int rv = write(gen->sound_sink_fd, gen->buffer, n_bytes);
-	if (rv != n_bytes) {
+	size_t n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
+	ssize_t rv = write(gen->sound_sink_fd, gen->buffer, n_bytes);
+	if (rv != (ssize_t) n_bytes) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "write: %s", strerror(errno));
 		return CW_FAILURE;
@@ -284,7 +286,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	/* Get fragment size in bytes, may be different than requested
 	   with ioctl(..., SNDCTL_DSP_SETFRAGMENT), and, in particular,
 	   can be different than 2^N. */
-	int rv = rv = ioctl(gen->sound_sink_fd, (int) SNDCTL_DSP_GETBLKSIZE, &size);
+	int rv = ioctl(gen->sound_sink_fd, (int) SNDCTL_DSP_GETBLKSIZE, &size);
 	if (-1 == rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: ioctl(SNDCTL_DSP_GETBLKSIZE): '%s'", strerror(errno));
@@ -292,7 +294,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 		return CW_FAILURE;
 	}
 
-	if ((size & 0x0000ffff) != (1 << CW_OSS_SETFRAGMENT)) {
+	if ((size & 0x0000ffff) != (1U << CW_OSS_SETFRAGMENT)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: OSS fragment size not set, %d", size);
 		close(gen->sound_sink_fd);
@@ -336,7 +338,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-cw_ret_t cw_oss_open_device_ioctls_internal(int fd, int * sample_rate)
+cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 {
 	int parameter = 0; /* Ignored. */
 	if (-1 == ioctl(fd, SNDCTL_DSP_SYNC, &parameter)) {
@@ -445,7 +447,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, int * sample_rate)
 	 * support.
 	 */
 	/* parameter = 0x7fff << 16 | CW_OSS_SETFRAGMENT; */
-	parameter = 0x0032 << 16 | CW_OSS_SETFRAGMENT;
+	parameter = 0x0032U << 16U | CW_OSS_SETFRAGMENT;
 
 	if (-1 == ioctl(fd, (int) SNDCTL_DSP_SETFRAGMENT, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
@@ -453,7 +455,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, int * sample_rate)
 		return CW_FAILURE;
 	}
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "ioctls: fragment size is 2^%d = %d", parameter & 0x0000ffff, 2 << ((parameter & 0x0000ffff) - 1));
+		      MSG_PREFIX "ioctls: fragment size is 2^%d = %d", parameter & 0x0000ffff, 2 << ((parameter & 0x0000ffffU) - 1));
 
 	/* Query fragment size just to get the driver buffers set. */
 	if (-1 == ioctl(fd, (int) SNDCTL_DSP_GETBLKSIZE, &parameter)) {
@@ -462,7 +464,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, int * sample_rate)
 		return CW_FAILURE;
 	}
 
-	if (parameter != (1 << CW_OSS_SETFRAGMENT)) {
+	if (parameter != (1U << CW_OSS_SETFRAGMENT)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: OSS fragment size not set, %d", parameter);
 	}
@@ -545,9 +547,10 @@ cw_ret_t cw_oss_get_version_internal(int fd, int * x, int * y, int * z)
 			      MSG_PREFIX "get version: ioctl OSS_GETVERSION");
 		return CW_FAILURE;
 	} else {
-		*x = (version & 0xFF0000) >> 16;
-		*y = (version & 0x00FF00) >> 8;
-		*z = (version & 0x0000FF) >> 0;
+		const unsigned int u_version = (unsigned int) version;
+		*x = (u_version & 0xFF0000U) >> 16U;
+		*y = (u_version & 0x00FF00U) >> 8U;
+		*z = (u_version & 0x0000FFU) >> 0U;
 		return CW_SUCCESS;
 	}
 }

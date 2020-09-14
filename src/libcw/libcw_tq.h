@@ -93,6 +93,14 @@ typedef enum cw_tone_slope_mode_t {
 
 
 
+/* TODO: come up with thought-out, consistent type system for samples
+   count and tone duration. The type system should take into
+   consideration very long duration of tones in QRSS. */
+typedef int64_t cw_sample_iter_t;
+
+
+
+
 typedef struct {
 	/* Frequency of a tone, in Hz. */
 	int frequency;
@@ -113,11 +121,7 @@ typedef struct {
 
 	/* Duration of a tone, in samples.
 	   This is a derived value, a function of duration and sample rate. */
-
-	/* TODO: come up with thought-out, consistent type system for
-	   samples count and tone duration. The type system should take into
-	   consideration very long duration of tones in QRSS. */
-	int64_t n_samples;
+	cw_sample_iter_t n_samples;
 
 	/* Counter of samples from the tone that have been calculated and put
 	   into generator's buffer.
@@ -129,7 +133,7 @@ typedef struct {
 	   advanced by generator's buffer size each time we pass it to the
 	   function.
 	 */
-	int sample_iterator;
+	cw_sample_iter_t sample_iterator;
 
 	/* a tone can start and/or end abruptly (which may result in
 	   audible clicks), or its beginning and/or end can have form

@@ -95,7 +95,7 @@ uint32_t cw_get_debug_flags(void)              __attribute__ ((deprecated));
 
 #define cw_debug_msg(debug_object, flag, debug_level, ...) {	\
 	if ((debug_level) >= (debug_object)->level) {		\
-		if ((debug_object)->flags & (flag)) {			\
+		if ((debug_object)->flags & (uint32_t) (flag)) {		\
 			fprintf(stderr, "%s ", (debug_object)->level_labels[(debug_level)]); \
 			if ((debug_level) == CW_DEBUG_DEBUG || (debug_level) == CW_DEBUG_ERROR) { \
 				fprintf(stderr, "%s: %d: ", __func__, __LINE__); \

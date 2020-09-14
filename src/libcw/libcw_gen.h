@@ -193,8 +193,8 @@ struct cw_gen_struct {
 	int buffer_sub_start;
 	int buffer_sub_stop;
 
-	int sample_rate; /* set to the same value of sample rate as
-			    you have used when configuring sound card */
+	unsigned int sample_rate; /* set to the same value of sample rate as
+				     you have used when configuring sound card */
 
 	/* Used to calculate sine wave.
 	   Phase offset needs to be stored between consecutive calls to

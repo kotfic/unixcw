@@ -469,11 +469,11 @@ unsigned int cw_representation_to_hash_internal(const char * representation)
 	unsigned int hash = 1; /* TODO: shouldn't this be uint8_t? */
 	for (size_t i = 0; i < length; i++) {
 		/* Left-shift everything so far. */
-		hash <<= 1;
+		hash <<= 1U;
 
 		if (representation[i] == CW_DASH_REPRESENTATION) {
 			/* Dash is represented by '1' in hash. */
-			hash |= 1;
+			hash |= 1U;
 		} else if (representation[i] == CW_DOT_REPRESENTATION) {
 			/* Dot is represented by '0' in hash. We don't have
 			   to do anything at this point, the zero bit is
@@ -1129,7 +1129,7 @@ const char * cw_lookup_procedural_character_internal(int character, bool * is_us
 */
 int cw_lookup_procedural_character(char character, char *expansion, int * is_usually_expanded)
 {
-	bool is_expanded;
+	bool is_expanded = false;
 
 	/* Lookup, and if found, return the string and display hint. */
 	const char * retval = cw_lookup_procedural_character_internal(character, &is_expanded);

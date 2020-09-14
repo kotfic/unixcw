@@ -291,23 +291,26 @@ static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, c
 	cw_usleep_internal(tone->duration);
 
 	cw_ret_t cw_ret_2 = CW_FAILURE;
-	if (tone->slope_mode == CW_SLOPE_MODE_FALLING_SLOPE) {
+	switch (tone->slope_mode) {
+	case CW_SLOPE_MODE_FALLING_SLOPE:
 		/* Falling slope causes the console to produce sound, so at
 		   the end of the slope - the console is left in "generate"
 		   state. We have to explicitly stop generating sound at
 		   the end of falling slope. */
-		cw_ret_2 = cw_console_write_low_level_internal(gen, false);
-	} else if (tone->slope_mode == CW_SLOPE_MODE_STANDARD_SLOPES) {
+	case CW_SLOPE_MODE_STANDARD_SLOPES:
 		/* It seems that it's a good idea to turn off the console
 		   buzzer after playing standard tone. In theory the console
 		   buzzer would be turned off by "silence" tone coming right
 		   after an audible tone, but in practice it may not be
 		   always so.*/
 		cw_ret_2 = cw_console_write_low_level_internal(gen, false);
-	} else {
+		break;
+	case CW_SLOPE_MODE_NO_SLOPES: /* TODO: do we handle CW_SLOPE_MODE_NO_SLOPES correctly? */
+	case CW_SLOPE_MODE_RISING_SLOPE:
+	default:
 		/* No change to state of buzzer. No failure. */
-		/* TODO: how to handle CW_SLOPE_MODE_NO_SLOPES? */
 		cw_ret_2 = CW_SUCCESS;
+		break;
 	}
 
 	if (CW_SUCCESS == cw_ret_1 && CW_SUCCESS == cw_ret_2) {

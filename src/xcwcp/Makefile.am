@@ -37,8 +37,10 @@ nodist_xcwcp_SOURCES = moc_application.cc
 
 # target-specific preprocessor flags (#defs and include dirs)
 xcwcp_CPPFLAGS = $(AM_CPPFLAGS) $(AC_QT5_CFLAGS) $(AC_CFLAG_PIC)
-# target-specific linker flags (objects to link)
-xcwcp_LDADD = -L$(top_builddir)/src/libcw/.libs -lcw $(AC_QT5_LIBS) $(top_builddir)/src/cwutils/lib_xcwcp.a -lpthread
+# Target-specific linker flags (objects to link). Order is important:
+# first static library then dynamic. Otherwise linker may not find
+# symbols from the dynamic library.
+xcwcp_LDADD = $(top_builddir)/src/cwutils/lib_xcwcp.a -L$(top_builddir)/src/libcw/.libs -lcw $(AC_QT5_LIBS) -lpthread
 
 
 
