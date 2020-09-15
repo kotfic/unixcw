@@ -105,7 +105,7 @@ static const int CW_OSS_SETFRAGMENT = 7;              /* Sound fragment size, 2^
 static const int CW_OSS_SAMPLE_FORMAT = AFMT_S16_NE;  /* Sound format AFMT_S16_NE = signed 16 bit, native endianess; LE = Little endianess. */
 
 static cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate);
-static cw_ret_t cw_oss_get_version_internal(int fd, int * x, int * y, int * z);
+static cw_ret_t cw_oss_get_version_internal(int fd, cw_oss_version_t * version);
 static cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen);
 static void cw_oss_close_sound_device_internal(cw_gen_t * gen);
@@ -139,10 +139,8 @@ bool cw_is_oss_possible(const char * device_name)
 	}
 
 	{
-		int x = 0;
-		int y = 0;
-		int z = 0;
-		cw_ret_t cw_ret = cw_oss_get_version_internal(soundcard, &x, &y, &z);
+		cw_oss_version_t version = { 0 };
+		cw_ret_t cw_ret = cw_oss_get_version_internal(soundcard, &version);
 		if (cw_ret == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 				      MSG_PREFIX "is possible: can't get OSS version '%s'", strerror(errno));
@@ -150,7 +148,7 @@ bool cw_is_oss_possible(const char * device_name)
 			return false;
 		} else {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-				      MSG_PREFIX "is possible: OSS version %d.%d.%d", x, y, z);
+				      MSG_PREFIX "is possible: OSS version %u.%u.%u", version.x, version.y, version.z);
 		}
 	}
 
@@ -309,7 +307,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	gen->buffer_n_samples = size;
 
 
-	cw_oss_get_version_internal(gen->sound_sink_fd, &gen->oss_data.version_x, &gen->oss_data.version_y, &gen->oss_data.version_z);
+	cw_oss_get_version_internal(gen->sound_sink_fd, &gen->oss_data.version);
 
 	/* Mark sound sink as now open for business. */
 	gen->sound_device_is_open = true;
@@ -527,30 +525,28 @@ void cw_oss_close_sound_device_internal(cw_gen_t * gen)
 /**
    @brief Get version number of OSS API
 
-   @reviewed 2020-07-19
+   @reviewed 2020-09-14
 
    @param[in] fd opened file descriptor for OSS device
-   @param[out] x first digit of OSS version
-   @param[out] y second digit of OSS version
-   @param[out] z third digit of OSS version
+   @param[out] version structure with version digits
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
 */
-cw_ret_t cw_oss_get_version_internal(int fd, int * x, int * y, int * z)
+cw_ret_t cw_oss_get_version_internal(int fd, cw_oss_version_t * version)
 {
 	assert (fd != -1);
 
-	int version = 0;
-	if (-1 == ioctl(fd, (int) OSS_GETVERSION, &version)) {
+	int parameter = 0;
+	if (-1 == ioctl(fd, (int) OSS_GETVERSION, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "get version: ioctl OSS_GETVERSION");
 		return CW_FAILURE;
 	} else {
-		const unsigned int u_version = (unsigned int) version;
-		*x = (u_version & 0xFF0000U) >> 16U;
-		*y = (u_version & 0x00FF00U) >> 8U;
-		*z = (u_version & 0x0000FFU) >> 0U;
+		const unsigned int u_parameter = (unsigned int) parameter;
+		version->x = (u_parameter & 0xFF0000U) >> 16U;
+		version->y = (u_parameter & 0x00FF00U) >> 8U;
+		version->z = (u_parameter & 0x0000FFU) >> 0U;
 		return CW_SUCCESS;
 	}
 }

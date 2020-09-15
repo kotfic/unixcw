@@ -8,10 +8,18 @@
 
 
 
+
+typedef struct cw_oss_version {
+	unsigned int x;
+	unsigned int y;
+	unsigned int z;
+} cw_oss_version_t;
+
+
+
+
 typedef struct cw_oss_data_struct {
-	int version_x;
-	int version_y;
-	int version_z;
+	cw_oss_version_t version;
 } cw_oss_data_t;
 
 
