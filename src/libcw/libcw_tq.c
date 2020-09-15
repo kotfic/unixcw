@@ -444,7 +444,7 @@ size_t cw_tq_get_high_water_mark_internal(const cw_tone_queue_t * tq)
 size_t cw_tq_length_internal(cw_tone_queue_t * tq)
 {
 	pthread_mutex_lock(&tq->mutex);
-	size_t len = tq->len;
+	const size_t len = tq->len;
 	pthread_mutex_unlock(&tq->mutex);
 
 	return len;

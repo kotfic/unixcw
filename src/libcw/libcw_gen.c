@@ -1187,7 +1187,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 	   fragment (during next function call). It will be added phase of
 	   every sample calculated in next function call. */
 
-	int n_periods = floor(phase / (2.0F * CW_PI));
+	const int n_periods = floor(phase / (2.0F * CW_PI));
 	gen->phase_offset = phase - n_periods * 2.0F * CW_PI;
 
 	return t;
