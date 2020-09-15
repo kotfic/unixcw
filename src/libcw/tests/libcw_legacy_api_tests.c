@@ -323,6 +323,10 @@ int legacy_api_test_parameter_ranges(cw_test_executor_t * cte)
 int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
+
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_setup(cte);
+	}
 	legacy_api_cw_single_test_setup();
 
 	int cwret;
@@ -373,7 +377,8 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			   adding a new tone. */
 			readback_length = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
 			expected_length = (i - 1);
-			cte->expect_op_int(cte, expected_length, "==", readback_length, "setup: cw_get_tone_queue_length(): before adding tone (#%02d)", i);
+			cte->expect_op_int(cte, expected_length, "==", readback_length,
+					   "setup: queue length before adding tone = %d", readback_length);
 
 
 			/* Add a tone to queue. All frequencies should be
@@ -388,7 +393,8 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			   adding a new tone. */
 			readback_length = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
 			expected_length = (i - 1) + 1;
-			cte->expect_op_int(cte, expected_length, "==", readback_length, "setup: cw_get_tone_queue_length(): after adding tone (#%02d)", i);
+			cte->expect_op_int(cte, expected_length, "==", readback_length,
+					   "setup: queue length after adding tone = %d", readback_length);
 		}
 	}
 
@@ -412,7 +418,8 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			/* Monitor length of a queue as it is emptied - before dequeueing. */
 			readback_length = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
 			expected_length = i;
-			cte->expect_op_int(cte, expected_length, "==", readback_length, "test: cw_get_tone_queue_length(): before dequeueing (#%02d)", i);
+			cte->expect_op_int(cte, expected_length, "==", readback_length,
+					   "test: queue length before dequeueing = %d", readback_length);
 
 			/* Wait for each of n_tones_to_add tones to be dequeued. */
 			cwret = LIBCW_TEST_FUT(cw_wait_for_tone)();
@@ -421,12 +428,16 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			/* Monitor length of a queue as it is emptied - after dequeueing single tone. */
 			readback_length = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
 			expected_length = i - 1;
-			cte->expect_op_int(cte, expected_length, "==", readback_length, "test: cw_get_tone_queue_length(): after dequeueing (#%02d)", i);
+			cte->expect_op_int(cte, expected_length, "==", readback_length,
+					   "test: queue length after dequeueing = %d", readback_length);
 		}
 	}
 
 	/* Test tear-down. */
 	{
+		if (0 != strlen(cte->config->test_function_name)) {
+			legacy_api_test_teardown(cte);
+		}
 	}
 
 	cte->print_test_footer(cte, __func__);

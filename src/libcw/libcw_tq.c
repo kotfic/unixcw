@@ -861,7 +861,20 @@ cw_ret_t cw_tq_register_low_level_callback_internal(cw_tone_queue_t * tq, cw_que
 cw_ret_t cw_tq_wait_for_end_of_current_tone_internal(cw_tone_queue_t * tq)
 {
 	pthread_mutex_lock(&tq->wait_mutex);
-	pthread_cond_wait(&tq->wait_var, &tq->wait_mutex);
+	/* According to man page, spurious wakeups of
+	   pthread_cond_wait() may occur.  Call the function in loop
+	   to work around these wakeups.
+
+	   Spurious wakeups noticed on:
+	   Intel Celeron 430, Ubuntu 18.04.5 x86_64, kernel 5.4.0-47
+
+	   TODO: double-check that our usage of wait_mutex in this
+	   function and in other tq functions allows us to safely get
+	   tq->head. */
+	const size_t check_tq_head = tq->head;
+	while (tq->head == check_tq_head && tq->state != CW_TQ_EMPTY) {
+		pthread_cond_wait(&tq->wait_var, &tq->wait_mutex);
+	}
 	pthread_mutex_unlock(&tq->wait_mutex);
 
 
