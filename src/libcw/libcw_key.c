@@ -1332,10 +1332,10 @@ void cw_key_sk_reset_internal(volatile cw_key_t * key)
 */
 cw_key_t * cw_key_new(void)
 {
-	cw_key_t * key = (cw_key_t *) malloc(sizeof (cw_key_t));
+	cw_key_t * key = (cw_key_t *) calloc(1, sizeof (cw_key_t));
 	if (NULL == key) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-			      MSG_PREFIX "new: malloc()");
+			      MSG_PREFIX "new: calloc()");
 		return (cw_key_t *) NULL;
 	}
 

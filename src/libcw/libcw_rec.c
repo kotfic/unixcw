@@ -149,13 +149,12 @@ static void cw_rec_reset_average_internal(cw_rec_averaging_t * avg, int initial)
 */
 cw_rec_t * cw_rec_new(void)
 {
-	cw_rec_t * rec = (cw_rec_t *) malloc(sizeof (cw_rec_t));
+	cw_rec_t * rec = (cw_rec_t *) calloc(1, sizeof (cw_rec_t));
 	if (NULL == rec) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-			      MSG_PREFIX "malloc()");
+			      MSG_PREFIX "calloc()");
 		return (cw_rec_t *) NULL;
 	}
-	memset(rec, 0, sizeof (cw_rec_t));
 
 	rec->state = RS_IDLE;
 

@@ -424,9 +424,9 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 
 	cw_assert (sound_system != CW_AUDIO_NONE, MSG_PREFIX "can't create generator with sound system '%s'", cw_get_audio_system_label(sound_system));
 
-	cw_gen_t * gen = (cw_gen_t *) malloc(sizeof (cw_gen_t));
+	cw_gen_t * gen = (cw_gen_t *) calloc(1, sizeof (cw_gen_t));
 	if (NULL == gen) {
-		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR, MSG_PREFIX "malloc()");
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR, MSG_PREFIX "calloc()");
 		return (cw_gen_t *) NULL;
 	}
 
@@ -570,10 +570,10 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 
 			; /* The two types of sound output don't require audio buffer. */
 		} else {
-			gen->buffer = (cw_sample_t *) malloc(gen->buffer_n_samples * sizeof (cw_sample_t));
+			gen->buffer = (cw_sample_t *) calloc(gen->buffer_n_samples, sizeof (cw_sample_t));
 			if (!gen->buffer) {
 				cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
-					      MSG_PREFIX "malloc()");
+					      MSG_PREFIX "calloc()");
 				cw_gen_delete(&gen);
 				return (cw_gen_t *) NULL;
 			}

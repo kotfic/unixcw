@@ -176,10 +176,10 @@ cw_tone_queue_t * cw_tq_new_internal(void)
 	   generator, then maybe we don't have to malloc it. That would be
 	   one error source less. */
 
-	cw_tone_queue_t * tq = (cw_tone_queue_t *) malloc(sizeof (cw_tone_queue_t));
+	cw_tone_queue_t * tq = (cw_tone_queue_t *) calloc(1, sizeof (cw_tone_queue_t));
 	if (NULL == tq) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
-				      MSG_PREFIX "new: failed to malloc() tone queue");
+				      MSG_PREFIX "new: failed to calloc() tone queue");
 		return (cw_tone_queue_t *) NULL;
 	}
 
