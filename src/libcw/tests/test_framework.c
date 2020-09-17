@@ -857,14 +857,14 @@ void cw_test_print_test_stats(cw_test_executor_t * self)
 
 	fprintf(self->stderr, "\n\nlibcw tests: Statistics of tests (failures/total)\n\n");
 
-	//                           12345 123456789012 123456789012 123456789012 123456789012 123456789012 123456789012
-	#define SEPARATOR_LINE      "   --+------------+------------+------------+------------+------------+------------+\n"
+	//                           12345 12345678901 12345678901 12345678901 12345678901 12345678901 12345678901
+	#define SEPARATOR_LINE      "   --+-----------+-----------+-----------+-----------+-----------+-----------+\n"
 	#define FRONT_FORMAT        "%s %c |"
 	#define BACK_FORMAT         "%s\n"
-	#define CELL_FORMAT_D       "% 11d |"
-	#define CELL_FORMAT_S       "%11s |"
+	#define CELL_FORMAT_D       "% 10d |"
+	#define CELL_FORMAT_S       "%10s |"
 
-	fprintf(self->stderr,       "     | tone queue | generator  |    key     |  receiver  |    data    |    other   |\n");
+	fprintf(self->stderr,       "     | tone queue| generator |    key    |  receiver |    data   |    other  |\n");
 	fprintf(self->stderr,       "%s", SEPARATOR_LINE);
 
 	for (int sound = CW_AUDIO_NULL; sound <= CW_AUDIO_PA; sound++) {
