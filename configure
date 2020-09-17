@@ -649,6 +649,7 @@ PKG_CONFIG
 LIBCW_VERSION
 LDCONFIG
 GZIP
+INTL_LIB
 OSS_LIB
 DL_LIB
 HOST_IS_FREEBSD_FALSE
@@ -16838,6 +16839,9 @@ DL_LIB=
 # TODO: consider using AC_CHECK_LIB(ossaudio, _oss_ioctl)
 OSS_LIB=
 
+# Explicit linking with libintl is needed on FreeBSD (12.1).
+INTL_LIB=
+
 IS_FREEBSD=false
 
 case $host_os in
@@ -16851,6 +16855,54 @@ $as_echo "$as_me: Detected Linux: $host_os" >&6;}
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: Detected FreeBSD: $host_os" >&5
 $as_echo "$as_me: Detected FreeBSD: $host_os" >&6;}
 	IS_FREEBSD=true
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for textdomain in -lintl" >&5
+$as_echo_n "checking for textdomain in -lintl... " >&6; }
+if ${ac_cv_lib_intl_textdomain+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lintl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char textdomain ();
+int
+main ()
+{
+return textdomain ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_intl_textdomain=yes
+else
+  ac_cv_lib_intl_textdomain=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_intl_textdomain" >&5
+$as_echo "$ac_cv_lib_intl_textdomain" >&6; }
+if test "x$ac_cv_lib_intl_textdomain" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBINTL 1
+_ACEOF
+
+  LIBS="-lintl $LIBS"
+
+fi
+
+	if test $ac_cv_lib_intl_textdomain = 'yes' ; then
+	   INTL_LIB=\"-lintl\"
+	fi
 	;;
     *openbsd*|*OpenBSD*)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: Detected OpenBSD: $host_os" >&5
@@ -16879,6 +16931,7 @@ else
   HOST_IS_FREEBSD_TRUE='#'
   HOST_IS_FREEBSD_FALSE=
 fi
+
 
 
 

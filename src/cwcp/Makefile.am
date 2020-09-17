@@ -28,7 +28,7 @@ cwcp_SOURCES = cwcp.c
 # Target-specific linker flags (objects to link). Order is important:
 # first static library then dynamic. Otherwise linker may not find
 # symbols from the dynamic library.
-cwcp_LDADD = $(top_builddir)/src/cwutils/lib_cwcp.a -lcurses -L$(top_builddir)/src/libcw/.libs -lcw
+cwcp_LDADD = $(top_builddir)/src/cwutils/lib_cwcp.a -lcurses $(INTL_LIB) -L$(top_builddir)/src/libcw/.libs -lcw
 
 
 # copy man page to proper directory during installation

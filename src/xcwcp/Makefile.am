@@ -40,7 +40,7 @@ xcwcp_CPPFLAGS = $(AM_CPPFLAGS) $(AC_QT5_CFLAGS) $(AC_CFLAG_PIC)
 # Target-specific linker flags (objects to link). Order is important:
 # first static library then dynamic. Otherwise linker may not find
 # symbols from the dynamic library.
-xcwcp_LDADD = $(top_builddir)/src/cwutils/lib_xcwcp.a -L$(top_builddir)/src/libcw/.libs -lcw $(AC_QT5_LIBS) -lpthread
+xcwcp_LDADD = $(top_builddir)/src/cwutils/lib_xcwcp.a -L$(top_builddir)/src/libcw/.libs -lcw $(AC_QT5_LIBS) -lpthread $(INTL_LIB)
 
 
 

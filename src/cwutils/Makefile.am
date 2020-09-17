@@ -28,8 +28,8 @@ cw_dictionary_tests_SOURCES = dictionary.c memory.c i18n.c cw_config.c cw_common
 # target-specific preprocessor flags (#defs and include dirs)
 cw_dictionary_tests_CPPFLAGS = $(AM_CPPFLAGS) -DCW_DICTIONARY_UNIT_TESTS
 
-# target-specific linker flags (objects to link)
-cw_dictionary_tests_LDADD=-L$(top_builddir)/src/libcw/.libs -lcw #-lm -lpthread -ldl
+# Target-specific linker flags (objects to link).
+cw_dictionary_tests_LDADD=-L$(top_builddir)/src/libcw/.libs -lcw $(INTL_LIB)
 
 # target-specific compiler flags
 cw_dictionary_tests_CFLAGS = -rdynamic

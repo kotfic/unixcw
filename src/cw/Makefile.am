@@ -28,7 +28,7 @@ cw_SOURCES = cw.c cw.h
 # Target-specific linker flags (objects to link). Order is important:
 # first static library then dynamic. Otherwise linker may not find
 # symbols from the dynamic library.
-cw_LDADD = $(top_builddir)/src/cwutils/lib_cw.a -L$(top_builddir)/src/libcw/.libs -lcw
+cw_LDADD = $(top_builddir)/src/cwutils/lib_cw.a -L$(top_builddir)/src/libcw/.libs -lcw $(INTL_LIB)
 
 
 

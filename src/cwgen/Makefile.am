@@ -28,7 +28,7 @@ cwgen_SOURCES = cwgen.c
 # Target-specific linker flags (objects to link). Order is important:
 # first static library then dynamic. Otherwise linker may not find
 # symbols from the dynamic library.
-cwgen_LDADD = $(top_builddir)/src/cwutils/lib_cwgen.a -L$(top_builddir)/src/libcw/.libs -lcw 
+cwgen_LDADD = $(top_builddir)/src/cwutils/lib_cwgen.a -L$(top_builddir)/src/libcw/.libs -lcw $(INTL_LIB)
 
 
 # copy man page to proper directory during installation

@@ -66,6 +66,9 @@ DL_LIB=
 # TODO: consider using AC_CHECK_LIB(ossaudio, _oss_ioctl)
 OSS_LIB=
 
+# Explicit linking with libintl is needed on FreeBSD (12.1).
+INTL_LIB=
+
 IS_FREEBSD=false
 AC_CANONICAL_HOST
 case $host_os in
@@ -77,6 +80,10 @@ case $host_os in
     *freebsd*|*FreeBSD*)
 	AC_MSG_NOTICE([Detected FreeBSD: $host_os])
 	IS_FREEBSD=true
+	AC_CHECK_LIB(intl, textdomain)
+	if test $ac_cv_lib_intl_textdomain = 'yes' ; then
+	   INTL_LIB=\"-lintl\"
+	fi
 	;;
     *openbsd*|*OpenBSD*)
 	AC_MSG_NOTICE([Detected OpenBSD: $host_os])
@@ -99,6 +106,7 @@ AM_CONDITIONAL([HOST_IS_FREEBSD], [test $IS_FREEBSD = true])
 
 AC_SUBST(DL_LIB)
 AC_SUBST(OSS_LIB)
+AC_SUBST(INTL_LIB)
 
 
 
