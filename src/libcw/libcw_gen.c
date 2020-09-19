@@ -510,7 +510,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 
 	/* pthread */
 	{
-		gen->thread.id = -1; /* FIXME: thread id type is opaque. Don't assign -1. */
+		gen->thread.id = (pthread_t) -1; /* FIXME: thread id type is opaque. Don't assign -1. */
 		pthread_attr_init(&gen->thread.attr);
 		/* Thread must be joinable in order to make a safe call to
 		   pthread_kill(thread_id, 0). pthreads are joinable by

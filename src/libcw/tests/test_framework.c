@@ -1113,6 +1113,10 @@ void cw_test_print_sound_systems(cw_test_executor_t * self, cw_sound_system * so
 			/* Found guard element. */
 			return;
 		}
+		if (CW_AUDIO_SOUNDCARD == sound_systems[i]) {
+			/* Catch-all value that shouldn't be used in tests. */
+			continue;
+		}
 
 		switch (sound_systems[i]) {
 		case CW_AUDIO_NULL:
@@ -1129,6 +1133,10 @@ void cw_test_print_sound_systems(cw_test_executor_t * self, cw_sound_system * so
 			break;
 		case CW_AUDIO_PA:
 			self->log_info_cont(self, "PulseAudio ");
+			break;
+		case CW_AUDIO_NONE:
+		case CW_AUDIO_SOUNDCARD:
+			/* Handled in 'if' before this switch. */
 			break;
 		default:
 			self->log_info_cont(self, "unknown! ");
