@@ -14,19 +14,91 @@
    "end-of-word space".
 
 
-* ALSA
+* Operating systems
+** FreeBSD
+
+*** Binary packages
+
+https://www.freebsd.org/doc/handbook/pkgng-intro.html
+
+**** Upgrade binary packages:
+pkg upgrade
+
+**** Audit installed packages for known vulnerabilities:
+pkg audit -F
+
+**** Clean up packages:
+pkg autoremove
+pkg clean
+pkg clean -a
+
+**** List installed packages:
+pgk info
+
+**** Remove package
+pkg remove
+
+
+*** Source code packages
+
+https://www.freebsd.org/doc/handbook/ports-using.html#ports-upgrading-tools
+
+**** Install portmaster
+cd /usr/ports/ports-mgmt/portmaster
+make install clean
+
+
+**** Upgrade all outdated ports
+portmaster -a
+or in case of errors:
+portmaster -af
+
+
+* Sound systems
+
+** Console
+
+*** FreeBSD
+
+**** beep
+Text visible after installing 'beep' package on FreeBSD 12.1:
+
+For PC spearker sound to work you need to be in the operator group and need rw/ permissions to /dev/speaker device.
+
+Load kernel module:
+kldload speaker
+
+Add a user to operator group:
+pw groupmod operator -m jerry
+
+Uncomment the following lines in /etc/devfs.rules file:
+# Allow members of group operator to cat things to the speaker
+[speaker=10]
+add path 'speaker' mode 0660 group operator
+
+To load these new rules add the following to /etc/rc.conf:
+devfs_speaker_ruleset="speaker"
+
+Then restart devfs to load the new rules:
+/etc/rc.d/devfs restart
+
+
+** ALSA
 "plughw" device
 
 https://alsa.opensrc.org/Proc_asound_documentation
 echo 32 > /proc/asound/card0/pcm0p/sub0/prealloc
 
 
-* PulseAudio
+** PulseAudio
 
 To kill pulseaudio server and prevent it from re-starting:
 emacs ~/.config/pulse/client.conf
 autospawn = no
 killall -9 pulseaudio
+
+
+
 * gdb
 
 export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./.libs/libcw_test_legacy_api -n legacy_api_test_low_level_gen_parameters
