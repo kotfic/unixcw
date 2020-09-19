@@ -9,13 +9,26 @@
 
 
 
+#include "libcw2.h"
+
+
+
+
+typedef struct {
+	int sound_sink_fd;
+	cw_key_value_t cw_value;
+} cw_console_data_t;
+
+
+
+
 #include "libcw_gen.h"
 
 
 
 
 cw_ret_t cw_console_fill_gen_internal(cw_gen_t * gen, const char * device_name);
-void cw_console_silence(cw_gen_t * gen);
+cw_ret_t cw_console_silence(cw_gen_t * gen);
 
 
 

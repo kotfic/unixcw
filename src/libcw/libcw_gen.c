@@ -527,7 +527,6 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 	/* Sound system. */
 	{
 		gen->sound_device = NULL;
-		gen->sound_sink_fd = -1;
 		/* gen->sound_system = sound_system; */ /* We handle this field below. */
 		gen->sound_device_is_open = false;
 		gen->dev_raw_sink = -1;
@@ -537,6 +536,9 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 		gen->write_buffer_to_sound_device = NULL;
 		gen->write_tone_to_sound_device = NULL;
 
+		/* Sound system - console. */
+		gen->console.sound_sink_fd = -1;
+		gen->console.cw_value = CW_KEY_VALUE_OPEN;
 
 		/* Sound system - OSS. */
 #ifdef LIBCW_WITH_OSS

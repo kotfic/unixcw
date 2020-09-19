@@ -49,7 +49,7 @@
 
 static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen);
 static void     cw_null_close_sound_device_internal(cw_gen_t * gen);
-static cw_ret_t cw_null_write_tone_to_sound_device_internal(cw_gen_t * gen, cw_tone_t * tone);
+static cw_ret_t cw_null_write_tone_to_sound_device_internal(cw_gen_t * gen, const cw_tone_t * tone);
 
 
 
@@ -155,7 +155,7 @@ static void cw_null_close_sound_device_internal(cw_gen_t * gen)
 
    @return CW_SUCCESS
 */
-static cw_ret_t cw_null_write_tone_to_sound_device_internal(__attribute__((unused)) cw_gen_t * gen, cw_tone_t * tone)
+static cw_ret_t cw_null_write_tone_to_sound_device_internal(__attribute__((unused)) cw_gen_t * gen, const cw_tone_t * tone)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_NULL);

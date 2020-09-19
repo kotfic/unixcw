@@ -12,6 +12,7 @@
 #include "libcw.h"
 #include "libcw2.h"
 #include "libcw_alsa.h"
+#include "libcw_console.h"
 #include "libcw_key.h"
 #include "libcw_oss.h"
 #include "libcw_pa.h"
@@ -314,9 +315,6 @@ struct cw_gen_struct {
 	   (it may be unused for PulseAudio) */
 	char * sound_device;
 
-	/* Output file descriptor for Console and OSS sound systems. */
-	int sound_sink_fd;
-
 	/* none/null/console/OSS/ALSA/PulseAudio */
 	int sound_system;
 
@@ -344,7 +342,7 @@ struct cw_gen_struct {
 	   The second function is for pseudo sound systems that don't access
 	   a sound card: Null and Console. */
 	cw_ret_t (* write_buffer_to_sound_device)(cw_gen_t * gen);
-	cw_ret_t (* write_tone_to_sound_device)(cw_gen_t * gen, cw_tone_t * tone);
+	cw_ret_t (* write_tone_to_sound_device)(cw_gen_t * gen, const cw_tone_t * tone);
 
 
 	/*
@@ -369,6 +367,9 @@ struct cw_gen_struct {
 
 
 	char label[LIBCW_OBJECT_INSTANCE_LABEL_SIZE];
+
+
+	cw_console_data_t console;
 
 #ifdef LIBCW_WITH_OSS
 	/* Data used by OSS. */

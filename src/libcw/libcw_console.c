@@ -82,9 +82,11 @@ extern cw_debug_t cw_debug_object_dev;
 #endif
 
 #ifdef __FreeBSD__
+#include <dev/speaker/speaker.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
+#define LIBCW_CONSOLE_USE_SPKRTONE
 #endif
 
 
@@ -96,15 +98,24 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
-
+#ifndef LIBCW_CONSOLE_USE_SPKRTONE
 /* Clock tick rate used for KIOCSOUND console ioctls.  This value is taken
    from linux/include/asm-i386/timex.h, included here for portability. */
 static const int KIOCSOUND_CLOCK_TICK_RATE = 1193180;
+#endif
+
+
 
 static void cw_console_close_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen);
-static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, cw_tone_t * tone);
-static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state);
+static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, const cw_tone_t * tone);
+
+#ifdef LIBCW_CONSOLE_USE_SPKRTONE
+static cw_ret_t cw_console_write_with_spkrtone_internal(cw_gen_t * gen, const cw_tone_t * tone);
+#else
+static cw_ret_t cw_console_write_with_kiocsound_internal(cw_gen_t * gen, const cw_tone_t * tone);
+static cw_ret_t cw_console_kiocsound_wrapper_internal(cw_gen_t * gen, cw_key_value_t cw_value);
+#endif
 
 
 
@@ -126,7 +137,7 @@ static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state);
    as every other function called to perform console operations will
    happily assume that it is allowed to perform such operations.
 
-   @reviewed 2020-07-14
+   @reviewed 2020-09-18
 
    @param[in] device_name name of console buzzer device to be used; if NULL
    then the function will use library-default device name.
@@ -154,7 +165,15 @@ bool cw_is_console_possible(const char * device_name)
 	}
 
 	errno = 0;
-	int rv = ioctl(fd, KIOCSOUND, 0);
+	int rv = 0;
+#ifdef LIBCW_CONSOLE_USE_SPKRTONE
+	tone_t spkrtone;
+	spkrtone.frequency = 0;
+	spkrtone.duration = 0;
+	rv = ioctl(fd, SPKRTONE, &spkrtone);
+#else
+	rv = ioctl(fd, KIOCSOUND, 0);
+#endif
 	close(fd);
 	if (rv == -1) {
 		if (EPERM == errno) {
@@ -203,14 +222,14 @@ static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * g
 		return CW_SUCCESS;
 	}
 
-	gen->sound_sink_fd = open(gen->sound_device, O_WRONLY);
-	if (-1 == gen->sound_sink_fd) {
+	gen->console.sound_sink_fd = open(gen->sound_device, O_WRONLY);
+	if (-1 == gen->console.sound_sink_fd) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open(%s): '%s'", gen->sound_device, strerror(errno));
 		return CW_FAILURE;
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-			      MSG_PREFIX "open successfully, console fd = %d", gen->sound_sink_fd);
+			      MSG_PREFIX "open successfully, console fd = %d", gen->console.sound_sink_fd);
 	}
 
 	/* It doesn't have any sense for console, but some code may depend
@@ -228,14 +247,32 @@ static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * g
 /**
    @brief Stop generating sound on console buzzer using given generator
 
-   @reviewed 2020-07-14
+   @reviewed 2020-09-19
 
    @param[in] gen generator to silence
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE on failure
 */
-void cw_console_silence(cw_gen_t * gen)
+cw_ret_t cw_console_silence(cw_gen_t * gen)
 {
-	ioctl(gen->sound_sink_fd, KIOCSOUND, 0);
-	return;
+	gen->console.cw_value = CW_KEY_VALUE_OPEN;
+
+	int rv = 0;
+#ifdef LIBCW_CONSOLE_USE_SPKRTONE
+	tone_t spkrtone;
+	spkrtone.frequency = 0; /* "A frequency of zero is interpreted as a rest." */
+	spkrtone.duration = 0;
+	rv = ioctl(gen->console.sound_sink_fd, SPKRTONE, &spkrtone);
+#else
+	rv = cw_console_kiocsound_wrapper_internal(gen, gen->console.cw_value);
+#endif
+
+	if (0 == rv) {
+		return CW_SUCCESS;
+	} else {
+		return CW_FAILURE;
+	}
 }
 
 
@@ -250,8 +287,8 @@ void cw_console_silence(cw_gen_t * gen)
 */
 static void cw_console_close_sound_device_internal(cw_gen_t * gen)
 {
-	close(gen->sound_sink_fd);
-	gen->sound_sink_fd = -1;
+	close(gen->console.sound_sink_fd);
+	gen->console.sound_sink_fd = -1;
 	gen->sound_device_is_open = false;
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
@@ -273,7 +310,7 @@ static void cw_console_close_sound_device_internal(cw_gen_t * gen)
    After playing X microseconds of tone the function returns. The function is
    intended to behave like a blocking write() function.
 
-   @reviewed 2020-07-16
+   @reviewed 2020-09-18
 
    @param[in] gen generator to use to play a tone
    @param[in] tone tone to play with generator
@@ -281,16 +318,99 @@ static void cw_console_close_sound_device_internal(cw_gen_t * gen)
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
 */
-static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, cw_tone_t * tone)
+static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, const cw_tone_t * tone)
 {
 	assert (gen);
 	assert (gen->sound_system == CW_AUDIO_CONSOLE);
 	assert (tone->duration >= 0); /* TODO: shouldn't the condition be "tone->duration > 0"? */
 
-	cw_ret_t cw_ret_1 = cw_console_write_low_level_internal(gen, (bool) tone->frequency);
+#ifdef LIBCW_CONSOLE_USE_SPKRTONE
+	return cw_console_write_with_spkrtone_internal(gen, tone);
+#else
+	return cw_console_write_with_kiocsound_internal(gen, tone);
+#endif
+}
+
+
+
+
+#ifdef LIBCW_CONSOLE_USE_SPKRTONE
+/**
+   @brief Generate a sound using console buzzer and SPKRTONE ioctl
+
+   The function calls the SPKRTONE ioctl to generate a particular
+   tone. The ioctl generates tone of specified duration.
+
+   The function will produce a silence if generator's volume is zero.
+
+   @reviewed 2020-09-19
+
+   @param[in] gen generator
+   @param[in] tone tone to generate
+
+   @return CW_FAILURE on errors
+   @return CW_SUCCESS on success
+*/
+static cw_ret_t cw_console_write_with_spkrtone_internal(cw_gen_t * gen, const cw_tone_t * tone)
+{
+  	tone_t spkrtone = { 0 };
+	if (0 == gen->volume_percent) {
+		spkrtone.frequency = 0; /* "A frequency of zero is interpreted as a rest." */
+	} else {
+		spkrtone.frequency = tone->frequency;
+	}
+	spkrtone.duration = tone->duration / (10 * 1000); /* ".duration in tone_t is "in 1/100ths of a second". */
+	const int rv = ioctl(gen->console.sound_sink_fd, SPKRTONE, &spkrtone);
+	if (0 != rv) {
+		return CW_FAILURE;
+	} else {
+		return CW_SUCCESS;
+	}
+}
+
+
+
+
+#else
+
+
+
+
+/**
+   @brief Start generating a sound using console buzzer and KIOCSOUND ioctl
+
+   The function calls the KIOCSOUND ioctl to start a particular tone.
+   Once started, the console tone generation needs no maintenance.
+
+   The function only initializes generation, you have to do another
+   function call to change the tone generated.
+
+   @reviewed 2020-09-19
+
+   @param[in] gen generator
+   @param[in] tone tone to generate
+
+   @return CW_FAILURE on errors
+   @return CW_SUCCESS on success
+*/
+static cw_ret_t cw_console_write_with_kiocsound_internal(cw_gen_t * gen, const cw_tone_t * tone)
+{
+	const cw_key_value_t cw_value = tone->frequency > 0 && gen->volume_percent > 0
+		? CW_KEY_VALUE_CLOSED : CW_KEY_VALUE_OPEN;
+
+	if (cw_value == gen->console.cw_value) {
+		/* Simulate blocking write() and let buzzer keep doing what it is doing. */
+		cw_usleep_internal(tone->duration);
+		return CW_SUCCESS;
+	} else {
+		gen->console.cw_value = cw_value;
+	}
+
+	const int rv = cw_console_kiocsound_wrapper_internal(gen, gen->console.cw_value);
+	/* Simulate blocking write() because cw_console_kiocsound_wrapper_internal() is not blocking. */
 	cw_usleep_internal(tone->duration);
 
-	cw_ret_t cw_ret_2 = CW_FAILURE;
+	cw_ret_t cwret = CW_SUCCESS;
 	switch (tone->slope_mode) {
 	case CW_SLOPE_MODE_FALLING_SLOPE:
 		/* Falling slope causes the console to produce sound, so at
@@ -303,17 +423,17 @@ static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, c
 		   buzzer would be turned off by "silence" tone coming right
 		   after an audible tone, but in practice it may not be
 		   always so.*/
-		cw_ret_2 = cw_console_write_low_level_internal(gen, false);
+		cwret = cw_console_silence(gen);
 		break;
 	case CW_SLOPE_MODE_NO_SLOPES: /* TODO: do we handle CW_SLOPE_MODE_NO_SLOPES correctly? */
 	case CW_SLOPE_MODE_RISING_SLOPE:
 	default:
 		/* No change to state of buzzer. No failure. */
-		cw_ret_2 = CW_SUCCESS;
+		cwret = CW_SUCCESS;
 		break;
 	}
 
-	if (CW_SUCCESS == cw_ret_1 && CW_SUCCESS == cw_ret_2) {
+	if (0 == rv && CW_SUCCESS == cwret) {
 		return CW_SUCCESS;
 	} else {
 		return CW_FAILURE;
@@ -324,47 +444,47 @@ static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, c
 
 
 /**
-   @brief Start generating a sound using console buzzer
+   @brief Wrapper for KIOCSOUND ioctl
 
-   The function calls the KIOCSOUND ioctl to start a particular tone.
-   Once started, the console tone generation needs no maintenance.
+   The function *does not* block and *does not* sleep for any duration
+   of time. Simulating blocking write to a sound sink should be done
+   by caller of the function. This is done to ensure that the API is
+   simple and list of arguments is short.
 
-   The function only initializes generation, you have to do another
-   function call to change the tone generated.
+   The function does not filter out consecutive calls with identical
+   parameters. This is left to the caller. This is done to ensure that
+   when the function is called to silence a console, the console will
+   be guaranteed to be silenced.
 
-   @reviewed 2020-07-16
+   The function will produce a silence if generator's volume is zero.
 
-   @param[in] gen generator
-   @param[in] state flag deciding if a sound should be generated (logical true) or not (logical false)
+   @reviewed 2020-09-19
 
-   @return CW_FAILURE on errors
+   @param[in] gen generator to use to generate a sound with KIOCSOUND ioctl
+   @param[in] cw_value value dictating what to do with sound sink: generate a tone or produce silence
+
    @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise
 */
-static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state)
+cw_ret_t cw_console_kiocsound_wrapper_internal(cw_gen_t * gen, cw_key_value_t cw_value)
 {
-	static bool local_state = false; /* TODO: this won't work well with multi-generator setup. */
-	if (local_state == state) {
-		return CW_SUCCESS;
-	} else {
-		local_state = state;
-	}
-
-	/* TODO: take a look at KDMKTONE ioctl argument. */
-
 	/* Calculate the correct argument for KIOCSOUND.  There's nothing we
 	   can do to control the volume, but if we find the volume is set to
 	   zero, the one thing we can do is to just turn off tones.  A bit
 	   crude, but perhaps just slightly better than doing nothing. */
 	int argument = 0;
-	if (gen->volume_percent > 0 && local_state) {
+	if (gen->volume_percent > 0 && CW_KEY_VALUE_CLOSED == cw_value) {
 		argument = KIOCSOUND_CLOCK_TICK_RATE / gen->frequency;
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "KIOCSOUND arg = %d (switch: %d, frequency: %d Hz, volume: %d %%)",
-		      argument, local_state, gen->frequency, gen->volume_percent);
+		      MSG_PREFIX "KIOCSOUND arg = %d (current cw value: %s, frequency: %d Hz, volume: %d %%)",
+		      argument,
+		      CW_KEY_VALUE_CLOSED == cw_value ? "closed" : "open",
+		      gen->frequency, gen->volume_percent);
 
-	if (-1 == ioctl(gen->sound_sink_fd, KIOCSOUND, argument)) {
+	/* TODO: take a look at KDMKTONE ioctl argument. */
+	if (0 != ioctl(gen->console.sound_sink_fd, KIOCSOUND, argument)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctl KIOCSOUND: '%s'", strerror(errno));
 		return CW_FAILURE;
@@ -372,6 +492,7 @@ static cw_ret_t cw_console_write_low_level_internal(cw_gen_t * gen, bool state)
 		return CW_SUCCESS;
 	}
 }
+#endif /* #ifdef LIBCW_CONSOLE_USE_SPKRTONE */
 
 
 
@@ -431,9 +552,9 @@ cw_ret_t cw_console_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __
 
 
 
-void cw_console_silence(__attribute__((unused)) cw_gen_t * gen)
+cw_ret_t cw_console_silence(__attribute__((unused)) cw_gen_t * gen)
 {
-	return;
+	return CW_FAILURE;
 }
 
 
