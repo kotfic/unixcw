@@ -31,7 +31,7 @@
 #include <errno.h>
 
 #if defined(HAVE_STRING_H)
-# include <string.h>
+# include <string.h> /* FreeBSD 12.1 */
 #endif
 
 #if defined(HAVE_STRINGS_H)

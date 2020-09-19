@@ -1399,8 +1399,6 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 		bool state_failure = false;
 		bool busy_failure = false;
 
-		const int usecs = CW_USECS_PER_SEC;
-
 		const int key_states[] = { CW_KEY_STATE_OPEN, CW_KEY_STATE_CLOSED };
 		const int first = 1 + (rand() % 2);
 		const int last = first + cte->get_repetitions_count(cte) + (1 + (rand() % 2));
@@ -1440,6 +1438,7 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 			   signals to conditional variables. */
 			sleep(1);
 #else
+			const int usecs = CW_USECS_PER_SEC;
 			cw_usleep_internal(usecs);
 #endif
 		}

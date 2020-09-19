@@ -580,7 +580,7 @@ cwt_retv test_cw_gen_forever_internal(cw_test_executor_t * cte)
 /**
    @reviewed on 2020-05-10
 */
-static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds)
+static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, __attribute__((unused)) int seconds)
 {
 	cw_gen_t * gen = cw_gen_new(cte->current_sound_system,
 				    cte->current_sound_device);

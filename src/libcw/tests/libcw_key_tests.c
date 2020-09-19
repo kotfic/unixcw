@@ -268,8 +268,6 @@ int test_straight_key(cw_test_executor_t * cte)
 		bool event_failure = false;
 		bool state_failure = false;
 
-		const int usecs = CW_USECS_PER_SEC;
-
 		/* Alternate between open and closed. */
 		for (int i = 0; i < max; i++) {
 			const cw_key_value_t intended_key_value = (i % 2) ? CW_KEY_VALUE_OPEN : CW_KEY_VALUE_CLOSED;
@@ -294,6 +292,7 @@ int test_straight_key(cw_test_executor_t * cte)
 			   signals to conditional variables. */
 			sleep(1);
 #else
+			const int usecs = CW_USECS_PER_SEC;
 			cw_usleep_internal(usecs);
 #endif
 		}

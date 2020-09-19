@@ -17,12 +17,22 @@
    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+
+#if defined(HAVE_STRING_H)
+# include <string.h> /* FreeBSD 12.1 */
+#endif
+
+#if defined(HAVE_STRINGS_H)
+# include <strings.h>
+#endif
 
 #include "libcw.h"
 #include "libcw2.h"
