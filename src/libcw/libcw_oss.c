@@ -231,7 +231,7 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 	assert (gen->sound_system == CW_AUDIO_OSS);
 
 	size_t n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
-	ssize_t rv = write(gen->sound_sink_fd, gen->buffer, n_bytes);
+	ssize_t rv = write(gen->oss_data.sound_sink_fd, gen->buffer, n_bytes);
 	if (rv != (ssize_t) n_bytes) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "write: %s", strerror(errno));
@@ -264,18 +264,18 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	   cw_oss_open_and_configure_sound_device_internal() and is_possible() function. */
 
 	/* Open the given soundcard device file, for write only. */
-	gen->sound_sink_fd = open(gen->sound_device, O_WRONLY);
-	if (-1 == gen->sound_sink_fd) {
+	gen->oss_data.sound_sink_fd = open(gen->sound_device, O_WRONLY);
+	if (-1 == gen->oss_data.sound_sink_fd) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: open(%s): '%s'", gen->sound_device, strerror(errno));
 		return CW_FAILURE;
 	}
 
-	cw_ret_t cw_ret = cw_oss_open_device_ioctls_internal(gen->sound_sink_fd, &gen->sample_rate);
+	cw_ret_t cw_ret = cw_oss_open_device_ioctls_internal(gen->oss_data.sound_sink_fd, &gen->sample_rate);
 	if (cw_ret != CW_SUCCESS) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: one or more OSS ioctl() calls failed");
-		close(gen->sound_sink_fd);
+		close(gen->oss_data.sound_sink_fd);
 		return CW_FAILURE;
 	}
 
@@ -284,18 +284,18 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	/* Get fragment size in bytes, may be different than requested
 	   with ioctl(..., SNDCTL_DSP_SETFRAGMENT), and, in particular,
 	   can be different than 2^N. */
-	int rv = ioctl(gen->sound_sink_fd, (int) SNDCTL_DSP_GETBLKSIZE, &size);
+	int rv = ioctl(gen->oss_data.sound_sink_fd, (int) SNDCTL_DSP_GETBLKSIZE, &size);
 	if (-1 == rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: ioctl(SNDCTL_DSP_GETBLKSIZE): '%s'", strerror(errno));
-		close(gen->sound_sink_fd);
+		close(gen->oss_data.sound_sink_fd);
 		return CW_FAILURE;
 	}
 
 	if ((size & 0x0000ffff) != (1U << CW_OSS_SETFRAGMENT)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: OSS fragment size not set, %d", size);
-		close(gen->sound_sink_fd);
+		close(gen->oss_data.sound_sink_fd);
 		/* FIXME */
 		return CW_FAILURE;
 	} else {
@@ -307,7 +307,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	gen->buffer_n_samples = size;
 
 
-	cw_oss_get_version_internal(gen->sound_sink_fd, &gen->oss_data.version);
+	cw_oss_get_version_internal(gen->oss_data.sound_sink_fd, &gen->oss_data.version);
 
 	/* Mark sound sink as now open for business. */
 	gen->sound_device_is_open = true;
@@ -506,8 +506,8 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 */
 void cw_oss_close_sound_device_internal(cw_gen_t * gen)
 {
-	close(gen->sound_sink_fd);
-	gen->sound_sink_fd = -1;
+	close(gen->oss_data.sound_sink_fd);
+	gen->oss_data.sound_sink_fd = -1;
 	gen->sound_device_is_open = false;
 
 #if CW_DEV_RAW_SINK

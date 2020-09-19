@@ -540,6 +540,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 
 		/* Sound system - OSS. */
 #ifdef LIBCW_WITH_OSS
+		gen->oss_data.sound_sink_fd = -1;
 		gen->oss_data.version.x = 0;
 		gen->oss_data.version.y = 0;
 		gen->oss_data.version.z = 0;

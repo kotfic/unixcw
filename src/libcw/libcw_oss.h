@@ -20,6 +20,7 @@ typedef struct cw_oss_version {
 
 typedef struct cw_oss_data_struct {
 	cw_oss_version_t version;
+	int sound_sink_fd;
 } cw_oss_data_t;
 
 
