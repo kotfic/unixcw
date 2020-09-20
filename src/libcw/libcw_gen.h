@@ -424,6 +424,8 @@ void cw_generator_delete_internal(void);
 void cw_gen_reset_parameters_internal(cw_gen_t * gen);
 void cw_gen_sync_parameters_internal(cw_gen_t * gen);
 
+const char * cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system);
+
 
 
 

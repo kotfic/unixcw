@@ -114,7 +114,6 @@ static int          cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa);
 static cw_ret_t     cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen);
 static void         cw_pa_close_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t     cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen);
-static const char * cw_pick_device_name_internal(const char * client_device_name, const char * default_device_name); /* TODO: use the function in other sound systems too. */
 
 
 
@@ -126,40 +125,13 @@ static const int CW_PA_BUFFER_N_SAMPLES = 256;
 
 
 /**
-   @brief Pick one of the two provided device names
-
-   Out of the two provided arguments pick and return device name for a sound
-   system. If @p client_device_name is not NULL and is not equal to @p
-   default_device_name, it will be picked and returned by the function.
-
-   @reviewed 2020-07-20
-
-   @param[in] client_device_name device name provided by library's client code (may be NULL)
-   @param[in] default_device_name library's default device name
-
-   @return NULL allowing sound system to use default device name
-   @return client_device_name otherwise
-*/
-static const char * cw_pick_device_name_internal(const char * client_device_name, const char * default_device_name)
-{
-	const char * result = NULL; /* NULL: let sound system use default device. */
-	if (NULL != client_device_name && 0 != strcmp(client_device_name, default_device_name)) {
-		result = client_device_name; /* Non-default device. */
-	}
-	return result;
-}
-
-
-
-
-/**
    @brief Check if it is possible to open PulseAudio output with given device
    name
 
    Function first tries to load PulseAudio library, and then does a test
    opening of PulseAudio output, but it closes it before returning.
 
-   @reviewed 2020-07-20
+   @reviewed 2020-09-20
 
    @param[in] device_name name of PulseAudio device to be used; if NULL then
    the function will use library-default device name.
@@ -189,7 +161,7 @@ bool cw_is_pa_possible(const char * device_name)
 		return false;
 	}
 
-	const char * dev = cw_pick_device_name_internal(device_name, CW_DEFAULT_PA_DEVICE);
+	const char * dev = cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA);
 
 	int sample_rate = 0;
 	int error = 0;
@@ -287,7 +259,7 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
    The function *does not* set size of sound buffer in libcw's generator.
 
-   @reviewed 2020-07-20
+   @reviewed 2020-09-20
 
    @param[in] device_name name of PulseAudio device to be used, or NULL for default device
    @param[in] stream_name descriptive name of client, passed to pa_simple_new
@@ -304,7 +276,7 @@ static pa_simple * cw_pa_simple_new_internal(const char * device_name, const cha
 	spec.rate = 44100; /* TODO: why this value is hardcoded? */
 	spec.channels = 1;
 
-	const char * dev = cw_pick_device_name_internal(device_name, CW_DEFAULT_PA_DEVICE);
+	const char * dev = cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA);
 
 	// http://www.mail-archive.com/pulseaudio-tickets@mail.0pointer.de/msg03295.html
 	pa_buffer_attr attr = { 0 };
@@ -381,7 +353,7 @@ static int cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa)
    You must use cw_gen_set_sound_device_internal() before calling this
    function. Otherwise generator @p gen won't know which device to open.
 
-   @reviewed 2020-07-20
+   @reviewed 2020-09-20
 
    @param[in,out] gen generator for which to open and configure sound system handle
 
@@ -390,7 +362,7 @@ static int cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa)
 */
 static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 {
-	const char * dev = cw_pick_device_name_internal(gen->sound_device, CW_DEFAULT_PA_DEVICE);
+	const char * dev = cw_gen_pick_device_name_internal(gen->sound_device, CW_AUDIO_PA);
 
 	int sample_rate = 0;
 	int error = 0;

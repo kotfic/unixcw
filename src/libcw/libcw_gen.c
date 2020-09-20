@@ -3019,3 +3019,37 @@ void cw_gen_register_value_tracking_callback_internal(cw_gen_t * gen, cw_gen_val
 
 	return;
 }
+
+
+
+
+/**
+   @brief Pick one of the two provided device names
+
+   Out of the two provided arguments pick and return device name for a
+   sound system. If @p alternative_device_name is not NULL and is not
+   equal to default device name of sound system @p sound_system, it
+   will be picked and returned by the function.
+
+   TODO: use the function in all sound devices (currently it is used
+   only in PA).
+   TODO: selection of device names in libcw is a mess full of
+   repetitions. Re-think and re-implement it.
+
+   @reviewed 2020-09-20
+
+   @param[in] alternative_device_name device name provided by library's client code (may be NULL)
+   @param[in] sound_system sound system for which the device name is being picked
+
+   @return NULL allowing sound system to use default device name
+   @return alternative_device_name otherwise
+*/
+const char * cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system)
+{
+	const char * result = NULL; /* NULL: let sound system use default device. */
+	if (NULL != alternative_device_name && 0 != strcmp(alternative_device_name, default_sound_devices[sound_system])) {
+		result = alternative_device_name; /* Non-default device. */
+	}
+	return result;
+}
+
