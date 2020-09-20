@@ -82,11 +82,13 @@ extern cw_debug_t cw_debug_object_dev;
 #endif
 
 #ifdef __FreeBSD__
-#include <dev/speaker/speaker.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <assert.h>
-#define LIBCW_CONSOLE_USE_SPKRTONE
+#include <dev/speaker/speaker.h>
+#include <errno.h>
+#include <fcntl.h>
+
+/* We aren't supporting this ioctl yet. */
+//#define LIBCW_CONSOLE_USE_SPKRTONE
 #endif
 
 
@@ -261,7 +263,7 @@ cw_ret_t cw_console_silence(cw_gen_t * gen)
 	int rv = 0;
 #ifdef LIBCW_CONSOLE_USE_SPKRTONE
 	tone_t spkrtone;
-	spkrtone.frequency = 0; /* "A frequency of zero is interpreted as a rest." */
+	spkrtone.frequency = 0; /* https://man.netbsd.org/speaker.4: "A frequency of zero is interpreted as a rest." */
 	spkrtone.duration = 0;
 	rv = ioctl(gen->console.sound_sink_fd, SPKRTONE, &spkrtone);
 #else
@@ -353,13 +355,17 @@ static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, c
 */
 static cw_ret_t cw_console_write_with_spkrtone_internal(cw_gen_t * gen, const cw_tone_t * tone)
 {
+	/* TODO: according to this man page: https://man.netbsd.org/speaker.4
+	   it *may* be possible to control volume of tone on console
+	   device on a BSD system. */
+
   	tone_t spkrtone = { 0 };
 	if (0 == gen->volume_percent) {
-		spkrtone.frequency = 0; /* "A frequency of zero is interpreted as a rest." */
+		spkrtone.frequency = 0; /* https://man.netbsd.org/speaker.4: "A frequency of zero is interpreted as a rest." */
 	} else {
 		spkrtone.frequency = tone->frequency;
 	}
-	spkrtone.duration = tone->duration / (10 * 1000); /* ".duration in tone_t is "in 1/100ths of a second". */
+	spkrtone.duration = tone->duration / (10 * 1000); /* .duration in tone_t is "in 1/100ths of a second" (https://man.netbsd.org/speaker.4). */
 	const int rv = ioctl(gen->console.sound_sink_fd, SPKRTONE, &spkrtone);
 	if (0 != rv) {
 		return CW_FAILURE;
