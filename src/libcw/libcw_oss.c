@@ -366,7 +366,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 #endif
 	/* Set the sample format. */
 	parameter = CW_OSS_SAMPLE_FORMAT;
-	if (-1 == ioctl(fd, (int) SNDCTL_DSP_SETFMT, &parameter)) {
+	/* Don't cast second argument of ioctl() to int, because you will get
+	   this warning in dmesg (found on FreeBSD 12.1):
+	   "ioctl sign-extension ioctl ffffffffc0045005" */
+	if (-1 == ioctl(fd, SNDCTL_DSP_SETFMT, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_SETFMT): '%s'", strerror(errno));
 		return CW_FAILURE;
@@ -380,7 +383,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 
 	/* Set up mono/stereo mode. */
 	parameter = CW_AUDIO_CHANNELS;
-	if (-1 == ioctl(fd, (int) SNDCTL_DSP_CHANNELS, &parameter)) {
+	/* Don't cast second argument of ioctl() to int, because you will get
+	   this warning in dmesg (found on FreeBSD 12.1):
+	   "ioctl sign-extension ioctl ffffffffc0045006" */
+	if (-1 == ioctl(fd, SNDCTL_DSP_CHANNELS, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_CHANNELS): '%s'", strerror(errno));
 		return CW_FAILURE;
@@ -397,7 +403,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 	bool success = false;
 	for (int i = 0; cw_supported_sample_rates[i]; i++) {
 		rate = cw_supported_sample_rates[i];
-		if (0 == ioctl(fd, (int) SNDCTL_DSP_SPEED, &rate)) {
+		/* Don't cast second argument of ioctl() to int, because you will get
+		   this warning in dmesg (found on FreeBSD 12.1):
+		   "ioctl sign-extension ioctl ffffffffc0045002" */
+		if (0 == ioctl(fd, SNDCTL_DSP_SPEED, &rate)) {
 			if (rate != cw_supported_sample_rates[i]) {
 				cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING, MSG_PREFIX "ioctls: imprecise sample rate:");
 				cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING, MSG_PREFIX "ioctls: asked for: %u", cw_supported_sample_rates[i]);
@@ -447,7 +456,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 	/* parameter = 0x7fff << 16 | CW_OSS_SETFRAGMENT; */
 	parameter = 0x0032U << 16U | CW_OSS_SETFRAGMENT;
 
-	if (-1 == ioctl(fd, (int) SNDCTL_DSP_SETFRAGMENT, &parameter)) {
+	/* Don't cast second argument of ioctl() to int, because you will get
+	   this warning in dmesg (found on FreeBSD 12.1):
+	   "ioctl sign-extension ioctl ffffffffc004500a" */
+	if (-1 == ioctl(fd, SNDCTL_DSP_SETFRAGMENT, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_SETFRAGMENT): '%s'", strerror(errno));
 		return CW_FAILURE;
