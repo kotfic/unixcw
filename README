@@ -135,15 +135,9 @@ following:
 
 
 
-Primary development platform for unixcw is Debian GNU/Linux. An effort
-has been made to compile and test at least parts of some versions of
-unixcw package on following platforms:
- - FreeBSD 9.3
- - FreeBSD 10.0
- - OpenBSD 5.5
- - Alpine Linux 3.1
-See INSTALL file for more information about compilation on different
-OSes.
+Primary development platform for unixcw is Debian GNU/Linux. An effort has
+been made to compile and test this version of unixcw package (or at least
+parts of this package) on following platforms:
 
 
 
@@ -173,3 +167,89 @@ Comments, questions, bug reports:
  - create ticket: http://sourceforge.net/p/unixcw/tickets/, or
  - write directly to acerion@wp.pl
 I reserve a right to a month of delay to reply.
+
+
+
+
+
+unixcw is written in C and C++.
+
+unixcw can be built and installed with standard set of commands:
+    ./configure && make && make install
+
+Depending on platform and software/files installed on build machine,
+build system will configure and compile following features:
+ - support for console buzzer in libcw;
+ - support for OSS sound system in libcw;
+ - support for ALSA sound system in libcw;
+ - support for PulseAudio sound system in libcw;
+If a support for a feature from this list is available in libcw, it
+will be available in rest of applications from unixcw package.
+
+Moreover, depending on platform and software/files installed on build
+machine, the build system will configure and compile following
+features:
+ - cwcp, if ncurses development files are available;
+ - xcwcp, if QT5 development files are available (xcwcp is an
+   application written in C++);
+
+libcw library, and cw and cwgen applications are built
+unconditionally.
+
+You can explicitly disable some libcw and unixcw features by passing
+flags to configure script. See output of "./configure --help" for
+details.
+
+Check your platform-dependent documentation on what packages/files are
+needed for each of these features.
+
+
+
+
+
+Build-time requirements for unixcw:
+ - standard build environment to build software from source package
+   with "./configure && make && make install";
+ - GNU make may be necessary on some platforms (I've had a problem
+   with FreeBSD's make on FreeBSD 9.3; make on FreeBSD 10.0 worked
+   fine).  If, when running "make", you see an error message like
+   this:
+           *** Parse error in unixcw-3.4.0/src: Need an operator in '../Makefile.inc' (Makefile:640)
+           *** Error 1 in unixcw-3.4.0 (Makefile:416 'all-recursive')
+   then install gmake package, and try running "gmake & gmake install"
+   instead of "make & make install".
+ - pkg-config to get configuration flags for QT5 application (xcwcp);
+   you can override pkg-config settings for QT5 using environment
+   variables, see output of "./configure --help" for details.
+ - sound system library development files for including support for
+   OSS, ALSA and PulseAudio sound sinks in libcw;
+ - header file providing KIOCSOUND symbol for including support for
+   console buzzer in libcw.
+ - ncurses development files for building cwcp;
+ - QT5 development files for building xcwcp;
+
+
+
+
+
+unixcw 3.4.2 (or at least parts of it) was successfully compiled on
+following platforms:
+ - Debian GNU/Linux 8 jessie/sid, x86_64, gcc 4.9.2;
+ - Alpine Linux 3.1, x86_64, gcc 4.8.3, musl 1.1.5;
+ - FreeBSD 10.0, x86_64, clang 3.3;
+
+unixcw 3.4.1 (or at least parts of it) was successfully compiled on
+following platforms:
+ - Debian GNU/Linux jessie/sid, x86_64, gcc 4.9.1;
+
+unixcw 3.4.0 (or at least parts of it) was successfully compiled on
+following platforms:
+ - Debian GNU/Linux jessie/sid, x86_64, gcc 4.9.1;
+ - FreeBSD 10.0 (x86_64-unknown-freebsd10.0, with clang 3.3);
+ - FreeBSD 9.3 (freebsd9.3 with gcc 4.2.1);
+ - OpenBSD 5.5 (amd64-unknown-openbsd5.5 with gcc 4.2.1);
+   compilation on OpenBSD gives lots of warnings related to usage of
+   functions deemed unsafe by OpenBSD developers, but there are no
+   errors. There are also some warnings about redeclarations of some
+   functions - this still needs to be fixed.
+
