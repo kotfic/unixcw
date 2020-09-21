@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS=src
 
 EXTRA_DIST = \
@@ -5,4 +7,5 @@ EXTRA_DIST = \
 	unixcw-2.3.spec unixcw-3.5.1.lsm \
 	po/UnixCW.po \
 	THANKS HISTORY \
-	README.dev.org
+	README.dev.org \
+	patches
