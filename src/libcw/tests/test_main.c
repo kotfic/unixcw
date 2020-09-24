@@ -101,12 +101,12 @@ int main(int argc, char * const argv[])
 	cw_test_init(cte, stdout, stderr, "libcw/tests");
 	atexit(deinit_executor);
 
+	cte->config->has_feature_sound_system = true;
+	cte->config->has_feature_generator = true;
 	cte->config->has_feature_libcw_test_specific = true;
 	cte->config->has_feature_test_repetitions = true;
 	cte->config->has_feature_test_name = true;
 	cte->config->has_feature_test_quick_only = true;
-	cte->config->has_feature_speed = true;
-	cte->config->has_feature_tone = true;
 	cte->config->test_repetitions = 5;
 
 	/* May cause exit on errors or "-h" option. */

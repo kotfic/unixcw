@@ -87,22 +87,19 @@ typedef struct cw_config_t {
 	char * input_file;
 	char * output_file;
 
-	bool has_feature_sound_system;  /* Does the program have sound system output, for which we can specify sound system type and device? */
-	bool has_feature_speed;         /* Generator speed. */
-	bool has_feature_tone;          /* Sound tone (frequency). */
-	bool has_feature_volume;        /* Sound volume. */
-	bool has_feature_gap;           /* */
-	bool has_feature_weighting;     /* */
-	bool has_feature_practice_time; /* For cwcp/xcwcp program: allows specifying how long a training session will take. */
-	bool has_feature_infile;        /* Allows specifying some input data for a program from input file. */
-	bool has_feature_outfile;       /* */
+	bool has_feature_sound_system;           /* Parameters of sound system: sound system type (e.g. ALSA) and device. */
+	bool has_feature_generator;              /* Generator and its basic parameters: tone (frequency), speed, volume. */
+	bool has_feature_dot_dash_params;        /* Dot/dash parameters: gap and weighting. */
+	bool has_feature_practice_time;          /* For cwcp program: allows specifying how long a training session will take. */
+	bool has_feature_infile;                 /* Allows specifying some input data for a program from input file. */
+	bool has_feature_outfile;                /* */
 
-	bool has_feature_cw_specific;   /* Does the program have features specific to cw program (i.e. is this program the cw program)? */
-	bool has_feature_ui_colors;     /* Can we control color theme of UI (cwcp-specific). */
+	bool has_feature_cw_specific;            /* Does the program have features specific to cw program (i.e. is this program the cw program)? */
+	bool has_feature_ui_colors;              /* Can we control color theme of UI (cwcp-specific). */
 
-	bool has_feature_test_repetitions; /* Does the test program allow specifying count of repetitions of each test function? */
-	bool has_feature_test_name;        /* Does the test program allow specifying single one test function to be executed? */
-	bool has_feature_test_quick_only;   /* Does the test program allow selection of tests that can be executed in short time? */
+	bool has_feature_test_repetitions;       /* Does the test program allow specifying count of repetitions of each test function? */
+	bool has_feature_test_name;              /* Does the test program allow specifying single one test function to be executed? */
+	bool has_feature_test_quick_only;        /* Does the test program allow selection of tests that can be executed in short time? */
 	bool has_feature_libcw_test_specific;
 
 	/*

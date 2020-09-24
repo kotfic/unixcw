@@ -65,13 +65,6 @@ static void write_to_cw_sender (const char *format, ...)
 
 static cw_config_t *config = NULL; /* program-specific configuration */
 static bool generator = false;     /* have we created a generator? */
-static const char *all_options = "s:|system,d:|device,"
-	"w:|wpm,t:|tone,v:|volume,"
-	"g:|gap,k:|weighting,"
-	"f:|infile,"
-	"e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments,"
-	"h|help,V|version";
-
 static void cw_atexit(void);
 
 
@@ -573,17 +566,21 @@ int main (int argc, char *const argv[])
 	i18n_initialize();
 
 	/* Parse combined environment and command line arguments. */
-	int combined_argc;
-	char **combined_argv;
+	int combined_argc = 0;
+	char **combined_argv = NULL;
 	combine_arguments("CW_OPTIONS", argc, argv, &combined_argc, &combined_argv);
 
 	config = cw_config_new(cw_program_basename(argv[0]));
 	if (!config) {
 		return EXIT_FAILURE;
 	}
-	config->has_feature_cw_specific = 1;
+	config->has_feature_sound_system = true;
+	config->has_feature_generator = true;
+	config->has_feature_dot_dash_params = true;
+	config->has_feature_infile = true;
+	config->has_feature_cw_specific = true;
 
-	if (!cw_process_argv(combined_argc, combined_argv, all_options, config)) {
+	if (CW_SUCCESS != cw_process_program_arguments(combined_argc, combined_argv, config)) {
 		fprintf(stderr, _("%s: failed to parse command line args\n"), config->program_name);
 		return EXIT_FAILURE;
 	}

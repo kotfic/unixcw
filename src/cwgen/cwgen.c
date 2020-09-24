@@ -355,8 +355,8 @@ void cwgen_parse_command_line(int argc, char **argv, struct cwgen_config *config
 */
 int main(int argc, char **argv)
 {
-	int combined_argc;
-	char **combined_argv;
+	int combined_argc = 0;
+	char **combined_argv = NULL;
 
 	/* Set locale and message catalogs. */
 	i18n_initialize();
