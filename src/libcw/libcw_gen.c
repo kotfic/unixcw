@@ -1152,17 +1152,17 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 	  the memory too. Therefore it has to always start from zero for
 	  every new fragment of sine wave. Therefore a separate t. */
 
-	double phase = 0.0;
+	float phase = 0.0F;
 	int t = 0;
 
 	for (int i = gen->buffer_sub_start; i <= gen->buffer_sub_stop; i++) {
 		phase = (2.0F * CW_PI
-				* (double) tone->frequency * (double) t
-				/ (double) gen->sample_rate)
+			 * (float) (tone->frequency * t)
+			 / (float) gen->sample_rate)
 			+ gen->phase_offset;
 		int amplitude = cw_gen_calculate_sample_amplitude_internal(gen, tone);
 
-		gen->buffer[i] = amplitude * sin(phase);
+		gen->buffer[i] = amplitude * sinf(phase);
 
 		tone->sample_iterator++;
 
@@ -1170,8 +1170,8 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 	}
 
 	phase = (2.0F * CW_PI
-		 * (double) tone->frequency * (double) t
-		 / (double) gen->sample_rate)
+		 * (float) (tone->frequency * t)
+		 / (float) gen->sample_rate)
 		+ gen->phase_offset;
 
 	/* "phase" is now phase of the first sample in next fragment to be
