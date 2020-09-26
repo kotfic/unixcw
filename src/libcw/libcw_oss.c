@@ -101,7 +101,7 @@ extern const unsigned int cw_supported_sample_rates[];
 #define CW_OSS_SET_POLICY         0  /* ioctl(fd, SNDCTL_DSP_POLICY, &param) */
 
 /* Constants specific to OSS sound system configuration. */
-static const int CW_OSS_SETFRAGMENT = 7;              /* Sound fragment size, 2^7 samples. */
+static const unsigned int CW_OSS_SETFRAGMENT = 7U;              /* Sound fragment size, 2^7 samples. */
 static const int CW_OSS_SAMPLE_FORMAT = AFMT_S16_NE;  /* Sound format AFMT_S16_NE = signed 16 bit, native endianess; LE = Little endianess. */
 
 static cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate);
@@ -284,7 +284,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
 	/* Get fragment size in bytes, may be different than requested
 	   with ioctl(..., SNDCTL_DSP_SETFRAGMENT), and, in particular,
 	   can be different than 2^N. */
-	int rv = ioctl(gen->oss_data.sound_sink_fd, (int) SNDCTL_DSP_GETBLKSIZE, &size);
+	int rv = ioctl(gen->oss_data.sound_sink_fd, SNDCTL_DSP_GETBLKSIZE, &size);
 	if (-1 == rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: ioctl(SNDCTL_DSP_GETBLKSIZE): '%s'", strerror(errno));
@@ -427,7 +427,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 
 
 	audio_buf_info buff;
-	if (-1 == ioctl(fd, (int) SNDCTL_DSP_GETOSPACE, &buff)) {
+	if (-1 == ioctl(fd, SNDCTL_DSP_GETOSPACE, &buff)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_GETOSPACE): '%s'", strerror(errno));
 		return CW_FAILURE;
@@ -468,7 +468,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 		      MSG_PREFIX "ioctls: fragment size is 2^%d = %d", parameter & 0x0000ffff, 2 << ((parameter & 0x0000ffffU) - 1));
 
 	/* Query fragment size just to get the driver buffers set. */
-	if (-1 == ioctl(fd, (int) SNDCTL_DSP_GETBLKSIZE, &parameter)) {
+	if (-1 == ioctl(fd, SNDCTL_DSP_GETBLKSIZE, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_GETBLKSIZE): '%s'", strerror(errno));
 		return CW_FAILURE;
@@ -489,7 +489,7 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 	}
 #endif
 
-	if (-1 == ioctl(fd, (int) SNDCTL_DSP_GETOSPACE, &buff)) {
+	if (-1 == ioctl(fd, SNDCTL_DSP_GETOSPACE, &buff)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_GETOSPACE): '%s'", strerror(errno));
 		return CW_FAILURE;
@@ -550,7 +550,7 @@ cw_ret_t cw_oss_get_version_internal(int fd, cw_oss_version_t * version)
 	assert (fd != -1);
 
 	int parameter = 0;
-	if (-1 == ioctl(fd, (int) OSS_GETVERSION, &parameter)) {
+	if (-1 == ioctl(fd, OSS_GETVERSION, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "get version: ioctl OSS_GETVERSION");
 		return CW_FAILURE;
