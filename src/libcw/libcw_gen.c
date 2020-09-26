@@ -485,7 +485,7 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 		gen->buffer_sub_start = 0;
 		gen->buffer_sub_stop  = 0;
 
-		gen->sample_rate = -1;
+		gen->sample_rate = 0;
 		gen->phase_offset = -1;
 
 

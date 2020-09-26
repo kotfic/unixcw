@@ -302,7 +302,7 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t * gen)
 	}
 #endif
 	fprintf(stderr, "sound device:         \"%s\"\n",  gen->sound_device);
-	fprintf(stderr, "sample rate:          %d Hz\n",  gen->sample_rate);
+	fprintf(stderr, "sample rate:          %u Hz\n",  gen->sample_rate);
 
 	/* Temporarily disabled because gen->pa_data.ba is missing. */
 #if 0 // def LIBCW_WITH_PULSEAUDIO

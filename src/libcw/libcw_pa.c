@@ -109,7 +109,7 @@ static cw_pa_handle_t g_cw_pa;
 
 
 
-static pa_simple  * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, int * sample_rate, int * error);
+static pa_simple  * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, unsigned int * sample_rate, int * error);
 static int          cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa);
 static cw_ret_t     cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen);
 static void         cw_pa_close_sound_device_internal(cw_gen_t * gen);
@@ -163,7 +163,7 @@ bool cw_is_pa_possible(const char * device_name)
 
 	const char * dev = cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA);
 
-	int sample_rate = 0;
+	unsigned int sample_rate = 0;
 	int error = 0;
 	pa_simple * simple = cw_pa_simple_new_internal(dev, "cw_is_pa_possible()", &sample_rate, &error);
 	if (NULL == simple) {
@@ -269,7 +269,7 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    @return pointer to new PulseAudio sink on success
    @return NULL on failure
 */
-static pa_simple * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, int * sample_rate, int * error)
+static pa_simple * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, unsigned int * sample_rate, int * error)
 {
 	pa_sample_spec spec = { 0 };
 	spec.format = CW_PA_SAMPLE_FORMAT;
@@ -364,7 +364,7 @@ static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen)
 {
 	const char * dev = cw_gen_pick_device_name_internal(gen->sound_device, CW_AUDIO_PA);
 
-	int sample_rate = 0;
+	unsigned int sample_rate = 0;
 	int error = 0;
 	gen->pa_data.simple = cw_pa_simple_new_internal(dev,
 							gen->library_client.name ? gen->library_client.name : "app",
