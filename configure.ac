@@ -43,6 +43,10 @@ AC_PROG_MAKE_SET
 AC_PROG_LN_S
 AM_PROG_CC_C_O
 
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+AC_C_VOLATILE
 
 
 
@@ -127,18 +131,6 @@ AC_SUBST(LDCONFIG)
 
 
 
-
-# Check for basic but essential libraries
-AC_CHECK_LIB(pthread, pthread_create)
-AC_CHECK_LIB(m, floor)
-
-# show-stoppers
-if test $ac_cv_lib_m_floor = 'no' ; then
-   AC_MSG_ERROR([math library is missing, cannot continue])
-fi
-if test $ac_cv_lib_pthread_pthread_create = 'no' ; then
-   AC_MSG_ERROR([pthread library is missing, cannot continue])
-fi
 
 
 
@@ -442,7 +434,7 @@ LIBS=
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_HEADER_TIME
-AC_CHECK_HEADERS([fcntl.h limits.h stdlib.h string.h strings.h sys/ioctl.h \
+AC_CHECK_HEADERS([fcntl.h limits.h stdlib.h sys/ioctl.h \
                   sys/param.h sys/time.h unistd.h locale.h libintl.h])
 AC_CHECK_HEADERS([getopt.h])
 AC_CHECK_HEADERS([string.h strings.h])
@@ -451,20 +443,23 @@ if test "$ac_cv_header_string_h" = 'no' \
   AC_MSG_WARN([Cannot find either string.h or strings.h])
 fi
 
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_SIZE_T
-AC_C_VOLATILE
-AC_PROG_GCC_TRADITIONAL
 
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_FUNC_STRCOLL
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([floor gettimeofday memset sqrt strchr strdup strrchr \
-                strtoul getopt_long setlocale memmove select strerror strspn])
-AC_FUNC_SELECT_ARGTYPES
+
+
+# Strange. If AC_CHECK_FUNCS[floorf...] is not preceded directly by
+# AC_CHECK_LIB[m], the AC_CHECK_FUNCS can't find the math libraries.
+AC_CHECK_LIB(m, floorf, [], [AC_MSG_ERROR([math library is missing, cannot continue])])
+AC_CHECK_FUNCS([floorf fabsf sinf cosf sqrtf], [], [AC_MSG_ERROR([math function is missing, cannot continue])])
+
+AC_CHECK_LIB(pthread, pthread_create, [], [AC_MSG_ERROR([pthread library is missing, cannot continue])])
+
+AC_CHECK_FUNCS([getopt_long])
+
+AC_CHECK_FUNCS([strtoul strchr strdup strrchr strspn], [], [AC_MSG_ERROR([memory function is missing, cannot continue])])
+
+AC_CHECK_FUNCS([malloc realloc memset memmove], [], [AC_MSG_ERROR([memory function is missing, cannot continue])])
+
+AC_CHECK_FUNCS([gettimeofday setlocale select strerror], [], [AC_MSG_ERROR([a function is missing, cannot continue])])
 
 
 
