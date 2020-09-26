@@ -127,7 +127,12 @@ const unsigned int cw_supported_sample_rates[] = {
 	22050,
 	16000,
 	11025,
-	 8000, /* This is the lowest value, dictated by value of CW_FREQUENCY_MAX */
+
+	 /* This is the lowest value, dictated by value of
+	    CW_FREQUENCY_MAX, but in practice I found that with this
+	    value the generation of sound rarely works at all. */
+	 8000,
+
 	    0 /* guard */
 };
 
@@ -1160,7 +1165,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 			 * (float) (tone->frequency * t)
 			 / (float) gen->sample_rate)
 			+ gen->phase_offset;
-		int amplitude = cw_gen_calculate_sample_amplitude_internal(gen, tone);
+		const int amplitude = cw_gen_calculate_sample_amplitude_internal(gen, tone);
 
 		gen->buffer[i] = amplitude * sinf(phase);
 
@@ -1553,7 +1558,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 	// cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "%lld samples, %d us, %d Hz", tone->n_samples, tone->duration, gen->frequency);
 	while (samples_to_write > 0) {
 
-		int64_t free_space = gen->buffer_n_samples - gen->buffer_sub_start;
+		const int64_t free_space = gen->buffer_n_samples - gen->buffer_sub_start;
 		if (samples_to_write > free_space) {
 			/* There will be some tone samples left for
 			   next iteration of this loop.  But buffer in

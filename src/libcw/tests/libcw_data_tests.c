@@ -273,7 +273,7 @@ int test_cw_representation_to_character_internal_speed_gain(cw_test_executor_t *
 
 
 	const float gain = 1.0 * direct / fast_lookup;
-	bool failure = gain < 1.1f;
+	const bool failure = gain < 1.1f;
 	cte->expect_op_int(cte, false, "==", failure, "lookup speed gain: %.2f", (double) gain);  /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
 
 	cte->print_test_footer(cte, __func__);

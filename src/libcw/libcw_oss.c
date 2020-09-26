@@ -422,6 +422,8 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_SPEED): '%s'", strerror(errno));
 		return CW_FAILURE;
 	} else {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+			      MSG_PREFIX "OSS sample rate = %u\n", rate);
 		*sample_rate = rate;
 	}
 
