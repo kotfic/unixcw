@@ -126,7 +126,9 @@ perf report
 
 
 * build system
+autoheader
 autoreconf -fvi
+libtoolize
 
 * TODO
 
