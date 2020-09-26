@@ -80,9 +80,9 @@ static bool cw_test_expect_op_int(struct cw_test_executor_t * self, int expected
 static bool cw_test_expect_op_int_errors_only(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
 static bool cw_test_expect_op_int_sub(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, bool errors_only, const char * va_buf);
 
-static bool cw_test_expect_op_double(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
-static bool cw_test_expect_op_double_errors_only(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
-static bool cw_test_expect_op_double_sub(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, bool errors_only, const char * va_buf);
+static bool cw_test_expect_op_float(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
+static bool cw_test_expect_op_float_errors_only(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
+static bool cw_test_expect_op_float_sub(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, bool errors_only, const char * va_buf);
 
 static bool cw_test_expect_between_int(struct cw_test_executor_t * self, int expected_lower, int received_value, int expected_higher, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
 static bool cw_test_expect_between_int_errors_only(struct cw_test_executor_t * self, int expected_lower, int received_value, int expected_higher, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
@@ -327,7 +327,7 @@ static bool cw_test_expect_op_int_sub(struct cw_test_executor_t * self, int expe
 
 
 
-bool cw_test_expect_op_double(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...)
+bool cw_test_expect_op_float(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, const char * fmt, ...)
 {
 	char va_buf[128] = { 0 };
 	va_list ap;
@@ -335,13 +335,13 @@ bool cw_test_expect_op_double(struct cw_test_executor_t * self, double expected_
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
-	return cw_test_expect_op_double_sub(self, expected_value, operator, received_value, false, va_buf);
+	return cw_test_expect_op_float_sub(self, expected_value, operator, received_value, false, va_buf);
 }
 
 
 
 
-bool cw_test_expect_op_double_errors_only(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...)
+bool cw_test_expect_op_float_errors_only(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, const char * fmt, ...)
 {
 	char va_buf[128] = { 0 };
 	va_list ap;
@@ -349,13 +349,13 @@ bool cw_test_expect_op_double_errors_only(struct cw_test_executor_t * self, doub
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
-	return cw_test_expect_op_double_sub(self, expected_value, operator, received_value, true, va_buf);
+	return cw_test_expect_op_float_sub(self, expected_value, operator, received_value, true, va_buf);
 }
 
 
 
 
-static bool cw_test_expect_op_double_sub(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, bool errors_only, const char * va_buf)
+static bool cw_test_expect_op_float_sub(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, bool errors_only, const char * va_buf)
 {
 	char msg_buf[1024] = { 0 };
 	int n = snprintf(msg_buf, sizeof (msg_buf), "%s", self->msg_prefix);
@@ -390,7 +390,7 @@ static bool cw_test_expect_op_double_sub(struct cw_test_executor_t * self, doubl
 
 		cw_test_append_status_string(self, msg_buf, message_len, "[FAIL]");
 		self->log_error(self, "%s\n", msg_buf);
-		self->log_error(self, "   ***   expected %f, got %f   ***\n", expected_value, received_value);
+		self->log_error(self, "   ***   expected %f, got %f   ***\n", (double) expected_value, (double) received_value);
 
 		as_expected = false;
 	}
@@ -952,8 +952,8 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 
 	self->expect_op_int = cw_test_expect_op_int;
 	self->expect_op_int_errors_only = cw_test_expect_op_int_errors_only;
-	self->expect_op_double = cw_test_expect_op_double;
-	self->expect_op_double_errors_only = cw_test_expect_op_double_errors_only;
+	self->expect_op_float = cw_test_expect_op_float;
+	self->expect_op_float_errors_only = cw_test_expect_op_float_errors_only;
 
 	self->expect_between_int = cw_test_expect_between_int;
 	self->expect_between_int_errors_only = cw_test_expect_between_int_errors_only;
@@ -1372,9 +1372,10 @@ static cwt_retv iterate_over_test_objects(cw_test_executor_t * cte, cw_test_obje
 			*/
 			resource_meas_stop(&cte->resource_meas);
 
-			const double current_cpu_usage = resource_meas_get_current_cpu_usage(&cte->resource_meas);
-			const double max_cpu_usage = resource_meas_get_maximal_cpu_usage(&cte->resource_meas);
-			cte->log_info(cte, "CPU usage: last = "CWTEST_CPU_FMT", max = "CWTEST_CPU_FMT"\n", current_cpu_usage, max_cpu_usage);
+			const int current_cpu_usage = resource_meas_get_current_cpu_usage(&cte->resource_meas);
+			const int max_cpu_usage = resource_meas_get_maximal_cpu_usage(&cte->resource_meas);
+			cte->log_info(cte, "CPU usage: last = "CWTEST_CPU_FMT", max = "CWTEST_CPU_FMT"\n",
+				      current_cpu_usage, max_cpu_usage);
 			if (max_cpu_usage > LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT) {
 				cte->stats->failures++;
 				cte->log_error(cte, "Registered high CPU usage "CWTEST_CPU_FMT" during execution of '%s'\n",

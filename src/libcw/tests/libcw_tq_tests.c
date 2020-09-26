@@ -1067,7 +1067,7 @@ int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 		/* Notice that level is always smaller than number of
 		   items added to queue. TODO: reconsider if we want
 		   to randomize this value. */
-		const int level = rand() % (int) (floor((0.7 * max)));
+		const int level = rand() % (int) (floorf((0.7F * max)));
 		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_wait_for_level_internal)(gen->tq, level);
 		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "wait for level = %d, tone queue items count = %d", level, max)) {
 			wait_failure = true;

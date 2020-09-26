@@ -126,8 +126,8 @@ typedef struct cw_test_executor_t {
 	*/
 	bool (* expect_op_int)(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
 	bool (* expect_op_int_errors_only)(struct cw_test_executor_t * self, int expected_value, const char * operator, int received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
-	bool (* expect_op_double)(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
-	bool (* expect_op_double_errors_only)(struct cw_test_executor_t * self, double expected_value, const char * operator, double received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
+	bool (* expect_op_float)(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
+	bool (* expect_op_float_errors_only)(struct cw_test_executor_t * self, float expected_value, const char * operator, float received_value, const char * fmt, ...) __attribute__ ((format (printf, 5, 6)));
 
 	/**
 	   Verify that @param received_value is between @param
@@ -463,7 +463,7 @@ typedef struct cw_test_set_t {
 #define LIBCW_TEST_MEAS_CPU_MEAS_INTERVAL_MSECS 200
 
 /* What is the top CPU usage threshold during test function's execution. */
-#define LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT 4.0
+#define LIBCW_TEST_MEAS_CPU_OK_THRESHOLD_PERCENT 4.0F
 
 
 

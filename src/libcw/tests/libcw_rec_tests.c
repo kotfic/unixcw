@@ -287,8 +287,10 @@ int test_cw_rec_test_with_constant_speeds(cw_test_executor_t * cte)
 			/* Verify that the test speed has been set correctly. */
 			const float rec_speed = cw_rec_get_speed(rec);
 			const float diff = rec_speed - speed;
-			 /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
-			cte->assert2(cte, diff < 0.1f, "%s: setting speed for test %s failed: %.3f != %.3f\n", this_test_name, test_data[i].name, (double) rec_speed, (double) speed);
+			cte->assert2(cte, diff < 0.1f, "%s: setting speed for test %s failed: %.3f != %.3f\n",
+				     this_test_name, test_data[i].name,
+				     /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
+				     (double) rec_speed, (double) speed);
 
 			/* Actual tests of receiver functions are here. */
 			bool failure = test_cw_rec_test_begin_end(cte, rec, vec);
@@ -372,8 +374,10 @@ int test_cw_rec_test_with_varying_speeds(cw_test_executor_t * cte)
 		/* Verify that initial test speed has been set correctly. */
 		const float rec_speed = cw_rec_get_speed(rec);
 		const float diff = rec_speed - CW_SPEED_MAX;
-		/* Casting to double to avoid compiler warning about implicit conversion from float to double. */
-		cte->assert2(cte, diff < 0.1f, "%s: incorrect receive speed: %.3f != %.3f\n", this_test_name, (double) rec_speed, (double) CW_SPEED_MAX);
+		cte->assert2(cte, diff < 0.1f, "%s: incorrect receive speed: %.3f != %.3f\n",
+			     this_test_name,
+			     /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
+			     (double) rec_speed, (double) CW_SPEED_MAX);
 
 		/* Actual tests of receiver functions are here. */
 		const bool failure = test_cw_rec_test_begin_end(cte, rec, vec);
@@ -1179,7 +1183,8 @@ void cw_rec_test_vector_print(cw_test_executor_t * cte, cw_rec_test_vector * vec
 		}
 
 		/* Print data. */
-		cte->log_info_cont(cte, "%c  %-7s %6.2f", point->character, point->representation, (double) point->send_speed); /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
+		cte->log_info_cont(cte, "%c  %-7s %6.2f", point->character, point->representation,
+				   (double) point->send_speed); /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
 		for (size_t t = 0; t < point->n_tone_durations; t++) {
 			cte->log_info_cont(cte, "%9d ", point->tone_durations[t]);
 		}
@@ -1394,7 +1399,7 @@ int test_cw_rec_parameter_getters_setters_1(cw_test_executor_t * cte)
 
 			const float readback_value = test_data[i].get_value(rec);
 			const float diff = readback_value - new_val;
-			if (!cte->expect_op_double_errors_only(cte, 0.01, ">", diff, "%s: setting %s value in-range: %d (val)", this_test_name, test_data[i].name, new_val)) {
+			if (!cte->expect_op_float_errors_only(cte, 0.01, ">", diff, "%s: setting %s value in-range: %d (val)", this_test_name, test_data[i].name, new_val)) {
 				set_ok_failure = true;
 				break;
 			}

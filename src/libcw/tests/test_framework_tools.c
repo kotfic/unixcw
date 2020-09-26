@@ -79,10 +79,10 @@ void resource_meas_stop(resource_meas * meas)
 
 
 
-double resource_meas_get_current_cpu_usage(resource_meas * meas)
+int resource_meas_get_current_cpu_usage(resource_meas * meas)
 {
 	pthread_mutex_lock(&meas->mutex);
-	double cpu_usage = meas->current_cpu_usage;
+	const int cpu_usage = meas->current_cpu_usage;
 	pthread_mutex_unlock(&meas->mutex);
 	return cpu_usage;
 }
@@ -90,10 +90,10 @@ double resource_meas_get_current_cpu_usage(resource_meas * meas)
 
 
 
-double resource_meas_get_maximal_cpu_usage(resource_meas * meas)
+int resource_meas_get_maximal_cpu_usage(resource_meas * meas)
 {
 	pthread_mutex_lock(&meas->mutex);
-	double cpu_usage = meas->maximal_cpu_usage;
+	const int cpu_usage = meas->maximal_cpu_usage;
 	pthread_mutex_unlock(&meas->mutex);
 	return cpu_usage;
 }
@@ -123,7 +123,10 @@ void resource_meas_do_measurement(resource_meas * meas)
 	pthread_mutex_lock(&meas->mutex);
 	{
 		meas->current_cpu_usage = meas->resource_usage * 100.0 / (meas->meas_duration * 1.0);
-		// fprintf(stderr, "Curr = %06.4f, usage = %04ld, duration = %ld\n", meas->current_cpu_usage, meas->resource_usage, meas->meas_duration);
+#if 0
+		fprintf(stderr, "Curr = "CWTEST_CPU_FMT", usage = %.3f, duration = %ld\n",
+			meas->current_cpu_usage, meas->resource_usage, meas->meas_duration);
+#endif
 		if (meas->current_cpu_usage > meas->maximal_cpu_usage) {
 			meas->maximal_cpu_usage = meas->current_cpu_usage;
 		}

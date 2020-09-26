@@ -1,4 +1,4 @@
-#include <math.h> /* fabs() */
+#include <math.h> /* fabsf() */
 
 #include "../libcw2.h"
 #include "../libcw_gen.h"
@@ -61,9 +61,9 @@ static const char * input_string = "ooo""ooo""ooo""sss""sss""sss";
 
 
 typedef struct divergence_t {
-	double min;
-	double avg;
-	double max;
+	float min;
+	float avg;
+	float max;
 } divergence_t;
 
 
@@ -446,9 +446,9 @@ static void print_element_stats_and_divergences(const cw_element_stats_t * stats
 		stats->duration_avg,
 		stats->duration_max,
 		duration_expected,
-		divergences->min,
-		divergences->avg,
-		divergences->max);
+		(double) divergences->min,
+		(double) divergences->avg,
+		(double) divergences->max);
 }
 
 
@@ -590,37 +590,37 @@ static void evaluate_test_results(cw_test_executor_t * cte, test_data_t * test_d
 {
 	/* Margin above 1.0: allow current results to be slightly worse than reference.
 	   Margin below 1.0: accept current results only if they are better than reference. */
-	const double margin = 1.5;
+	const float margin = 1.5F;
 	{
-		const double expected_div = fabs(test_data->reference_div_dots.min) * margin;
-		const double current_div = fabs(test_data->current_div_dots.min);
-		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, min");
+		const float expected_div = fabsf(test_data->reference_div_dots.min) * margin;
+		const float current_div = fabsf(test_data->current_div_dots.min);
+		cte->expect_op_float(cte, expected_div, ">", current_div, "divergence of dots, min");
 	}
 	{
-		const double expected_div = fabs(test_data->reference_div_dots.avg) * margin;
-		const double current_div = fabs(test_data->current_div_dots.avg);
-		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, avg");
+		const float expected_div = fabsf(test_data->reference_div_dots.avg) * margin;
+		const float current_div = fabsf(test_data->current_div_dots.avg);
+		cte->expect_op_float(cte, expected_div, ">", current_div, "divergence of dots, avg");
 	}
 	{
-		const double expected_div = fabs(test_data->reference_div_dots.max) * margin;
-		const double current_div = fabs(test_data->current_div_dots.max);
-		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dots, max");
+		const float expected_div = fabsf(test_data->reference_div_dots.max) * margin;
+		const float current_div = fabsf(test_data->current_div_dots.max);
+		cte->expect_op_float(cte, expected_div, ">", current_div, "divergence of dots, max");
 	}
 
 	{
-		const double expected_div = fabs(test_data->reference_div_dashes.min) * margin;
-		const double current_div = fabs(test_data->current_div_dashes.min);
-		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, min");
+		const float expected_div = fabsf(test_data->reference_div_dashes.min) * margin;
+		const float current_div = fabsf(test_data->current_div_dashes.min);
+		cte->expect_op_float(cte, expected_div, ">", current_div, "divergence of dashes, min");
 	}
 	{
-		const double expected_div = fabs(test_data->reference_div_dashes.avg) * margin;
-		const double current_div = fabs(test_data->current_div_dashes.avg);
-		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, avg");
+		const float expected_div = fabsf(test_data->reference_div_dashes.avg) * margin;
+		const float current_div = fabsf(test_data->current_div_dashes.avg);
+		cte->expect_op_float(cte, expected_div, ">", current_div, "divergence of dashes, avg");
 	}
 	{
-		const double expected_div = fabs(test_data->reference_div_dashes.max) * margin;
-		const double current_div = fabs(test_data->current_div_dashes.max);
-		cte->expect_op_double(cte, expected_div, ">", current_div, "divergence of dashes, max");
+		const float expected_div = fabsf(test_data->reference_div_dashes.max) * margin;
+		const float current_div = fabsf(test_data->current_div_dashes.max);
+		cte->expect_op_float(cte, expected_div, ">", current_div, "divergence of dashes, max");
 	}
 
 	/* TODO: the test should also have test for absolute

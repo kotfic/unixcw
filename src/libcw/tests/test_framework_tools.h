@@ -18,7 +18,7 @@
 
 
 /* Format to be used when printing CPU usage with printf(). */
-#define CWTEST_CPU_FMT "%8.4f%%"
+#define CWTEST_CPU_FMT "%03d%%"
 
 
 
@@ -48,8 +48,8 @@ typedef struct {
 	pthread_attr_t thread_attr;
 	pthread_t thread_id;
 
-	double current_cpu_usage; /* Last calculated value of CPU usage. */
-	double maximal_cpu_usage; /* Maximum detected during measurements run. */
+	int current_cpu_usage; /* Last calculated value of CPU usage. */
+	int maximal_cpu_usage; /* Maximum detected during measurements run. */
 
 } resource_meas;
 
@@ -77,7 +77,7 @@ void resource_meas_stop(resource_meas * meas);
    The value may change from one measurement to another - may rise and
    fall.
 */
-double resource_meas_get_current_cpu_usage(resource_meas * meas);
+int resource_meas_get_current_cpu_usage(resource_meas * meas);
 
 
 
@@ -90,7 +90,7 @@ double resource_meas_get_current_cpu_usage(resource_meas * meas);
    may go up. The value is reset to zero each time a
    resource_meas_start() function is called.
 */
-double resource_meas_get_maximal_cpu_usage(resource_meas * meas);
+int resource_meas_get_maximal_cpu_usage(resource_meas * meas);
 
 
 
