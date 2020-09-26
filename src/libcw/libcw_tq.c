@@ -868,7 +868,7 @@ cw_ret_t cw_tq_wait_for_end_of_current_tone_internal(cw_tone_queue_t * tq)
 	   Spurious wakeups noticed on:
 	   Intel Celeron 430, Ubuntu 18.04.5 x86_64, kernel 5.4.0-47
 
-	   TODO: double-check that our usage of wait_mutex in this
+	   TODO: check that our usage of wait_mutex in this
 	   function and in other tq functions allows us to safely get
 	   tq->head. */
 	const size_t check_tq_head = tq->head;

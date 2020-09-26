@@ -235,7 +235,10 @@ struct cw_gen_struct {
 		   (at least for any sane slope shape), so naturally
 		   they can be used in forming rising slope. However
 		   they can be used in forming falling slope as well -
-		   just iterate the table from end to beginning. */
+		   just iterate the table from end to beginning.
+
+		   TODO: it seems that amplitudes can be
+		   integers. Investigate it. */
 		float * amplitudes;
 
 		/* This is a secondary parameter, derived from

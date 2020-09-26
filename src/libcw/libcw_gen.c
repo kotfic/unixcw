@@ -208,7 +208,7 @@ char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffe
 
 cw_ret_t cw_gen_start(cw_gen_t * gen)
 {
-	gen->phase_offset = 0.0;
+	gen->phase_offset = 0.0F;
 
 #ifdef GENERATOR_CLIENT_THREAD
 	/* This generator exists in client's application thread.
@@ -1167,7 +1167,7 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 			+ gen->phase_offset;
 		const int amplitude = cw_gen_calculate_sample_amplitude_internal(gen, tone);
 
-		gen->buffer[i] = amplitude * sinf(phase);
+		gen->buffer[i] = ((float) amplitude) * sinf(phase);
 
 		tone->sample_iterator++;
 
@@ -1195,8 +1195,9 @@ int cw_gen_calculate_sine_wave_internal(cw_gen_t * gen, cw_tone_t * tone)
 	   fragment (during next function call). It will be added phase of
 	   every sample calculated in next function call. */
 
-	const int n_periods = floor(phase / (2.0F * CW_PI));
-	gen->phase_offset = phase - n_periods * 2.0F * CW_PI;
+	/* TODO: check if n_periods can be a float. We could avoid the casts. */
+	const int n_periods = (int) floorf(phase / (2.0F * CW_PI));
+	gen->phase_offset = phase - (float) n_periods * 2.0F * CW_PI;
 
 	return t;
 }
@@ -1275,7 +1276,7 @@ int cw_gen_calculate_sample_amplitude_internal(cw_gen_t * gen, const cw_tone_t *
 		   && tone->sample_iterator < tone->n_samples - tone->falling_slope_n_samples) {
 
 		/* Middle of tone, plateau, constant amplitude. */
-		amplitude = 1.0F * gen->volume_abs;
+		amplitude = (float) gen->volume_abs;
 		assert (amplitude >= 0);
 
 	} else if (tone->sample_iterator >= tone->n_samples - tone->falling_slope_n_samples) {
@@ -1480,15 +1481,17 @@ void cw_gen_recalculate_slope_amplitudes_internal(cw_gen_t * gen)
 	for (int i = 0; i < gen->tone_slope.n_amplitudes; i++) {
 
 		if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_LINEAR) {
-			gen->tone_slope.amplitudes[i] = 1.0F * gen->volume_abs * i / gen->tone_slope.n_amplitudes;
+			gen->tone_slope.amplitudes[i] = (float) (i * gen->volume_abs) / (float) gen->tone_slope.n_amplitudes;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_SINE) {
-			const float radian = i * (CW_PI / 2.0F) / (float) gen->tone_slope.n_amplitudes;
-			gen->tone_slope.amplitudes[i] = sinf(radian) * 1.0F * gen->volume_abs;
+			const float radian = (float) i * (CW_PI / 2.0F) / (float) gen->tone_slope.n_amplitudes;
+			const float y = sinf(radian);
+			gen->tone_slope.amplitudes[i] = y * (float) gen->volume_abs;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_RAISED_COSINE) {
-			const float radian = i * CW_PI / gen->tone_slope.n_amplitudes;
-			gen->tone_slope.amplitudes[i] = (1 - ((1 + cosf(radian)) / 2)) * gen->volume_abs;
+			const float radian = (float) i * CW_PI / (float) gen->tone_slope.n_amplitudes;
+			const float y = (1 - ((1 + cosf(radian)) / 2));
+			gen->tone_slope.amplitudes[i] = y * (float) gen->volume_abs;
 
 		} else if (gen->tone_slope.shape == CW_TONE_SLOPE_SHAPE_RECTANGULAR) {
 			/* CW_TONE_SLOPE_SHAPE_RECTANGULAR is covered
@@ -1549,7 +1552,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 
 #if 0   /* Debug code. */
 	int n_loops = 0;
-	const double n_loops_expected = floor(1.0 * samples_to_write / gen->buffer_n_samples); /* In reality number of loops executed is sometimes n_loops_expected, but mostly it's n_loops_expected+1. */
+	const float n_loops_expected = floorf(1.0 * samples_to_write / gen->buffer_n_samples); /* In reality number of loops executed is sometimes n_loops_expected, but mostly it's n_loops_expected+1. */
 	fprintf(stderr, MSG_PREFIX "entering loop (~%.1g), tone->frequency = %d, buffer->n_samples = %d, samples_to_write = %d\n",
 		n_loops_expected, tone->frequency, gen->buffer_n_samples, samples_to_write);
 

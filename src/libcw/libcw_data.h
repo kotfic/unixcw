@@ -22,7 +22,7 @@
 /* TODO: write a test that iterates over table of representations and
    verifies that all representations' lengths are within these bounds. */
 #define CW_DATA_MIN_REPRESENTATION_LENGTH 1 /* Smallest representation contains single Dot or Dash. This value does not include space for terminating NUL. */
-#define CW_DATA_MAX_REPRESENTATION_LENGTH 7 /* CHAR_BIT - 1. Does not include space for terminating NUL (TODO: double check and explain why). */
+#define CW_DATA_MAX_REPRESENTATION_LENGTH 7 /* CHAR_BIT - 1. Does not include space for terminating NUL (TODO: check and explain why). */
 
 #define CW_DATA_MIN_REPRESENTATION_HASH 2
 #define CW_DATA_MAX_REPRESENTATION_HASH 255
