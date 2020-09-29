@@ -406,8 +406,9 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 		   for n_tones_to_add-1 of them. Additionally, let's
 		   wait a moment till dequeueing of the first tone is
 		   without a question in progress. */
-
-		usleep(tone_duration / 4);
+		/* TODO: this test needs redesign, it can't rely on presence
+		   or lack of a sleep(). */
+		//usleep(tone_duration / 4);
 
 		/* And this is the proper test - waiting for dequeueing tones. */
 		for (int i = n_tones_to_add - 1; i > 0; i--) {
@@ -742,6 +743,9 @@ typedef struct callback_data {
 int legacy_api_test_tone_queue_callback(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_setup(cte);
+	}
 	legacy_api_cw_single_test_setup();
 
 	for (int i = 1; i < 10; i++) {
@@ -789,6 +793,10 @@ int legacy_api_test_tone_queue_callback(cw_test_executor_t * cte)
 		cte->expect_between_int(cte, expected_lower, data.captured_level, expected_higher, "tone queue callback:           level at callback = %d", data.captured_level);
 
 		cw_reset_tone_queue();
+	}
+
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_teardown(cte);
 	}
 
 	cte->print_test_footer(cte, __func__);
