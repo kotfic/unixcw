@@ -298,7 +298,7 @@ void cw_dev_debug_print_generator_setup(const cw_gen_t * gen)
 #ifdef LIBCW_WITH_OSS
 	if (gen->sound_system == CW_AUDIO_OSS) {
 		fprintf(stderr, "OSS version           %X.%X.%X\n",
-			gen->oss_data.version_x, gen->oss_data.version_y, gen->oss_data.version_z);
+			gen->oss_data.version.x, gen->oss_data.version.y, gen->oss_data.version.z);
 	}
 #endif
 	fprintf(stderr, "sound device:         \"%s\"\n",  gen->sound_device);

@@ -384,10 +384,10 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 	   check for this in this function. */
 	const int snd_rv = cw_alsa.snd_pcm_writei(gen->alsa_data.pcm_handle, gen->buffer, gen->buffer_n_samples);
 	const cw_ret_t cw_ret = cw_alsa_debug_evaluate_write_internal(gen, snd_rv);
-	/*
+#if 0
 	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "write: written %d/%d samples", snd_rv, gen->buffer_n_samples);
-	*/
+#endif
 	return cw_ret;
 }
 
@@ -550,7 +550,7 @@ static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv
 
 	} else if (snd_rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
-			      MSG_PREFIX "write: writei: %s", cw_alsa.snd_strerror(snd_rv));
+			      MSG_PREFIX "write: writei: %s / %d", cw_alsa.snd_strerror(snd_rv), snd_rv);
 		cw_alsa.snd_pcm_prepare(gen->alsa_data.pcm_handle); /* Reset sound sink. */
 		return CW_FAILURE;
 
@@ -1246,9 +1246,15 @@ static int cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle)
 */
 void cw_alsa_drop_internal(cw_gen_t * gen)
 {
-	if (gen->sound_system == CW_AUDIO_ALSA) {
-		cw_alsa.snd_pcm_drop(gen->alsa_data.pcm_handle);
+	/* TODO: why do we need this test? When cw_alsa function would be
+	   called with non-ALSA sound system? */
+	if (gen->sound_system != CW_AUDIO_ALSA) {
+		return;
 	}
+
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+		      MSG_PREFIX "PCM drop");
+	cw_alsa.snd_pcm_drop(gen->alsa_data.pcm_handle);
 
 	return;
 }

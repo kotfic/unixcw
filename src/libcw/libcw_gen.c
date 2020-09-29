@@ -377,7 +377,7 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 	*/
 
 	/* Somewhere there may be a key in "down" state and we need to make
-	   it go "up", regardless of sound sink (even for CDW_AUDIO_NULL,
+	   it go "up", regardless of sound sink (even for CW_AUDIO_NULL,
 	   because that sound system can also be used with a key).  Otherwise
 	   the key may stay in "down" state forever and the sound will be
 	   played after "silencing" of the generator. */
@@ -408,6 +408,8 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 
 	if (gen->sound_system == CW_AUDIO_ALSA) {
 		/* "Stop a PCM dropping pending frames. " */
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
+			      MSG_PREFIX "asking ALSA to drop frames on silence()");
 		cw_alsa_drop_internal(gen);
 	}
 
@@ -1298,7 +1300,7 @@ int cw_gen_calculate_sample_amplitude_internal(cw_gen_t * gen, const cw_tone_t *
 			   tone->falling_slope_n_samples);
 	}
 
-	assert (amplitude >= 0.0);
+	assert (amplitude >= 0.0F);
 	return (int) amplitude;
 #endif
 }
@@ -1553,8 +1555,8 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 #if 0   /* Debug code. */
 	int n_loops = 0;
 	const float n_loops_expected = floorf(1.0 * samples_to_write / gen->buffer_n_samples); /* In reality number of loops executed is sometimes n_loops_expected, but mostly it's n_loops_expected+1. */
-	fprintf(stderr, MSG_PREFIX "entering loop (~%.1g), tone->frequency = %d, buffer->n_samples = %d, samples_to_write = %d\n",
-		n_loops_expected, tone->frequency, gen->buffer_n_samples, samples_to_write);
+	fprintf(stderr, MSG_PREFIX "entering loop (~%.1f), tone->frequency = %d, buffer->n_samples = %d, samples_to_write = %"PRId64"\n",
+		(double) n_loops_expected, tone->frequency, gen->buffer_n_samples, samples_to_write);
 
 #endif
 
@@ -1637,7 +1639,7 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 
 #if 0
 	/* Debug code. */
-	fprintf(stderr, MSG_PREFIX "left loop, %d / %.1f loops, samples left = %d\n", n_loops, n_loops_expected, (int) samples_to_write);
+	fprintf(stderr, MSG_PREFIX "left loop, %d / %.1f loops, samples left = %d\n", n_loops, (double) n_loops_expected, (int) samples_to_write);
 #endif
 
 	return 0;
