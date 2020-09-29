@@ -75,8 +75,11 @@ typedef struct cw_test_executor_t {
 	cw_config_t * config;
 
 	char msg_prefix[32];
-	FILE * stdout;
-	FILE * stderr;
+
+	/* gcc on Alpine 3.12 doesn't like these variables to be called
+	   stdout/stderr. */
+	FILE * file_out;
+	FILE * file_err;
 
 	resource_meas resource_meas;
 	bool use_resource_meas;

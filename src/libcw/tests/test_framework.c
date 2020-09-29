@@ -474,7 +474,7 @@ bool cw_test_expect_between_int_errors_only(struct cw_test_executor_t * self, in
 	if (expected_lower <= received_value && received_value <= expected_higher) {
 		as_expected = true;
 	} else {
-		const int n = fprintf(self->stderr, "%s%s", self->msg_prefix, buf);
+		const int n = fprintf(self->file_err, "%s%s", self->msg_prefix, buf);
 		self->stats->failures++;
 		self->log_error(self, "%*s", self->console_n_cols - n, "failure: ");
 		self->log_error(self, "expected value within %d-%d, got %d\n", expected_lower, expected_higher, received_value);
@@ -855,7 +855,7 @@ void cw_test_print_test_stats(cw_test_executor_t * self)
 {
 	const char sound_systems[] = " NCOAP";
 
-	fprintf(self->stderr, "\n\nlibcw tests: Statistics of tests (failures/total)\n\n");
+	fprintf(self->file_err, "\n\nlibcw tests: Statistics of tests (failures/total)\n\n");
 
 	//                           12345 12345678901 12345678901 12345678901 12345678901 12345678901 12345678901
 	#define SEPARATOR_LINE      "   --+-----------+-----------+-----------+-----------+-----------+-----------+\n"
@@ -864,8 +864,8 @@ void cw_test_print_test_stats(cw_test_executor_t * self)
 	#define CELL_FORMAT_D       "% 10d |"
 	#define CELL_FORMAT_S       "%10s |"
 
-	fprintf(self->stderr,       "     | tone queue| generator |    key    |  receiver |    data   |    other  |\n");
-	fprintf(self->stderr,       "%s", SEPARATOR_LINE);
+	fprintf(self->file_err,     "     | tone queue| generator |    key    |  receiver |    data   |    other  |\n");
+	fprintf(self->file_err,     "%s", SEPARATOR_LINE);
 
 	for (int sound = CW_AUDIO_NULL; sound <= CW_AUDIO_PA; sound++) {
 
@@ -897,40 +897,40 @@ void cw_test_print_test_stats(cw_test_executor_t * self)
 		/* Print line with errors. Print numeric values only
 		   if some tests for given combination of sound
 		   system/topic were performed. */
-		fprintf(self->stderr, FRONT_FORMAT, error_indicator_front, sound_systems[sound]);
+		fprintf(self->file_err, FRONT_FORMAT, error_indicator_front, sound_systems[sound]);
 		for (int topic = 0; topic < LIBCW_TEST_TOPIC_MAX; topic++) {
 			int total = self->all_stats[sound][topic].failures + self->all_stats[sound][topic].successes;
 			int failures = self->all_stats[sound][topic].failures;
 
 			if (0 == total && 0 == failures) {
-				fprintf(self->stderr, CELL_FORMAT_S, " ");
+				fprintf(self->file_err, CELL_FORMAT_S, " ");
 			} else {
-				fprintf(self->stderr, CELL_FORMAT_D, failures);
+				fprintf(self->file_err, CELL_FORMAT_D, failures);
 			}
 		}
-		fprintf(self->stderr, BACK_FORMAT, error_indicator_back);
+		fprintf(self->file_err, BACK_FORMAT, error_indicator_back);
 
 
 
 		/* Print line with totals. Print numeric values only
 		   if some tests for given combination of sound
 		   system/topic were performed. */
-		fprintf(self->stderr, FRONT_FORMAT, error_indicator_empty, sound_systems[sound]);
+		fprintf(self->file_err, FRONT_FORMAT, error_indicator_empty, sound_systems[sound]);
 		for (int topic = 0; topic < LIBCW_TEST_TOPIC_MAX; topic++) {
 			int total = self->all_stats[sound][topic].failures + self->all_stats[sound][topic].successes;
 			int failures = self->all_stats[sound][topic].failures;
 
 			if (0 == total && 0 == failures) {
-				fprintf(self->stderr, CELL_FORMAT_S, " ");
+				fprintf(self->file_err, CELL_FORMAT_S, " ");
 			} else {
-				fprintf(self->stderr, CELL_FORMAT_D, total);
+				fprintf(self->file_err, CELL_FORMAT_D, total);
 			}
 		}
-		fprintf(self->stderr, BACK_FORMAT, error_indicator_empty);
+		fprintf(self->file_err, BACK_FORMAT, error_indicator_empty);
 
 
 
-		fprintf(self->stderr,       "%s", SEPARATOR_LINE);
+		fprintf(self->file_err,       "%s", SEPARATOR_LINE);
 	}
 
 	return;
@@ -945,8 +945,8 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 
 	self->config = cw_config_new("libcw tests");
 
-	self->stdout = stdout;
-	self->stderr = stderr;
+	self->file_out = stdout;
+	self->file_err = stderr;
 
 	self->use_resource_meas = false;
 
@@ -1021,7 +1021,7 @@ void cw_test_deinit(cw_test_executor_t * self)
 
 int cw_test_log_info(struct cw_test_executor_t * self, const char * fmt, ...)
 {
-	if (NULL == self->stdout) {
+	if (NULL == self->file_out) {
 		return 0;
 	}
 
@@ -1032,8 +1032,8 @@ int cw_test_log_info(struct cw_test_executor_t * self, const char * fmt, ...)
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
-	const int n = fprintf(self->stdout, "[II] %s", va_buf);
-	fflush(self->stdout);
+	const int n = fprintf(self->file_out, "[II] %s", va_buf);
+	fflush(self->file_out);
 
 	return n;
 }
@@ -1043,7 +1043,7 @@ int cw_test_log_info(struct cw_test_executor_t * self, const char * fmt, ...)
 
 void cw_test_log_info_cont(struct cw_test_executor_t * self, const char * fmt, ...)
 {
-	if (NULL == self->stdout) {
+	if (NULL == self->file_out) {
 		return;
 	}
 
@@ -1054,8 +1054,8 @@ void cw_test_log_info_cont(struct cw_test_executor_t * self, const char * fmt, .
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
-	fprintf(self->stdout, "%s", va_buf);
-	fflush(self->stdout);
+	fprintf(self->file_out, "%s", va_buf);
+	fflush(self->file_out);
 
 	return;
 }
@@ -1065,10 +1065,10 @@ void cw_test_log_info_cont(struct cw_test_executor_t * self, const char * fmt, .
 
 void cw_test_flush_info(struct cw_test_executor_t * self)
 {
-	if (NULL == self->stdout) {
+	if (NULL == self->file_out) {
 		return;
 	}
-	fflush(self->stdout);
+	fflush(self->file_out);
 	return;
 }
 
@@ -1077,7 +1077,7 @@ void cw_test_flush_info(struct cw_test_executor_t * self)
 
 void cw_test_log_error(struct cw_test_executor_t * self, const char * fmt, ...)
 {
-	if (NULL == self->stdout) {
+	if (NULL == self->file_out) {
 		return;
 	}
 
@@ -1088,8 +1088,8 @@ void cw_test_log_error(struct cw_test_executor_t * self, const char * fmt, ...)
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
-	fprintf(self->stdout, "[EE] %s", va_buf);
-	fflush(self->stdout);
+	fprintf(self->file_out, "[EE] %s", va_buf);
+	fflush(self->file_out);
 
 	return;
 }
@@ -1215,7 +1215,7 @@ void cw_test_print_test_options(cw_test_executor_t * self)
 		self->log_info(self, "Single function to be tested: '%s'\n", self->config->test_function_name);
 	}
 
-	fflush(self->stdout);
+	fflush(self->file_out);
 }
 
 
