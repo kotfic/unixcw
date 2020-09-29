@@ -138,6 +138,9 @@ struct cw_alsa_handle_t {
 
 
 	int (* snd_pcm_hw_params_get_periods)(const snd_pcm_hw_params_t * hw_params, unsigned int * val, int * dir);
+	int (* snd_pcm_hw_params_get_periods_min)(const snd_pcm_hw_params_t * hw_params, unsigned int * val, int * dir);
+	int (* snd_pcm_hw_params_get_periods_max)(const snd_pcm_hw_params_t * hw_params, unsigned int * val, int * dir);
+	int (* snd_pcm_hw_params_set_periods)(snd_pcm_t * pcm, snd_pcm_hw_params_t * hw_params, unsigned int val, int dir);
 
 	/* For testing/getting period size in ALSA configuration space.
 	   We can use it first on initial hw parameters obtained with
@@ -901,13 +904,25 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
 	   "Commonly this is 2*period size".
 
 	   We can experiment here with other value. */
-	snd_pcm_uframes_t intended_buffer_size = actual_period_size * 3;
+	const int n_periods = 3;
+	snd_pcm_uframes_t intended_buffer_size = actual_period_size * n_periods;
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "Will try to set intended buffer size %lu", intended_buffer_size);
 	snd_rv = cw_alsa.snd_pcm_hw_params_set_buffer_size_near(gen->alsa_data.pcm_handle, hw_params, &intended_buffer_size);
 	if (0 != snd_rv) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "Unable to set buffer size %lu for playback: %s", intended_buffer_size, cw_alsa.snd_strerror(snd_rv));
+		return CW_FAILURE;
+	}
+
+	/* On my Samsung N150 netbook running Alpine Linux 3.12 I found the
+	   parameter to be zero in final configuration space. Better set it
+	   explicitly. */
+	int dir = 0;
+	cw_alsa.snd_pcm_hw_params_set_periods(gen->alsa_data.pcm_handle, hw_params, n_periods, dir);
+	if (0 != snd_rv) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
+			      MSG_PREFIX "set hw params: can't set periods: %s / %u", cw_alsa.snd_strerror(snd_rv), n_periods);
 		return CW_FAILURE;
 	}
 
@@ -1039,10 +1054,14 @@ static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, co
 
 	/* How many periods in a buffer? */
 	unsigned int n_periods = 0;
+	unsigned int n_periods_min = 0;
+	unsigned int n_periods_max = 0;
 	dir = 0;
 	cw_alsa.snd_pcm_hw_params_get_periods(hw_params, &n_periods, &dir);
+	cw_alsa.snd_pcm_hw_params_get_periods_min(hw_params, &n_periods_min, &dir);
+	cw_alsa.snd_pcm_hw_params_get_periods_max(hw_params, &n_periods_max, &dir);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-		      MSG_PREFIX "    Count of periods in buffer: %u", n_periods);
+		      MSG_PREFIX "    Count of periods in buffer: %u (min = %u, max = %u)", n_periods, n_periods_min, n_periods_max);
 	/* The ratio should be a value with zero fractional part. TODO: write a test for it. */
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "    Ratio of period size to buffer size = %f",
@@ -1160,7 +1179,15 @@ static int cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle)
 	if (!alsa_handle->snd_pcm_hw_params_set_channels)         return -33;
 
 	*(void **) &(alsa_handle->snd_pcm_hw_params_get_periods)          = dlsym(alsa_handle->lib_handle, "snd_pcm_hw_params_get_periods");
-	if (!alsa_handle->snd_pcm_hw_params_get_periods)                  return -40;
+	if (!alsa_handle->snd_pcm_hw_params_get_periods)                  return -(__LINE__);
+	*(void **) &(alsa_handle->snd_pcm_hw_params_get_periods_min)      = dlsym(alsa_handle->lib_handle, "snd_pcm_hw_params_get_periods_min");
+	if (!alsa_handle->snd_pcm_hw_params_get_periods_min)              return -(__LINE__);
+	*(void **) &(alsa_handle->snd_pcm_hw_params_get_periods_max)      = dlsym(alsa_handle->lib_handle, "snd_pcm_hw_params_get_periods_max");
+	if (!alsa_handle->snd_pcm_hw_params_get_periods_max)              return -(__LINE__);
+	*(void **) &(alsa_handle->snd_pcm_hw_params_set_periods)          = dlsym(alsa_handle->lib_handle, "snd_pcm_hw_params_set_periods");
+	if (!alsa_handle->snd_pcm_hw_params_set_periods)                  return -(__LINE__);
+
+
 	*(void **) &(alsa_handle->snd_pcm_hw_params_get_period_size_min)  = dlsym(alsa_handle->lib_handle, "snd_pcm_hw_params_get_period_size_min");
 	if (!alsa_handle->snd_pcm_hw_params_get_period_size_min)          return -41;
 	*(void **) &(alsa_handle->snd_pcm_hw_params_get_period_size_max)  = dlsym(alsa_handle->lib_handle, "snd_pcm_hw_params_get_period_size_max");
