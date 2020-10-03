@@ -1,17 +1,25 @@
-* terminology
+* terminology and conventions for code
 
  - Use "duration" when describing how long (in microseconds or seconds) a
    tone will last. Don't use length when speaking about how long (in
    microseconds or seconds) a tone will last.
+
  - Use "sound" when referring to sound devices, sounds systems
    (ALSA/PulseAudio, etc.) or sound outputs (sinks). Don't use "audio" in
    this context.
+
  - Use "inter-mark-space" when referring to space between Dots and Dashes
    within one character.  Don't use "end-of-mark space".
+
  - Use "inter-character-space" when referring to space between characters
    within one word. Don't use "end-of-character space".
+
  - Use "inter-word-space" when referring to space between words. Don't use
    "end-of-word space".
+
+ - Variables of type cw_ret_t, returned by libcw functions, should be called
+   'cwret' (or 'cwret_<suffix>'):
+   cw_ret_t cwret = cw_tq_enqueue_internal(tq, &tone);
 
 
 * Operating systems
