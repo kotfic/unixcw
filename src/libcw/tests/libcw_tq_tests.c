@@ -49,7 +49,7 @@
 
 
 
-static int test_cw_tq_enqueue_internal_A(cw_test_executor_t * cte, cw_tone_queue_t * tq);
+static int test_cw_tq_enqueue_internal(cw_test_executor_t * cte, cw_tone_queue_t * tq);
 static int test_cw_tq_dequeue_internal(cw_test_executor_t * cte, cw_tone_queue_t * tq);
 
 
@@ -58,6 +58,7 @@ static void gen_destroy(cw_gen_t ** gen);
 static void enqueue_tone_low_level(cw_test_executor_t * cte, cw_tone_queue_t * tq, const cw_tone_t * tone);
 static cw_tone_queue_t * test_cw_tq_capacity_test_init(cw_test_executor_t * cte, size_t capacity, size_t high_water_mark, int head_shift);
 static void test_helper_tq_callback(void * data);
+static cwt_retv test_helper_fill_queue(cw_test_executor_t * cte, cw_tone_queue_t * tq, size_t count);
 
 
 
@@ -391,7 +392,7 @@ int test_cw_tq_length_internal_1(cw_test_executor_t * cte)
   First we fill a tone queue when testing enqueue(), and then use the
   filled tone queue to test dequeue().
 
-  @reviewed on 2019-10-04
+  @reviewed 2020-10-03
 */
 int test_cw_tq_enqueue_dequeue_internal(cw_test_executor_t * cte)
 {
@@ -403,10 +404,8 @@ int test_cw_tq_enqueue_dequeue_internal(cw_test_executor_t * cte)
 
 	for (int i = 0; i < max; i++) {
 
-		// tq->state = CW_TQ_NONEMPTY; /* TODO: why this assignment? */
-
 		/* Fill the tone queue with tones. */
-		test_cw_tq_enqueue_internal_A(cte, tq);
+		test_cw_tq_enqueue_internal(cte, tq);
 
 		/* Use the same (now filled) tone queue to test dequeue()
 		   function. */
@@ -424,9 +423,11 @@ int test_cw_tq_enqueue_dequeue_internal(cw_test_executor_t * cte)
 
 
 /**
-   @reviewed on 2019-10-04
+   @brief Test enqueueing operation
+
+   @reviewed 2020-10-02
 */
-int test_cw_tq_enqueue_internal_A(cw_test_executor_t * cte, cw_tone_queue_t * tq)
+cwt_retv test_cw_tq_enqueue_internal(cw_test_executor_t * cte, cw_tone_queue_t * tq)
 {
 	/* At this point cw_tq_length_internal() should be
 	   tested, so we can use it to verify correctness of 'enqueue'
@@ -441,7 +442,10 @@ int test_cw_tq_enqueue_internal_A(cw_test_executor_t * cte, cw_tone_queue_t * tq
 
 		/* This tests for potential problems with function call. */
 		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueueing tone")) {
+		if (!cte->expect_op_int_errors_only(cte,
+						    CW_SUCCESS, "==", cwret,
+						    "%s:%d: enqueueing tone",
+						    __func__, __LINE__)) {
 			enqueue_failure = true;
 			break;
 		}
@@ -451,35 +455,28 @@ int test_cw_tq_enqueue_internal_A(cw_test_executor_t * cte, cw_tone_queue_t * tq
 		   queue length. */
 		const size_t expected_len = i + 1;
 		const size_t readback_len = cw_tq_length_internal(tq);
-		if (!cte->expect_op_int_errors_only(cte, expected_len, "==", readback_len, "enqueue A, readback #1")) {
+		if (!cte->expect_op_int_errors_only(cte,
+						    expected_len, "==", readback_len,
+						    "%s:%d:readback #1",
+						    __func__, __LINE__)) {
 			length_failure = true;
 			break;
 		}
-		if (!cte->expect_op_int_errors_only(cte, tq->len, "==", readback_len, "enqueue A, readback #2")) {
+		if (!cte->expect_op_int_errors_only(cte,
+						    tq->len, "==", readback_len,
+						    "%s:%d: readback #2",
+						    __func__, __LINE__)) {
 			length_failure = true;
 			break;
 		}
 	}
 
-	cte->expect_op_int(cte, false, "==", enqueue_failure, "enqueue A: enqueueing");
-	cte->expect_op_int(cte, false, "==", length_failure, "enqueue A: tone queue length");
-
-
-
-	/* Try adding a tone to full tq. */
-	/* This tests for potential problems with function call.
-	   Enqueueing should fail when the queue is full. */
-	cte->log_info(cte, "*** you may now see \"EE: can't enqueue tone, tq is full\" message ***\n");
-	const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
-	cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "enqueue A: attempting to enqueue tone to full queue");
-
-	/* This tests for correctness of working of the 'enqueue'
-	   function.  Full tq should not grow beyond its capacity. */
-	cte->expect_op_int(cte, tq->capacity, "==", tq->len, "enqueue A: length of full queue vs. capacity");
+	cte->expect_op_int(cte, false, "==", enqueue_failure, "%s:%d: enqueueing", __func__, __LINE__);
+	cte->expect_op_int(cte, false, "==", length_failure, "%s:%d: tone queue length", __func__, __LINE__);
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 
@@ -536,24 +533,6 @@ int test_cw_tq_dequeue_internal(cw_test_executor_t * cte, cw_tone_queue_t * tq)
 	cte->expect_op_int(cte, false, "==", length_failure, "dequeue: length of tq");
 
 
-
-	/* Try removing a tone from empty queue. */
-	/* This tests for potential problems with function call. */
-	const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
-	cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "dequeue: attempting to dequeue tone from empty queue");
-
-
-	/* This tests for correctness of working of the dequeue()
-	   function.  Empty tq should stay empty.
-
-	   At this point cw_tq_length_internal() should be already
-	   tested, so we can use it to verify correctness of dequeue()
-	   function. */
-	const size_t readback_len = cw_tq_length_internal(tq);
-	cte->expect_op_int(cte, 0, "==", readback_len, "dequeue: length of empty queue (readback)");
-	cte->expect_op_int(cte, 0, "==", tq->len, "dequeue: length of empty queue (direct check)");
-
-
 	return 0;
 }
 
@@ -561,69 +540,103 @@ int test_cw_tq_dequeue_internal(cw_test_executor_t * cte, cw_tone_queue_t * tq)
 
 
 /**
-   The second function is just a wrapper for the first one, so this
-   test case tests both functions at once.
+   @brief Test 'is full' function while enqueueing tones to it
 
    Remember that the function checks whether tq is full, not whether
    it is non-empty.
 
-   @reviewed on 2019-10-04
+   @reviewed 2020-10-03
 */
-int test_cw_tq_is_full_internal(cw_test_executor_t * cte)
+cwt_retv test_cw_tq_is_full_internal_while_enqueueing(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
 	cw_tone_queue_t * tq = cw_tq_new_internal();
 	cte->assert2(cte, tq, "failed to create new tq");
-	//tq->state = CW_TQ_NONEMPTY; // TODO: what is it doing here?
 	bool failure = false;
-	bool is_full = false;
 
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 1, 1, CW_SLOPE_MODE_NO_SLOPES);
 
-	/* Notice the "capacity - 1" in loop condition: we leave one
-	   place in tq free so that is_full() called in the loop
-	   always returns false. */
-	for (size_t i = 0; i < tq->capacity - 1; i++) {
-		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
-		/* The 'enqueue' function has been already tested, but
-		   it won't hurt to check this simple condition here
-		   as well. */
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "is_full: enqueuing tone #%zu", i)) {
+	for (size_t i = 0; i < tq->capacity; i++) {
+		/* The 'enqueue' function is tested elsewhere, but it won't
+		   hurt to check this simple condition here as well. */
+		const cw_ret_t cwret = cw_tq_enqueue_internal(tq, &tone);
+		if (!cte->expect_op_int_errors_only(cte,
+						    CW_SUCCESS, "==", cwret,
+						    "%s:%d: enqueuing tone #%zu",
+						    __func__, __LINE__, i)) {
 			failure = true;
 			break;
 		}
 
-		/* The queue shouldn't become full in this loop
-		   because we enqueue only 'capacity - 1' tones. */
-		is_full = LIBCW_TEST_FUT(cw_tq_is_full_internal)(tq);
-		if (!cte->expect_op_int_errors_only(cte, false, "==", is_full, "is_full: is tone queue full after enqueueing tone #%zu", i)) {
+		/* The last tone will make the queue full. */
+		const bool expected_value = i == (tq->capacity - 1);
+		const bool is_full = LIBCW_TEST_FUT(cw_tq_is_full_internal)(tq);
+		if (!cte->expect_op_int_errors_only(cte,
+						    expected_value, "==", is_full,
+						    "%s:%d: is tone queue full after enqueueing tone #%zu",
+						    __func__, __LINE__, i)) {
 			failure = true;
 			break;
 		}
 	}
-	cte->expect_op_int(cte, false, "==", failure, "is_full: 'full' state during enqueueing:");
+	cte->expect_op_int(cte,
+			   false, "==", failure,
+			   "%s:%d: 'full' state during enqueueing",
+			   __func__, __LINE__);
+
+	cw_tq_delete_internal(&tq);
+
+	cte->print_test_footer(cte, __func__);
+
+	return cwt_retv_ok;
+}
 
 
 
-	/* At this point there is still place in tq for one more
-	   tone. Enqueue it and verify that the tq is now full. */
-	cw_ret_t cwret = cw_tq_enqueue_internal(tq, &tone);
-	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "is_full: adding last element");
 
-	is_full = LIBCW_TEST_FUT(cw_tq_is_full_internal)(tq);
-	cte->expect_op_int(cte, true, "==", is_full, "is_full: queue is full after adding last element");
+/**
+   @brief Test 'is full' function while dequeueing tones from it
 
+   Remember that the function checks whether tq is full, not whether
+   it is non-empty.
 
+   @reviewed 2020-10-03
+*/
+cwt_retv test_cw_tq_is_full_internal_while_dequeueing(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, __func__);
 
-	/* Now test the function as we dequeue ALL tones. */
+	cw_tone_queue_t * tq = cw_tq_new_internal();
+	cte->assert2(cte, tq, "failed to create new tq");
+	bool failure = false;
+
+	/* Fill tone queue completely. */
+	if (cwt_retv_ok != test_helper_fill_queue(cte, tq, tq->capacity)) {
+		cte->log_error(cte, "%s:%d: failed to fill tone queue\n", __func__, __LINE__);
+		return cwt_retv_err;
+	}
+
+	/* First test the function on filled and not-dequeued-from queue. */
+	bool is_full = LIBCW_TEST_FUT(cw_tq_is_full_internal)(tq);
+	if (!cte->expect_op_int(cte,
+				true, "==", is_full,
+				"%s:%d: queue should be full after completely filling it",
+				__func__, __LINE__)) {
+	}
+
+	/* Now test the 'is full' function as we dequeue ALL tones. */
 	for (size_t i = tq->capacity; i > 0; i--) {
 		/* The 'dequeue' function has been already tested, but
 		   it won't hurt to check this simple condition here
 		   as well. */
-		cwret = cw_tq_dequeue_internal(tq, &tone);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "is_full: dequeueing tone #%zd\n", i)) {
+		cw_tone_t tone;
+		const cw_ret_t cwret = cw_tq_dequeue_internal(tq, &tone);
+		if (!cte->expect_op_int_errors_only(cte,
+						    CW_SUCCESS, "==", cwret,
+						    "%s:%d: dequeueing tone #%zd",
+						    __func__, __LINE__, i)) {
 			failure = true;
 			break;
 		}
@@ -632,13 +645,18 @@ int test_cw_tq_is_full_internal(cw_test_executor_t * cte)
 		   we have called "dequeue" above, the queue becomes
 		   non-full during first iteration. */
 		is_full = LIBCW_TEST_FUT(cw_tq_is_full_internal)(tq);
-		if (!cte->expect_op_int_errors_only(cte, false, "==", is_full, "is_full: queue should not be full after dequeueing tone %zd\n", i)) {
+		if (!cte->expect_op_int_errors_only(cte,
+						    false, "==", is_full,
+						    "%s:%d: queue should not be full after dequeueing tone %zd",
+						    __func__, __LINE__, i)) {
 			failure = true;
 			break;
 		}
 	}
-	cte->expect_op_int(cte, false, "==", failure, "is_full: 'full' state during dequeueing:");
-
+	cte->expect_op_int(cte,
+			   false, "==", failure,
+			   "%s:%d: 'full' state during dequeueing",
+			   __func__, __LINE__);
 
 
 	cw_tq_delete_internal(&tq);
@@ -979,7 +997,7 @@ cw_tone_queue_t * test_cw_tq_capacity_test_init(cw_test_executor_t * cte, size_t
 
    @reviewed on 2019-10-04
 */
-int test_cw_tq_enqueue_internal_B(cw_test_executor_t * cte)
+cwt_retv test_cw_tq_enqueue_internal_tone_validity(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
@@ -1025,7 +1043,51 @@ int test_cw_tq_enqueue_internal_B(cw_test_executor_t * cte)
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
+}
+
+
+
+
+/**
+   @brief Add @param count tones to tone queue
+
+   This is a test helper function.
+
+   @reviewed 2020-10-03
+
+   @param[in] cte test executor
+   @param[in/out] tq tone queue to which to add tones
+   @param[in] count how many tones to add?
+
+   @return cwt_retv_ok on success
+   @return cwt_retv_err otherwise
+*/
+cwt_retv test_helper_fill_queue(cw_test_executor_t * cte, cw_tone_queue_t * tq, size_t count)
+{
+	/* This is a test helper function, so I don't use
+	   cte->expect_op_int...(). Using this function would increment test
+	   status counters. */
+
+	cw_tone_t tone;
+	CW_TONE_INIT(&tone, 20, 10000, CW_SLOPE_MODE_STANDARD_SLOPES);
+
+	for (size_t i = 0; i < count; i++) {
+		const cw_ret_t cwret = cw_tq_enqueue_internal(tq, &tone);
+		if (CW_SUCCESS != cwret) {
+			cte->log_error(cte, "%s:%d: enqueue tone #%zd failed\n", __func__, __LINE__, i);
+			return cwt_retv_err;
+		}
+	}
+
+	const size_t len = tq->len;
+	if (len == count) {
+		return cwt_retv_ok;
+	} else {
+		cte->log_error(cte, "%s:%d: queue len invalid: %zd != %zd\n",
+			       __func__, __LINE__, len, count);
+		return cwt_retv_err;
+	}
 }
 
 
@@ -1039,15 +1101,12 @@ int test_cw_tq_enqueue_internal_B(cw_test_executor_t * cte)
 
    @reviewed on
 */
-int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
+cwt_retv test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 {
 	/* +1 for cases where repetition count is 1.
 	   In such cases modulo operation in the loop would fail. */
 	const int max = cte->get_repetitions_count(cte) + 1;
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
-
-	cw_tone_t tone;
-	CW_TONE_INIT(&tone, 20, 10000, CW_SLOPE_MODE_STANDARD_SLOPES);
 
 	bool wait_failure = false;
 	bool diff_failure = false;
@@ -1059,9 +1118,9 @@ int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 		cte->assert2(cte, gen, "failed to create a tone queue\n");
 		cw_gen_start(gen);
 
-		for (int j = 0; j < max; j++) {
-			const cw_ret_t cwret = cw_tq_enqueue_internal(gen->tq, &tone);
-			cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "wait for level: enqueue tone #%d", j);
+		if (cwt_retv_ok != test_helper_fill_queue(cte, gen->tq, max)) {
+			cte->log_error(cte, "%s:%d: failed to fill tone queue\n", __func__, __LINE__);
+			return cwt_retv_err;
 		}
 
 		/* Notice that level is always smaller than number of
@@ -1105,7 +1164,7 @@ int test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 
 	cte->print_test_footer(cte, __func__);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 
@@ -1397,103 +1456,165 @@ int test_cw_tq_gen_operations_B(cw_test_executor_t * cte)
 
 
 /**
-   Test the tone queue manipulations, ensuring that:
-   1. we can test properties of empty tone queue,
-   2. we can fill the queue, that the filled tone queue really has
-      some characteristics of full tone queue,
-   3. that we can flush it all again afterwards, and re-test empty
-      tone queue's properties.
+   @brief Test properties (capacity, length and other) of empty tone queue
 
-   @reviewed on 2019-10-07
+   @reviewed 2020-10-03
 */
-int test_cw_tq_operations_C(cw_test_executor_t * cte)
+cwt_retv test_cw_tq_properties_empty(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
 	cw_tone_queue_t * tq = cw_tq_new_internal();
-
-	/* Test: properties (capacity and length) of empty tq. */
-	{
-		/* Empty tone queue and make sure that it is really
-		   empty (wait for info from libcw). */
-		cw_tq_flush_internal(tq);
-		cw_tq_wait_for_level_internal(tq, 0);
-
-		const int capacity = LIBCW_TEST_FUT(cw_tq_capacity_internal)(tq);
-		cte->expect_op_int(cte, CW_TONE_QUEUE_CAPACITY_MAX, "==", capacity, "empty queue's capacity");
-
-		const size_t len_empty = LIBCW_TEST_FUT(cw_tq_length_internal)(tq);
-		cte->expect_op_int(cte, 0, "==", len_empty, "empty queue's length");
-	}
-
-
+	bool failure_capacity = false;
+	bool failure_length = false;
+	bool failure_dequeue = false;
 
 	/*
-	  Test: properties (capacity and length) of full tq.
-
-	  Since the queue is not a member of a generator that is
-	  started, there will be no automatic dequeueing.
-
-	  TODO: add a test that verifies that non-started-generator
-	  doesn't dequeue tones.
+	  Do the tests few times in a loop. In the loop simulate using the
+	  queue (by filling it) and then emptying it and in next iteration
+	  re-test properties of emptied queue (i.e. queue that is empty not
+	  because it's never been used, but because it has been emptied).
 	*/
-	{
-		int i = 0;
-		/* FIXME: cw_tq_is_full_internal() is not tested */
-		while (!cw_tq_is_full_internal(tq)) {
-			cw_tone_t tone;
-			int f = 5; /* I don't want to hear the tone during tests. */
-			CW_TONE_INIT(&tone, f + (i++ & 1) * f, 1000, CW_SLOPE_MODE_NO_SLOPES);
-			cw_tq_enqueue_internal(tq, &tone);
+	for (size_t i = 0; i < 5; i++) {
+
+		/* Capacity of queue should always be the same. */
+		const int capacity = LIBCW_TEST_FUT(cw_tq_capacity_internal)(tq);
+		if (!cte->expect_op_int_errors_only(cte,
+						    CW_TONE_QUEUE_CAPACITY_MAX, "==", capacity,
+						    "%s:%d: empty queue's capacity",
+						    __func__, __LINE__)) {
+			failure_capacity = true;
+			break;
+		}
+
+		/* Length of empty tone queue should be zero (of course). */
+		const size_t readback_len = LIBCW_TEST_FUT(cw_tq_length_internal)(tq);
+		if (!cte->expect_op_int_errors_only(cte,
+						    0, "==", readback_len,
+						    "%s:%d: empty queue's length",
+						    __func__, __LINE__)) {
+			failure_length = true;
+			break;
+		}
+		if (!cte->expect_op_int_errors_only(cte,
+						    0, "==", tq->len,
+						    "%s:%d: empty queue's length",
+						    __func__, __LINE__)) {
+			failure_length = true;
+			break;
+		}
+
+		/* Dequeueing from empty tone queue should fail. */
+		cw_tone_t tone;
+		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
+		if (!cte->expect_op_int_errors_only(cte,
+						    CW_FAILURE, "==", cwret,
+						    "%s:%d: dequeueing from empty queue",
+						    __func__, __LINE__)) {
+			failure_dequeue = true;
+			break;
 		}
 
 
-		const int capacity = LIBCW_TEST_FUT(cw_tq_capacity_internal)(tq);
-		cte->expect_op_int(cte, CW_TONE_QUEUE_CAPACITY_MAX, "==", capacity, "full queue's capacity");
-
-
-		const size_t len_full = LIBCW_TEST_FUT(cw_tq_length_internal)(tq);
-		cte->expect_op_int(cte, CW_TONE_QUEUE_CAPACITY_MAX, "==", len_full, "full queue's length");
-	}
-
-
-
-	/* Test: attempt to add tone to full queue. */
-	{
-		cte->log_info(cte, "you may now see \"EE: can't enqueue tone, tq is full\" message\n");
-
-		cw_tone_t tone;
-		CW_TONE_INIT(&tone, 100, 1000000, CW_SLOPE_MODE_NO_SLOPES);
-		errno = 0;
-		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
-		cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "trying to enqueue tone to full queue (cwret)");
-		cte->expect_op_int(cte, EAGAIN, "==", errno, "trying to enqueue tone to full queue (errno)");
-	}
-
-
-
-	/* Test: check again properties (capacity and length) of empty
-	   tq after it has been in use.
-
-	   Empty the tq, ensure that it is empty, and do the test. */
-	{
-		/* Empty tone queue and make sure that it is really
-		   empty (wait for info from libcw). */
+		/* Prepare tone queue for next iteration of the loop: fill
+		   and empty the tone queue. */
+		if (cwt_retv_ok != test_helper_fill_queue(cte, tq, tq->capacity)) {
+			cte->log_error(cte, "%s:%d: failed to fill tone queue\n", __func__, __LINE__);
+			return cwt_retv_err;
+		}
 		cw_tq_flush_internal(tq);
 		cw_tq_wait_for_level_internal(tq, 0);
 
-		const int capacity = LIBCW_TEST_FUT(cw_tq_capacity_internal)(tq);
-		cte->expect_op_int(cte, CW_TONE_QUEUE_CAPACITY_MAX, "==", capacity, "empty queue's capacity");
 
-
-		/* Test that the tq is really empty after
-		   cw_tq_wait_for_level_internal() has returned. */
-		const size_t len_empty = LIBCW_TEST_FUT(cw_tq_length_internal)(tq);
-		cte->expect_op_int(cte, 0, "==", len_empty, "empty queue's length");
+		/* Go to checking properties of emptied tq in next iteration. */
 	}
+
+
+	cte->expect_op_int(cte,
+			   false, "==", failure_capacity,
+			   "%s:%d: empty queue's capacity",
+			   __func__, __LINE__);
+	cte->expect_op_int(cte,
+			   false, "==", failure_length,
+			   "%s:%d: empty queue's length",
+			   __func__, __LINE__);
+	cte->expect_op_int(cte,
+			   false, "==", failure_dequeue,
+			   "%s:%d: dequeueing from empty queue",
+			   __func__, __LINE__);
+
 
 	cw_tq_delete_internal(&tq);
 	cte->expect_null_pointer_errors_only(cte, tq, "deleting tone queue");
+
+	cte->print_test_footer(cte, __func__);
+
+	return 0;
+}
+
+
+
+
+/**
+   @brief Test properties (capacity, length and other) of full tq
+
+   Since the queue is not a member of a generator that is started, there will
+   be no automatic dequeueing. TODO: add a test that verifies that
+   non-started-generator doesn't dequeue tones.
+
+   @reviewed 2020-10-02
+*/
+cwt_retv test_cw_tq_properties_full(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, __func__);
+
+	cw_tone_queue_t * tq = cw_tq_new_internal();
+	if (cwt_retv_ok != test_helper_fill_queue(cte, tq, tq->capacity)) {
+		cte->log_error(cte, "%s:%d: failed to fill tone queue\n", __func__, __LINE__);
+		return cwt_retv_err;
+	}
+
+
+	const size_t capacity = LIBCW_TEST_FUT(cw_tq_capacity_internal)(tq);
+	cte->expect_op_int(cte,
+			   CW_TONE_QUEUE_CAPACITY_MAX, "==", capacity,
+			   "%s:%d: full queue's capacity",
+			   __func__, __LINE__);
+
+
+	const size_t len_full = LIBCW_TEST_FUT(cw_tq_length_internal)(tq);
+	cte->expect_op_int(cte,
+			   CW_TONE_QUEUE_CAPACITY_MAX, "==", len_full,
+			   "%s:%d: full queue's length",
+			   __func__, __LINE__);
+
+
+	/* This tests for correctness of working of the 'enqueue' function.
+	   Full tq should not grow beyond its capacity. */
+	cte->expect_op_int(cte,
+			   tq->capacity, "==", tq->len,
+			   "%s:%d: length of full queue vs. capacity (first variant)",
+			   __func__, __LINE__);
+	cte->expect_op_int(cte,
+			   capacity, "==", len_full,
+			   "%s:%d: length of full queue vs. capacity (second variant)",
+			   __func__, __LINE__);
+
+
+	/* Try adding a tone to full tq. This tests for potential problems
+	   with 'enqueue' function.  Enqueueing should fail when the queue is
+	   full. */
+	cte->log_info(cte, "*** you may now see \"EE: can't enqueue tone, tq is full\" message ***\n");
+	cw_tone_t tone;
+	CW_TONE_INIT(&tone, 0, 100, CW_SLOPE_MODE_NO_SLOPES);
+	const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
+	cte->expect_op_int(cte,
+			   CW_FAILURE, "==", cwret,
+			   "%s:%d: attempting to enqueue tone to full queue",
+			   __func__, __LINE__);
+
+
+	cw_tq_delete_internal(&tq);
 
 	cte->print_test_footer(cte, __func__);
 

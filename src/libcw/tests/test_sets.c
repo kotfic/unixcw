@@ -228,12 +228,15 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_test_capacity_A, true),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_test_capacity_B, true),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_wait_for_level_internal, false),
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_is_full_internal, true),
+
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_is_full_internal_while_enqueueing, true),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_is_full_internal_while_dequeueing, true),
+
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_enqueue_dequeue_internal, true),
 #if 0
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_enqueue_args_internal, true),
 #endif
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_enqueue_internal_B, true),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_enqueue_internal_tone_validity, true),
 
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_new_delete_internal, true),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_capacity_internal, true),
@@ -243,7 +246,9 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_callback, false),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_gen_operations_A, false),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_gen_operations_B, false),
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_operations_C, true),
+
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_properties_empty, true),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_properties_full, true),
 
 			LIBCW_TEST_FUNCTION_INSERT(NULL, true),
 		}
