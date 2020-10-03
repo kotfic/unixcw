@@ -425,7 +425,7 @@ void receiver_poll_character_c_r(Receiver * xcwcp_receiver)
 			}
 			if (!cte->expect_op_int_errors_only(cte,
 							    prod.character, "==", test.character,
-							    "Compare polled and looked up character: %c, %c\n",
+							    "Compare polled and looked up character: %c, %c",
 							    prod.character, test.character)) {
 				failure = true;
 			}
@@ -576,7 +576,7 @@ void receiver_poll_character_r_c(Receiver * xcwcp_receiver)
 			const int cmp = strcmp(prod.representation, looked_up_representation);
 			if (!cte->expect_op_int_errors_only(cte,
 							    cmp, "==", 0,
-							    "Compare polled and looked up representation: '%s', '%s'\n",
+							    "Compare polled and looked up representation: '%s', '%s'",
 							    prod.representation, looked_up_representation)) {
 				failure = true;
 			}

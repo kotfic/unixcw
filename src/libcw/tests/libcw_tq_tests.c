@@ -364,11 +364,11 @@ int test_cw_tq_length_internal_1(cw_test_executor_t * cte)
 		/* OK, added a tone, ready to measure length of the queue. */
 		const size_t expected_len = i + 1;
 		const size_t readback_len = LIBCW_TEST_FUT(cw_tq_length_internal)(tq);
-		if (!cte->expect_op_int_errors_only(cte, expected_len, "==", readback_len, "tone queue length A, readback #1\n")) {
+		if (!cte->expect_op_int_errors_only(cte, expected_len, "==", readback_len, "tone queue length A, readback #1")) {
 			failure = true;
 			break;
 		}
-		if (!cte->expect_op_int_errors_only(cte, tq->len, "==", readback_len, "tone queue length A, readback #2\n")) {
+		if (!cte->expect_op_int_errors_only(cte, tq->len, "==", readback_len, "tone queue length A, readback #2")) {
 			failure = true;
 			break;
 		}

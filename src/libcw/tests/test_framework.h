@@ -124,6 +124,11 @@ typedef struct cw_test_executor_t {
 	   Include test result in statistics only if the result was an
 	   error.
 
+	   You shouldn't put newline character at end of formatting
+	   string. The messages printed by these functions will be followed
+	   by "[ OK ]" or "[FAIL]" tags, and the newline would put these tags
+	   in new line, decreasing readability of test results.
+
 	   @return true if this comparison shows that the values satisfy the operator
 	   @return false otherwise
 	*/

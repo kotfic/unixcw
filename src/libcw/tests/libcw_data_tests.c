@@ -208,7 +208,7 @@ int test_cw_representation_to_character_internal(cw_test_executor_t * cte)
 			int cwret = LIBCW_TEST_FUT(cw_lookup_representation)(cw_entry->representation, &char_old_lookup);
 
 			if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
-							    "fast lookup vs. old method: conversion from representation to character for #%d (representation '%s')\n",
+							    "fast lookup vs. old method: conversion from representation to character for #%d (representation '%s')",
 							    i, cw_entry->representation)) {
 				failure = true;
 				break;
@@ -446,7 +446,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 		bool is_valid = representation_is_valid(representation);
 		if (!cte->expect_op_int_errors_only(cte,
 						    is_valid, "==", true,
-						    "character to representation: validity of representation (new) for #%d (char '%c')\n",
+						    "character to representation: validity of representation (new) for #%d (char '%c')",
 						    i, input_character)) {
 			c2r_failure = true;
 			break;
@@ -469,7 +469,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 			int cwret = LIBCW_TEST_FUT(cw_lookup_character)(input_character, representation_old);
 
 			if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
-							    "character to representation: conversion from character to representation (old) for #%d (char '%c')\n",
+							    "character to representation: conversion from character to representation (old) for #%d (char '%c')",
 							    i, input_character)) {
 				c2r_failure = true;
 				break;
@@ -478,7 +478,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 			is_valid = representation_is_valid(representation_old);
 			if (!cte->expect_op_int_errors_only(cte,
 							    is_valid, "==", true,
-							    "character to representation: validity of representation (old) for #%d (char '%c')\n",
+							    "character to representation: validity of representation (old) for #%d (char '%c')",
 							    i, input_character)) {
 				c2r_failure = true;
 				break;
@@ -486,7 +486,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 
 			const int cmp = strcmp(representation, representation_old);
 			if (!cte->expect_op_int_errors_only(cte, cmp, "==", 0,
-							    "character to representation: result of new and old method for #%d: '%s' != '%s'\n",
+							    "character to representation: result of new and old method for #%d: '%s' != '%s'",
 							    i, representation, representation_old)) {
 				c2r_failure = true;
 				break;
@@ -496,7 +496,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 		/* Here we convert the representation back into a character. */
 		char reverse_character = LIBCW_TEST_FUT(cw_representation_to_character)(representation);
 		if (!cte->expect_op_int_errors_only(cte, 0, "!=", reverse_character,
-						    "representation to character: conversion from representation to character (new) for #%d (representation '%s')\n",
+						    "representation to character: conversion from representation to character (new) for #%d (representation '%s')",
 						    i, representation)) {
 			r2c_failure = true;
 			break;
@@ -507,7 +507,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 			int cwret = LIBCW_TEST_FUT(cw_lookup_representation)(representation, &old_reverse_character);
 
 			if (!cte->expect_op_int_errors_only(cte, cwret, "==", CW_SUCCESS,
-							    "representation to character: conversion from representation to character (old) for #%d (representation '%s')\n",
+							    "representation to character: conversion from representation to character (old) for #%d (representation '%s')",
 							    i, representation)) {
 				r2c_failure = true;
 				break;
@@ -515,7 +515,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 
 
 			if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", old_reverse_character,
-							    "representation to character: result of new and old method for #%d: '%c' != '%c'\n",
+							    "representation to character: result of new and old method for #%d: '%c' != '%c'",
 							    i, reverse_character, old_reverse_character)) {
 				r2c_failure = true;
 				break;
@@ -523,7 +523,7 @@ cwt_retv test_data_main_table_lookups(cw_test_executor_t * cte)
 		}
 
 		/* Compare output char with input char. */
-		if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", input_character, "character lookup: two-way lookup for #%d ('%c' -> '%s' -> '%c')\n", i, input_character, representation, reverse_character)) {
+		if (!cte->expect_op_int_errors_only(cte, reverse_character, "==", input_character, "character lookup: two-way lookup for #%d ('%c' -> '%s' -> '%c')", i, input_character, representation, reverse_character)) {
 			two_way_failure = true;
 			break;
 		}
@@ -625,7 +625,7 @@ int test_prosign_lookups_internal(cw_test_executor_t * cte)
 			}
 
 			/* Check if call to tested function has modified the flag. */
-			if (!cte->expect_op_int_errors_only(cte, -1, "!=", is_usually_expanded, "procedural character lookup: expansion hint of character '%c' ((#%d)\n", procedural_characters[i], i)) {
+			if (!cte->expect_op_int_errors_only(cte, -1, "!=", is_usually_expanded, "procedural character lookup: expansion hint of character '%c' ((#%d)", procedural_characters[i], i)) {
 				expansion_failure = true;
 				break;
 			}
@@ -690,13 +690,13 @@ int test_phonetic_lookups_internal(cw_test_executor_t * cte)
 		int i = 0;
 		while (data[i].character) {
 			const int cwret = LIBCW_TEST_FUT(cw_lookup_phonetic)((char) data[i].character, phonetic_buffer); /* TODO: we need a version of the function that accepts size argument. */
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "phonetic lookup: simple lookup for character '%c'\n", data[i].character)) {
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "phonetic lookup: simple lookup for character '%c'", data[i].character)) {
 				simple_failure = true;
 				break;
 			}
 
 			int cmp = strcmp(phonetic_buffer, data[i].string);
-			if (!cte->expect_op_int_errors_only(cte, 0, "==", cmp, "phonetic lookup: simple lookup for character '%c'/'%s' -> '%s'\n",
+			if (!cte->expect_op_int_errors_only(cte, 0, "==", cmp, "phonetic lookup: simple lookup for character '%c'/'%s' -> '%s'",
 							    data[i].character, data[i].string, phonetic_buffer)) {
 				simple_failure = true;
 				break;
@@ -743,7 +743,7 @@ static int test_phonetic_lookups_internal_sub(cw_test_executor_t * cte, char * p
 			  Let's verify this using result of
 			  isalpha().
 			*/
-			if (!cte->expect_op_int_errors_only(cte, true, "==", is_alpha, "phonetic lookup (A): lookup of phonetic for '%c' (#%d)\n", (char) i, i)) {
+			if (!cte->expect_op_int_errors_only(cte, true, "==", is_alpha, "phonetic lookup (A): lookup of phonetic for '%c' (#%d)", (char) i, i)) {
 				lookup_failure = true;
 				break;
 			}
@@ -755,7 +755,7 @@ static int test_phonetic_lookups_internal_sub(cw_test_executor_t * cte, char * p
 			  Let's verify this using result of
 			  isalpha().
 			*/
-			if (!cte->expect_op_int_errors_only(cte, false, "==", is_alpha, "phonetic lookup (B): lookup of phonetic for '%c' (#%d)\n", (char) i, i)) {
+			if (!cte->expect_op_int_errors_only(cte, false, "==", is_alpha, "phonetic lookup (B): lookup of phonetic for '%c' (#%d)", (char) i, i)) {
 				lookup_failure = true;
 				break;
 			}
@@ -769,7 +769,7 @@ static int test_phonetic_lookups_internal_sub(cw_test_executor_t * cte, char * p
 			   be the same as the looked up
 			   letter. */
 			reverse_failure = (phonetic_buffer[0] != toupper((char) i));
-			if (!cte->expect_op_int_errors_only(cte, false, "==", reverse_failure, "phonetic lookup: reverse lookup for phonetic \"%s\" ('%c' / #%d)\n", phonetic_buffer, (char) i, i)) {
+			if (!cte->expect_op_int_errors_only(cte, false, "==", reverse_failure, "phonetic lookup: reverse lookup for phonetic \"%s\" ('%c' / #%d)", phonetic_buffer, (char) i, i)) {
 				reverse_failure = true;
 				break;
 			}
@@ -816,14 +816,14 @@ int test_validate_character_internal(cw_test_executor_t * cte)
 			   Test that backspace is not treated as valid character. */
 			{
 				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_character)(i);
-				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (old): valid character <backspace> / #%d\n", i)) {
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (old): valid character <backspace> / #%d", i)) {
 					failure_valid = true;
 					break;
 				}
 			}
 			{
 				const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
-				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (new): character <backspace> / #%d\n", i)) {
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (new): character <backspace> / #%d", i)) {
 					failure_valid = true;
 					break;
 				}
@@ -836,14 +836,14 @@ int test_validate_character_internal(cw_test_executor_t * cte)
 			   should confirm it. */
 			{
 				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_character)(i);
-				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (old): valid character '%c' / #%d not recognized as valid\n", (char ) i, i)) {
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (old): valid character '%c' / #%d not recognized as valid", (char ) i, i)) {
 					failure_valid = true;
 					break;
 				}
 			}
 			{
 				const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
-				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (new): valid character '%c' / #%d not recognized as valid\n", (char ) i, i)) {
+				if (!cte->expect_op_int_errors_only(cte, true, "==", is_valid, "validate character (new): valid character '%c' / #%d not recognized as valid", (char ) i, i)) {
 					failure_valid = true;
 					break;
 				}
@@ -856,14 +856,14 @@ int test_validate_character_internal(cw_test_executor_t * cte)
 			   invalid. */
 			{
 				const bool is_valid = (bool) LIBCW_TEST_FUT(cw_check_character)(i);
-				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (old): invalid character '%c' / #%d recognized as valid\n", (char ) i, i)) {
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (old): invalid character '%c' / #%d recognized as valid", (char ) i, i)) {
 					failure_invalid = true;
 					break;
 				}
 			}
 			{
 				const bool is_valid = LIBCW_TEST_FUT(cw_character_is_valid)(i);
-				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (new): invalid character '%c' / #%d recognized as valid\n", (char ) i, i)) {
+				if (!cte->expect_op_int_errors_only(cte, false, "==", is_valid, "validate character (new): invalid character '%c' / #%d recognized as valid", (char ) i, i)) {
 					failure_invalid = true;
 					break;
 				}

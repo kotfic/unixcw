@@ -73,7 +73,7 @@ int test_cw_debug_flags_internal(cw_test_executor_t * cte)
 		}
 
 		uint32_t readback_flags = LIBCW_TEST_FUT(cw_debug_get_flags)(&cw_debug_object);
-		if (!cte->expect_op_int_errors_only(cte, flags, "==", readback_flags, "get debug flag %"PRIu32"\n", flags)) {
+		if (!cte->expect_op_int_errors_only(cte, flags, "==", readback_flags, "get debug flag %"PRIu32"", flags)) {
 			get_failure = true;
 			break;
 		}
