@@ -39,6 +39,7 @@ int test_cw_tq_gen_operations_B(cw_test_executor_t * cte);
 cwt_retv test_cw_tq_properties_empty(cw_test_executor_t * cte);
 cwt_retv test_cw_tq_properties_full(cw_test_executor_t * cte);
 
+cwt_retv test_cw_tq_dequeue_internal_returns(cw_test_executor_t * cte);
 
 
 

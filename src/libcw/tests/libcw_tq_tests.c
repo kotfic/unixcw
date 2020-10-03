@@ -513,11 +513,19 @@ int test_cw_tq_dequeue_internal(cw_test_executor_t * cte, cw_tone_queue_t * tq)
 			break;
 		}
 
-		/* This tests for potential problems with function call. */
-		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "dequeue: dequeueing tone #%zu", i)) {
-			dequeue_failure = true;
-			break;
+		const cw_queue_state_t queue_state = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
+		if (1 == i) {
+			/* Dequeueing last tone from the queue. */
+			if (!cte->expect_op_int_errors_only(cte, CW_TQ_JUST_EMPTIED, "==", queue_state, "dequeue: dequeueing tone #%zu", i)) {
+				dequeue_failure = true;
+				break;
+			}
+		} else {
+			/* Dequeueing last tone from the queue. */
+			if (!cte->expect_op_int_errors_only(cte, CW_TQ_NONEMPTY, "==", queue_state, "dequeue: dequeueing tone #%zu", i)) {
+				dequeue_failure = true;
+				break;
+			}
 		}
 
 		/* Length of tone queue after dequeue. */
@@ -628,13 +636,14 @@ cwt_retv test_cw_tq_is_full_internal_while_dequeueing(cw_test_executor_t * cte)
 
 	/* Now test the 'is full' function as we dequeue ALL tones. */
 	for (size_t i = tq->capacity; i > 0; i--) {
-		/* The 'dequeue' function has been already tested, but
-		   it won't hurt to check this simple condition here
-		   as well. */
+		/* The 'dequeue' function has been already tested, but it
+		   won't hurt to check this simple condition here as
+		   well. The dequeue operation may return CW_TQ_JUST_EMPTIED
+		   for last tone, but it shouldn't return CW_TQ_EMPTY. */
 		cw_tone_t tone;
-		const cw_ret_t cwret = cw_tq_dequeue_internal(tq, &tone);
+		const cw_queue_state_t queue_state = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
 		if (!cte->expect_op_int_errors_only(cte,
-						    CW_SUCCESS, "==", cwret,
+						    CW_TQ_EMPTY, "!=", queue_state,
 						    "%s:%d: dequeueing tone #%zd",
 						    __func__, __LINE__, i)) {
 			failure = true;
@@ -811,7 +820,7 @@ int test_cw_tq_test_capacity_B(cw_test_executor_t * cte)
 	const size_t capacity = (rand() % 40) + 30;
 	const size_t watermark = capacity - (capacity * 0.2);
 
-	cte->print_test_header(cte, "%s (%zu)", __func__, capacity);
+	cte->print_test_header(cte, "%s", __func__);
 
 	/* We will do tests of queue with constant capacity, but with
 	   different initial position at which we insert first element
@@ -832,7 +841,7 @@ int test_cw_tq_test_capacity_B(cw_test_executor_t * cte)
 		const int current_head_shift = head_shifts[shift_idx];
 
 		cte->log_info_cont(cte, "\n");
-		cte->log_info(cte, "Testing with head shift = %d\n", current_head_shift);
+		cte->log_info(cte, "Testing with head shift = %d, capacity = %zd\n", current_head_shift, capacity);
 
 		/* For every new test with new head shift we need a
 		   "clean" queue. */
@@ -847,7 +856,11 @@ int test_cw_tq_test_capacity_B(cw_test_executor_t * cte)
 			CW_TONE_INIT(&tone, (int) i, 1000, CW_SLOPE_MODE_NO_SLOPES);
 
 			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_enqueue_internal)(tq, &tone);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "capacity B: enqueueing ton #%zu, queue size %zu, head shift %d", i, capacity, current_head_shift)) {
+			if (!cte->expect_op_int_errors_only(cte,
+							    CW_SUCCESS, "==", cwret,
+							    "%s:%d: enqueueing tone #%zu/%zu",
+							    __func__, __LINE__,
+							    i + 1, tq->capacity)) {
 				enqueue_failure = true;
 				break;
 			}
@@ -871,7 +884,8 @@ int test_cw_tq_test_capacity_B(cw_test_executor_t * cte)
 
 		size_t i = 0;
 		cw_tone_t deq_tone; /* For output only, so no need to initialize. */
-		while (CW_SUCCESS == LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &deq_tone)) {
+		cw_queue_state_t state;
+		while (CW_TQ_EMPTY != (state = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &deq_tone))) {
 
 			/* When shift of head == 0, tone with
 			   frequency 'i' is at index 'i'. But with
@@ -881,8 +895,12 @@ int test_cw_tq_test_capacity_B(cw_test_executor_t * cte)
 			const size_t expected_freq = i;
 			const size_t readback_freq = deq_tone.frequency;
 
-			if (!cte->expect_op_int_errors_only(cte, expected_freq, "==", readback_freq, "capacity B: readback: queue position %zu, head shift %d",
-						i, current_head_shift)) {
+			if (!cte->expect_op_int_errors_only(cte,
+							    expected_freq, "==", readback_freq,
+							    "%s:%d: readback: state = %d, queue position %zu/%zu, head shift %d",
+							    __func__, __LINE__,
+							    state,
+							    i + 1, tq->capacity, current_head_shift)) {
 				dequeue_failure = true;
 				break;
 			}
@@ -1504,11 +1522,11 @@ cwt_retv test_cw_tq_properties_empty(cw_test_executor_t * cte)
 			break;
 		}
 
-		/* Dequeueing from empty tone queue should fail. */
+		/* Dequeueing from empty tone queue should return CW_TQ_EMPTY. */
 		cw_tone_t tone;
-		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
+		const cw_queue_state_t queue_state = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
 		if (!cte->expect_op_int_errors_only(cte,
-						    CW_FAILURE, "==", cwret,
+						    CW_TQ_EMPTY, "==", queue_state,
 						    "%s:%d: dequeueing from empty queue",
 						    __func__, __LINE__)) {
 			failure_dequeue = true;
@@ -1682,7 +1700,7 @@ int test_cw_tq_callback(cw_test_executor_t * cte)
 		}
 
 
-		/* Start generator (and dequeueing) only after the qt
+		/* Start generator (and dequeueing) only after the tq
 		   has been filled. */
 		cw_gen_start(gen);
 
@@ -1742,3 +1760,79 @@ static void test_helper_tq_callback(void * data)
 
 	return;
 }
+
+
+
+
+/**
+   @brief Test return values of dequeue function
+
+   @reviewed 2020-10-03
+*/
+cwt_retv test_cw_tq_dequeue_internal_returns(cw_test_executor_t * cte)
+{
+	cte->print_test_header(cte, "%s", __func__);
+	bool failure = false;
+
+	cw_tone_queue_t * tq = cw_tq_new_internal();
+	cte->assert2(cte, tq, "failed to create new tone queue");
+
+	struct {
+		int frequency;
+		cw_queue_state_t expected_state;
+	} test_data[] = {
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+		{ 100, CW_TQ_NONEMPTY },
+
+		/* This will be the last tone added to queue, so dequeuing it
+		   should return 'just emptied'. */
+		{ 100, CW_TQ_JUST_EMPTIED },
+
+		/* This tone won't be enqueued by test code (frequency == 0),
+		   and dequeue operation should return 'empty' when doing
+		   this N-th dequeue attempt because the queue should
+		   transition from 'just emptied' to 'empty' */
+		{   0, CW_TQ_EMPTY },
+	};
+	const size_t n_items = sizeof (test_data) / sizeof (test_data[0]);
+
+	/* Enqueue tones. */
+	for (size_t i = 0; i < n_items; i++) {
+		if (test_data[i].frequency) {
+			cw_tone_t tone;
+			const int duration = 100;
+			CW_TONE_INIT(&tone, test_data[i].frequency, duration, CW_SLOPE_MODE_STANDARD_SLOPES);
+			cw_tq_enqueue_internal(tq, &tone);
+		}
+	}
+
+	/* Dequeue tones, do the test. */
+	for (size_t i = 0; i < n_items; i++) {
+		cw_tone_t tone;
+		const cw_queue_state_t queue_state = LIBCW_TEST_FUT(cw_tq_dequeue_internal)(tq, &tone);
+		if (!cte->expect_op_int_errors_only(cte,
+						    test_data[i].expected_state, "==", queue_state,
+						    "%s:%d: dequeue return value for test data #%zd",
+						    __func__, __LINE__,
+						    i)) {
+			failure = true;
+			break;
+		}
+	}
+
+	cw_tq_delete_internal(&tq);
+
+	cte->expect_op_int(cte, false, "==", failure, "dequeue's return values");
+
+	cte->print_test_footer(cte, __func__);
+
+	return cwt_retv_ok;
+}
+

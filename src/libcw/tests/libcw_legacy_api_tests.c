@@ -328,11 +328,16 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 		legacy_api_test_setup(cte);
 	}
 	legacy_api_cw_single_test_setup();
+	cw_generator_stop();
 
 	int cwret;
 
-	const int n_tones_to_add = 6;     /* This is a simple test, so only a handful of tones. */
-	const int tone_duration = 100000;
+	/* This is a simple test, so only a handful of tones. */
+	const int n_tones_to_add = 6;
+
+	/* Duration long enough to not allow generator dequeue two tones in a
+	   row too fast. */
+	const int tone_duration = 1000 * 1000;
 
 	/* Test setup. */
 	{
@@ -346,29 +351,7 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 		   them separately. Control length of tone queue in the
 		   process. */
 
-		/* Enqueue first tone. Don't check queue length yet.
-
-		   The first tone is being dequeued right after enqueueing, so
-		   checking the queue length would yield incorrect result.
-		   Instead, enqueue the first tone, and during the process of
-		   dequeueing it, enqueue rest of the tones in the loop,
-		   together with checking length of the tone queue. */
-		int freq = freq_min;
-
-		cwret = LIBCW_TEST_FUT(cw_queue_tone)(tone_duration, freq);
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "setup: cw_queue_tone()");
-
-
-		/* This is to make sure that rest of tones is enqueued when
-		   the first tone is in process of being dequeued (because we
-		   wait only a fraction of duration). */
-		usleep(tone_duration / 4);
-
-		/* Enqueue rest of n_tones_to_add tones. It is now safe to check length of
-		   tone queue before and after queueing each tone: length of
-		   the tone queue should increase (there won't be any decrease
-		   due to dequeueing of first tone). */
-		for (int i = 1; i < n_tones_to_add; i++) {
+		for (int i = 0; i < n_tones_to_add; i++) {
 
 			int readback_length = 0;       /* Measured length of tone queue. */
 			int expected_length = 0;  /* Expected length of tone queue. */
@@ -376,7 +359,7 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			/* Monitor length of a queue as it is filled - before
 			   adding a new tone. */
 			readback_length = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
-			expected_length = (i - 1);
+			expected_length = i;
 			cte->expect_op_int(cte, expected_length, "==", readback_length,
 					   "setup: queue length before adding tone = %d", readback_length);
 
@@ -384,7 +367,7 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			/* Add a tone to queue. All frequencies should be
 			   within allowed range, so there should be no
 			   error. */
-			freq = freq_min + i * delta_freq;
+			const int freq = freq_min + i * delta_freq;
 			cwret = LIBCW_TEST_FUT(cw_queue_tone)(tone_duration, freq);
 			cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "setup: cw_queue_tone() #%02d", i);
 
@@ -392,7 +375,7 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			/* Monitor length of a queue as it is filled - after
 			   adding a new tone. */
 			readback_length = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
-			expected_length = (i - 1) + 1;
+			expected_length = i + 1;
 			cte->expect_op_int(cte, expected_length, "==", readback_length,
 					   "setup: queue length after adding tone = %d", readback_length);
 		}
@@ -400,17 +383,17 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 
 	/* Test. */
 	{
-		/* Above we have queued n_tones_to_add tones. libcw
-		   starts dequeueing first of them before the last one
-		   is enqueued. This is why below we should only check
-		   for n_tones_to_add-1 of them. Additionally, let's
-		   wait a moment till dequeueing of the first tone is
-		   without a question in progress. */
-		/* TODO: this test needs redesign, it can't rely on presence
-		   or lack of a sleep(). */
-		//usleep(tone_duration / 4);
+		cw_generator_start();
 
-		/* And this is the proper test - waiting for dequeueing tones. */
+		/*
+		  This is the proper test - waiting for dequeueing
+		  tones. Notice "-1" in loop initialization. We assume here
+		  that first tone has been already dequeued after generator
+		  has been started.
+
+		  TODO: redesign the test to avoid guessing how many tones
+		  have been already dequeued by running generator.
+		*/
 		for (int i = n_tones_to_add - 1; i > 0; i--) {
 
 			int readback_length = 0;  /* Measured length of tone queue. */
@@ -432,6 +415,8 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 			cte->expect_op_int(cte, expected_length, "==", readback_length,
 					   "test: queue length after dequeueing = %d", readback_length);
 		}
+
+		cw_generator_stop();
 	}
 
 	/* Test tear-down. */
@@ -458,7 +443,13 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 int legacy_api_test_cw_wait_for_tone_queue(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_setup(cte);
+	}
 	legacy_api_cw_single_test_setup();
+	/* Don't let generator run and dequeue tones just
+	   yet. Running/dequeueing generator will break our 'length' test. */
+	cw_generator_stop();
 
 	const int n_tones_to_add = 6;     /* This is a simple test, so only a handful of tones. */
 
@@ -478,7 +469,11 @@ int legacy_api_test_cw_wait_for_tone_queue(cw_test_executor_t * cte)
 		for (int i = 0; i < n_tones_to_add; i++) {
 			const int freq = freq_min + i * delta_freq;
 			int cwret = LIBCW_TEST_FUT(cw_queue_tone)(tone_duration, freq);
-			const bool success = cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "setup: cw_queue_tone(%d, %d):", tone_duration, freq);
+			const bool success = cte->expect_op_int(cte,
+								CW_SUCCESS, "==", cwret,
+								"%s:%d setup: cw_queue_tone(%d, %d):",
+								__func__, __LINE__,
+								tone_duration, freq);
 			if (!success) {
 				break;
 			}
@@ -491,22 +486,34 @@ int legacy_api_test_cw_wait_for_tone_queue(cw_test_executor_t * cte)
 	*/
 	{
 		const int len = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
-		cte->expect_op_int(cte, n_tones_to_add, "==", len, "test: cw_get_tone_queue_length()");
+		cte->expect_op_int(cte,
+				   n_tones_to_add, "==", len,
+				   "%s:%d: test: cw_get_tone_queue_length()",
+				   __func__, __LINE__);
 	}
 
 	/*
 	  Test 2 (main):
-	  We should be able to wait for emptying of non-empty queue.
+	  We should be able to wait for emptying of non-empty queue while
+	  running generator is dequeueing tones.
 	*/
 	{
+		cw_generator_start();
+
 		int cwret = LIBCW_TEST_FUT(cw_wait_for_tone_queue)();
-		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "test: cw_wait_for_tone_queue()");
+		cte->expect_op_int(cte,
+				   CW_SUCCESS, "==", cwret,
+				   "%s:%d: test: cw_wait_for_tone_queue()",
+				   __func__, __LINE__);
 	}
 
 	/* Test tear-down. */
 	{
 	}
 
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_teardown(cte);
+	}
 	cte->print_test_footer(cte, __func__);
 
 	return 0;

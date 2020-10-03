@@ -1200,11 +1200,11 @@ cwt_retv test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 			cte->log_info_cont(cte, "%c", charlist[i]);
 			cte->flush_info(cte);
 			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_character)(gen, charlist[i]);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue character(<valid>) (i = %d)", i)) {
+			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue character(<valid>) (i = %d, char = '%c')", i, charlist[i])) {
 				failure = true;
 				break;
 			}
-			cw_gen_wait_for_queue_level(gen, 0);
+			cw_gen_wait_for_queue_level(gen, 0); /* TODO: the queue level should be randomized. */
 		}
 		cte->log_info_cont(cte, "\n");
 		cte->flush_info(cte);

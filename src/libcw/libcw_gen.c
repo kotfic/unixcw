@@ -139,7 +139,7 @@ const unsigned int cw_supported_sample_rates[] = {
 
 
 
-static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev);
+static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_queue_state_t queue_state);
 static void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, cw_key_value_t value);
 
 
@@ -793,9 +793,9 @@ cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
 	   handle.
 
 	   The delay also allows the generator function thread to stop
-	   generating tone (or for tone queue to get out of CW_TQ_EMPTY
-	   state) and exit before we resort to killing generator
-	   function thread. */
+	   generating tone (or for tone queue to get out of CW_TQ_EMPTY state
+	   (TODO: verify this comment, does it describe correct tq state?)
+	   and exit before we resort to killing generator function thread. */
 	cw_usleep_internal(1 * CW_USECS_PER_SEC);
 
 
@@ -951,15 +951,14 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, 0, CW_SLOPE_MODE_STANDARD_SLOPES);
 
-	cw_ret_t dequeued_prev = CW_FAILURE; /* Status of previous call to dequeue(). */
-	cw_ret_t dequeued_now = CW_FAILURE; /* Status of current call to dequeue(). */
-
+	cw_queue_state_t queue_state_prev = CW_TQ_EMPTY; /* Status of previous call to dequeue(). */
+	cw_queue_state_t queue_state_current = CW_TQ_EMPTY; /* Status of current call to dequeue(). */
 	while (gen->do_dequeue_and_generate) {
-		dequeued_now = cw_tq_dequeue_internal(gen->tq, &tone);
-		if (!dequeued_now && !dequeued_prev) {
+		queue_state_current = cw_tq_dequeue_internal(gen->tq, &tone);
+		if (CW_TQ_EMPTY == queue_state_current && CW_TQ_EMPTY == queue_state_prev) {
 
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_INFO,
-				      MSG_PREFIX "queue is idle");
+				      MSG_PREFIX "queue is empty");
 
 			/* We won't get here while there are some
 			   accumulated tones in queue, because
@@ -994,9 +993,9 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			continue;
 		}
 
-		const bool is_empty_tone = !dequeued_now && dequeued_prev;
+		const bool is_empty_tone = CW_TQ_EMPTY == queue_state_current;
 
-		cw_gen_value_tracking_internal(gen, &tone, dequeued_now, dequeued_prev);
+		cw_gen_value_tracking_internal(gen, &tone, queue_state_current);
 
 #ifdef IAMBIC_KEY_HAS_TIMER
 		/* Also look at call to cw_key_ik_update_graph_state_internal()
@@ -1007,7 +1006,7 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			cw_key_ik_increment_timer_internal(gen->key, tone.duration);
 		}
 #endif
-		dequeued_prev = dequeued_now;
+		queue_state_prev = queue_state_current;
 
 
 #ifdef LIBCW_WITH_DEV
@@ -2866,40 +2865,33 @@ cw_ret_t cw_gen_get_label(const cw_gen_t * gen, char * label, size_t size)
    @brief Function used to set and track value of generator
 
    @internal
-   @reviewed 2020-08-07
+   @reviewed 2020-10-03
    @endinternal
 
    @param[in] gen generator
    @param[in] tone tone dequeued from generator's tone queue
-   @param[in] dequeued_now status of dequeue attempt in current loop iteration
-   @param[in] dequeued_prev status of dequeue attempt in previous loop iteration
+   @param[in] queue_state state of queue after dequeueing current tone
 
    @return CW_SUCCESS
 */
-static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_ret_t dequeued_now, cw_ret_t dequeued_prev)
+static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_queue_state_t queue_state)
 {
 	cw_key_value_t value = CW_KEY_VALUE_OPEN;
 
-	if ((dequeued_now && dequeued_prev) || (dequeued_now && !dequeued_prev)) {
-		/* Flag combinations 1 and 2.
-		   A valid tone has been dequeued just now. */
+	switch (queue_state) {
+	case CW_TQ_JUST_EMPTIED:
+	case CW_TQ_NONEMPTY:
+		/* A valid tone has been dequeued just now. */
 		value = tone->frequency ? CW_KEY_VALUE_CLOSED : CW_KEY_VALUE_OPEN;
+		break;
 
-	} else if (!dequeued_now && dequeued_prev) {
-		/* Flag combination 3.
-		   Tone queue just went empty. No tone == no sound. */
+	case CW_TQ_EMPTY:
+		/* Tone queue remains  empty. No new tone == no sound. */
 		value = CW_KEY_VALUE_OPEN;
-	} else {
-		/* !dequeued_now && !dequeued_prev */
-		/* Flag combination 4.
-		   Tone queue continues to be empty.
-		   This combination was handled right
-		   after cw_tq_dequeue_internal(), we
-		   should be waiting there for kick
-		   from tone queue.  Us being here is
-		   an error. */
-		cw_assert (0, MSG_PREFIX "unhandled combination of flags: dequeued_now = %d, dequeued_prev = %d",
-			   dequeued_now, dequeued_prev);
+		break;
+	default:
+		cw_assert (0, MSG_PREFIX "unexpected state of tone queue: %d", queue_state);
+		break;
 	}
 	cw_gen_value_tracking_set_value_internal(gen, gen->key, value);
 

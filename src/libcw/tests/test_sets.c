@@ -250,6 +250,8 @@ cw_test_set_t cw_test_sets[] = {
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_properties_empty, true),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_properties_full, true),
 
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_tq_dequeue_internal_returns, true),
+
 			LIBCW_TEST_FUNCTION_INSERT(NULL, true),
 		}
 	},

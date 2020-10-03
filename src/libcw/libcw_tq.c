@@ -105,26 +105,23 @@
 /*
    The CW tone queue functions implement the following state graph:
 
-                              (queue empty)
-            +---------------------------------------------------------+
-            |                                                         |
-            |                                                         |
-            |        (tone(s) added to queue,                         |
-            v        dequeueing process started)                      |
-   ----> CW_TQ_EMPTY ------------------------------> CW_TQ_NONEMPTY --+
-                                                 ^        |
-                                                 |        |
-                                                 +--------+
-                                             (queue not empty)
+                                   [start]
+                                      |
+                                      |
+                                      v
+                                 CW_TQ_EMPTY <---------------------------------+
+                                      v                                        |
+                     [call enqueue()] |                                        |
+                                      |                                        | [call dequeue() on empty tone queue]
+                                      |                                        |
+                                      v        [call dequeue(), last tone]     ^
+                +-------------> CW_TQ_NONEMPTY >-------------------------CW_TQ_JUST_EMPTIED
+                |                v        ^                                    v
+                |                |        |                                    | [call enqueue()]
+                +----------------+        +------------------------------------+
+    [call dequeue(), not last tone]
+                   [call enqueue()]
 
-
-   Above diagram shows two states of a queue, but dequeue function
-   returns three distinct values: CW_TQ_DEQUEUED,
-   CW_TQ_NDEQUEUED_EMPTY, CW_TQ_NDEQUEUED_IDLE. Having these three
-   values is important for the function that calls the dequeue
-   function. If you ever intend to limit number of return values of
-   dequeue function to two, you will also have to re-think how
-   cw_gen_dequeue_and_generate_internal() operates.
 
    Future libcw API should (completely) hide tone queue from client code. The
    client code should only operate on a generator: enqueue tones to
@@ -506,26 +503,19 @@ size_t cw_tq_next_index_internal(const cw_tone_queue_t * tq, size_t ind)
 /**
    @brief Dequeue a tone from tone queue
 
-   If there are any tones in queue (i.e. queue's state is not CW_TQ_EMPTY),
+   If there are any tones in queue (i.e. queue's state is CW_TQ_NONEMPTY),
    function copies tone from @p tq queue into @p tone supplied by caller,
-   removes the tone from @p tq queue (with exception for "forever" tone) and
-   returns CW_SUCCESS (i.e. "dequeued (successfully)").
+   removes the tone from @p tq queue (with exception for "forever" tone).
 
-   If there are no tones in @p tq queue (i.e. queue's state is CW_TQ_EMPTY),
-   function does nothing with @p tone, and returns CW_FAILURE (i.e. "not
-   dequeued").
-
-   Notice that returned value does not describe current internal state
-   of tone queue, only whether contents of @p tone has been updated
-   with dequeued tone or not.
+   If there are no tones in @p tq queue (i.e. queue's state at the moment of
+   function call is CW_TQ_EMPTY), function does nothing with @p tone.
 
    dequeue() is not a totally dumb function. It understands how
    "forever" tone works and how it should be handled.  If the last
    tone in queue has "forever" flag set, the function won't
    permanently dequeue it. Instead, it will keep returning (through @p
    tone) the tone on every call, until a new tone is added to the
-   queue after the "forever" tone. Since "forever" tone is successfully
-   copied into @p tone, function returns CW_SUCCESS on "forever" tone.
+   queue after the "forever" tone.
 
    @p tq must be a valid queue.
    @p tone must be allocated by caller.
@@ -541,45 +531,58 @@ size_t cw_tq_next_index_internal(const cw_tone_queue_t * tq, size_t ind)
    @param[in] tq tone queue to dequeue tone from
    @param[out] tone dequeued tone
 
-   @return CW_SUCCESS if a tone has been dequeued
-   @return CW_FAILURE if no tone has been dequeued. TODO it's not a failure to be unable to dequeue tone from empty queue. Revise the type.
+   @return current state of tone queue (state after dequeueing current tone)
 */
-cw_ret_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
+cw_queue_state_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
 {
 	pthread_mutex_lock(&tq->mutex);
 	pthread_mutex_lock(&tq->wait_mutex);
 
-	cw_assert (tq->state == CW_TQ_EMPTY || tq->state == CW_TQ_NONEMPTY,
-		   MSG_PREFIX "dequeue: unexpected value of tq->state = %d", tq->state);
+	bool call_callback = false;
 
-	if (tq->state == CW_TQ_EMPTY) {
+	switch (tq->state) {
+	case CW_TQ_EMPTY:
 		/* Ignore calls if queue is empty. */
-		pthread_mutex_unlock(&tq->wait_mutex);
-		pthread_mutex_unlock(&tq->mutex);
-		return CW_FAILURE;
+		break;
 
-	} else { /* tq->state == CW_TQ_NONEMPTY */
-		cw_assert (tq->len, MSG_PREFIX "dequeue: tone queue is CW_TQ_NONEMPTY, but tq->len = %zu\n", tq->len);
+	case CW_TQ_JUST_EMPTIED:
+		/* There are no more tones to dequeue, but we still need to
+		   update the state. */
+		tq->state = CW_TQ_EMPTY;
+		break;
 
-		const bool call_callback = cw_tq_dequeue_sub_internal(tq, tone);
-
+	case CW_TQ_NONEMPTY:
+		cw_assert (tq->len > 0, MSG_PREFIX "dequeue: tone queue is CW_TQ_NONEMPTY, but tq->len = %zu\n", tq->len);
+		call_callback = cw_tq_dequeue_sub_internal(tq, tone);
 		if (0 == tq->len) {
-			tq->state = CW_TQ_EMPTY;
+			tq->state = CW_TQ_JUST_EMPTIED;
 		}
-
-		pthread_mutex_unlock(&tq->wait_mutex);
-		pthread_mutex_unlock(&tq->mutex);
-
-		/* Since client's callback can use libcw functions
-		   that call pthread_mutex_lock(&tq->...), we should
-		   call the callback *after* we unlock queue's mutexes
-		   in this function. */
-		if (call_callback) {
-			(*(tq->low_water_callback))(tq->low_water_callback_arg);
-		}
-
-		return CW_SUCCESS;
+		break;
+	default:
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
+			      MSG_PREFIX "unexpected queue state %d", tq->state);
+		break;
 	}
+
+	const cw_queue_state_t queue_state = tq->state;
+#if 0
+	/* Debug. */
+	fprintf(stderr, "%s:%d queue state = %d, dequeued tone %dHz %dus\n",
+		__func__, __LINE__, queue_state, tone->frequency, tone->duration);
+#endif
+
+	pthread_mutex_unlock(&tq->wait_mutex);
+	pthread_mutex_unlock(&tq->mutex);
+
+	/* Since client's callback can use libcw functions
+	   that call pthread_mutex_lock(&tq->...), we should
+	   call the callback *after* we unlock queue's mutexes
+	   in this function. */
+	if (call_callback) {
+		(*(tq->low_water_callback))(tq->low_water_callback_arg);
+	}
+
+	return queue_state;
 }
 
 
@@ -782,6 +785,8 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
 		pthread_mutex_lock(&tq->dequeue_mutex);
 		pthread_cond_signal(&tq->dequeue_var); /* Use pthread_cond_signal() because there is only one listener. */
 		pthread_mutex_unlock(&tq->dequeue_mutex);
+	} else {
+		tq->state = CW_TQ_NONEMPTY;
 	}
 
 	pthread_mutex_unlock(&tq->wait_mutex);
@@ -861,9 +866,24 @@ cw_ret_t cw_tq_register_low_level_callback_internal(cw_tone_queue_t * tq, cw_que
 cw_ret_t cw_tq_wait_for_end_of_current_tone_internal(cw_tone_queue_t * tq)
 {
 	pthread_mutex_lock(&tq->wait_mutex);
-	/* According to man page, spurious wakeups of
-	   pthread_cond_wait() may occur.  Call the function in loop
-	   to work around these wakeups.
+	/* According to man page, spurious wakeups of pthread_cond_wait() may
+	   occur.  Call the function in loop with two conditions to work
+	   around these wakeups.
+
+	   First of the two conditions checks this: are we still in the same
+	   position in queue as at the beginning of function call (i.e. has
+	   anything been dequeued)?
+
+	   Second of the two conditions checks if there is any tone
+	   generation in progress. As long as state of queue is different
+	   than CW_TQ_EMPTY, it means that generator is still in the middle
+	   of generating something: either some tone from the middle of the
+	   queue (then queue state is CW_TQ_NONEMPTY), or the last tone from
+	   tone queue (then queue state is CW_TQ_JUST_EMPTIED).
+
+	   TODO: perhaps we shouldn't be checking three-values state of
+	   queue, but a property (state) of generator. Maybe the generator
+	   should be telling us if it is still generating something.
 
 	   Spurious wakeups noticed on:
 	   Intel Celeron 430, Ubuntu 18.04.5 x86_64, kernel 5.4.0-47
@@ -871,6 +891,8 @@ cw_ret_t cw_tq_wait_for_end_of_current_tone_internal(cw_tone_queue_t * tq)
 	   TODO: check that our usage of wait_mutex in this
 	   function and in other tq functions allows us to safely get
 	   tq->head. */
+
+	/* Wait for the queue index to change or the dequeue to go completely empty. */
 	const size_t check_tq_head = tq->head;
 	while (tq->head == check_tq_head && tq->state != CW_TQ_EMPTY) {
 		pthread_cond_wait(&tq->wait_var, &tq->wait_mutex);
@@ -1070,7 +1092,7 @@ cw_ret_t cw_tq_remove_last_character_internal(cw_tone_queue_t * tq)
 		cwret = CW_SUCCESS;
 
 		if (0 == tq->len) {
-			tq->state = CW_TQ_EMPTY;
+			tq->state = CW_TQ_JUST_EMPTIED;
 		}
 	}
 
