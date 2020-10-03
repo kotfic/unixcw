@@ -121,8 +121,7 @@ int main(int argc, char * const argv[])
 	atexit(cw_test_print_stats_wrapper);
 	register_signal_handler();
 
-	const int rv = cte->main_test_loop(cte, cw_test_sets);
-	if (0 != rv) {
+	if (cwt_retv_ok != cte->main_test_loop(cte, cw_test_sets)) {
 		cte->log_error(cte, "Test loop returned with error\n");
 		exit(EXIT_FAILURE);
 	}

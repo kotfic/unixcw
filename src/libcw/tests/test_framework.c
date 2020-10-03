@@ -128,7 +128,7 @@ static void cw_test_print_topics(cw_test_executor_t * self, int * topics, int ma
 static bool cw_test_test_topic_is_member(cw_test_executor_t * cte, int topic, int * topics, int max);
 static bool cw_test_sound_system_is_member(cw_test_executor_t * cte, cw_sound_system sound_system, cw_sound_system * sound_systems, int max);
 
-static int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets);
+static cwt_retv cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets);
 static unsigned int cw_test_get_total_errors_count(cw_test_executor_t * cte);
 
 
@@ -1265,16 +1265,19 @@ bool cw_test_sound_system_is_member(__attribute__((unused)) cw_test_executor_t *
 
 
 
-int cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
+cwt_retv cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 {
 	int set = 0;
 	while (LIBCW_TEST_SET_VALID == test_sets[set].set_valid) {
 		cw_test_set_t * test_set = &test_sets[set];
-		iterate_over_topics(cte, test_set);
+		if (cwt_retv_ok != iterate_over_topics(cte, test_set)) {
+			cte->log_error(cte, "Test framework failed for set %d\n", set);
+			return cwt_retv_err;
+		}
 		set++;
 	}
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 

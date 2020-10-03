@@ -585,7 +585,7 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, __attribute__(
 	cw_gen_t * gen = cw_gen_new(cte->current_sound_system,
 				    cte->current_sound_device);
 	if (NULL == gen) {
-		cte->log_error(cte, "failed to create generator");
+		cte->log_error(cte, "failed to create generator\n");
 		return cwt_retv_err;
 	}
 

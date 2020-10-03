@@ -367,8 +367,11 @@ typedef struct cw_test_executor_t {
 	   @brief Main test loop that walks through given @param
 	   @test_sets and executes all test function specified in
 	   @param test_sets
+
+	   @return cwt_retv_ok if test framework worked correctly
+	   @return cwt_retv_err if test framework failed at some point
 	*/
-	int (* main_test_loop)(struct cw_test_executor_t * cte, struct cw_test_set_t * test_sets);
+	cwt_retv (* main_test_loop)(struct cw_test_executor_t * cte, struct cw_test_set_t * test_sets);
 
 	/**
 	   @brief Get total count of errors after main_test_loop() has returned

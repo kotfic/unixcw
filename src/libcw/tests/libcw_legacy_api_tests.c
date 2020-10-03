@@ -680,6 +680,7 @@ int legacy_api_test_full_tone_queue(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, CW_TONE_QUEUE_CAPACITY_MAX, "==", capacity, "cw_get_tone_queue_capacity()");
 
 		const int len_full = LIBCW_TEST_FUT(cw_get_tone_queue_length)();
+		cte->log_info(cte, "*** you may now see \"EE: can't enqueue tone, tq is full\" message ***\n");
 		cte->expect_op_int(cte, CW_TONE_QUEUE_CAPACITY_MAX, "==", len_full, "cw_get_tone_queue_length() when tq is full");
 	}
 
