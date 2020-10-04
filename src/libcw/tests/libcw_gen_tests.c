@@ -1332,8 +1332,6 @@ cwt_retv test_cw_gen_remove_last_character(cw_test_executor_t * cte)
 		cte->log_error(cte, "%s:%d: Failed to create generator\n", __func__, __LINE__);
 		return cwt_retv_err;
 	}
-	cw_gen_start(gen);
-
 
 	const int n = 4;
 	bool failure = false;
