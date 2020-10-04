@@ -22,6 +22,12 @@
    cw_ret_t cwret = cw_tq_enqueue_internal(tq, &tone);
 
 
+* Linux tips
+
+show threads of a process:
+ps -p `pidof <process name>`  -T
+
+
 * Operating systems
 ** FreeBSD
 

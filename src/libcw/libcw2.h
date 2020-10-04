@@ -649,9 +649,9 @@ cw_ret_t cw_gen_enqueue_string(cw_gen_t * gen, const char * string);
    TODO: in current implementation of library most of the cleanup has been removed.
    @endinternal
 
-   The function returns when queue's level is equal or lower than @p level.
-   If at the time of function call the level of queue is already equal or
-   lower than @p level, function returns immediately.
+   The function returns when queue's level is equal to or lower than @p
+   level.  If at the time of function call the level of queue is already
+   equal to or lower than @p level, function returns immediately.
 
    Notice that generator must be running (started with cw_gen_start())
    when this function is called, otherwise it will be waiting forever
@@ -678,7 +678,8 @@ cw_ret_t cw_gen_wait_for_queue_level(cw_gen_t * gen, size_t level);
    last one has completed, then silence the tones.
 
    @internal
-   TODO: verify the above comment. Do we really wait until last tone has completed?
+   TODO: verify the above comment. Do we really wait until last tone has
+   completed? What if the tone is very long?
    @endinternal
 
    @internal
