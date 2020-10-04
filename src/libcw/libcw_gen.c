@@ -951,11 +951,9 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, 0, CW_SLOPE_MODE_STANDARD_SLOPES);
 
-	cw_queue_state_t queue_state_prev = CW_TQ_EMPTY; /* Status of previous call to dequeue(). */
-	cw_queue_state_t queue_state_current = CW_TQ_EMPTY; /* Status of current call to dequeue(). */
 	while (gen->do_dequeue_and_generate) {
-		queue_state_current = cw_tq_dequeue_internal(gen->tq, &tone);
-		if (CW_TQ_EMPTY == queue_state_current && CW_TQ_EMPTY == queue_state_prev) {
+		const cw_queue_state_t queue_state = cw_tq_dequeue_internal(gen->tq, &tone);
+		if (CW_TQ_EMPTY == queue_state) {
 
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_INFO,
 				      MSG_PREFIX "queue is empty");
@@ -993,9 +991,9 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			continue;
 		}
 
-		const bool is_empty_tone = CW_TQ_EMPTY == queue_state_current;
+		const bool is_empty_tone = CW_TQ_EMPTY == queue_state;
 
-		cw_gen_value_tracking_internal(gen, &tone, queue_state_current);
+		cw_gen_value_tracking_internal(gen, &tone, queue_state);
 
 #ifdef IAMBIC_KEY_HAS_TIMER
 		/* Also look at call to cw_key_ik_update_graph_state_internal()
@@ -1006,7 +1004,6 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			cw_key_ik_increment_timer_internal(gen->key, tone.duration);
 		}
 #endif
-		queue_state_prev = queue_state_current;
 
 
 #ifdef LIBCW_WITH_DEV
