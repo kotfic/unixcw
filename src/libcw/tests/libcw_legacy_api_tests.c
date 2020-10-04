@@ -536,6 +536,10 @@ int legacy_api_test_cw_wait_for_tone_queue(cw_test_executor_t * cte)
 int legacy_api_test_cw_queue_tone(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
+
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_setup(cte);
+	}
 	legacy_api_cw_single_test_setup();
 
 	cw_set_volume(70);
@@ -598,6 +602,9 @@ int legacy_api_test_cw_queue_tone(cw_test_executor_t * cte)
 	int cwret = cw_wait_for_tone_queue();
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "cw_wait_for_tone_queue()");
 
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_teardown(cte);
+	}
 
 	cte->print_test_footer(cte, __func__);
 
@@ -1127,6 +1134,10 @@ int legacy_api_test_representations(cw_test_executor_t * cte)
 int legacy_api_test_send_character_and_string(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
+
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_setup(cte);
+	}
 	legacy_api_cw_single_test_setup();
 
 	/* Test: sending all supported characters as individual characters. */
@@ -1197,6 +1208,9 @@ int legacy_api_test_send_character_and_string(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "cw_send_string(<invalid>)");
 	}
 
+	if (0 != strlen(cte->config->test_function_name)) {
+		legacy_api_test_teardown(cte);
+	}
 
 	cte->print_test_footer(cte, __func__);
 
