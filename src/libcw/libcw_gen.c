@@ -1548,12 +1548,13 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 	/* Total number of samples to write in a loop below. */
 	int64_t samples_to_write = tone->n_samples;
 
-#if 0   /* Debug code. */
+#define LIBCW_WRITE_LOOP_DEBUG_LEVEL 0
+#if LIBCW_WRITE_LOOP_DEBUG_LEVEL > 0
+	/* Debug code. */
 	int n_loops = 0;
 	const float n_loops_expected = floorf(1.0 * samples_to_write / gen->buffer_n_samples); /* In reality number of loops executed is sometimes n_loops_expected, but mostly it's n_loops_expected+1. */
-	fprintf(stderr, MSG_PREFIX "entering loop (~%.1f), tone->frequency = %d, buffer->n_samples = %d, samples_to_write = %"PRId64"\n",
+	fprintf(stderr, MSG_PREFIX "entering loop (~%.1f iterations expected), tone->frequency = %d, buffer->n_samples = %d, samples_to_write = %"PRId64"\n",
 		(double) n_loops_expected, tone->frequency, gen->buffer_n_samples, samples_to_write);
-
 #endif
 
 	// cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "%lld samples, %d us, %d Hz", tone->n_samples, tone->duration, gen->frequency);
@@ -1588,12 +1589,17 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 		const int buffer_sub_n_samples = gen->buffer_sub_stop - gen->buffer_sub_start + 1;
 
 
-#if 0
+#if LIBCW_WRITE_LOOP_DEBUG_LEVEL > 0
 		/* Debug code. */
-		fprintf(stderr, MSG_PREFIX "       loop #%d, buffer_sub_n_samples = %d\n", ++n_loops, buffer_sub_n_samples);
+		++n_loops;
+#if LIBCW_WRITE_LOOP_DEBUG_LEVEL > 1
+		/* Debug code. */
+		fprintf(stderr, MSG_PREFIX "       loop #%d, buffer_sub_n_samples = %d\n", n_loops, buffer_sub_n_samples);
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG,
 			      MSG_PREFIX "sub start: %d, sub stop: %d, sub size: %d / %d", gen->buffer_sub_start, gen->buffer_sub_stop, buffer_sub_n_samples, samples_to_write);
 #endif
+#endif
+
 
 		const int calculated = cw_gen_calculate_sine_wave_internal(gen, tone);
 		cw_assert (calculated == buffer_sub_n_samples, MSG_PREFIX "calculated wrong number of samples: %d != %d", calculated, buffer_sub_n_samples);
@@ -1624,18 +1630,19 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 
 		samples_to_write -= buffer_sub_n_samples;
 
-#if 0
+#if LIBCW_WRITE_LOOP_DEBUG_LEVEL > 0
 		/* Debug code. */
 		if (samples_to_write < 0) {
-			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "samples left = %d", samples_to_write);
+			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG, MSG_PREFIX "samples left = %"PRId64, samples_to_write);
 		}
 #endif
 
 	} /* while (samples_to_write > 0) { */
 
-#if 0
+#if LIBCW_WRITE_LOOP_DEBUG_LEVEL > 0
 	/* Debug code. */
-	fprintf(stderr, MSG_PREFIX "left loop, %d / %.1f loops, samples left = %d\n", n_loops, (double) n_loops_expected, (int) samples_to_write);
+	fprintf(stderr, MSG_PREFIX "left loop, %d iterations executed from %.1f iterations planned, samples left = %d\n",
+		n_loops, (double) n_loops_expected, (int) samples_to_write);
 #endif
 
 	return 0;
