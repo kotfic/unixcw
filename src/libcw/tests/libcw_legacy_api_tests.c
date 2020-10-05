@@ -1425,14 +1425,14 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 		bool busy_failure = false;
 
 		const int key_states[] = { CW_KEY_STATE_OPEN, CW_KEY_STATE_CLOSED };
-		const int first = 1 + (rand() % 2);
-		const int last = first + cte->get_repetitions_count(cte) + (1 + (rand() % 2));
+		const int first = 1 + (lrand48() % 2);
+		const int last = first + cte->get_repetitions_count(cte) + (1 + (lrand48() % 2));
 		cte->log_info(cte, "Randomized key indices range: from %d to %d\n", first, last);
 
 		/* Alternate between open and closed. */
 		for (int i = first; i <= last; i++) {
 
-			const int intended_key_state = key_states[i % 2]; /* Notice that depending on rand(), we may start with key open or key closed. */
+			const int intended_key_state = key_states[i % 2]; /* Notice that depending on lrand48(), we may start with key open or key closed. */
 
 			const int cwret = LIBCW_TEST_FUT(cw_notify_straight_key_event)(intended_key_state);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "cw_notify_straight_key_event(%d)", intended_key_state)) {
@@ -1755,6 +1755,16 @@ cwt_retv legacy_api_test_gen_remove_last_character(cw_test_executor_t * cte)
 		}
 
 		cw_wait_for_tone_queue();
+
+		/* TODO: this sleep should be randomized from 0 to 1000 *
+		   1000 microseconds, to detect e.g. problems with ALSA
+		   underruns. I have noticed that when this sleep is small or
+		   zero, there is no underrun, but with 10^6 us delay an
+		   underrun may happen, because there is a long period in
+		   which we don't supply new frames to HW.
+
+		   Some cases of buffer underrun have been fixed with calls
+		   to snd_pcm_drain(), but perhaps not all of them. */
 		cw_usleep_internal(1000 * 1000);
 
 		if (failure) {

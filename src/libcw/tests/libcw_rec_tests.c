@@ -707,7 +707,7 @@ cw_characters_list * cw_characters_list_new_basic(cw_test_executor_t * cte)
 */
 cw_characters_list * cw_characters_list_new_random(cw_test_executor_t * cte)
 {
-	const size_t n_random_characters = cw_get_character_count() * ((rand() % 50) + 30);
+	const size_t n_random_characters = cw_get_character_count() * ((lrand48() % 50) + 30);
 
 	/* We will use basic characters list (all characters supported
 	   by libcw) as an input for generating random characters
@@ -725,10 +725,10 @@ cw_characters_list * cw_characters_list_new_random(cw_test_executor_t * cte)
 
 	size_t space_randomizer = 3;
 	for (size_t i = 0; i < n_random_characters; i++) {
-		int basic_idx = rand() % n_basic_characters;
+		int basic_idx = lrand48() % n_basic_characters;
 
 		if (0 == (basic_idx % space_randomizer)) { /* Insert space at random places. */
-			space_randomizer = (rand() % (n_basic_characters / 2)) + 3; /* Pick new value for next round. */
+			space_randomizer = (lrand48() % (n_basic_characters / 2)) + 3; /* Pick new value for next round. */
 			random_characters_list->values[i] = ' ';
 
 			/*

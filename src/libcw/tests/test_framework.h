@@ -84,7 +84,8 @@ typedef struct cw_test_executor_t {
 	resource_meas resource_meas;
 	bool use_resource_meas;
 
-	suseconds_t random_seed;
+	/* Type suitable for srand48(). */
+	long int random_seed;
 
 	/* Sound system and test topic currently tested.
 	   Should be set right before calling a specific test function. */

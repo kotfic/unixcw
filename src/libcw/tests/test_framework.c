@@ -226,6 +226,16 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 	if (CW_SUCCESS != cw_process_program_arguments(argc, argv, self->config)) {
 		exit(EXIT_FAILURE);
 	}
+
+	if (self->config->test_random_seed > 0) {
+		self->random_seed = self->config->test_random_seed;
+	} else {
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		self->random_seed = (long int) tv.tv_sec;
+	}
+	srand48(self->random_seed);
+
 	return 0;
 }
 
@@ -1001,11 +1011,6 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 	self->current_sound_device[0] = '\0';
 
 	snprintf(self->msg_prefix, sizeof (self->msg_prefix), "%s: ", msg_prefix);
-
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	self->random_seed = tv.tv_sec;
-	srand(self->random_seed);
 }
 
 
@@ -1209,7 +1214,7 @@ void cw_test_print_test_options(cw_test_executor_t * self)
 	cw_test_print_topics(self, self->config->tested_areas, sizeof (self->config->tested_areas) / sizeof (self->config->tested_areas[0]));
 	self->log_info_cont(self, "\n");
 
-	self->log_info(self, "Random seed = %lu\n", self->random_seed);
+	self->log_info(self, "Random seed = %ld\n", self->random_seed);
 
 	if (strlen(self->config->test_function_name)) {
 		self->log_info(self, "Single function to be tested: '%s'\n", self->config->test_function_name);

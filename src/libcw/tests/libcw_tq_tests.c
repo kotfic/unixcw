@@ -171,7 +171,7 @@ int test_cw_tq_capacity_internal(cw_test_executor_t * cte)
 		/* This is a silly test, but let's have any test of
 		   the getter. TODO: come up with better test. */
 
-		const size_t intended_capacity = (rand() % 4000) + 10;
+		const size_t intended_capacity = (lrand48() % 4000) + 10;
 		tq->capacity = intended_capacity;
 
 		const size_t readback_capacity = LIBCW_TEST_FUT(cw_tq_capacity_internal)(tq);
@@ -700,7 +700,7 @@ int test_cw_tq_test_capacity_A(cw_test_executor_t * cte)
 	/* We don't need to check tq with capacity ==
 	   CW_TONE_QUEUE_CAPACITY_MAX (yet). Let's test a smaller
 	   queue capacity. */
-	const size_t capacity = (rand() % 40) + 30;
+	const size_t capacity = (lrand48() % 40) + 30;
 	const size_t watermark = capacity - (capacity * 0.2);
 
 	cte->print_test_header(cte, "%s (%zu)", __func__, capacity);
@@ -817,7 +817,7 @@ int test_cw_tq_test_capacity_B(cw_test_executor_t * cte)
 	/* We don't need to check tq with capacity ==
 	   CW_TONE_QUEUE_CAPACITY_MAX (yet). Let's test a smaller
 	   queue. */
-	const size_t capacity = (rand() % 40) + 30;
+	const size_t capacity = (lrand48() % 40) + 30;
 	const size_t watermark = capacity - (capacity * 0.2);
 
 	cte->print_test_header(cte, "%s", __func__);
@@ -1144,7 +1144,7 @@ cwt_retv test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 		/* Notice that level is always smaller than number of
 		   items added to queue. TODO: reconsider if we want
 		   to randomize this value. */
-		const int level = rand() % (int) (floorf((0.7F * max)));
+		const int level = lrand48() % (int) (floorf((0.7F * max)));
 		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_wait_for_level_internal)(gen->tq, level);
 		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "wait for level = %d, tone queue items count = %d", level, max)) {
 			wait_failure = true;
@@ -1374,7 +1374,7 @@ int test_cw_tq_gen_operations_B(cw_test_executor_t * cte)
 	cw_gen_t * gen = NULL;
 	gen_setup(cte, &gen);
 	const size_t capacity = cw_tq_capacity_internal(gen->tq);
-	const int level = rand() % (capacity / 2);
+	const int level = lrand48() % (capacity / 2);
 
 
 	cte->print_test_header(cte, "%s (%d)", __func__, level);

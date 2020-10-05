@@ -101,6 +101,7 @@ typedef struct cw_config_t {
 	bool has_feature_test_name;              /* Does the test program allow specifying single one test function to be executed? */
 	bool has_feature_test_quick_only;        /* Does the test program allow selection of tests that can be executed in short time? */
 	bool has_feature_libcw_test_specific;
+	bool has_feature_test_random_seed;       /* Does the test allow passing random seed through command line arg? */
 
 	/*
 	 * Program-specific state variables, settable from the command line, or from
@@ -123,6 +124,9 @@ typedef struct cw_config_t {
 	char test_function_name[128];    /* Execute only a test function with this name. */
 	int test_repetitions;            /* How many times a single test function should be repeated? */
 	bool test_quick_only;            /* Execute tests that are flagged as 'quick enough to make <make check> target run in short time'. */
+	/* Some tests use lrand48() or mrand48(). Use this specific seed
+	   instead of some default value to seed randomness. */
+	long int test_random_seed;
 
 	/* Names of specific sound devices that should be used for tests. If
 	   a test should be executed for a group of sound systems, we may

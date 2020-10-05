@@ -470,7 +470,8 @@ void cw_print_help(cw_config_t *config)
 	if (config->has_feature_libcw_test_specific
 	    || config->has_feature_test_repetitions
 	    || config->has_feature_test_name
-	    || config->has_feature_test_quick_only) {
+	    || config->has_feature_test_quick_only
+	    || config->has_feature_test_random_seed) {
 
 		fprintf(stderr, "%s",     _("Options specific to test programs:\n"));
 
@@ -494,6 +495,10 @@ void cw_print_help(cw_config_t *config)
 		if (config->has_feature_test_quick_only) {
 			fprintf(stderr, "%s", _("  -Q, --test_quick_only\n"));
 			fprintf(stderr, "%s", _("        execute only test functions that take short time\n"));
+		}
+		if (config->has_feature_test_random_seed) {
+			fprintf(stderr, "%s", _("  -D, --random-seed\n"));
+			fprintf(stderr, "%s", _("        use given seed for randomization\n"));
 		}
 
 		if (config->has_feature_libcw_test_specific) {
@@ -572,6 +577,9 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 	}
 	if (config->has_feature_test_quick_only) {
 		append_option(buffer, size, &n, "Q|test_quick_only");
+	}
+	if (config->has_feature_test_random_seed) {
+		append_option(buffer, size, &n, "D:|random-seed");
 	}
 
 	if (true) {
@@ -924,6 +932,10 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 
 	case 'X':
 		snprintf(config->test_alsa_device_name, sizeof (config->test_alsa_device_name), "%s", optarg);
+		break;
+
+	case 'D':
+		config->test_random_seed = atol(optarg);
 		break;
 
 	default: /* '?' */
