@@ -55,6 +55,15 @@
 
 
 
+/*
+  TODO: see what happens when you disable the workaround and run
+  './tests/libcw_tests -S p -A k'
+*/
+#define LIBCW_KEY_TESTS_WORKAROUND
+
+
+
+
 extern const char * test_valid_representations[];
 extern const char * test_invalid_representations[];
 
@@ -66,21 +75,33 @@ static void test_helper_tq_callback(void * ptr);
 /* Helper function for iambic key tests. */
 static void legacy_api_test_iambic_key_paddles_common(cw_test_executor_t * cte, const int intended_dot_paddle, const int intended_dash_paddle, char character, int n_elements);
 
-static void legacy_api_cw_single_test_setup(void);
+static int legacy_api_standalone_test_setup(cw_test_executor_t * cte, bool start_gen);
+static int legacy_api_standalone_test_teardown(__attribute__((unused)) cw_test_executor_t * cte);
 
 
 
 
 /**
-   \brief Set up common test conditions
+   @brief Setup test environment for a test of legacy function
 
-   This must be called at the beginning of every individual test
-   function to handle setup of common test conditions.
+   @param start_gen whether a prepared generator should be started
 
-   @reviewed on 2019-10-13
+   @reviewed on 2020-10-04
 */
-void legacy_api_cw_single_test_setup(void)
+int legacy_api_standalone_test_setup(cw_test_executor_t * cte, bool start_gen)
 {
+	if (CW_SUCCESS != cw_generator_new(cte->current_sound_system, cte->current_sound_device)) {
+		cte->log_error(cte, "Can't create generator, stopping the test\n");
+		return cwt_retv_err;
+	}
+	if (start_gen) {
+		if (CW_SUCCESS != cw_generator_start()) {
+			cte->log_error(cte, "Can't start generator, stopping the test\n");
+			cw_generator_delete();
+			return cwt_retv_err;
+		}
+	}
+
 	cw_reset_send_receive_parameters();
 	cw_set_send_speed(30);
 	cw_set_receive_speed(30);
@@ -89,39 +110,18 @@ void legacy_api_cw_single_test_setup(void)
 	cw_unregister_signal_handler(SIGUSR1);
 	errno = 0;
 
-	return;
+	return cwt_retv_ok;
 }
 
 
 
 
 /**
-   @reviewed on 2019-10-13
+   @brief Deconfigure test environment after running a test of legacy function
+
+   @reviewed on 2020-10-04
 */
-int legacy_api_test_setup(cw_test_executor_t * cte)
-{
-	int rv = cw_generator_new(cte->current_sound_system, cte->current_sound_device);
-	if (rv != CW_SUCCESS) {
-		cte->log_error(cte, "Can't create generator, stopping the test\n");
-		return -1;
-	}
-	rv = cw_generator_start();
-	if (rv != CW_SUCCESS) {
-		cte->log_error(cte, "Can't start generator, stopping the test\n");
-		cw_generator_delete();
-		return -1;
-	}
-
-	return 0;
-}
-
-
-
-
-/**
-   @reviewed on 2019-10-13
-*/
-int legacy_api_test_teardown(__attribute__((unused)) cw_test_executor_t * cte)
+int legacy_api_standalone_test_teardown(__attribute__((unused)) cw_test_executor_t * cte)
 {
 	sleep(1);
 	cw_generator_stop();
@@ -140,7 +140,7 @@ int legacy_api_test_teardown(__attribute__((unused)) cw_test_executor_t * cte)
 int legacy_api_test_low_level_gen_parameters(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	int txdot_usecs = -1;
 	int txdash_usecs = -1;
@@ -171,6 +171,7 @@ int legacy_api_test_low_level_gen_parameters(cw_test_executor_t * cte)
 	cte->expect_op_int(cte, additional_usecs,       ">=", 0, "send parameters: additional_usecs");
 	cte->expect_op_int(cte, adjustment_usecs,       ">=", 0, "send parameters: adjustment_usecs");
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -185,7 +186,7 @@ int legacy_api_test_low_level_gen_parameters(cw_test_executor_t * cte)
 int legacy_api_test_parameter_ranges(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	const int off_limits = 10000;
 
@@ -306,6 +307,7 @@ int legacy_api_test_parameter_ranges(cw_test_executor_t * cte)
 	}
 
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -323,12 +325,7 @@ int legacy_api_test_parameter_ranges(cw_test_executor_t * cte)
 int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_setup(cte);
-	}
-	legacy_api_cw_single_test_setup();
-	cw_generator_stop();
+	legacy_api_standalone_test_setup(cte, false);
 
 	int cwret;
 
@@ -421,11 +418,9 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 
 	/* Test tear-down. */
 	{
-		if (0 != strlen(cte->config->test_function_name)) {
-			legacy_api_test_teardown(cte);
-		}
 	}
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -443,13 +438,10 @@ int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte)
 int legacy_api_test_cw_wait_for_tone_queue(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_setup(cte);
-	}
-	legacy_api_cw_single_test_setup();
 	/* Don't let generator run and dequeue tones just
 	   yet. Running/dequeueing generator will break our 'length' test. */
-	cw_generator_stop();
+	const bool start_generator = false;
+	legacy_api_standalone_test_setup(cte, start_generator);
 
 	const int n_tones_to_add = 6;     /* This is a simple test, so only a handful of tones. */
 
@@ -511,9 +503,7 @@ int legacy_api_test_cw_wait_for_tone_queue(cw_test_executor_t * cte)
 	{
 	}
 
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_teardown(cte);
-	}
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -536,11 +526,7 @@ int legacy_api_test_cw_wait_for_tone_queue(cw_test_executor_t * cte)
 int legacy_api_test_cw_queue_tone(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_setup(cte);
-	}
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	cw_set_volume(70);
 	int duration = 20000;
@@ -602,10 +588,7 @@ int legacy_api_test_cw_queue_tone(cw_test_executor_t * cte)
 	int cwret = cw_wait_for_tone_queue();
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "cw_wait_for_tone_queue()");
 
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_teardown(cte);
-	}
-
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -621,7 +604,7 @@ int legacy_api_test_cw_queue_tone(cw_test_executor_t * cte)
 int legacy_api_test_empty_tone_queue(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	/* Test setup. */
 	{
@@ -646,6 +629,7 @@ int legacy_api_test_empty_tone_queue(cw_test_executor_t * cte)
 	{
 	}
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -660,7 +644,7 @@ int legacy_api_test_empty_tone_queue(cw_test_executor_t * cte)
 int legacy_api_test_full_tone_queue(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	/* Test setup. */
 	{
@@ -738,6 +722,7 @@ int legacy_api_test_full_tone_queue(cw_test_executor_t * cte)
 	{
 	}
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -758,10 +743,7 @@ typedef struct callback_data {
 int legacy_api_test_tone_queue_callback(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_setup(cte);
-	}
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	for (int i = 1; i < 10; i++) {
 		/* Test the callback mechanism for very small values,
@@ -810,10 +792,7 @@ int legacy_api_test_tone_queue_callback(cw_test_executor_t * cte)
 		cw_reset_tone_queue();
 	}
 
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_teardown(cte);
-	}
-
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -851,7 +830,7 @@ static void test_helper_tq_callback(void * ptr)
 int legacy_api_test_volume_functions(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	int vol_min = -1;
 	int vol_max = -1;
@@ -958,6 +937,7 @@ int legacy_api_test_volume_functions(cw_test_executor_t * cte)
 		cw_flush_tone_queue();
 	}
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -976,7 +956,7 @@ int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 	const int max = cte->get_repetitions_count(cte);
 
 	cte->print_test_header(cte, "%s (%d)", __func__, max);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	/* Test: sending dot. */
 	{
@@ -1034,6 +1014,7 @@ int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, false, "==", failure, "cw_send_word_space()");
 	}
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1050,7 +1031,7 @@ int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 int legacy_api_test_representations(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	/* Test: sending valid representations. */
 	{
@@ -1118,6 +1099,7 @@ int legacy_api_test_representations(cw_test_executor_t * cte)
 
 	cw_wait_for_tone_queue();
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1134,11 +1116,7 @@ int legacy_api_test_representations(cw_test_executor_t * cte)
 int legacy_api_test_send_character_and_string(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_setup(cte);
-	}
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	/* Test: sending all supported characters as individual characters. */
 	{
@@ -1208,10 +1186,7 @@ int legacy_api_test_send_character_and_string(cw_test_executor_t * cte)
 		cte->expect_op_int(cte, CW_FAILURE, "==", cwret, "cw_send_string(<invalid>)");
 	}
 
-	if (0 != strlen(cte->config->test_function_name)) {
-		legacy_api_test_teardown(cte);
-	}
-
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1277,7 +1252,7 @@ void legacy_api_test_iambic_key_paddles_common(cw_test_executor_t * cte, const i
 int legacy_api_test_iambic_key_dot(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 	/*
 	  Test: keying dot.
@@ -1293,6 +1268,9 @@ int legacy_api_test_iambic_key_dot(cw_test_executor_t * cte)
 	const int n_elements = 30;
 	legacy_api_test_iambic_key_paddles_common(cte, intended_dot_paddle, intended_dash_paddle, character, n_elements);
 
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_teardown(cte);
+#endif
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1311,7 +1289,9 @@ int legacy_api_test_iambic_key_dot(cw_test_executor_t * cte)
 int legacy_api_test_iambic_key_dash(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_setup(cte, true);
+#endif
 
 	/*
 	  Test: keying dash.
@@ -1327,6 +1307,9 @@ int legacy_api_test_iambic_key_dash(cw_test_executor_t * cte)
 	const int n_elements = 30;
 	legacy_api_test_iambic_key_paddles_common(cte, intended_dot_paddle, intended_dash_paddle, character, n_elements);
 
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_teardown(cte);
+#endif
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1345,7 +1328,9 @@ int legacy_api_test_iambic_key_dash(cw_test_executor_t * cte)
 int legacy_api_test_iambic_key_alternating(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_setup(cte, true);
+#endif
 
 	/*
 	  Test: keying alternate dit/dash.
@@ -1361,6 +1346,9 @@ int legacy_api_test_iambic_key_alternating(cw_test_executor_t * cte)
 	const int n_elements = 30;
 	legacy_api_test_iambic_key_paddles_common(cte, intended_dot_paddle, intended_dash_paddle, character, n_elements);
 
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_teardown(cte);
+#endif
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1379,7 +1367,9 @@ int legacy_api_test_iambic_key_alternating(cw_test_executor_t * cte)
 int legacy_api_test_iambic_key_none(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_setup(cte, true);
+#endif
 
 	/*
 	  Test: set new state of paddles: no paddle pressed.
@@ -1408,6 +1398,9 @@ int legacy_api_test_iambic_key_none(cw_test_executor_t * cte)
 	}
 	cw_wait_for_keyer();
 
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_teardown(cte);
+#endif
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1422,7 +1415,9 @@ int legacy_api_test_iambic_key_none(cw_test_executor_t * cte)
 int legacy_api_test_straight_key(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+#ifndef LIBCW_KEY_TESTS_WORKAROUND
+	legacy_api_standalone_test_setup(cte, true);
+#endif
 
 	{
 		bool event_failure = false;
@@ -1486,6 +1481,7 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 
 	sleep(1);
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
@@ -1501,7 +1497,7 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 void cw_test_delayed_release(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 
 
 	int failures = 0;
@@ -1562,6 +1558,7 @@ void cw_test_delayed_release(cw_test_executor_t * cte)
 	}
 
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return;
@@ -1666,11 +1663,10 @@ void cw_test_signal_handling(cw_test_executor_t * cte)
 int legacy_api_test_basic_gen_operations(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
-
+#if 0
 	/* We don't call it here because generator is not created
 	   yet. Setup is handled by test code below.. */
-#if 0
-	legacy_api_cw_single_test_setup();
+	legacy_api_standalone_test_setup(cte, true);
 #endif
 
 
@@ -1738,8 +1734,7 @@ int legacy_api_test_basic_gen_operations(cw_test_executor_t * cte)
 cwt_retv legacy_api_test_gen_remove_last_character(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, "%s", __func__);
-
-	legacy_api_test_setup(cte);
+	legacy_api_standalone_test_setup(cte, true);
 
 	const int n = 4;
 	bool failure = false;
@@ -1767,10 +1762,9 @@ cwt_retv legacy_api_test_gen_remove_last_character(cw_test_executor_t * cte)
 		}
 	}
 
-	legacy_api_test_teardown(cte);
-
 	cte->expect_op_int(cte, false, "==", failure, "remove last character");
 
+	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);
 
 	return cwt_retv_ok;

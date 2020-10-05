@@ -13,11 +13,6 @@
 
 
 
-/* Setup and teardown functions for test sets. */
-int legacy_api_test_setup(cw_test_executor_t * cte);
-int legacy_api_test_teardown(cw_test_executor_t * cte);
-
-
 
 /* "Tone queue" topic. */
 int legacy_api_test_cw_wait_for_tone(cw_test_executor_t * cte);

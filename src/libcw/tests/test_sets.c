@@ -58,16 +58,12 @@ cw_test_set_t cw_test_sets[] = {
 		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup, true),
-
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_cw_wait_for_tone, true),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_cw_wait_for_tone_queue, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_cw_queue_tone, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_empty_tone_queue, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_full_tone_queue, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_tone_queue_callback, false),
-
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown, true),
 
 			LIBCW_TEST_FUNCTION_INSERT(NULL, false),
 		}
@@ -80,18 +76,10 @@ cw_test_set_t cw_test_sets[] = {
 		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup, true),
-
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_volume_functions, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_send_primitives, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_send_character_and_string, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_representations, false),
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown, true),
-
-			/* These functions create and delete a
-			   generator on their own, so they have to be put
-			   after legacy_api_test_teardown() that
-			   deletes a generator. */
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_basic_gen_operations, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_gen_remove_last_character, false),
 
@@ -106,15 +94,11 @@ cw_test_set_t cw_test_sets[] = {
 		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup, true),
-
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_dot, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_dash, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_alternating, false),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_iambic_key_none, true),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_straight_key, false),
-
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown, true),
 
 			LIBCW_TEST_FUNCTION_INSERT(NULL, false),
 		}
@@ -127,14 +111,10 @@ cw_test_set_t cw_test_sets[] = {
 		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_setup, true),
-
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_low_level_gen_parameters, true),
 			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_parameter_ranges, true),
 			//LIBCW_TEST_FUNCTION_INSERT(legacy_api_cw_test_delayed_release, true),
 			//LIBCW_TEST_FUNCTION_INSERT(legacy_api_cw_test_signal_handling, true), /* FIXME - not sure why this test fails :( */
-
-			LIBCW_TEST_FUNCTION_INSERT(legacy_api_test_teardown, true),
 
 			LIBCW_TEST_FUNCTION_INSERT(NULL, true),
 		}
