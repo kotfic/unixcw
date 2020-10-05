@@ -40,6 +40,7 @@
 
 #include "cw.h"
 #include "libcw.h"
+#include "libcw_debug.h"
 
 #include "i18n.h"
 #include "cw_cmdline.h"
@@ -61,6 +62,8 @@ static void write_to_cw_sender (const char *format, ...)
     __attribute__ ((__format__ (__printf__, 1, 2)));
 #endif
 
+
+extern cw_debug_t cw_debug_object;
 
 
 static cw_config_t *config = NULL; /* program-specific configuration */
@@ -560,6 +563,9 @@ parse_stream (FILE *stream)
 */
 int main (int argc, char *const argv[])
 {
+	//cw_debug_set_flags(&cw_debug_object, CW_DEBUG_MASK);
+	//cw_debug_object.level = CW_DEBUG_INFO;
+
 	atexit(cw_atexit);
 
 	/* Set locale and message catalogs. */
