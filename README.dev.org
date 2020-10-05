@@ -18,8 +18,22 @@
    "end-of-word space".
 
  - Variables of type cw_ret_t, returned by libcw functions, should be called
-   'cwret' (or 'cwret_<suffix>'):
+   "cwret" (or "cwret_<suffix>"). Example:
+
    cw_ret_t cwret = cw_tq_enqueue_internal(tq, &tone);
+
+ - Variables of type int, returned by ALSA API functions, should be called
+   "snd_rv". The "snd" prefix comes from names of ALSA functions and
+   highlights the fact that the returned value comes from ALSA (snd)
+   API. Example:
+
+   int snd_rv = cw_alsa.snd_pcm_hw_params_set_channels(gen->alsa_data.pcm_handle, hw_params, CW_AUDIO_CHANNELS);
+   if (0 != snd_rv) {
+           cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
+                         MSG_PREFIX "set hw params: can't set number of channels: %s", cw_alsa.snd_strerror(snd_rv));
+           return CW_FAILURE;
+   }
+
 
 
 * Linux tips
@@ -147,4 +161,20 @@ libtoolize
 * TODO
 
 ** Use suseconds_t for duration variables?
+
+** Count ALSA errors in tests framework:
+ + write: writei: Input/output error / -5
+ + underruns
+ + other
+This will require propagating them from libcw's ALSA module up to test
+framework, but it would help a lot in registering and tracking problems.
+
+** Detect unusually long times when joining generator's thread
+
+Usually it's 2-5 microseconds, anything longer may be a sign of problems.
+
+** Module prefixes of equal length
+
+To improve readability of debug messages, all values of MSG_PREFIX (like
+"libcw/gen" or "libcw/alsa") should have the same length.
 

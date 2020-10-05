@@ -566,9 +566,10 @@ cw_queue_state_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
 
 	const cw_queue_state_t queue_state = tq->state;
 #if 0
-	/* Debug. */
-	fprintf(stderr, "%s:%d queue state = %d, dequeued tone %dHz %dus\n",
-		__func__, __LINE__, queue_state, tone->frequency, tone->duration);
+	/* Verbose debug. */
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_TONE_QUEUE, CW_DEBUG_DEBUG
+		      MSG_PREFIX_ "queue state = %d, dequeued tone %dHz %dus\n",
+		      queue_state, tone->frequency, tone->duration);
 #endif
 
 	pthread_mutex_unlock(&tq->wait_mutex);

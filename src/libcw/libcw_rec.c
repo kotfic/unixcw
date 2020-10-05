@@ -2085,7 +2085,13 @@ void cw_rec_sync_parameters_internal(cw_rec_t * rec)
 	}
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_PARAMETERS, CW_DEBUG_INFO,
-		      MSG_PREFIX "'%s': sync parameters: receive usec timings <%.2f [wpm]>: dot: %d-%d [ms], dash: %d-%d [ms], ims: %d-%d[%d], %d-%d[%d], thres: %d [us]",
+		      MSG_PREFIX "'%s': sync parameters: receiver timings [us] at speed %.2f [wpm]:\n"
+		      "[II] " MSG_PREFIX "    dot:    min: %11d   max: %11d\n"
+		      "[II] " MSG_PREFIX "    dash:   min: %11d   max: %11d\n"
+		      "[II] " MSG_PREFIX "    ims:    min: %11d   max: %11d   ideal: %11d\n"
+		      "[II] " MSG_PREFIX "    ics:    min: %11d   max: %11d   ideal: %11d\n"
+		      "[II] " MSG_PREFIX "    thres:       %11d",
+
 		      rec->label,
 		      (double) rec->speed, /* Casting to double to avoid compiler warning about implicit conversion from float to double. */
 		      rec->dot_duration_min, rec->dot_duration_max,

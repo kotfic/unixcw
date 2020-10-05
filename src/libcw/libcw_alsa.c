@@ -384,8 +384,10 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 	   check for this in this function. */
 	const int snd_rv = cw_alsa.snd_pcm_writei(gen->alsa_data.pcm_handle, gen->buffer, gen->buffer_n_samples);
 	const cw_ret_t cw_ret = cw_alsa_debug_evaluate_write_internal(gen, snd_rv);
+
 #if 0
-	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+	/* Verbose debug code. */
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "write: written %d/%d samples", snd_rv, gen->buffer_n_samples);
 #endif
 	return cw_ret;

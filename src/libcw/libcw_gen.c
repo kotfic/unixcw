@@ -206,6 +206,10 @@ char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffe
 
 
 
+/*
+  TODO: the function must detect already running generator, and return
+  failure when it is detected.
+*/
 cw_ret_t cw_gen_start(cw_gen_t * gen)
 {
 	gen->phase_offset = 0.0F;
@@ -1596,7 +1600,9 @@ int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is
 		/* Debug code. */
 		fprintf(stderr, MSG_PREFIX "       loop #%d, buffer_sub_n_samples = %d\n", n_loops, buffer_sub_n_samples);
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_DEBUG,
-			      MSG_PREFIX "sub start: %d, sub stop: %d, sub size: %d / %d", gen->buffer_sub_start, gen->buffer_sub_stop, buffer_sub_n_samples, samples_to_write);
+			      MSG_PREFIX
+			      "sub start: %d, sub stop: %d, sub size: %d / %"PRIu64,
+			      gen->buffer_sub_start, gen->buffer_sub_stop, buffer_sub_n_samples, samples_to_write);
 #endif
 #endif
 
@@ -2513,7 +2519,16 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 	gen->adjustment_space_duration = (7 * gen->additional_space_duration) / 3;
 
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_PARAMETERS, CW_DEBUG_INFO,
-		      MSG_PREFIX "gen durations [us] at speed %d [wpm]: dot: %d, dash: %d, ims: %d, ics: %d, iws: %d, %d, %d",
+		      MSG_PREFIX "'%s': gen durations [us] at speed %d [wpm]:\n"
+		      "[II] " MSG_PREFIX "    dot: %11d\n"
+		      "[II] " MSG_PREFIX "   dash: %11d\n"
+		      "[II] " MSG_PREFIX "    ims: %11d\n"
+		      "[II] " MSG_PREFIX "    ics: %11d\n"
+		      "[II] " MSG_PREFIX "    iws: %11d\n"
+		      "[II] " MSG_PREFIX "   adsd: %11d\n"
+		      "[II] " MSG_PREFIX "   ajsd: %11d",
+
+		      gen->label,
 		      gen->send_speed, gen->dot_duration, gen->dash_duration,
 		      gen->ims_duration,
 		      gen->ics_duration,
@@ -2890,7 +2905,7 @@ static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t *
 		break;
 
 	case CW_TQ_EMPTY:
-		/* Tone queue remains  empty. No new tone == no sound. */
+		/* Tone queue remains empty. No new tone == no sound. */
 		value = CW_KEY_VALUE_OPEN;
 		break;
 	default:
