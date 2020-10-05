@@ -952,6 +952,10 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 {
 	cw_gen_t * gen = (cw_gen_t *) arg;
 
+	char name[15] = { 0 };
+	snprintf(name, sizeof (name), "deq_thr %s\n", gen->label);
+	pthread_setname_np(pthread_self(), name);
+
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, 0, CW_SLOPE_MODE_STANDARD_SLOPES);
 
