@@ -56,10 +56,14 @@
 
 
 /*
-  TODO: see what happens when you disable the workaround and run
-  './tests/libcw_tests -S p -A k'
+  TODO: when you do this:
+  1. disable the workaround
+  2. comment out cw_key_Xk_reset_state_internal() in libcw_gen.c
+  3. run './tests/libcw_tests -S p -A k'
+
+  you will notice that 'legacy_api_test_iambic_key_dash' test hangs
 */
-#define LIBCW_KEY_TESTS_WORKAROUND
+//#define LIBCW_KEY_TESTS_WORKAROUND
 
 
 

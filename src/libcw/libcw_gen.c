@@ -779,6 +779,23 @@ cw_ret_t cw_gen_stop(cw_gen_t * gen)
 	pthread_mutex_unlock(&gen->tq->wait_mutex);
 #endif
 
+	/*
+	  TODO: there is something wrong with the keyer machine state for
+	  iambic keyer if we have to reset it here (I'm resetting straight
+	  key too, just for completeness).
+
+	  Replication scenario:
+	  1. comment "#define LIBCW_KEY_TESTS_WORKAROUND" in
+	     libcw_legacy_api_tests.c
+	  2. comment these two function calls
+	  3. run './src/libcw/tests/libcw_tests -S a -X plughw -A k'
+	  4. see that 'legacy_api_test_iambic_key_dash' test hangs
+	*/
+	if (gen->key) {
+		cw_key_ik_reset_state_internal(gen->key);
+		cw_key_sk_reset_state_internal(gen->key);
+	}
+
 	pthread_mutex_lock(&gen->tq->dequeue_mutex);
 	/* Use pthread_cond_signal() because there is only one listener: loop in generator's thread function. */
 	pthread_cond_signal(&gen->tq->dequeue_var);
@@ -987,8 +1004,10 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 		const cw_queue_state_t queue_state = cw_tq_dequeue_internal(gen->tq, &tone);
 		if (CW_TQ_EMPTY == queue_state) {
 
-			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_INFO,
-				      MSG_PREFIX "queue is empty");
+			cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
+				      MSG_PREFIX "Detected empty queue");
+
+			cw_gen_value_tracking_internal(gen, &tone, queue_state);
 
 			if (gen->on_empty_queue) {
 				if (CW_SUCCESS != gen->on_empty_queue(gen)) {
@@ -1017,8 +1036,16 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			   that gently asks this function to stop
 			   idling and nicely return. */
 
+			/* The 'while' loop handles spurious wakeups of
+			   pthread_cond_wait() and also ensures that the
+			   wait() function is called only when a wait is
+			   necessary. TODO: make sure that getting
+			   gen->tq->state doesn't require locking a tq
+			   mutex. */
 			pthread_mutex_lock(&(gen->tq->dequeue_mutex));
-			pthread_cond_wait(&gen->tq->dequeue_var, &gen->tq->dequeue_mutex);
+			while (CW_TQ_EMPTY == gen->tq->state && gen->do_dequeue_and_generate) {
+				pthread_cond_wait(&gen->tq->dequeue_var, &gen->tq->dequeue_mutex);
+			}
 			pthread_mutex_unlock(&(gen->tq->dequeue_mutex));
 
 #if 0
@@ -1119,7 +1146,7 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 
 	} /* while (gen->do_dequeue_and_generate) */
 
-	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
+	cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
 		      MSG_PREFIX "EXIT: generator stopped (gen->do_dequeue_and_generate = %d)", gen->do_dequeue_and_generate);
 
 	/* Some functions in client thread may be waiting for the last
