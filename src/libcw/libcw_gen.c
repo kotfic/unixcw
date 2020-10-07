@@ -95,6 +95,9 @@
 
 #define MSG_PREFIX "libcw/gen: "
 
+/* Measuring how long some thread operations take. */
+#define LIBCW_GEN_DEBUG_THREAD_TIMING   1
+
 
 
 
@@ -238,6 +241,14 @@ cw_ret_t cw_gen_start(cw_gen_t * gen)
 	gen->do_dequeue_and_generate = true;
 
 
+#if LIBCW_GEN_DEBUG_THREAD_TIMING
+	/* Debug code to measure how long it takes to create thread. */
+	struct timeval before;
+	struct timeval after;
+	gettimeofday(&before, NULL);
+#endif
+
+
 	/* cw_gen_dequeue_and_generate_internal() is THE
 	   function that does the main job of generating
 	   tones. */
@@ -253,6 +264,19 @@ cw_ret_t cw_gen_start(cw_gen_t * gen)
 	} else {
 		/* TODO: shouldn't we be doing it in generator's thread function? */
 		gen->thread.running = true;
+
+#if LIBCW_GEN_DEBUG_THREAD_TIMING
+		/* Debug code to measure how long it takes to create thread.
+		   My main laptop:
+		       ALSA: 32 - 79 us
+		       PulseAudio: 20 - 65 us
+		*/
+		gettimeofday(&after, NULL);
+		const int delta = cw_timestamp_compare_internal(&before, &after);
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
+		MSG_PREFIX "generator thread timing: creating thread took %d us", delta);
+#endif
+
 
 		/* FIXME: For some yet unknown reason we have to put
 		   usleep() here, otherwise a generator may
@@ -803,9 +827,8 @@ cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
 	cw_usleep_internal(1 * CW_USECS_PER_SEC);
 
 
-#define CW_DEBUG_TIMING_JOIN 1
-
-#if CW_DEBUG_TIMING_JOIN   /* Debug code to measure how long it takes to join threads. */
+#if LIBCW_GEN_DEBUG_THREAD_TIMING
+	/* Debug code to measure how long it takes to join threads. */
 	struct timeval before;
 	struct timeval after;
 	gettimeofday(&before, NULL);
@@ -815,11 +838,12 @@ cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
 	int rv = pthread_join(gen->thread.id, NULL);
 
 
-#if CW_DEBUG_TIMING_JOIN   /* Debug code to measure how long it takes to join threads. */
+#if LIBCW_GEN_DEBUG_THREAD_TIMING
+	/* Debug code to measure how long it takes to join threads. */
 	gettimeofday(&after, NULL);
 	const int delta = cw_timestamp_compare_internal(&before, &after);
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
-		      MSG_PREFIX "joining thread took %d us", delta);
+		      MSG_PREFIX "generator thread timing: joining thread took %d us", delta);
 #endif
 
 
