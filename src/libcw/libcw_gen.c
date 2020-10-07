@@ -966,6 +966,13 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_INFO,
 				      MSG_PREFIX "queue is empty");
 
+			if (gen->on_empty_queue) {
+				if (CW_SUCCESS != gen->on_empty_queue(gen)) {
+					cw_debug_msg (&cw_debug_object, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
+						      MSG_PREFIX "handling of empty queue by generator has failed");
+				}
+			}
+
 			/* We won't get here while there are some
 			   accumulated tones in queue, because
 			   cw_tq_dequeue_internal() will be handling

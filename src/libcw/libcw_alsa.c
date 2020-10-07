@@ -104,6 +104,7 @@ struct cw_alsa_handle_t {
 	int (* snd_pcm_close)(snd_pcm_t * pcm);
 	int (* snd_pcm_prepare)(snd_pcm_t * pcm);
 	int (* snd_pcm_drop)(snd_pcm_t * pcm);
+	int (* snd_pcm_drain)(snd_pcm_t * pcm);
 	snd_pcm_sframes_t (* snd_pcm_writei)(snd_pcm_t * pcm, const void * buffer, snd_pcm_uframes_t size);
 #if WITH_ALSA_FREE_GLOBAL_CONFIG
 	int (* snd_config_update_free_global)(void);
@@ -247,6 +248,7 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv);
 static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen);
 static void     cw_alsa_close_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_alsa_on_empty_queue(cw_gen_t * gen);
 
 
 
@@ -355,6 +357,7 @@ cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
 	gen->open_and_configure_sound_device = cw_alsa_open_and_configure_sound_device_internal;
 	gen->close_sound_device              = cw_alsa_close_sound_device_internal;
 	gen->write_buffer_to_sound_device    = cw_alsa_write_buffer_to_sound_device_internal;
+	gen->on_empty_queue                  = cw_alsa_on_empty_queue;
 
 	return CW_SUCCESS;
 }
@@ -521,6 +524,46 @@ static void cw_alsa_close_sound_device_internal(cw_gen_t * gen)
 	}
 #endif
 	return;
+}
+
+
+
+
+/**
+   @brief Prepare ALSA sound sink for no new samples
+
+   Prevent 'buffer underrun' that would happen in this scenario:
+   1. write some buffers to ALSA PCM handle
+   2. detect empty tone queue, don't write anything for a while
+   3. start writing to ALSA PCM handle agan - here you may get 'buffer underrun' errors
+
+   @param[in/out] gen generator with opened ALSA PCM handle
+
+   @return CW_SUCCESS on success
+   @return CW_FAILURE otherwise
+*/
+static cw_ret_t cw_alsa_on_empty_queue(cw_gen_t * gen)
+{
+	int snd_rv = 0;
+
+	snd_rv = cw_alsa.snd_pcm_drain(gen->alsa_data.pcm_handle);
+	if (0 != snd_rv) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
+			      MSG_PREFIX "drain() returns error: %s/%d",
+			      cw_alsa.snd_strerror(snd_rv), snd_rv);
+		/* Don't return error, try to prepare PCM handle anyway
+		   (especially now, when drain() failed). */
+	}
+
+	snd_rv = cw_alsa.snd_pcm_prepare(gen->alsa_data.pcm_handle);
+	if (0 != snd_rv) {
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
+			      MSG_PREFIX "prepare() returns error: %s/%d",
+			      cw_alsa.snd_strerror(snd_rv), snd_rv);
+		return CW_FAILURE;
+	}
+
+	return CW_SUCCESS;
 }
 
 
@@ -1154,6 +1197,8 @@ static int cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle)
 	if (!alsa_handle->snd_pcm_prepare)         return -3;
 	*(void **) &(alsa_handle->snd_pcm_drop)    = dlsym(alsa_handle->lib_handle, "snd_pcm_drop");
 	if (!alsa_handle->snd_pcm_drop)            return -4;
+	*(void **) &(alsa_handle->snd_pcm_drain)   = dlsym(alsa_handle->lib_handle, "snd_pcm_drain");
+	if (!alsa_handle->snd_pcm_drain)           return -(__LINE__);
 	*(void **) &(alsa_handle->snd_pcm_writei)  = dlsym(alsa_handle->lib_handle, "snd_pcm_writei");
 	if (!alsa_handle->snd_pcm_writei)          return -5;
 #if WITH_ALSA_FREE_GLOBAL_CONFIG

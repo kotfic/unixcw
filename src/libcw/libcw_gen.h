@@ -348,6 +348,17 @@ struct cw_gen_struct {
 	cw_ret_t (* write_buffer_to_sound_device)(cw_gen_t * gen);
 	cw_ret_t (* write_tone_to_sound_device)(cw_gen_t * gen, const cw_tone_t * tone);
 
+	/**
+	   @brief Do some housekeeping of sound sink when tone queue goes completely empty
+
+	   A sound system may not set this function pointer.
+
+	   @param[in/out] gen generator with opened sound sink
+
+	   @return CW_SUCCESS on success
+	   @return CW_FAILURE on failure
+	*/
+	cw_ret_t (* on_empty_queue)(cw_gen_t * gen);
 
 	/*
 	  Current value of generator, as dictated by value of the tone
