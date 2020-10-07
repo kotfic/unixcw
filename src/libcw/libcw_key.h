@@ -138,9 +138,12 @@ void cw_key_ik_register_timer_internal(volatile cw_key_t * key, struct timeval *
 
 void cw_key_ik_get_paddle_latches_internal(volatile cw_key_t * key, int * dot_paddle_latch_state, int * dash_paddle_latch_state);
 bool cw_key_ik_is_busy_internal(const volatile cw_key_t * key);
+
 void cw_key_ik_reset_internal(volatile cw_key_t * key);
+void cw_key_ik_reset_state_internal(volatile cw_key_t * key);
 
 void cw_key_sk_reset_internal(volatile cw_key_t * key);
+void cw_key_sk_reset_state_internal(volatile cw_key_t * key);
 
 
 

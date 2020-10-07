@@ -1138,12 +1138,37 @@ cw_ret_t cw_key_ik_wait_for_keyer(volatile cw_key_t * key)
    suitable for calling from an application exit handler.
 
    @internal
-   @reviewed 2020-08-02
+   @reviewed 2020-10-06
    @endinternal
 
    @param[in] key key to reset
 */
 void cw_key_ik_reset_internal(volatile cw_key_t * key)
+{
+	cw_key_ik_reset_state_internal(key);
+
+	/* Silence sound and stop any background soundcard tone generation. */
+	cw_gen_silence_internal(key->gen);
+	cw_finalization_schedule_internal(); /* TODO: do we still need this? */
+
+	return;
+}
+
+
+
+/**
+   @brief Reset iambic keyer data and state
+
+   Clear all latches and paddle values of iambic keyer, return to
+   Curtis 8044 Keyer mode A
+
+   @internal
+   @reviewed 2020-10-06
+   @endinternal
+
+   @param[in] key key to reset
+*/
+void cw_key_ik_reset_state_internal(volatile cw_key_t * key)
 {
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYER_STATES, CW_DEBUG_DEBUG,
 		      MSG_PREFIX_IK "ik reset: keyer graph state %s -> KS_IDLE", cw_iambic_keyer_graph_states[key->ik.graph_state]);
@@ -1157,14 +1182,6 @@ void cw_key_ik_reset_internal(volatile cw_key_t * key)
 	key->ik.dash_latch = false;
 	key->ik.curtis_mode_b = false;
 	key->ik.curtis_b_latch = false;
-
-	/* Silence sound and stop any background soundcard tone generation. */
-	cw_gen_silence_internal(key->gen);
-	cw_finalization_schedule_internal(); /* TODO: do we still need this? */
-
-	cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_KEYER_STATES, CW_DEBUG_DEBUG,
-		      MSG_PREFIX_IK "ik reset: keyer graph state -> %s (reset)",
-		      cw_iambic_keyer_graph_states[key->ik.graph_state]);
 
 	return;
 }
@@ -1291,26 +1308,44 @@ cw_ret_t cw_key_sk_get_value(const volatile cw_key_t * key, cw_key_value_t * key
 
 
 /**
-   @brief Clear the straight key value,stop generating sound on associated generator
+   @brief Clear the straight key state, stop generating sound on associated generator
 
    This function is suitable for calling from an application exit handler.
 
    @internal
-   @reviewed 2020-08-02
+   @reviewed 2020-10-06
    @endinternal
 
    @param[in] key key to reset
 */
 void cw_key_sk_reset_internal(volatile cw_key_t * key)
 {
-	key->sk.key_value = CW_KEY_VALUE_OPEN;
+	cw_key_sk_reset_state_internal(key);
 
 	/* Stop any tone generation. */
 	cw_gen_silence_internal(key->gen);
 	//cw_finalization_schedule_internal();
 
+	return;
+}
+
+
+
+
+/**
+   @brief Clear the straight key state
+
+   @internal
+   @reviewed 2020-10-06
+   @endinternal
+
+   @param[in] key key to reset
+*/
+void cw_key_sk_reset_state_internal(volatile cw_key_t * key)
+{
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_STRAIGHT_KEY_STATES, CW_DEBUG_INFO,
 		      MSG_PREFIX_SK "sk: key value ->OPEN (reset)");
+	key->sk.key_value = CW_KEY_VALUE_OPEN;
 
 	return;
 }
