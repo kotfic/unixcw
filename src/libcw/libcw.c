@@ -33,6 +33,7 @@
 #include "libcw_gen.h"
 #include "libcw_key.h"
 #include "libcw_rec.h"
+#include "libcw_utils.h"
 
 
 
@@ -77,14 +78,14 @@ static cw_rec_t cw_receiver = {
 
 	.parameters_in_sync = false,
 
-	.label = "global rec", /* Single global receiver visible after loading libcw library. */
+	.label = "global rec", /* Single global receiver available in libcw library, used by legacy API. */
 };
 
 
 
 
 
-static volatile cw_key_t cw_key = {
+CW_STATIC_FUNC volatile cw_key_t cw_key = {
 	.gen = NULL,
 
 
@@ -112,7 +113,7 @@ static volatile cw_key_t cw_key = {
 		.lock = false,
 	},
 
-	.label = "global key", /* Single global key visible after loading libcw library. */
+	.label = "global key", /* Single global key available in libcw library, used by legacy API. */
 };
 
 
@@ -156,7 +157,7 @@ int cw_generator_new(int audio_system, const char *device)
 			      "libcw: can't create generator");
 		return CW_FAILURE;
 	} else {
-		cw_gen_set_label(cw_generator, "global gen"); /* Single global generator. */
+		cw_gen_set_label(cw_generator, "global gen"); /* Single global generator available in libcw library, used by legacy API. */
 
 		/* For some (all?) applications a key needs to have
 		   some generator associated with it. */

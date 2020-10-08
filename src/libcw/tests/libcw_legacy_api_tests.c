@@ -51,6 +51,7 @@
 #include "libcw_utils.h"
 #include "libcw_gen.h"
 #include "libcw_legacy_api_tests.h"
+#include "libcw_key_tests.h"
 
 
 
@@ -70,6 +71,8 @@
 
 extern const char * test_valid_representations[];
 extern const char * test_invalid_representations[];
+extern test_straight_key_data_t g_test_straight_key_data[];
+extern volatile cw_key_t cw_key;
 
 
 
@@ -1414,7 +1417,7 @@ int legacy_api_test_iambic_key_none(cw_test_executor_t * cte)
 
 
 /**
-   @reviewed on 2019-10-13
+   @reviewed on 2020-10-08
 */
 int legacy_api_test_straight_key(cw_test_executor_t * cte)
 {
@@ -1423,67 +1426,18 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 	legacy_api_standalone_test_setup(cte, true);
 #endif
 
-	{
-		bool event_failure = false;
-		bool state_failure = false;
-		bool busy_failure = false;
+	const int max = 8;
 
-		const int key_states[] = { CW_KEY_STATE_OPEN, CW_KEY_STATE_CLOSED };
-		const int first = 1 + (lrand48() % 2);
-		const int last = first + cte->get_repetitions_count(cte) + (1 + (lrand48() % 2));
-		cte->log_info(cte, "Randomized key indices range: from %d to %d\n", first, last);
+	for (size_t i = 0; i < TEST_STRAIGHT_KEY_DATA_COUNT; i++) {
+		g_test_straight_key_data[i].loops = max;
+		g_test_straight_key_data[i].legacy_set = LIBCW_TEST_FUT(cw_notify_straight_key_event);
+		g_test_straight_key_data[i].legacy_get = LIBCW_TEST_FUT(cw_get_straight_key_state);
+		g_test_straight_key_data[i].legacy_is_busy = LIBCW_TEST_FUT(cw_is_straight_key_busy);
+		g_test_straight_key_data[i].modern_set = NULL;
+		g_test_straight_key_data[i].modern_get = NULL;
 
-		/* Alternate between open and closed. */
-		for (int i = first; i <= last; i++) {
-
-			const int intended_key_state = key_states[i % 2]; /* Notice that depending on lrand48(), we may start with key open or key closed. */
-
-			const int cwret = LIBCW_TEST_FUT(cw_notify_straight_key_event)(intended_key_state);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "cw_notify_straight_key_event(%d)", intended_key_state)) {
-				event_failure = true;
-				break;
-			}
-
-			const int readback_key_state = LIBCW_TEST_FUT(cw_get_straight_key_state)();
-			if (!cte->expect_op_int_errors_only(cte, intended_key_state, "==", readback_key_state, "cw_get_straight_key_state() (%d)", intended_key_state)) {
-				state_failure = true;
-				break;
-			}
-
-			/* "busy" is misleading. This function just asks if key is down. */
-			const bool is_busy = LIBCW_TEST_FUT(cw_is_straight_key_busy)();
-			const bool expected_is_busy = intended_key_state == CW_KEY_STATE_CLOSED;
-			if (!cte->expect_op_int_errors_only(cte, expected_is_busy, "==", is_busy, "cw_is_straight_key_busy() (%d)", intended_key_state)) {
-				busy_failure = true;
-				break;
-			}
-
-			cte->log_info_cont(cte, "%d", intended_key_state);
-			cte->flush_info(cte);
-#ifdef __FreeBSD__
-			/* There is a problem with nanosleep() and
-			   signals on FreeBSD. TODO: see if the
-			   problem still persists after moving from
-			   signals to conditional variables. */
-			sleep(1);
-#else
-			const int usecs = CW_USECS_PER_SEC;
-			cw_usleep_internal(usecs);
-#endif
-		}
-
-		/* Always make the key open after the tests. */
-		cw_notify_straight_key_event(CW_KEY_STATE_OPEN);
-
-		cte->log_info_cont(cte, "\n");
-		cte->flush_info(cte);
-
-		cte->expect_op_int(cte, false, "==", event_failure, "cw_notify_straight_key_event(<key open/closed>)");
-		cte->expect_op_int(cte, false, "==", state_failure, "cw_get_straight_key_state()");
-		cte->expect_op_int(cte, false, "==", busy_failure, "cw_is_straight_key_busy()");
+		test_helper_test_straight_key(cte, &cw_key, &g_test_straight_key_data[i]);
 	}
-
-	sleep(1);
 
 	legacy_api_standalone_test_teardown(cte);
 	cte->print_test_footer(cte, __func__);

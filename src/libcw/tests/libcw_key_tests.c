@@ -42,10 +42,28 @@
 
 
 
+test_straight_key_data_t g_test_straight_key_data[TEST_STRAIGHT_KEY_DATA_COUNT] = {
+	/* See what happens when we tell the library 'max' times in a row
+	   that key is open. */
+	{ 0, 0, { CW_KEY_VALUE_OPEN,   CW_KEY_VALUE_OPEN   }, "consecutive open",   NULL, NULL, NULL, NULL, NULL },
+
+	/* See what happens when we tell the library 'max' times in a row
+	   that key is closed. */
+	{ 0, 0, { CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_CLOSED }, "consecutive closed", NULL, NULL, NULL, NULL, NULL },
+
+	/* During development I noticed a bug that happened only if test was
+	   started from 'open' state. So test both possibilities: when
+	   starting from open and from closed. */
+	{ 0, CW_USECS_PER_SEC, { CW_KEY_VALUE_OPEN, CW_KEY_VALUE_CLOSED }, "open/closed", NULL, NULL, NULL, NULL, NULL },
+	{ 0, CW_USECS_PER_SEC, { CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_OPEN }, "closed/open", NULL, NULL, NULL, NULL, NULL },
+};
+
+
+
+
 static int key_setup(cw_test_executor_t * cte, cw_key_t ** key, cw_gen_t ** gen);
 static void key_destroy(cw_key_t ** key, cw_gen_t ** gen);
 static int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t intended_dot_paddle, cw_key_value_t intended_dash_paddle, char mark_representation, const char * marks_name, int max);
-static int test_straight_key_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t intended_key_value, const char * state_name, int max);
 
 
 
@@ -209,39 +227,101 @@ int test_keyer(cw_test_executor_t * cte)
 
 
 /**
-   @reviewed on 2020-08-02
+   @reviewed on 2020-10-08
 */
-int test_straight_key_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t intended_key_value, const char * state_name, int max)
+cwt_retv test_helper_test_straight_key(cw_test_executor_t * cte, volatile cw_key_t * key, test_straight_key_data_t * test_data)
 {
 	bool event_failure = false;
 	bool state_failure = false;
+	bool busy_failure = false;
 
-	for (int i = 0; i < max; i++) {
-		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_key_sk_set_value)(key, intended_key_value);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "key value %d", intended_key_value)) {
+	for (int i = 0; i < test_data->loops; i++) {
+		const cw_key_value_t intended_key_value = test_data->values_set[i % 2];
+
+		cw_ret_t cwret = CW_FAILURE;
+		if (test_data->modern_set) {
+			cwret = test_data->modern_set(key, intended_key_value);
+		} else {
+			cwret = test_data->legacy_set(intended_key_value);
+		}
+		if (!cte->expect_op_int_errors_only(cte,
+						    CW_SUCCESS, "==", cwret,
+						    "%s: set key value %d",
+						    test_data->test_name,
+						    intended_key_value)) {
 			event_failure = true;
 			break;
 		}
 
 		cw_key_value_t readback_value;
-		LIBCW_TEST_FUT(cw_key_sk_get_value)(key, &readback_value);
-		if (!cte->expect_op_int_errors_only(cte, intended_key_value, "==", readback_value, "key value readback (%d)", intended_key_value)) {
+		if (test_data->modern_get) {
+			cwret = test_data->modern_get(key, &readback_value);
+		} else {
+			cwret = CW_SUCCESS;
+			readback_value = test_data->legacy_get();
+		}
+		if (!cte->expect_op_int_errors_only(cte,
+						    intended_key_value, "==", readback_value,
+						    "%s: get key value %d",
+						    test_data->test_name,
+						    intended_key_value)) {
 			state_failure = true;
 			break;
 		}
+
+		/* "busy" is misleading. This function just asks if key is down. */
+		if (test_data->legacy_is_busy) {
+			const bool is_busy = test_data->legacy_is_busy();
+			const bool expected_is_busy = intended_key_value == CW_KEY_VALUE_CLOSED;
+			if (!cte->expect_op_int_errors_only(cte,
+							    expected_is_busy, "==", is_busy,
+							    "%s: is sk busy", test_data->test_name)) {
+				busy_failure = true;
+				break;
+			}
+		}
+
+		cte->log_info_cont(cte, "%d", intended_key_value);
+
+		if (test_data->usecs) {
+#ifdef __FreeBSD__
+			/* There is a problem with nanosleep() and
+			   signals on FreeBSD. TODO: see if the
+			   problem still persists after moving from
+			   signals to conditional variables. */
+			sleep(1);
+#else
+			cw_usleep_internal(test_data->usecs);
+#endif
+		}
 	}
 
-	cte->expect_op_int(cte, false, "==", event_failure, "cw_key_sk_set_state(<key %s>)", state_name);
-	cte->expect_op_int(cte, false, "==", state_failure, "cw_key_sk_get_state(<key %s)", state_name);
+	cte->log_info_cont(cte, "\n");
 
-	return 0;
+	/* Never leave the key closed. */
+	cw_key_sk_set_value(key, CW_KEY_VALUE_OPEN);
+
+	cte->expect_op_int(cte,
+			   false, "==", event_failure,
+			   "set sk state(%s)", test_data->test_name);
+	cte->expect_op_int(cte,
+			   false, "==", state_failure,
+			   "get sk state(%s)", test_data->test_name);
+	if (test_data->legacy_is_busy) {
+		cte->expect_op_int(cte,
+				   false, "==", busy_failure,
+				   "is sk busy(%s)", test_data->test_name);
+	}
+
+
+	return cwt_retv_ok;
 }
 
 
 
 
 /**
-   @reviewed on 2019-10-12
+   @reviewed on 2020-10-08
 */
 int test_straight_key(cw_test_executor_t * cte)
 {
@@ -255,60 +335,25 @@ int test_straight_key(cw_test_executor_t * cte)
 		return -1;
 	}
 
-	/* See what happens when we tell the library 'max' times in a
-	   row that key is open. */
-	test_straight_key_helper(cte, key, CW_KEY_VALUE_OPEN, "open", max);
+	for (size_t i = 0; i < TEST_STRAIGHT_KEY_DATA_COUNT; i++) {
+		g_test_straight_key_data[i].loops = max;
+		g_test_straight_key_data[i].legacy_set = NULL;
+		g_test_straight_key_data[i].legacy_get = NULL;
+		g_test_straight_key_data[i].legacy_is_busy = NULL;
+		g_test_straight_key_data[i].modern_set = LIBCW_TEST_FUT(cw_key_sk_set_value);
+		g_test_straight_key_data[i].modern_get = LIBCW_TEST_FUT(cw_key_sk_get_value);
 
-	/* See what happens when we tell the library 'max' times in a
-	   row that key is closed. */
-	test_straight_key_helper(cte, key, CW_KEY_VALUE_CLOSED, "closed", max);
-
-
-	{
-		bool event_failure = false;
-		bool state_failure = false;
-
-		/* Alternate between open and closed. */
-		for (int i = 0; i < max; i++) {
-			const cw_key_value_t intended_key_value = (i % 2) ? CW_KEY_VALUE_OPEN : CW_KEY_VALUE_CLOSED;
-			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_key_sk_set_value)(key, intended_key_value);
-			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "alternating key value, notification, iteration %d, value %d", i, intended_key_value)) {
-				event_failure = true;
-				break;
-			}
-
-			cw_key_value_t readback_key_value;
-			LIBCW_TEST_FUT(cw_key_sk_get_value)(key, &readback_key_value);
-			if (!cte->expect_op_int_errors_only(cte, intended_key_value, "==", readback_key_value, "alternating key value, value readback, iteration %d, value %d", i, intended_key_value)) {
-				state_failure = true;
-				break;
-			}
-
-			cte->log_info_cont(cte, "%d", intended_key_value);
-#ifdef __FreeBSD__
-			/* There is a problem with nanosleep() and
-			   signals on FreeBSD. TODO: see if the
-			   problem still persists after moving from
-			   signals to conditional variables. */
-			sleep(1);
-#else
-			const int usecs = CW_USECS_PER_SEC;
-			cw_usleep_internal(usecs);
-#endif
-		}
-		cte->log_info_cont(cte, "\n");
-
-		/* Never leave the key closed. */
-		cw_key_sk_set_value(key, CW_KEY_VALUE_OPEN);
-
-		cte->expect_op_int(cte, false, "==", event_failure, "cw_key_sk_set_state(<key open/closed>)");
-		cte->expect_op_int(cte, false, "==", state_failure, "cw_key_sk_get_state(<key open/closed>)");
+		test_helper_test_straight_key(cte, key, &g_test_straight_key_data[i]);
 	}
 
-	sleep(1); /* Don't go immediately to key_destroy(), because this will cut the sound of the last dot short. TODO: shouldn't this be some kind of wait()? */
+	/* Don't go immediately to key_destroy(), because this will cut the
+	   sound of the last dot short. TODO: shouldn't this be some kind of
+	   wait()? */
+	sleep(1);
 	key_destroy(&key, &gen);
 
 	cte->print_test_footer(cte, __func__);
 
 	return 0;
 }
+
