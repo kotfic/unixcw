@@ -364,23 +364,25 @@ int get_optind(void)
 
 void cw_print_help(cw_config_t *config)
 {
-	fprintf(stderr, _("Usage: %s [options...]\n"), config->program_name);
+	fprintf(stderr, _("Usage: %s [options...]\n\n"), config->program_name);
 
 	if (!cw_longopts_available()) {
 		fprintf(stderr, "%s", _("Long format of options is not supported on your system\n\n"));
 	}
 
 	if (config->has_feature_sound_system) {
-		fprintf(stderr, "%s", _("Sound system options:\n"));
 		if (config->has_feature_libcw_test_specific) {
-			fprintf(stderr, "%s", _("  -S, --test_systems=SYSTEMS\n"));
+			fprintf(stderr, "%s", _("Sound system options (unstable):\n"));
+			fprintf(stderr, "%s", _("  -S, --test-systems=SYSTEMS\n"));
 			fprintf(stderr, "%s", _("        test one or more of these sound systems:\n"));
 			fprintf(stderr, "%s", _("        n - Null\n"));
 			fprintf(stderr, "%s", _("        c - console\n"));
 			fprintf(stderr, "%s", _("        o - OSS\n"));
 			fprintf(stderr, "%s", _("        a - ALSA\n"));
 			fprintf(stderr, "%s", _("        p - PulseAudio\n"));
+			fprintf(stderr, "%s", _("  If this option is not specified, the program will attempt to test all sound systems\n\n"));
 		} else {
+			fprintf(stderr, "%s", _("Sound system options:\n"));
 			fprintf(stderr, "%s", _("  -s, --system=SYSTEM\n"));
 			fprintf(stderr, "%s", _("        generate sound using SYSTEM sound system\n"));
 			fprintf(stderr, "%s", _("        SYSTEM: {null|console|oss|alsa|pulseaudio|soundcard}\n"));
@@ -403,7 +405,7 @@ void cw_print_help(cw_config_t *config)
 		fprintf(stderr,       _("        'pulseaudio': %s\n"), CW_DEFAULT_PA_DEVICE);
 
 		if (config->has_feature_libcw_test_specific) {
-			fprintf(stderr, "%s", _("  -X, --alsa_device=device\n"));
+			fprintf(stderr, "%s", _("  -X, --test-alsa-device=device\n"));
 		}
 
 		fprintf(stderr, "\n");
@@ -440,7 +442,7 @@ void cw_print_help(cw_config_t *config)
 	    || config->has_feature_outfile
 	    || config->has_feature_cw_specific) {
 
-		fprintf(stderr, "%s",     _("Other options:\n"));
+		fprintf(stderr, "%s", _("Other options:\n"));
 
 		if (config->has_feature_cw_specific) {
 			fprintf(stderr, "%s", _("  -e, --noecho           disable sending echo to stdout\n"));
@@ -473,41 +475,40 @@ void cw_print_help(cw_config_t *config)
 	    || config->has_feature_test_quick_only
 	    || config->has_feature_test_random_seed) {
 
-		fprintf(stderr, "%s",     _("Options specific to test programs:\n"));
+		fprintf(stderr, "%s", _("Options specific to test programs (unstable):\n"));
 
 		if (config->has_feature_libcw_test_specific) {
-			fprintf(stderr, "%s", _("  -A, --test_areas=AREAS\n"));
+			fprintf(stderr, "%s", _("  -A, --test-areas=AREAS\n"));
 			fprintf(stderr, "%s", _("        test one or more of these areas:\n"));
 			fprintf(stderr, "%s", _("        g - generator\n"));
 			fprintf(stderr, "%s", _("        t - tone queue\n"));
 			fprintf(stderr, "%s", _("        k - Morse key\n"));
 			fprintf(stderr, "%s", _("        r - receiver\n"));
 			fprintf(stderr, "%s", _("        o - other\n"));
+			fprintf(stderr, "%s", _("  If this option is not specified, the program will attempt to test all test areas\n\n"));
 		}
 		if (config->has_feature_test_repetitions) {
-			fprintf(stderr, "%s", _("  -R, --test_repetitions=N\n"));
+			fprintf(stderr, "%s", _("  -R, --test-repetitions=N\n"));
 			fprintf(stderr, "%s", _("        repeat each test function N times\n"));
 		}
 		if (config->has_feature_test_name) {
-			fprintf(stderr, "%s", _("  -N, --test_name=NAME\n"));
+			fprintf(stderr, "%s", _("  -N, --test-name=NAME\n"));
 			fprintf(stderr, "%s", _("        execute only a test function specified by NAME\n"));
+			fprintf(stderr, "%s", _("        this option overrides -A option\n"));
 		}
 		if (config->has_feature_test_quick_only) {
-			fprintf(stderr, "%s", _("  -Q, --test_quick_only\n"));
+			fprintf(stderr, "%s", _("  -Q, --test-quick-only\n"));
 			fprintf(stderr, "%s", _("        execute only test functions that take short time\n"));
 		}
 		if (config->has_feature_test_random_seed) {
-			fprintf(stderr, "%s", _("  -D, --random-seed\n"));
+			fprintf(stderr, "%s", _("  -D, --test-random-seed\n"));
 			fprintf(stderr, "%s", _("        use given seed for randomization\n"));
 		}
 
-		if (config->has_feature_libcw_test_specific) {
-			fprintf(stderr, "%s", _("If no argument is provided, the program will attempt to test all sound systems available on the machine and all areas\n"));
-		}
 		fprintf(stderr, "\n");
 	}
 
-	fprintf(stderr, "%s",     _("Help and version information:\n"));
+	fprintf(stderr, "%s", _("Help and version information:\n"));
 	fprintf(stderr, "%s", _("  -h, --help             print this message\n"));
 	fprintf(stderr, "%s", _("  -V, --version          print version information\n\n"));
 
@@ -565,21 +566,21 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 	}
 
 	if (config->has_feature_libcw_test_specific) {
-		append_option(buffer, size, &n, "S:|test_systems");
-		append_option(buffer, size, &n, "A:|test_areas");
-		append_option(buffer, size, &n, "X:|alsa_device");
+		append_option(buffer, size, &n, "S:|test-systems");
+		append_option(buffer, size, &n, "A:|test-areas");
+		append_option(buffer, size, &n, "X:|test-alsa-device");
 	}
 	if (config->has_feature_test_repetitions) {
-		append_option(buffer, size, &n, "R:|test_repetitions");
+		append_option(buffer, size, &n, "R:|test-repetitions");
 	}
 	if (config->has_feature_test_name) {
-		append_option(buffer, size, &n, "N:|test_name");
+		append_option(buffer, size, &n, "N:|test-name");
 	}
 	if (config->has_feature_test_quick_only) {
-		append_option(buffer, size, &n, "Q|test_quick_only");
+		append_option(buffer, size, &n, "Q|test-quick-only");
 	}
 	if (config->has_feature_test_random_seed) {
-		append_option(buffer, size, &n, "D:|random-seed");
+		append_option(buffer, size, &n, "D:|test-random-seed");
 	}
 
 	if (true) {
