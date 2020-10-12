@@ -183,7 +183,9 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 	cw_gen_t * gen = NULL;
 
 	for (int i = 0; i < repetitions; i++) {
+		cte->log_info(cte, "%s", "");
 		if (do_new) {
+			cte->log_info_cont(cte, "new ");
 			gen = LIBCW_TEST_FUT(cw_gen_new)(cte->current_sound_system, cte->current_sound_device);
 			if (!cte->expect_valid_pointer_errors_only(cte, gen, "new() (loop #%d/%d)", i + 1, repetitions)) {
 				new_failure = true;
@@ -214,6 +216,12 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 
 
 		if (do_start || do_stop) {
+			if (do_start) {
+				cte->log_info_cont(cte, "start ");
+			}
+			if (do_stop) {
+				cte->log_info_cont(cte, "stop ");
+			}
 			/* I expect that a common pattern will be that
 			   generator will be created once, then
 			   started/stopped multiple times, and then deleted
@@ -261,12 +269,14 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 		}
 
 		if (do_delete) {
+			cte->log_info_cont(cte, "delete ");
 			LIBCW_TEST_FUT(cw_gen_delete)(&gen);
 			if (!cte->expect_null_pointer_errors_only(cte, gen, "delete() (loop #%d/%d)", i + 1, repetitions)) {
 				delete_failure = true;
 				break;
 			}
 		}
+		cte->log_info_cont(cte, "\n");
 	}
 	if (do_new) {
 		cte->expect_op_int(cte, false, "==", new_failure, "%s(): new()", function_name);
