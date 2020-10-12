@@ -309,6 +309,7 @@ struct cw_gen_struct {
 	   dequeue_and_generate thread function. */
 	bool do_dequeue_and_generate;
 
+	bool silencing_initialized;
 
 
 

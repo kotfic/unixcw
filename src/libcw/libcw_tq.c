@@ -777,7 +777,7 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
 	if (tq->state == CW_TQ_EMPTY) {
 		tq->state = CW_TQ_NONEMPTY;
 
-		/* A loop in cw_gen_dequeue_and_play_internal()
+		/* A loop in cw_gen_dequeue_and_generate_internal()
 		   function may await for the queue to be filled with
 		   new tones to dequeue and play.  It waits for a
 		   notification from tq that there are some new tones

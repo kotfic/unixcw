@@ -144,6 +144,9 @@ const unsigned int cw_supported_sample_rates[] = {
 
 static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t * tone, cw_queue_state_t queue_state);
 static void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, cw_key_value_t value);
+static void cw_gen_empty_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t * tone);
+static void cw_gen_silencing_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t * tone);
+static void cw_gen_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t * tone);
 
 
 
@@ -360,10 +363,10 @@ cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_na
    this function?
 
    @internal
-   @reviewed 2020-08-04
+   @reviewed 2020-10-12
    @endinternal
 
-   @param[in] gen generator using an sound sink that should be silenced
+   @param[in] gen generator using a sound sink that should be silenced
 
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure to silence a sound sink
@@ -387,6 +390,35 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 		   so return CW_SUCCESS. */
 		return CW_SUCCESS;
 	}
+
+#if 1
+	/* Tell 'dequeue and generate' thread function to go silent.
+
+	   TODO: What if the last tone on queue is a Very Long Tone, and
+	   silencing the generator will take a long time? */
+	gen->silencing_initialized = true;
+	cw_gen_wait_for_queue_level(gen, 0);
+
+	/* Somewhere there may be a key in "down" state and we need to make
+	   it go "up", regardless of sound sink (even for CW_AUDIO_NULL,
+	   because that sound system can also be used with a key).  Otherwise
+	   the key may stay in "down" state forever and the sound will be
+	   played after "silencing" of the generator. */
+	cw_tone_t tone;
+	CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
+	cw_ret_t cwret = cw_tq_enqueue_internal(gen->tq, &tone);
+	cw_gen_wait_for_end_of_current_tone(gen);
+
+	if (gen->sound_system == CW_AUDIO_CONSOLE) {
+		/* Just in case...
+		   TODO: is it still necessary after adding the quantum of
+		   silence above? */
+		cw_console_silence(gen);
+	}
+
+	return cwret;
+
+#else
 
 	/* TODO: Tone queue may have e.g. 10 tones enqueued at this
 	   moment. To have a "gentle" silencing of generator, we shouldn't
@@ -446,6 +478,7 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 	//gen->do_dequeue_and_generate = false;
 
 	return status;
+#endif
 }
 
 
@@ -764,20 +797,35 @@ cw_ret_t cw_gen_stop(cw_gen_t * gen)
 	}
 
 
-	/* "while (gen->do_dequeue_and_generate)" loop in thread function
-	   may be in a state where dequeue() function returned IDLE
-	   state, and the loop is waiting for new tone.
+	{
+		/* "while (gen->do_dequeue_and_generate)" loop in thread
+		   function may be in a state where dequeue() function
+		   returned IDLE state, and the loop is waiting for new tone.
 
-	   This is to force the loop to start new cycle, make the loop
-	   notice that gen->do_dequeue_and_generate is false, and to
-	   get the thread function to return (and thus to end the
-	   thread). */
+		   This is to force the loop to start new cycle, make the
+		   loop notice that gen->do_dequeue_and_generate is false,
+		   and to get the thread function to return (and thus to end
+		   the thread). */
 
-#if 0 /* This was disabled some time before 2017-01-19. */
-	pthread_mutex_lock(&gen->tq->wait_mutex);
-	pthread_cond_broadcast(&gen->tq->wait_var);
-	pthread_mutex_unlock(&gen->tq->wait_mutex);
+#if 0
+		/* This was disabled some time before 2017-01-19. */
+		pthread_mutex_lock(&gen->tq->wait_mutex);
+		pthread_cond_broadcast(&gen->tq->wait_var);
+		pthread_mutex_unlock(&gen->tq->wait_mutex);
 #endif
+
+		pthread_mutex_lock(&gen->tq->dequeue_mutex);
+		/* Use pthread_cond_signal() because there is only one
+		   listener: loop in generator's thread function. */
+		pthread_cond_signal(&gen->tq->dequeue_var);
+		pthread_mutex_unlock(&gen->tq->dequeue_mutex);
+
+#if 0
+		/* This was disabled some time before 2017-01-19. */
+		/* Original implementation using signals. */
+		pthread_kill(gen->thread.id, SIGALRM);
+#endif
+	}
 
 	/*
 	  TODO: there is something wrong with the keyer machine state for
@@ -795,15 +843,6 @@ cw_ret_t cw_gen_stop(cw_gen_t * gen)
 		cw_key_ik_reset_state_internal(gen->key);
 		cw_key_sk_reset_state_internal(gen->key);
 	}
-
-	pthread_mutex_lock(&gen->tq->dequeue_mutex);
-	/* Use pthread_cond_signal() because there is only one listener: loop in generator's thread function. */
-	pthread_cond_signal(&gen->tq->dequeue_var);
-	pthread_mutex_unlock(&gen->tq->dequeue_mutex);
-
-#if 0   /* Original implementation using signals. */  /* This was disabled some time before 2017-01-19. */
-	pthread_kill(gen->thread.id, SIGALRM);
-#endif
 
 	return cw_gen_join_thread_internal(gen);
 }
@@ -982,7 +1021,7 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, int sound_system, const char *
    this function.
 
    @internal
-   @reviewed 2020-08-04
+   @reviewed 2020-10-13
    @endinternal
 
    @param[in] arg generator (cast to (void *)) to be used for generating tones
@@ -997,6 +1036,10 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 	snprintf(name, sizeof (name), "deq_thr %s\n", gen->label);
 	pthread_setname_np(pthread_self(), name);
 
+	/* Tone dequeued in previous call to cw_tq_dequeue_internal(). */
+	cw_tone_t prev_tone = { 0 };
+
+	/* Tone dequeued in current call to cw_tq_dequeue_internal(). */
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, 0, CW_SLOPE_MODE_STANDARD_SLOPES);
 
@@ -1008,13 +1051,14 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 				      MSG_PREFIX "Detected empty queue");
 
 			cw_gen_value_tracking_internal(gen, &tone, queue_state);
-
+#if 1
 			if (gen->on_empty_queue) {
 				if (CW_SUCCESS != gen->on_empty_queue(gen)) {
 					cw_debug_msg (&cw_debug_object, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
 						      MSG_PREFIX "handling of empty queue by generator has failed");
 				}
 			}
+#endif
 
 			/* We won't get here while there are some
 			   accumulated tones in queue, because
@@ -1081,7 +1125,31 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			cw_assert (NULL != gen->write_tone_to_sound_device, "'gen->write_tone_to_sound_device' pointer is NULL");
 			gen->write_tone_to_sound_device(gen, &tone);
 		} else {
-			cw_gen_write_to_soundcard_internal(gen, &tone, is_empty_tone);
+			if (gen->silencing_initialized) {
+				/* Don't play a tone that has been just
+				   dequeued. Instead prepare a tone that will
+				   silence current source sink. Use current
+				   tone ('tone' variable) as starting
+				   point/basis for this silencing tone. */
+				CW_TONE_COPY(&tone, &prev_tone);
+				cw_gen_silencing_tone_calculate_samples_size_internal(gen, &tone);
+			} else if (is_empty_tone) {
+				/* No valid tone dequeued from tone
+				   queue. 'tone' argument doesn't represent a
+				   valid tone. We need samples to complete
+				   filling buffer, but they have to be empty
+				   samples. */
+				cw_gen_empty_tone_calculate_samples_size_internal(gen, &tone);
+			} else {
+				/* Valid tone dequeued from tone queue and
+				   nothing prohibits us from playing it (we
+				   aren't in 'silencing' phase). Use the tone
+				   to calculate samples in buffer. */
+				CW_TONE_COPY(&prev_tone, &tone);
+				cw_gen_tone_calculate_samples_size_internal(gen, &tone);
+			}
+
+			cw_gen_write_to_soundcard_internal(gen, &tone);
 		}
 
 		/*
@@ -1138,6 +1206,19 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			/* just try again, once */
 			usleep(1000);
 			cw_key_ik_update_graph_state_internal(gen->key);
+		}
+
+		if (gen->silencing_initialized) {
+			/* We are in silencing phase. A last tone (silencing
+			   tone) has been played, and we shouldn't play
+			   anything else. Discard tones remaining in
+			   queue.
+
+			   Remember that we are in silencing phase, which may
+			   or may not mean that generator is being
+			   stopped and deleted. */
+			cw_tq_flush_internal(gen->tq);
+			gen->silencing_initialized = false;
 		}
 
 #ifdef LIBCW_WITH_DEV
@@ -1580,36 +1661,17 @@ void cw_gen_recalculate_slope_amplitudes_internal(cw_gen_t * gen)
    @brief Write tone to soundcard
 
    @internal
-   @reviewed 2020-08-05
+   @reviewed 2020-10-13
    @endinternal
 
    @param[in] gen
    @param[in] tone tone dequeued from queue (if dequeueing was successful); must always be non-NULL
-   @param[in] is_empty_tone true if dequeueing was not successful (if no tone was dequeued), false otherwise
 
    @return 0
 */
-int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone, bool is_empty_tone)
+int cw_gen_write_to_soundcard_internal(cw_gen_t * gen, cw_tone_t * tone)
 {
-	cw_assert (NULL != tone, MSG_PREFIX "'tone' argument should always be non-NULL, even when dequeueing failed");
-
-	if (is_empty_tone) {
-		/* No valid tone dequeued from tone queue. 'tone'
-		   argument doesn't represent a valid tone. We need
-		   samples to complete filling buffer, but they have
-		   to be empty samples. */
-		cw_gen_empty_tone_calculate_samples_size_internal(gen, tone);
-	} else {
-		/* Valid tone dequeued from tone queue. Use it to
-		   calculate samples in buffer. */
-		cw_gen_tone_calculate_samples_size_internal(gen, tone);
-	}
-	/* After the calculations above, we can use 'tone' to generate
-	   samples in the same way, regardless of state of tone queue
-	   (regardless of what the tone queue returned in last call).
-
-	   Simply look at tone's frequency and tone's samples count. */
-
+	cw_assert (NULL != tone, MSG_PREFIX "'tone' argument should always be non-NULL");
 
 	/* Total number of samples to write in a loop below. */
 	int64_t samples_to_write = tone->n_samples;
@@ -1779,6 +1841,53 @@ void cw_gen_empty_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_
 	tone->slope_mode = CW_SLOPE_MODE_NO_SLOPES;
 	tone->rising_slope_n_samples = 0;
 	tone->falling_slope_n_samples = 0;
+
+	/* This is part of initialization of tone. Zero samples from the tone
+	   have been calculated and put into generator's buffer. */
+	tone->sample_iterator = 0;
+
+	//fprintf(stderr, "++++ length of padding silence = %d [samples]\n", tone->n_samples);
+
+	return;
+}
+
+
+
+
+/**
+   @brief Calculate tone suitable for silencing a generator
+
+   Calculate a @p tone variable that, when passed to generator's write()
+   function, will silence a generator.
+
+   @internal
+   @reviewed 2020-10-13
+   @endinternal
+
+   @param[in] gen
+   @param[in] tone tone for which to calculate samples
+*/
+void cw_gen_silencing_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t * tone)
+{
+	/* Make sure that we fill a buffer to the end (i.e. calculate as many
+	   samples as there are from current position in the buffer to the
+	   end of the buffer). Otherwise a buffer underrun may occur. */
+	tone->n_samples = gen->buffer_n_samples - (gen->buffer_sub_stop + 1);
+
+	/* Also make sure that a tone is long enough for it to be heard
+	   (otherwise it may be perceived as click). */
+	tone->n_samples += (5 * gen->buffer_n_samples);
+
+	tone->duration = 0;    /* This value matters no more, because now we only deal with samples. */
+
+	/* Length of a single slope. */
+	cw_sample_iter_t slope_n_samples = gen->sample_rate / 100;
+	slope_n_samples *= gen->tone_slope.duration;
+	slope_n_samples /= 10000;
+
+	tone->slope_mode = CW_SLOPE_MODE_FALLING_SLOPE;
+	tone->rising_slope_n_samples = 0;
+	tone->falling_slope_n_samples = slope_n_samples;
 
 	/* This is part of initialization of tone. Zero samples from the tone
 	   have been calculated and put into generator's buffer. */
