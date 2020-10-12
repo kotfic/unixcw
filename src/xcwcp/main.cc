@@ -38,7 +38,7 @@
 #include "application.h"
 
 #include "libcw.h"
-//#include "libcw_debug.h"
+#include "libcw_debug.h"
 
 #include "i18n.h"
 #include "cw_cmdline.h"
@@ -46,7 +46,7 @@
 #include "dictionary.h"
 
 
-//extern cw_debug_t cw_debug_object;
+extern cw_debug_t cw_debug_object;
 
 void xcwcp_atexit(void);
 
@@ -84,8 +84,8 @@ int main(int argc, char **argv)
 {
 	try {
 
-		//cw_debug_set_flags(&cw_debug_object, CW_DEBUG_KEYING | CW_DEBUG_GENERATOR | CW_DEBUG_TONE_QUEUE | CW_DEBUG_RECEIVE_STATES | CW_DEBUG_KEYER_STATES | CW_DEBUG_INTERNAL| CW_DEBUG_PARAMETERS);
-		//cw_debug_object.level = CW_DEBUG_DEBUG;
+		//cw_debug_set_flags(&cw_debug_object, CW_DEBUG_MASK); //KEYING | CW_DEBUG_GENERATOR | CW_DEBUG_TONE_QUEUE | CW_DEBUG_RECEIVE_STATES | CW_DEBUG_KEYER_STATES | CW_DEBUG_INTERNAL| CW_DEBUG_PARAMETERS);
+		//cw_debug_object.level = CW_DEBUG_WARNING;
 
 		atexit(xcwcp_atexit);
 
