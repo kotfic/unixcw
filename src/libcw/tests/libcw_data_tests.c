@@ -32,15 +32,18 @@
 
 
 
-#include "test_framework.h"
+#include "libcw.h"
+#include "libcw2.h"
+
+
+
 
 #include "libcw_data.h"
 #include "libcw_data_tests.h"
 #include "libcw_debug.h"
-#include "libcw_utils.h"
 #include "libcw_key.h"
-#include "libcw.h"
-#include "libcw2.h"
+#include "libcw_utils.h"
+#include "test_framework.h"
 
 
 
@@ -689,7 +692,7 @@ int test_phonetic_lookups_internal(cw_test_executor_t * cte)
 
 		int i = 0;
 		while (data[i].character) {
-			const int cwret = LIBCW_TEST_FUT(cw_lookup_phonetic)((char) data[i].character, phonetic_buffer); /* TODO: we need a version of the function that accepts size argument. */
+			const int cwret = LIBCW_TEST_FUT(cw_lookup_phonetic)(data[i].character, phonetic_buffer); /* TODO: we need a version of the function that accepts size argument. */
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "phonetic lookup: simple lookup for character '%c'", data[i].character)) {
 				simple_failure = true;
 				break;

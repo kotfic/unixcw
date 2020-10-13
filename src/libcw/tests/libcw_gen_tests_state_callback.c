@@ -1,9 +1,16 @@
 #include <math.h> /* fabsf() */
 
-#include "../libcw2.h"
-#include "../libcw_gen.h"
-#include "../libcw_utils.h"
+
+
+
+#include "libcw2.h"
+
+
+
+
 #include "libcw_gen_tests_state_callback.h"
+#include "libcw_gen.h"
+#include "libcw_utils.h"
 
 
 

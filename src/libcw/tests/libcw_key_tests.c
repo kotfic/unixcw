@@ -29,15 +29,17 @@
 
 
 
-#include "test_framework.h"
+#include "libcw.h"
+#include "libcw2.h"
+
+
 
 #include "libcw_gen.h"
 #include "libcw_key.h"
 #include "libcw_key_tests.h"
 #include "libcw_debug.h"
 #include "libcw_utils.h"
-#include "libcw.h"
-#include "libcw2.h"
+#include "test_framework.h"
 
 
 

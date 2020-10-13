@@ -34,15 +34,24 @@
 # include <strings.h>
 #endif
 
+#include <cw_common.h>
+
+
+
+
 #include "libcw.h"
 #include "libcw2.h"
-#include "../../libcw/libcw_gen.h"
-#include "../../libcw/libcw_key.h"
-#include "../../libcw/libcw_tq.h"
-#include "../../libcw/libcw_utils.h"
+
+
+
+
+#include "libcw_gen.h"
+#include "libcw_key.h"
+#include "libcw_tq.h"
+#include "libcw_utils.h"
+
 #include "test_framework.h"
 #include "test_framework_tools.h"
-#include "cw_common.h"
 #include "libcw_legacy_api_tests_rec_poll.h"
 
 

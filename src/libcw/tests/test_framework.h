@@ -9,8 +9,8 @@
 
 
 
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 
 
@@ -20,12 +20,14 @@
 
 
 
+#include <cw_common.h>
 #include <libcw.h>
 
 
 
+
 #include "test_framework_tools.h"
-#include "cw_common.h"
+
 
 
 
@@ -465,7 +467,7 @@ typedef struct cw_test_set_t {
 
 #define LIBCW_TEST_STRINGIFY(x) #x
 #define LIBCW_TEST_TOSTRING(x) LIBCW_TEST_STRINGIFY(x)
-#define LIBCW_TEST_FUNCTION_INSERT(function_pointer, _is_quick_) { .test_function = (function_pointer), .name = LIBCW_TEST_TOSTRING(function_pointer), .is_quick = _is_quick_ }
+#define LIBCW_TEST_FUNCTION_INSERT(function_pointer, _is_quick_) { .test_function = (function_pointer), .name = LIBCW_TEST_TOSTRING(function_pointer), .is_quick = (_is_quick_) }
 
 /* FUT = "Function under test". A function from libcw library that is
    the subject of a test. */

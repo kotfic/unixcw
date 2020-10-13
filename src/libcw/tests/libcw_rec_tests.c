@@ -31,21 +31,25 @@
 
 
 
-#include "test_framework.h"
-
-#include "libcw_utils.h"
-#include "libcw_rec.h"
-#include "libcw_rec_tests.h"
-#include "libcw_rec_internal.h"
-#include "libcw_debug.h"
-#include "libcw_tq.h"
-#include "libcw_key.h"
 #include "libcw.h"
 #include "libcw2.h"
 
 
 
 
+#include "libcw_debug.h"
+#include "libcw_key.h"
+#include "libcw_rec.h"
+#include "libcw_rec_internal.h"
+#include "libcw_rec_tests.h"
+#include "libcw_tq.h"
+#include "libcw_utils.h"
+#include "test_framework.h"
+
+
+
+
+/* TODO: this should go to some 'utils' header. */
 #define cw_min(a, b) ((a) < (b) ? (a) : (b))
 #define cw_max(a, b) ((a) > (b) ? (a) : (b))
 

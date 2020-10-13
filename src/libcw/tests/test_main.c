@@ -43,9 +43,12 @@
 
 
 
-#include "libcw_debug.h"
 #include "libcw2.h"
 
+
+
+
+#include "libcw_debug.h"
 #include "test_framework.h"
 
 
