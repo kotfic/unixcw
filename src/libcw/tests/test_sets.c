@@ -284,17 +284,17 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_REC, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_get_receive_parameters, true),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_get_receive_parameters,      true),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_parameter_getters_setters_1, true),
 			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_parameter_getters_setters_2, true),
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_identify_mark_internal, true),
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_test_with_constant_speeds, true),
-			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_test_with_varying_speeds, true),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_identify_mark_internal,      true),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_test_with_constant_speeds,   true),
+			LIBCW_TEST_FUNCTION_INSERT(test_cw_rec_test_with_varying_speeds,    true),
 
-			LIBCW_TEST_FUNCTION_INSERT(NULL, true)
+			LIBCW_TEST_FUNCTION_INSERT(NULL, true) /* Guard. */
 		}
 	},
 

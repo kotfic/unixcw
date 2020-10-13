@@ -1110,7 +1110,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 		cte->log_info(cte, "Test mode: poll representation, verify by polling character\n");
 	}
 
-	if (CW_SUCCESS != cw_generator_new(CW_AUDIO_PA, NULL)) {
+	if (CW_SUCCESS != cw_generator_new(cte->current_sound_system, cte->current_sound_device)) {
 		fprintf(stderr, "failed to create generator\n");
 		return cwt_retv_err;
 	}
