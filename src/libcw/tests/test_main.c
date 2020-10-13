@@ -104,11 +104,11 @@ int main(int argc, char * const argv[])
 	cte->config->has_feature_sound_system = true;
 	cte->config->has_feature_generator = true;
 	cte->config->has_feature_libcw_test_specific = true;
-	cte->config->has_feature_test_repetitions = true;
+	cte->config->has_feature_test_loops = true;
 	cte->config->has_feature_test_name = true;
 	cte->config->has_feature_test_quick_only = true;
 	cte->config->has_feature_test_random_seed = true;
-	cte->config->test_repetitions = 5;
+	cte->config->test_loops = 5;
 
 	/* May cause exit on errors or "-h" option. */
 	cte->process_args(cte, argc, argv);

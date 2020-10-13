@@ -95,14 +95,14 @@ static void gen_destroy(cw_gen_t ** gen)
 */
 int test_cw_tq_new_delete_internal(cw_test_executor_t * cte)
 {
-	const int loop_max = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, loop_max);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	bool failure = false;
 	cw_tone_queue_t * tq = NULL;
 
-	for (int i = 0; i < loop_max; i++) {
+	for (int i = 0; i < loops; i++) {
 		tq = LIBCW_TEST_FUT(cw_tq_new_internal)();
 		if (!cte->expect_valid_pointer_errors_only(cte, tq, "creating new tone queue")) {
 			failure = true;
@@ -159,15 +159,15 @@ int test_cw_tq_new_delete_internal(cw_test_executor_t * cte)
 */
 int test_cw_tq_capacity_internal(cw_test_executor_t * cte)
 {
-	const int loop_max = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, loop_max);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	bool failure = false;
 	cw_tone_queue_t * tq = cw_tq_new_internal();
 	cte->assert2(cte, tq, "failed to create new tone queue");
 
-	for (int i = 0; i < loop_max; i++) {
+	for (int i = 0; i < loops; i++) {
 		/* This is a silly test, but let's have any test of
 		   the getter. TODO: come up with better test. */
 
@@ -396,13 +396,13 @@ int test_cw_tq_length_internal_1(cw_test_executor_t * cte)
 */
 int test_cw_tq_enqueue_dequeue_internal(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	const int loops = cte->get_loops_count(cte);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_tone_queue_t * tq = cw_tq_new_internal();
 	cte->assert2(cte, tq, "failed to create new tone queue");
 
-	for (int i = 0; i < max; i++) {
+	for (int i = 0; i < loops; i++) {
 
 		/* Fill the tone queue with tones. */
 		test_cw_tq_enqueue_internal(cte, tq);
@@ -1123,20 +1123,20 @@ cwt_retv test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 {
 	/* +1 for cases where repetition count is 1.
 	   In such cases modulo operation in the loop would fail. */
-	const int max = cte->get_repetitions_count(cte) + 1;
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	const int loops = cte->get_loops_count(cte) + 1;
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	bool wait_failure = false;
 	bool diff_failure = false;
 
 	cw_gen_t * gen = NULL;
 
-	for (int i = 0; i < max; i++) {
+	for (int i = 0; i < loops; i++) {
 		gen = cw_gen_new(cte->current_sound_system, cte->current_sound_device);
 		cte->assert2(cte, gen, "failed to create a tone queue\n");
 		cw_gen_start(gen);
 
-		if (cwt_retv_ok != test_helper_fill_queue(cte, gen->tq, max)) {
+		if (cwt_retv_ok != test_helper_fill_queue(cte, gen->tq, loops)) {
 			cte->log_error(cte, "%s:%d: failed to fill tone queue\n", __func__, __LINE__);
 			return cwt_retv_err;
 		}
@@ -1144,9 +1144,9 @@ cwt_retv test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 		/* Notice that level is always smaller than number of
 		   items added to queue. TODO: reconsider if we want
 		   to randomize this value. */
-		const int level = lrand48() % (int) (floorf((0.7F * max)));
+		const int level = lrand48() % (int) (floorf(0.7F * loops));
 		const cw_ret_t cwret = LIBCW_TEST_FUT(cw_tq_wait_for_level_internal)(gen->tq, level);
-		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "wait for level = %d, tone queue items count = %d", level, max)) {
+		if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "wait for level = %d, tone queue items count = %d", level, loops)) {
 			wait_failure = true;
 			break;
 		}
@@ -1201,8 +1201,8 @@ int test_cw_tq_gen_operations_A(cw_test_executor_t * cte)
 {
 	/* +1 for cases where repetition count is 1.  In such cases
 	   division operation in the loop would fail. */
-	const int max = cte->get_repetitions_count(cte) + 1;
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	const int loops = cte->get_loops_count(cte) + 1;
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_gen_t * gen = NULL;
 	gen_setup(cte, &gen);
@@ -1212,7 +1212,7 @@ int test_cw_tq_gen_operations_A(cw_test_executor_t * cte)
 	cw_get_frequency_limits(&freq_min, &freq_max);
 
 	const int duration = 100000;  /* Duration of tone. */
-	const int delta_freq = ((freq_max - freq_min) / (max - 1));
+	const int delta_freq = ((freq_max - freq_min) / (loops - 1));
 
 
 	/* Test 1: enqueue max tones, and wait for each of them
@@ -1238,7 +1238,7 @@ int test_cw_tq_gen_operations_A(cw_test_executor_t * cte)
 		   yet, so tones won't be dequeued parallel to being
 		   enqueued, so we always have certainty how many
 		   tones must there be in queue. */
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < loops; i++) {
 			/* Monitor length of a queue as it is filled - before
 			   adding a new tone. */
 			size_t expected_length = (size_t) i; /* Expected length of tone queue. */
@@ -1294,7 +1294,7 @@ int test_cw_tq_gen_operations_A(cw_test_executor_t * cte)
 	   iteration will be. */
 	bool length_failure = false;
 	bool wait_failure = false;
-	for (int i = max - 1; i > 0; i--) { /* -1 because after starting the generator one tone is already dequeued. */
+	for (int i = loops - 1; i > 0; i--) { /* -1 because after starting the generator one tone is already dequeued. */
 
 		size_t readback_length = 0;  /* Measured length of tone queue. */
 		size_t expected_length_min = 0;
@@ -1334,7 +1334,7 @@ int test_cw_tq_gen_operations_A(cw_test_executor_t * cte)
 	   empty. */
 
 	bool failure = false;
-	for (int i = 0; i < max; i++) {
+	for (int i = 0; i < loops; i++) {
 		int freq = freq_min + i * delta_freq;
 		cw_tone_t tone;
 		CW_TONE_INIT(&tone, freq, duration, CW_SLOPE_MODE_NO_SLOPES);
@@ -1655,8 +1655,8 @@ struct cw_callback_struct {
 */
 int test_cw_tq_callback(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	const int loops = cte->get_loops_count(cte);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_gen_t * gen = NULL;
 
@@ -1664,7 +1664,7 @@ int test_cw_tq_callback(cw_test_executor_t * cte)
 	bool enqueue_failure = false;
 	bool capture_failure = false;
 
-	for (int i = 1; i < max; i++) { /* TODO: the test doesn't work for i == 0. This needs to be communicated in documentation. */
+	for (int i = 1; i < loops; i++) { /* TODO: the test doesn't work for i == 0. This needs to be communicated in documentation. */
 
 		gen_setup(cte, &gen);
 

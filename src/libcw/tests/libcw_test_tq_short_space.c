@@ -85,9 +85,9 @@ static const int tq_low_watermark = 1;
 */
 int legacy_api_test_tq_short_space(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 
 	struct tq_short_space_data data = { 0 };
@@ -95,12 +95,12 @@ int legacy_api_test_tq_short_space(cw_test_executor_t * cte)
 	data.cte = cte;
 
 	bool success = true;;
-	for (int i = 0; i < max; i++) {
-		cte->log_info(cte, "Testing dequeuing short space, iteration #%d / %d\n", i + 1, max);
+	for (int i = 0; i < loops; i++) {
+		cte->log_info(cte, "Testing dequeuing short space, iteration #%d / %d\n", i + 1, loops);
 
 		data.n_actual_callback_executions = 0;
 
-		success = single_test_over_speed_range(&data, i, max);
+		success = single_test_over_speed_range(&data, i, loops);
 		if (!success) {
 			break;
 		}

@@ -960,15 +960,15 @@ int legacy_api_test_volume_functions(cw_test_executor_t * cte)
 */
 int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 	legacy_api_standalone_test_setup(cte, true);
 
 	/* Test: sending dot. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < loops; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_send_dot)();
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "cw_send_dot() #%d", i)) {
 				failure = true;
@@ -982,7 +982,7 @@ int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 	/* Test: sending dash. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < loops; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_send_dash)();
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "cw_send_dash() #%d", i)) {
 				failure = true;
@@ -996,7 +996,7 @@ int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 	/* Test: sending character space. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < loops; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_send_character_space)();
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "cw_send_character_space() #%d", i)) {
 				failure = true;
@@ -1010,7 +1010,7 @@ int legacy_api_test_send_primitives(cw_test_executor_t * cte)
 	/* Test: sending word space. */
 	{
 		bool failure = false;
-		for (int i = 0; i < max; i++) {
+		for (int i = 0; i < loops; i++) {
 			const int cwret = LIBCW_TEST_FUT(cw_send_word_space)();
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "cw_send_word_space() #%d", i)) {
 				failure = true;
@@ -1426,10 +1426,10 @@ int legacy_api_test_straight_key(cw_test_executor_t * cte)
 	legacy_api_standalone_test_setup(cte, true);
 #endif
 
-	const int max = 8;
+	const int loops = 8;
 
 	for (size_t i = 0; i < TEST_STRAIGHT_KEY_DATA_COUNT; i++) {
-		g_test_straight_key_data[i].loops = max;
+		g_test_straight_key_data[i].loops = loops;
 		g_test_straight_key_data[i].legacy_set = LIBCW_TEST_FUT(cw_notify_straight_key_event);
 		g_test_straight_key_data[i].legacy_get = LIBCW_TEST_FUT(cw_get_straight_key_state);
 		g_test_straight_key_data[i].legacy_is_busy = LIBCW_TEST_FUT(cw_is_straight_key_busy);

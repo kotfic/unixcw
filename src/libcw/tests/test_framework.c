@@ -101,7 +101,7 @@ static void cw_test_print_test_footer(cw_test_executor_t * self, const char * te
 static void cw_test_append_status_string(cw_test_executor_t * self, char * msg_buf, int n, const char * status_string);
 
 static int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[]);
-static int cw_test_get_repetitions_count(cw_test_executor_t * self);
+static int cw_test_get_loops_count(cw_test_executor_t * self);
 static int cw_test_fill_default_sound_systems_and_topics(cw_test_executor_t * self);
 
 static void cw_test_print_test_options(cw_test_executor_t * self);
@@ -242,9 +242,9 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 
 
 
-static int cw_test_get_repetitions_count(cw_test_executor_t * self)
+static int cw_test_get_loops_count(cw_test_executor_t * self)
 {
-	return self->config->test_repetitions;
+	return self->config->test_loops;
 }
 
 
@@ -981,7 +981,7 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 
 	self->process_args = cw_test_process_args;
 
-	self->get_repetitions_count = cw_test_get_repetitions_count;
+	self->get_loops_count = cw_test_get_loops_count;
 
 	self->print_test_options = cw_test_print_test_options;
 

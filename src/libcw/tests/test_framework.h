@@ -256,13 +256,13 @@ typedef struct cw_test_executor_t {
 
 
 	/**
-	   \brief Get count of repetitions of a test
+	   \brief Get count of loops of a test
 
 	   Get a loop limit for some repeating tests. It may be a
 	   small value for quick tests, or it may be a large value for
 	   long-term tests.
 	 */
-	int (* get_repetitions_count)(struct cw_test_executor_t * self);
+	int (* get_loops_count)(struct cw_test_executor_t * self);
 
 
 	/**

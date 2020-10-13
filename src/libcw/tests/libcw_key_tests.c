@@ -183,9 +183,9 @@ int test_keyer_helper(cw_test_executor_t * cte, cw_key_t * key, cw_key_value_t i
 */
 int test_keyer(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_key_t * key = NULL;
 	cw_gen_t * gen = NULL;
@@ -199,13 +199,13 @@ int test_keyer(cw_test_executor_t * cte)
 
 
 	/* Test: keying dot. */
-	test_keyer_helper(cte, key, CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_OPEN, CW_DOT_REPRESENTATION, "dots", max);
+	test_keyer_helper(cte, key, CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_OPEN, CW_DOT_REPRESENTATION, "dots", loops);
 
 	/* Test: keying dash. */
-	test_keyer_helper(cte, key, CW_KEY_VALUE_OPEN, CW_KEY_VALUE_CLOSED, CW_DASH_REPRESENTATION, "dashes", max);
+	test_keyer_helper(cte, key, CW_KEY_VALUE_OPEN, CW_KEY_VALUE_CLOSED, CW_DASH_REPRESENTATION, "dashes", loops);
 
 	/* Test: keying alternate dit/dash. */
-	test_keyer_helper(cte, key, CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_CLOSED, '#', "alternating", max);
+	test_keyer_helper(cte, key, CW_KEY_VALUE_CLOSED, CW_KEY_VALUE_CLOSED, '#', "alternating", loops);
 
 
 	/* Test: set new state of paddles: no paddle pressed. */
@@ -325,9 +325,9 @@ cwt_retv test_helper_test_straight_key(cw_test_executor_t * cte, volatile cw_key
 */
 int test_straight_key(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_key_t * key = NULL;
 	cw_gen_t * gen = NULL;
@@ -336,7 +336,7 @@ int test_straight_key(cw_test_executor_t * cte)
 	}
 
 	for (size_t i = 0; i < TEST_STRAIGHT_KEY_DATA_COUNT; i++) {
-		g_test_straight_key_data[i].loops = max;
+		g_test_straight_key_data[i].loops = loops;
 		g_test_straight_key_data[i].legacy_set = NULL;
 		g_test_straight_key_data[i].legacy_get = NULL;
 		g_test_straight_key_data[i].legacy_is_busy = NULL;

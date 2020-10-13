@@ -470,7 +470,7 @@ void cw_print_help(cw_config_t *config)
 	}
 
 	if (config->has_feature_libcw_test_specific
-	    || config->has_feature_test_repetitions
+	    || config->has_feature_test_loops
 	    || config->has_feature_test_name
 	    || config->has_feature_test_quick_only
 	    || config->has_feature_test_random_seed) {
@@ -487,9 +487,10 @@ void cw_print_help(cw_config_t *config)
 			fprintf(stderr, "%s", _("        o - other\n"));
 			fprintf(stderr, "%s", _("  If this option is not specified, the program will attempt to test all test areas\n\n"));
 		}
-		if (config->has_feature_test_repetitions) {
-			fprintf(stderr, "%s", _("  -R, --test-repetitions=N\n"));
-			fprintf(stderr, "%s", _("        repeat each test function N times\n"));
+		if (config->has_feature_test_loops) {
+			fprintf(stderr, "%s", _("  -L, --test-loops=N\n"));
+			fprintf(stderr, "%s", _("        execute testes functions N times in a loop\n"));
+			fprintf(stderr, "%s", _("        test functions usually have some small default value\n"));
 		}
 		if (config->has_feature_test_name) {
 			fprintf(stderr, "%s", _("  -N, --test-name=NAME\n"));
@@ -570,8 +571,8 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 		append_option(buffer, size, &n, "A:|test-areas");
 		append_option(buffer, size, &n, "X:|test-alsa-device");
 	}
-	if (config->has_feature_test_repetitions) {
-		append_option(buffer, size, &n, "R:|test-repetitions");
+	if (config->has_feature_test_loops) {
+		append_option(buffer, size, &n, "L:|test-loops");
 	}
 	if (config->has_feature_test_name) {
 		append_option(buffer, size, &n, "N:|test-name");
@@ -923,8 +924,8 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 		snprintf(config->test_function_name, sizeof (config->test_function_name), "%s", optarg);
 		break;
 
-	case 'R':
-		config->test_repetitions = atoi(optarg);
+	case 'L':
+		config->test_loops = atoi(optarg);
 		break;
 
 	case 'Q':

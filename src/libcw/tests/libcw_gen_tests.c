@@ -173,8 +173,8 @@ cwt_retv test_cw_gen_new_start_stop_delete(cw_test_executor_t * cte)
 */
 static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, const char * function_name, bool do_new, bool do_start, bool do_stop, bool do_delete)
 {
-	const int repetitions = cte->get_repetitions_count(cte);
-	cte->print_test_header(cte, "%s (%d)", function_name, repetitions);
+	const int loops = cte->get_loops_count(cte);
+	cte->print_test_header(cte, "%s (%d)", function_name, loops);
 
 	bool new_failure = false;
 	bool start_failure = false;
@@ -182,12 +182,12 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 	bool delete_failure = false;
 	cw_gen_t * gen = NULL;
 
-	for (int i = 0; i < repetitions; i++) {
+	for (int i = 0; i < loops; i++) {
 		cte->log_info(cte, "%s", "");
 		if (do_new) {
 			cte->log_info_cont(cte, "new ");
 			gen = LIBCW_TEST_FUT(cw_gen_new)(cte->current_sound_system, cte->current_sound_device);
-			if (!cte->expect_valid_pointer_errors_only(cte, gen, "new() (loop #%d/%d)", i + 1, repetitions)) {
+			if (!cte->expect_valid_pointer_errors_only(cte, gen, "new() (loop #%d/%d)", i + 1, loops)) {
 				new_failure = true;
 				break;
 			}
@@ -226,7 +226,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 			   generator will be created once, then
 			   started/stopped multiple times, and then deleted
 			   once. So do start/stop in inner loop here. */
-			int repetitions_inner = repetitions;
+			int loops_inner = loops;
 
 			if (do_start && (!do_stop)) {
 				/* FIXME: there is a problem:
@@ -238,18 +238,18 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 				   "pthread_join(gen->thread.id, NULL);" because there were several
 				   start() calls and several threads were created in single
 				   generator. So for now, if this subroutine was called to do several
-				   starts but no stops, limit number of inner repetitions.
+				   starts but no stops, limit number of inner loops.
 
 				   The solution can be that start() function looks at state of thread,
 				   and doesn't create new one if a generator thread is already running.
 				*/
-				repetitions_inner = 1;
+				loops_inner = 1;
 			}
 
-			for (int j = 0; j < repetitions_inner; j++) {
+			for (int j = 0; j < loops_inner; j++) {
 				if (do_start) {
 					const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_start)(gen);
-					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "start() (loop #%d/%d - %d/%d)", i + 1, repetitions, j + 1, repetitions_inner)) {
+					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "start() (loop #%d/%d - %d/%d)", i + 1, loops, j + 1, loops_inner)) {
 						start_failure = true;
 						break;
 					}
@@ -257,7 +257,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 
 				if (do_stop) {
 					const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_stop)(gen);
-					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "stop() (loop #%d/%d - %d/%d)", i + 1, repetitions_inner, j + 1, repetitions_inner)) {
+					if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "stop() (loop #%d/%d - %d/%d)", i + 1, loops_inner, j + 1, loops_inner)) {
 						stop_failure = true;
 						break;
 					}
@@ -271,7 +271,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 		if (do_delete) {
 			cte->log_info_cont(cte, "delete ");
 			LIBCW_TEST_FUT(cw_gen_delete)(&gen);
-			if (!cte->expect_null_pointer_errors_only(cte, gen, "delete() (loop #%d/%d)", i + 1, repetitions)) {
+			if (!cte->expect_null_pointer_errors_only(cte, gen, "delete() (loop #%d/%d)", i + 1, loops)) {
 				delete_failure = true;
 				break;
 			}
@@ -999,9 +999,9 @@ cwt_retv test_cw_gen_volume_functions(cw_test_executor_t * cte)
 */
 cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 {
-	const int repetitions = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_gen_t * gen = NULL;
 	if (cwt_retv_ok != gen_setup(cte, &gen)) {
@@ -1013,7 +1013,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	/* Test: playing dots. */
 	{
 		bool failure = false;
-		for (int i = 0; i < repetitions; i++) {
+		for (int i = 0; i < loops; i++) {
 			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DOT_REPRESENTATION, false);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue mark internal(CW_DOT_REPRESENTATION) (i = %d)", i)) {
 				failure = true;
@@ -1030,7 +1030,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	/* Test: playing dashes. */
 	{
 		bool failure = false;
-		for (int i = 0; i < repetitions; i++) {
+		for (int i = 0; i < loops; i++) {
 			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_mark_internal)(gen, CW_DASH_REPRESENTATION, false);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue mark internal(CW_DASH_REPRESENTATION) (i = %d)", i)) {
 				failure = true;
@@ -1046,7 +1046,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	/* Test: playing inter-character-spaces. */
 	{
 		bool failure = false;
-		for (int i = 0; i < repetitions; i++) {
+		for (int i = 0; i < loops; i++) {
 			/* TODO: this function adds 2-Unit space, not a
 			   regular 3-Unit inter-character-space. Be aware of
 			   this fact. */
@@ -1065,7 +1065,7 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 	/* Test: playing inter-word-spaces. */
 	{
 		bool failure = false;
-		for (int i = 0; i < repetitions; i++) {
+		for (int i = 0; i < loops; i++) {
 			const cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_iws_internal)(gen);
 			if (!cte->expect_op_int_errors_only(cte, CW_SUCCESS, "==", cwret, "enqueue iws internal() (i = %d)", i)) {
 				failure = true;
@@ -1094,9 +1094,9 @@ cwt_retv test_cw_gen_enqueue_primitives(cw_test_executor_t * cte)
 */
 cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 {
-	const int repetitions = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	/* Representation is valid when it contains dots and dashes only.
 	   cw_gen_enqueue_representation*() doesn't check if given
@@ -1112,7 +1112,7 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	/* Test: playing valid representations. */
 	{
 		bool failure = false;
-		for (int rep = 0; rep < repetitions; rep++) {
+		for (int rep = 0; rep < loops; rep++) {
 			int i = 0;
 			while (NULL != test_valid_representations[i]) {
 				cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation)(gen, test_valid_representations[i]);
@@ -1139,7 +1139,7 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 	/* Test: trying to play invalid representations. */
 	{
 		bool failure = false;
-		for (int rep = 0; rep < repetitions; rep++) {
+		for (int rep = 0; rep < loops; rep++) {
 			int i = 0;
 			while (NULL != test_invalid_representations[i]) {
 				cw_ret_t cwret = LIBCW_TEST_FUT(cw_gen_enqueue_representation)(gen, test_invalid_representations[i]);
@@ -1185,9 +1185,9 @@ cwt_retv test_cw_gen_enqueue_representations(cw_test_executor_t * cte)
 */
 cwt_retv test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 {
-	const int repetitions = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_gen_t * gen = NULL;
 	if (cwt_retv_ok != gen_setup(cte, &gen)) {
@@ -1226,7 +1226,7 @@ cwt_retv test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 	/* Test: trying to play invalid characters. */
 	{
 		bool failure = false;
-		for (int rep = 0; rep < repetitions; rep++) {
+		for (int rep = 0; rep < loops; rep++) {
 			const char invalid_characters[] = { 0x00, 0x01 }; /* List of invalid characters to be enqueued. */
 			const int n = sizeof (invalid_characters) / sizeof (invalid_characters[0]);
 
@@ -1262,9 +1262,9 @@ cwt_retv test_cw_gen_enqueue_character(cw_test_executor_t * cte)
 */
 cwt_retv test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 {
-	const int repetitions = cte->get_repetitions_count(cte);
+	const int loops = cte->get_loops_count(cte);
 
-	cte->print_test_header(cte, "%s (%d)", __func__, repetitions);
+	cte->print_test_header(cte, "%s (%d)", __func__, loops);
 
 	cw_gen_t * gen = NULL;
 	if (cwt_retv_ok != gen_setup(cte, &gen)) {
@@ -1300,7 +1300,7 @@ cwt_retv test_cw_gen_enqueue_string(cw_test_executor_t * cte)
 	/* Test: trying to enqueue invalid strings. */
 	{
 		bool failure = false;
-		for (int rep = 0; rep < repetitions; rep++) {
+		for (int rep = 0; rep < loops; rep++) {
 			int i = 0;
 			while (NULL != test_invalid_strings[i]) {
 				const char * test_string = test_invalid_strings[i];

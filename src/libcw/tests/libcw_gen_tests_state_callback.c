@@ -457,9 +457,7 @@ static void print_element_stats_and_divergences(const cw_element_stats_t * stats
 /* Top-level test function. */
 cwt_retv test_cw_gen_state_callback(cw_test_executor_t * cte)
 {
-	const int max = cte->get_repetitions_count(cte);
-
-	cte->print_test_header(cte, "%s (%d)", __func__, max);
+	cte->print_test_header(cte, "%s", __func__);
 
 	cwt_retv retv = cwt_retv_ok;
 	const size_t n_tests = sizeof (g_test_data) / sizeof (g_test_data[0]);

@@ -97,7 +97,7 @@ typedef struct cw_config_t {
 	bool has_feature_cw_specific;            /* Does the program have features specific to cw program (i.e. is this program the cw program)? */
 	bool has_feature_ui_colors;              /* Can we control color theme of UI (cwcp-specific). */
 
-	bool has_feature_test_repetitions;       /* Does the test program allow specifying count of repetitions of each test function? */
+	bool has_feature_test_loops;             /* Does the test program allow specifying count of loops executed in each test function? */
 	bool has_feature_test_name;              /* Does the test program allow specifying single one test function to be executed? */
 	bool has_feature_test_quick_only;        /* Does the test program allow selection of tests that can be executed in short time? */
 	bool has_feature_libcw_test_specific;
@@ -122,7 +122,7 @@ typedef struct cw_config_t {
 	cw_sound_system tested_sound_systems[CW_SOUND_SYSTEM_LAST + 1]; /* List of distinct sound systems, indexed from zero. End of values is marked by CW_AUDIO_NONE guard. */
 	int tested_areas[LIBCW_TEST_TOPIC_MAX + 1];
 	char test_function_name[128];    /* Execute only a test function with this name. */
-	int test_repetitions;            /* How many times a single test function should be repeated? */
+	int test_loops;                  /* How many times tested function should be executed in a a single test function? */
 	bool test_quick_only;            /* Execute tests that are flagged as 'quick enough to make <make check> target run in short time'. */
 	/* Some tests use lrand48() or mrand48(). Use this specific seed
 	   instead of some default value to seed randomness. */
