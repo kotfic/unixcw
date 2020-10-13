@@ -129,7 +129,7 @@ killall -9 pulseaudio
 
 * gdb
 
-export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./.libs/libcw_test_legacy_api -n legacy_api_test_low_level_gen_parameters
+export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./src/libcw/tests/.libs/libcw_tests -A r -S a -X plughw
 
 
 * performance
