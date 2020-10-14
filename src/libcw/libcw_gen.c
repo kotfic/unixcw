@@ -3156,9 +3156,9 @@ static cw_ret_t cw_gen_value_tracking_internal(cw_gen_t * gen, const cw_tone_t *
    @param[in] key TODO: document
    @param[in] value value of generator to be set
 */
-void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, volatile cw_key_t * key, cw_key_value_t value)
+void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, __attribute__((unused)) volatile cw_key_t * key, cw_key_value_t value)
 {
-	cw_assert (NULL != key, MSG_PREFIX "tk set value: key is NULL");
+	//cw_assert (NULL != key, MSG_PREFIX "gen track value: key is NULL");
 
 	if (gen->value_tracking.value == value) {
 		/* This is not an error. This may happen when
