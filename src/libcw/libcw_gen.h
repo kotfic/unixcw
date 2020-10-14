@@ -41,7 +41,7 @@ enum { CW_SYMBOL_SPACE = ' ' };
 /* This is used in libcw_gen and libcw_debug. */
 #ifdef LIBCW_WITH_DEV
 #define CW_DEV_RAW_SINK           1  /* Create and use /tmp/cw_file.<sound system>.raw file with sound samples written as raw data. */
-#define CW_DEV_RAW_SINK_MARKERS   0  /* Put markers in raw data saved to raw sink. */
+#define CW_DEV_RAW_SINK_MARKERS   0  /* Put markers at the beginning and end of buffers (frames) sent to raw sink. */
 #else
 #define CW_DEV_RAW_SINK           0
 #define CW_DEV_RAW_SINK_MARKERS   0

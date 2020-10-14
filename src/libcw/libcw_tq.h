@@ -187,6 +187,9 @@ typedef struct {
 
 	int rising_slope_n_samples;     /* Number of samples on rising slope. */
 	int falling_slope_n_samples;    /* Number of samples on falling slope. */
+
+	/* Useful for marking individual tones during debugging. */
+	char debug_id;
 } cw_tone_t;
 
 
@@ -209,6 +212,7 @@ typedef struct {
 		(m_tone)->sample_iterator         = 0;			\
 		(m_tone)->rising_slope_n_samples  = 0;			\
 		(m_tone)->falling_slope_n_samples = 0;			\
+		(m_tone)->debug_id                = 0;			\
 	}
 
 
@@ -225,6 +229,7 @@ typedef struct {
 		(m_dest)->sample_iterator         = (m_source)->sample_iterator;	\
 		(m_dest)->rising_slope_n_samples  = (m_source)->rising_slope_n_samples; \
 		(m_dest)->falling_slope_n_samples = (m_source)->falling_slope_n_samples; \
+		(m_dest)->debug_id                = (m_source)->debug_id; \
 	};
 
 

@@ -170,13 +170,34 @@ static const char * default_sound_devices[] = {
 
 static const int CW_AUDIO_VOLUME_RANGE = (1U << 15U);  /* 2^15 = 32768 */
 
-/* Shortest duration of time (in microseconds) that is used by libcw for
-   idle waiting and idle loops. If a libcw function needs to wait for
-   something, or make an idle loop, it should call
-   usleep(N * gen->quantum_duration)
+/*
+  Shortest duration of time (in microseconds) that is used by libcw for idle
+  waiting and idle loops. If a libcw function needs to wait for something, or
+  make an idle loop, it should call usleep(N * gen->quantum_duration)
 
-   This is also duration of a single "forever" tone. */
-static const int CW_AUDIO_QUANTUM_DURATION_INITIAL = 100;  /* [us] */
+  This is also duration of a single "forever" tone.
+
+  Don't make the quantum duration too short. Short quantum duration will have
+  two negative results:
+  1. you can't create a nice slope with just 4 samples - you will hear a
+  click.
+  2. you will get very frequent dequeues of 'forever' tone that has quantum
+  duration.
+
+  n_samples = gen->sample_rate * duration / (usecs per sec);
+  (code calculating n_samples uses slightly modified formula)
+
+  sample rate | duration |   n || duration |   n
+  ------------------------------------------------
+  48000       |      100 |   4 ||      500 |  24
+  44100       |      100 |   4 ||      500 |  22
+  32000       |      100 |   3 ||      500 |  16
+  22050       |      100 |   2 ||      500 |  11
+  16000       |      100 |   1 ||      500 |   8
+  11025       |      100 |   1 ||      500 |   5
+   8000       |      100 |   0 ||      500 |   4
+*/
+static const int CW_AUDIO_QUANTUM_DURATION_INITIAL = 500;  /* [us] */
 
 
 
@@ -406,7 +427,9 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 	   played after "silencing" of the generator. */
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
+	tone.debug_id = 'd';
 	cw_ret_t cwret = cw_tq_enqueue_internal(gen->tq, &tone);
+	cw_gen_wait_for_queue_level(gen, 0);
 	cw_gen_wait_for_end_of_current_tone(gen);
 
 	if (gen->sound_system == CW_AUDIO_CONSOLE) {
@@ -1846,7 +1869,7 @@ void cw_gen_empty_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_
 	   have been calculated and put into generator's buffer. */
 	tone->sample_iterator = 0;
 
-	//fprintf(stderr, "++++ length of padding silence = %d [samples]\n", tone->n_samples);
+	//fprintf(stderr, "++++ count of samples in empty tone '%c' = %d\n", tone->debug_id, tone->n_samples);
 
 	return;
 }
@@ -1885,7 +1908,22 @@ void cw_gen_silencing_tone_calculate_samples_size_internal(const cw_gen_t * gen,
 	slope_n_samples *= gen->tone_slope.duration;
 	slope_n_samples /= 10000;
 
-	tone->slope_mode = CW_SLOPE_MODE_FALLING_SLOPE;
+	switch (tone->slope_mode) {
+	case CW_SLOPE_MODE_NO_SLOPES:
+	case CW_SLOPE_MODE_RISING_SLOPE:
+		/* Previous tone has ended with full level. Let the silencing
+		   tone fall from the full level to zero. */
+		tone->slope_mode = CW_SLOPE_MODE_FALLING_SLOPE;
+		break;
+	case CW_SLOPE_MODE_FALLING_SLOPE:
+	case CW_SLOPE_MODE_STANDARD_SLOPES:
+		/* Level of previous slope has already fallen to zero. Keep
+		   the level at zero. */
+	default:
+		tone->slope_mode = CW_SLOPE_MODE_NO_SLOPES;
+		tone->frequency = 0;
+		break;
+	}
 	tone->rising_slope_n_samples = 0;
 	tone->falling_slope_n_samples = slope_n_samples;
 
@@ -1893,7 +1931,7 @@ void cw_gen_silencing_tone_calculate_samples_size_internal(const cw_gen_t * gen,
 	   have been calculated and put into generator's buffer. */
 	tone->sample_iterator = 0;
 
-	//fprintf(stderr, "++++ length of padding silence = %d [samples]\n", tone->n_samples);
+	//fprintf(stderr, "++++ count of samples in silencing tone '%c' = %d\n", tone->debug_id, tone->n_samples);
 
 	return;
 }
@@ -1953,6 +1991,15 @@ void cw_gen_tone_calculate_samples_size_internal(const cw_gen_t * gen, cw_tone_t
 	/* This is part of initialization of tone. Zero samples from the tone
 	   have been calculated and put into generator's buffer. */
 	tone->sample_iterator = 0;
+
+#if 0
+	/* Debug code. */
+	if (tone->is_forever) {
+		fprintf(stderr, "++++ count of samples in forever tone '%c' = %d\n", tone->debug_id, tone->n_samples);
+	} else {
+		fprintf(stderr, "++++ count of samples in regular tone '%c' = %d\n", tone->debug_id, tone->n_samples);
+	}
+#endif
 
 	return;
 }

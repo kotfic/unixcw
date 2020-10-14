@@ -635,11 +635,14 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, __attribute__(
 #endif
 
 	/* Silence the generator. */
-	CW_TONE_INIT(&tone, 0, slope_duration, CW_SLOPE_MODE_FALLING_SLOPE);
+	CW_TONE_INIT(&tone, freq, slope_duration, CW_SLOPE_MODE_FALLING_SLOPE);
+	tone.debug_id = 'e';
 	const cw_ret_t cwret3 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret3, "silence the generator");
 
-	usleep(10 * slope_duration); /* Don't stop generator immediately, because the sound will be distorted. TODO: shouldn't we use some gen_wait() function for that? */
+	cw_gen_wait_for_queue_level(gen, 0);
+	cw_gen_wait_for_end_of_current_tone(gen);
+
 	cw_gen_stop(gen);
 	cw_gen_delete(&gen);
 
