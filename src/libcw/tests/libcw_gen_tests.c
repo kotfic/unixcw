@@ -570,17 +570,19 @@ cwt_retv test_cw_gen_tone_slope_shape_enums(cw_test_executor_t * cte)
    experiencing 100% CPU usage on one of cores with ALSA sound system when HW
    configuration of the ALSA sound system was incorrect.
 
-   @reviewed on 2020-05-07
+   @reviewed on 2020-10-15
 */
 cwt_retv test_cw_gen_forever_internal(cw_test_executor_t * cte)
 {
-	cte->print_test_header(cte, __func__);
-
+	const int loops = cte->get_loops_count(cte);
 	const int seconds = 7;
-	cte->log_info(cte, "forever tone (%d seconds):\n", seconds);
 
-	const cwt_retv rv = test_cw_gen_forever_sub(cte, seconds);
-	cte->expect_op_int(cte, cwt_retv_ok, "==", rv, "'forever' test");
+	cte->print_test_header(cte, "%s (%d loops, %d seconds)", __func__, loops, seconds);
+
+	for (int i = 0; i < loops; i++) {
+		const cwt_retv rv = test_cw_gen_forever_sub(cte, seconds);
+		cte->expect_op_int(cte, cwt_retv_ok, "==", rv, "'forever' test");
+	}
 
 	cte->print_test_footer(cte, __func__);
 
@@ -616,6 +618,7 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, __attribute__(
 
 	CW_TONE_INIT(&tone, freq, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	tone.is_forever = true;
+	tone.debug_id = 'f';
 	const cw_ret_t cwret2 = cw_tq_enqueue_internal(gen->tq, &tone);
 	cte->expect_op_int(cte, CW_SUCCESS, "==", cwret2, "enqueue forever tone");
 

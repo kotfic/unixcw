@@ -268,18 +268,10 @@ typedef struct {
 	void     * low_water_callback_arg;
 
 
-	/* IPC */
-	/* Used to broadcast queue events to waiting functions. */
+	/* Inter-thread communication. Used to broadcast queue events to
+	   waiting functions. */
 	pthread_cond_t wait_var;
 	pthread_mutex_t wait_mutex;
-
-	/* Used to communicate between enqueueing and dequeueing
-	   mechanism. */
-	pthread_cond_t dequeue_var;
-	pthread_mutex_t dequeue_mutex;
-
-
-	pthread_mutex_t mutex;
 
 	/* Generator associated with a tone queue. */
 	struct cw_gen_struct * gen;

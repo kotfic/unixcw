@@ -820,35 +820,24 @@ cw_ret_t cw_gen_stop(cw_gen_t * gen)
 	}
 
 
-	{
-		/* "while (gen->do_dequeue_and_generate)" loop in thread
-		   function may be in a state where dequeue() function
-		   returned IDLE state, and the loop is waiting for new tone.
+	/*
+	  "while (gen->do_dequeue_and_generate)" loop in thread function may
+	  be in a state where dequeue() function returned IDLE state, and the
+	  loop is waiting for new tone.
 
-		   This is to force the loop to start new cycle, make the
-		   loop notice that gen->do_dequeue_and_generate is false,
-		   and to get the thread function to return (and thus to end
-		   the thread). */
-
+	  This is to force the loop to start new cycle, make the loop notice
+	  that gen->do_dequeue_and_generate is false, and to get the thread
+	  function to return (and thus to end the thread).
+	*/
+	pthread_mutex_lock(&gen->tq->wait_mutex);
+	pthread_cond_broadcast(&gen->tq->wait_var);
+	pthread_mutex_unlock(&gen->tq->wait_mutex);
 #if 0
-		/* This was disabled some time before 2017-01-19. */
-		pthread_mutex_lock(&gen->tq->wait_mutex);
-		pthread_cond_broadcast(&gen->tq->wait_var);
-		pthread_mutex_unlock(&gen->tq->wait_mutex);
+	/* Original implementation using signals. */
+	/* This was disabled some time before 2017-01-19. */
+	pthread_kill(gen->thread.id, SIGALRM);
 #endif
 
-		pthread_mutex_lock(&gen->tq->dequeue_mutex);
-		/* Use pthread_cond_signal() because there is only one
-		   listener: loop in generator's thread function. */
-		pthread_cond_signal(&gen->tq->dequeue_var);
-		pthread_mutex_unlock(&gen->tq->dequeue_mutex);
-
-#if 0
-		/* This was disabled some time before 2017-01-19. */
-		/* Original implementation using signals. */
-		pthread_kill(gen->thread.id, SIGALRM);
-#endif
-	}
 
 	/*
 	  TODO: there is something wrong with the keyer machine state for
@@ -1044,7 +1033,7 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, int sound_system, const char *
    this function.
 
    @internal
-   @reviewed 2020-10-13
+   @reviewed 2020-10-17
    @endinternal
 
    @param[in] arg generator (cast to (void *)) to be used for generating tones
@@ -1109,11 +1098,11 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 			   necessary. TODO: make sure that getting
 			   gen->tq->state doesn't require locking a tq
 			   mutex. */
-			pthread_mutex_lock(&(gen->tq->dequeue_mutex));
+			pthread_mutex_lock(&(gen->tq->wait_mutex));
 			while (CW_TQ_EMPTY == gen->tq->state && gen->do_dequeue_and_generate) {
-				pthread_cond_wait(&gen->tq->dequeue_var, &gen->tq->dequeue_mutex);
+				pthread_cond_wait(&gen->tq->wait_var, &gen->tq->wait_mutex);
 			}
-			pthread_mutex_unlock(&(gen->tq->dequeue_mutex));
+			pthread_mutex_unlock(&(gen->tq->wait_mutex));
 
 #if 0
 			/* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
@@ -1168,12 +1157,36 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 				   nothing prohibits us from playing it (we
 				   aren't in 'silencing' phase). Use the tone
 				   to calculate samples in buffer. */
-				CW_TONE_COPY(&prev_tone, &tone);
 				cw_gen_tone_calculate_samples_size_internal(gen, &tone);
 			}
 
 			cw_gen_write_to_soundcard_internal(gen, &tone);
 		}
+
+		if (prev_tone.is_forever && tone.is_forever) {
+			/*
+			  Don't notify about dequeueing two consecutive
+			  'forever' tones. For any listener this is still the
+			  same tone.
+
+			  TODO: make the check more precise. What if first
+			  'forever' tone is silent and the next is
+			  non-silent, or if they have two different
+			  frequencies?
+			*/
+			; /* NOOP */
+		} else {
+#ifdef GENERATOR_CLIENT_THREAD
+			fprintf(stderr, MSG_PREFIX "      sending signal on dequeue, target thread id = %ld\n", gen->library_client.thread_id);
+#endif
+			pthread_mutex_lock(&gen->tq->wait_mutex);
+			pthread_cond_broadcast(&gen->tq->wait_var);
+			pthread_mutex_unlock(&gen->tq->wait_mutex);
+		}
+
+#ifdef GENERATOR_CLIENT_THREAD
+		/* Original implementation using signals. */
+		/* This code has been disabled some time before 2017-01-19. */
 
 		/*
 		  When sending text from text input, the signal:
@@ -1186,19 +1199,6 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 		     by waiting for signal in
 		     cw_tq_wait_for_end_of_current_tone_internal();
 		*/
-
-#ifdef GENERATOR_CLIENT_THREAD
-		fprintf(stderr, MSG_PREFIX "      sending signal on dequeue, target thread id = %ld\n", gen->library_client.thread_id);
-#endif
-
-		pthread_mutex_lock(&gen->tq->wait_mutex);
-		/* There may be many listeners, so use broadcast(). */
-		pthread_cond_broadcast(&gen->tq->wait_var);
-		pthread_mutex_unlock(&gen->tq->wait_mutex);
-
-
-#ifdef GENERATOR_CLIENT_THREAD
-		/* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
 		pthread_kill(gen->library_client.thread_id, SIGALRM);
 #endif
 
@@ -1247,6 +1247,8 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 #ifdef LIBCW_WITH_DEV
 		cw_debug_ev (&cw_debug_object_ev, 0, tone.frequency ? CW_DEBUG_EVENT_TONE_LOW : CW_DEBUG_EVENT_TONE_HIGH);
 #endif
+		/* And finally, at the very end... */
+		CW_TONE_COPY(&prev_tone, &tone);
 
 	} /* while (gen->do_dequeue_and_generate) */
 
@@ -3164,7 +3166,15 @@ void cw_gen_value_tracking_set_value_internal(cw_gen_t * gen, __attribute__((unu
 		/* This is not an error. This may happen when
 		   dequeueing 'forever' tone multiple times in a
 		   row. */
-		// fprintf(stderr, "gen: dropping the same value %d -> %d\n", gen->value_tracking.value, value); // TODO: uncomment this and see how often it's called for straight key actions in xcwcp
+		/*
+		  TODO: uncomment this fprintf() and see how often it's
+		  called for straight key actions in xcwcp.
+		  2020-10-17: the frequency may be now decreased after we now
+		  call pthread_cond_broadcast() in
+		  cw_gen_dequeue_and_generate_internal() only conditionally,
+		  if two consecutive tones aren't 'forever'.
+		*/
+		// fprintf(stderr, "gen: dropping the same value %d -> %d\n", gen->value_tracking.value, value); 
 		return;
 	}
 

@@ -160,7 +160,7 @@ extern cw_debug_t cw_debug_object_dev;
    Allocate and initialize new tone queue structure.
 
    @internal
-   @reviewed 2020-07-28
+   @reviewed 2020-10-17
    @endinternal
 
    @return pointer to new tone queue on success
@@ -180,21 +180,14 @@ cw_tone_queue_t * cw_tq_new_internal(void)
 		return (cw_tone_queue_t *) NULL;
 	}
 
-	int rv = pthread_mutex_init(&tq->mutex, NULL);
-	cw_assert (0 == rv, MSG_PREFIX "new: failed to initialize mutex");
-
-	pthread_mutex_lock(&tq->mutex);
-
-	pthread_cond_init(&tq->wait_var, NULL);
 	pthread_mutex_init(&tq->wait_mutex, NULL);
+	pthread_mutex_lock(&tq->wait_mutex);
+	pthread_cond_init(&tq->wait_var, NULL);
 
-	pthread_cond_init(&tq->dequeue_var, NULL);
-	pthread_mutex_init(&tq->dequeue_mutex, NULL);
-
-	/* This function operates on cw_tq_t::wait_var and
-	   cdw_tq_t::wait_mutex. Therefore it needs to be called
-	   after pthread_X_init(). */
-	cw_tq_make_empty_internal(tq);
+	tq->head = 0;
+	tq->tail = 0;
+	tq->len = 0;
+	tq->state = CW_TQ_EMPTY;
 
 	tq->low_water_mark = 0;
 	tq->low_water_callback = NULL;
@@ -205,7 +198,7 @@ cw_tone_queue_t * cw_tq_new_internal(void)
 	cw_ret_t cwret = cw_tq_set_capacity_internal(tq, CW_TONE_QUEUE_CAPACITY_MAX, CW_TONE_QUEUE_HIGH_WATER_MARK_MAX);
 	cw_assert (CW_SUCCESS == cwret, MSG_PREFIX "new: failed to set initial capacity of tq");
 
-	pthread_mutex_unlock(&tq->mutex);
+	pthread_mutex_unlock(&tq->wait_mutex);
 
 	return tq;
 }
@@ -220,7 +213,7 @@ cw_tone_queue_t * cw_tq_new_internal(void)
    itself, and sets the pointer to NULL.
 
    @internal
-   @reviewed 2020-07-28
+   @reviewed 2020-10-17
    @endinternal
 
    @param[in] tq tone queue to delete
@@ -253,16 +246,8 @@ void cw_tq_delete_internal(cw_tone_queue_t ** tq)
 	   by function called _destroy().
 
 	   So don't call pthread_cond_destroy(). */
-
 	//pthread_cond_destroy(&(*tq)->wait_var);
 	pthread_mutex_destroy(&(*tq)->wait_mutex);
-
-	//pthread_cond_destroy(&(*tq)->dequeue_var);
-	pthread_mutex_destroy(&(*tq)->dequeue_mutex);
-
-
-	pthread_mutex_destroy(&(*tq)->mutex);
-
 
 	free(*tq);
 	*tq = (cw_tone_queue_t *) NULL;
@@ -279,30 +264,26 @@ void cw_tq_delete_internal(cw_tone_queue_t ** tq)
    This makes the @p tq empty, but without calling low water mark callback.
 
    @internal
-   @reviewed 2020-07-28
+   @reviewed 2020-10-17
    @endinternal
 */
 void cw_tq_make_empty_internal(cw_tone_queue_t * tq)
 {
-	{
-		/* TODO: this should be enabled only in dev builds. */
-		/* clang-tidy will complain about this attempt to lock mutex:
-		   "This lock has already been acquired"
-		   but this call is made on purpose to test that the mutex is acquired.
-		   http://clang.llvm.org/extra/clang-tidy/#suppressing-undesired-diagnostics */
-		const int rv = pthread_mutex_trylock(&tq->mutex); // NOLINT(clang-analyzer-alpha.unix.PthreadLock)
-		cw_assert (rv == EBUSY, MSG_PREFIX "make empty: resetting tq state outside of mutex!");
-	}
-
 	pthread_mutex_lock(&tq->wait_mutex);
+	bool broadcast = false;
+	if (tq->len > 0 || tq->state != CW_TQ_EMPTY) {
+		broadcast = true;
+	}
 
 	tq->head = 0;
 	tq->tail = 0;
 	tq->len = 0;
 	tq->state = CW_TQ_EMPTY;
 
-	//fprintf(stderr, MSG_PREFIX "make empty: broadcast on tq->len = 0\n");
-	pthread_cond_broadcast(&tq->wait_var);
+	if (broadcast) {
+		//fprintf(stderr, "[II] " MSG_PREFIX "%s:%d broadcast on 'make empty'\n", __func__, __LINE__);
+		pthread_cond_broadcast(&tq->wait_var);
+	}
 	pthread_mutex_unlock(&tq->wait_mutex);
 
 	return;
@@ -431,7 +412,7 @@ size_t cw_tq_get_high_water_mark_internal(const cw_tone_queue_t * tq)
    @brief Return current number of items (tones) in tone queue
 
    @internal
-   @reviewed 2020-07-29
+   @reviewed 2020-10-17
    @endinternal
 
    @param[in] tq tone queue
@@ -440,9 +421,9 @@ size_t cw_tq_get_high_water_mark_internal(const cw_tone_queue_t * tq)
 */
 size_t cw_tq_length_internal(cw_tone_queue_t * tq)
 {
-	pthread_mutex_lock(&tq->mutex);
+	pthread_mutex_lock(&tq->wait_mutex);
 	const size_t len = tq->len;
-	pthread_mutex_unlock(&tq->mutex);
+	pthread_mutex_unlock(&tq->wait_mutex);
 
 	return len;
 }
@@ -525,7 +506,7 @@ size_t cw_tq_next_index_internal(const cw_tone_queue_t * tq, size_t ind)
    the function calls the callback.
 
    @internal
-   @reviewed 2020-07-29
+   @reviewed 2020-10-17
    @endinternal
 
    @param[in] tq tone queue to dequeue tone from
@@ -535,10 +516,11 @@ size_t cw_tq_next_index_internal(const cw_tone_queue_t * tq, size_t ind)
 */
 cw_queue_state_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
 {
-	pthread_mutex_lock(&tq->mutex);
 	pthread_mutex_lock(&tq->wait_mutex);
 
 	bool call_callback = false;
+	const size_t len_before = tq->len;
+	const cw_queue_state_t state_before = tq->state;
 
 	switch (tq->state) {
 	case CW_TQ_EMPTY:
@@ -572,8 +554,12 @@ cw_queue_state_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
 		      queue_state, tone->frequency, tone->duration);
 #endif
 
+	if (len_before != tq->len || state_before != tq->state) {
+		//fprintf(stderr, "[II] " MSG_PREFIX "%s:%d broadcast on 'dequeue'\n", __func__, __LINE__);
+		pthread_cond_broadcast(&tq->wait_var);
+	}
+
 	pthread_mutex_unlock(&tq->wait_mutex);
-	pthread_mutex_unlock(&tq->mutex);
 
 	/* Since client's callback can use libcw functions
 	   that call pthread_mutex_lock(&tq->...), we should
@@ -607,7 +593,7 @@ cw_queue_state_t cw_tq_dequeue_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
    TODO: add unit tests
 
    @internal
-   @reviewed 2020-07-29
+   @reviewed 2020-10-17
    @endinternal
 
    @param[in] tq tone queue to dequeue from
@@ -642,9 +628,6 @@ bool cw_tq_dequeue_sub_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
 	/* Dequeue. We already have the tone, now update tq's state. */
 	tq->head = cw_tq_next_index_internal(tq, tq->head);
 	tq->len--;
-	//fprintf(stderr, MSG_PREFIX "dequeue sub: broadcast on tq->len--\n");
-	pthread_cond_broadcast(&tq->wait_var);
-
 
 	if (tq->len == 0) {
 		/* Verify basic property of empty tq. */
@@ -701,7 +684,7 @@ bool cw_tq_dequeue_sub_internal(cw_tone_queue_t * tq, cw_tone_t * tone)
    The function does not accept tones with negative values of duration.
 
    @internal
-   @reviewed 2020-07-29
+   @reviewed 2020-10-17
    @endinternal
 
    @exception EINVAL invalid values of @p tone
@@ -743,7 +726,6 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
 	}
 
 
-	pthread_mutex_lock(&tq->mutex);
 	pthread_mutex_lock(&tq->wait_mutex);
 
 	if (tq->len == tq->capacity) {
@@ -753,7 +735,6 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_TONE_QUEUE, CW_DEBUG_ERROR,
 			      MSG_PREFIX "enqueue: can't enqueue tone, tq is full");
 		pthread_mutex_unlock(&tq->wait_mutex);
-		pthread_mutex_unlock(&tq->mutex);
 
 		return CW_FAILURE;
 	}
@@ -770,28 +751,27 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
 
 	tq->tail = cw_tq_next_index_internal(tq, tq->tail);
 	tq->len++;
-	// fprintf(stderr, MSG_PREFIX "enqueue: broadcast on tq->len++\n");
-	pthread_cond_broadcast(&tq->wait_var);
 
 
 	if (tq->state == CW_TQ_EMPTY) {
 		tq->state = CW_TQ_NONEMPTY;
 
-		/* A loop in cw_gen_dequeue_and_generate_internal()
-		   function may await for the queue to be filled with
-		   new tones to dequeue and play.  It waits for a
-		   notification from tq that there are some new tones
-		   in tone queue. This is a right place and time to
-		   send such notification. */
-		pthread_mutex_lock(&tq->dequeue_mutex);
-		pthread_cond_signal(&tq->dequeue_var); /* Use pthread_cond_signal() because there is only one listener. */
-		pthread_mutex_unlock(&tq->dequeue_mutex);
+		/* A loop in cw_gen_dequeue_and_generate_internal() function
+		   may await for the queue to be filled with new tones to
+		   dequeue and play.  It waits for a notification from tq
+		   that there are some new tones in tone queue. We will send
+		   such notification with pthread_cond_broadcast() below. */
 	} else {
 		tq->state = CW_TQ_NONEMPTY;
 	}
 
+	/* tq->len and perhaps tq->state have changed. Signal this fact to
+	   listeners. */
+	// fprintf(stderr, "[II] " MSG_PREFIX "%s:%d broadcast on 'enqueue'\n", __func__, __LINE__);
+	pthread_cond_broadcast(&tq->wait_var);
+
 	pthread_mutex_unlock(&tq->wait_mutex);
-	pthread_mutex_unlock(&tq->mutex);
+
 	return CW_SUCCESS;
 }
 
@@ -997,22 +977,21 @@ bool cw_tq_is_full_internal(const cw_tone_queue_t * tq)
    queue's level that will never happen.
 
    @internal
-   @reviewed 2020-07-29
+   @reviewed 2020-10-17
    @endinternal
 
    @param[in] tq tone queue to empty
 */
 void cw_tq_flush_internal(cw_tone_queue_t * tq)
 {
-	pthread_mutex_lock(&tq->mutex);
 	/* Force zero length state. */
 	cw_tq_make_empty_internal(tq);
-	pthread_mutex_unlock(&tq->mutex);
 
 
 	/* TODO: is this necessary? We have already reset queue
 	   state. */
-	cw_tq_wait_for_level_internal(tq, 0);
+	/* This has been disabled on 2020-10-17. */
+	//cw_tq_wait_for_level_internal(tq, 0);
 
 
 #if 0   /* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-30. */
@@ -1060,7 +1039,7 @@ bool cw_tq_is_nonempty_internal(const cw_tone_queue_t * tq)
    TODO: write tests for this function
 
    @internal
-   @reviewed 2020-08-24
+   @reviewed 2020-10-17
    @endinternal
 
    @param[in] tq tone queue from which to remove tones
@@ -1072,7 +1051,7 @@ cw_ret_t cw_tq_remove_last_character_internal(cw_tone_queue_t * tq)
 {
 	cw_ret_t cwret = CW_FAILURE;
 
-	pthread_mutex_lock(&tq->mutex);
+	pthread_mutex_lock(&tq->wait_mutex);
 
 	size_t len = tq->len;
 	size_t idx = tq->tail;
@@ -1097,7 +1076,7 @@ cw_ret_t cw_tq_remove_last_character_internal(cw_tone_queue_t * tq)
 		}
 	}
 
-	pthread_mutex_unlock(&tq->mutex);
+	pthread_mutex_unlock(&tq->wait_mutex);
 
 	return cwret;
 }
