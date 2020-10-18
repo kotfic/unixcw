@@ -751,22 +751,19 @@ cw_ret_t cw_tq_enqueue_internal(cw_tone_queue_t * tq, const cw_tone_t * tone)
 
 	tq->tail = cw_tq_next_index_internal(tq, tq->tail);
 	tq->len++;
+	tq->state = CW_TQ_NONEMPTY;
 
+	/*
+	  tq->len and perhaps tq->state have changed. Signal this fact
+	  to listeners.
 
-	if (tq->state == CW_TQ_EMPTY) {
-		tq->state = CW_TQ_NONEMPTY;
-
-		/* A loop in cw_gen_dequeue_and_generate_internal() function
-		   may await for the queue to be filled with new tones to
-		   dequeue and play.  It waits for a notification from tq
-		   that there are some new tones in tone queue. We will send
-		   such notification with pthread_cond_broadcast() below. */
-	} else {
-		tq->state = CW_TQ_NONEMPTY;
-	}
-
-	/* tq->len and perhaps tq->state have changed. Signal this fact to
-	   listeners. */
+	  A loop in cw_gen_dequeue_and_generate_internal() function
+	  may await for the queue to be filled with new tones to
+	  dequeue and play.  It waits for a notification from tq that
+	  there are some new tones in tone queue. We will need to use
+	  pthread_cond_broadcast() to make sure the notification
+	  reaches all listeners.
+	*/
 	// fprintf(stderr, "[II] " MSG_PREFIX "%s:%d broadcast on 'enqueue'\n", __func__, __LINE__);
 	pthread_cond_broadcast(&tq->wait_var);
 
