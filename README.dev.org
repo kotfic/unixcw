@@ -1,3 +1,20 @@
+export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./src/libcw/tests/.libs/libcw_tests -N test_cw_gen_forever_internal -S p -t 300 -X plughw
+
+./tests/libcw_tests  -S a  -X plughw -N legacy_api_test_cw_queue_tone
+clicks
+
+
+---------------
+No reproduction
+./src/libcw/tests/libcw_tests -S a -X plughw -A k --random-seed 1601917967
+
+Reproduction
+./src/libcw/tests/libcw_tests -S a -X plughw -A k --random-seed 1601917893
+---------------
+
+
+
+
 * terminology and conventions for code
 
  - Use "duration" when describing how long (in microseconds or seconds) a
@@ -40,6 +57,15 @@
 
 show threads of a process:
 ps -p `pidof <process name>`  -T
+
+
+Emacs tramp mode:
+(setq tramp-default-method "ssh")
+C-x C-f /remotehost:filename
+
+
+Get all #defines seen by a compiler
+gcc -march=native -dM -E - </dev/null
 
 
 * Operating systems
