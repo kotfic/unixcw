@@ -74,6 +74,11 @@
 # include <strings.h>
 #endif
 
+#if defined(__linux__)
+#include <sys/prctl.h> /* prctl() */
+#elif defined(__FreeBSD__)
+#endif
+
 
 
 
@@ -1044,9 +1049,17 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 {
 	cw_gen_t * gen = (cw_gen_t *) arg;
 
-	char name[15] = { 0 };
-	snprintf(name, sizeof (name), "deq_thr %s\n", gen->label);
-	pthread_setname_np(pthread_self(), name);
+	const char name_prefix[] = "deq ";
+	char name[sizeof (name_prefix) + sizeof (gen->label)] = { 0 };
+	snprintf(name, sizeof (name), "%s%s\n", name_prefix, gen->label);
+	name[15] = '\0';
+#if defined(__linux__)
+	/* Choosing prctl() over pthread_setname_np() for Linux
+	   because prctl doesn't require explicit "#define
+	   _GNU_SOURCE". */
+	prctl(PR_SET_NAME, name, 0, 0, 0);
+#elif defined(__FreeBSD__)
+#endif
 
 	/* Tone dequeued in previous call to cw_tq_dequeue_internal(). */
 	cw_tone_t prev_tone = { 0 };
@@ -1255,7 +1268,7 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_GENERATOR, CW_DEBUG_INFO,
 		      MSG_PREFIX "EXIT: generator stopped (gen->do_dequeue_and_generate = %d)", gen->do_dequeue_and_generate);
 
-	/* Some functions in client thread may be waiting for the last
+	/* Some functions in main thread may be waiting for the last
 	   notification from the generator thread to continue/finalize
 	   their business. Let's send that notification right before
 	   exiting. */
@@ -1273,7 +1286,8 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 	pthread_mutex_unlock(&gen->tq->wait_mutex);
 
 #ifdef GENERATOR_CLIENT_THREAD
-	/* Original implementation using signals. */ /* This code has been disabled some time before 2017-01-19. */
+	/* Original implementation using signals. */
+	/* This code has been disabled some time before 2017-01-19. */
 	pthread_kill(gen->library_client.thread_id, SIGALRM);
 #endif
 
