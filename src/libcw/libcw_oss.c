@@ -107,7 +107,7 @@ static const int CW_OSS_SAMPLE_FORMAT = AFMT_S16_NE;  /* Sound format AFMT_S16_N
 static cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate);
 static cw_ret_t cw_oss_get_version_internal(int fd, cw_oss_version_t * version);
 static cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen);
-static cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 static void cw_oss_close_sound_device_internal(cw_gen_t * gen);
 
 
@@ -254,11 +254,12 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    @reviewed 2020-07-19
 
    @param[in] gen generator for which to open and configure sound system handle
+   @param[in] gen_conf
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen)
+cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
 	/* TODO: there seems to be some redundancy between
 	   cw_oss_open_and_configure_sound_device_internal() and is_possible() function. */

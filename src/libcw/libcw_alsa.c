@@ -246,7 +246,7 @@ static void cw_alsa_print_sw_params_internal(snd_pcm_sw_params_t * sw_params, co
 static int      cw_alsa_handle_load_internal(cw_alsa_handle_t * alsa_handle);
 static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv);
-static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 static void     cw_alsa_close_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_alsa_on_empty_queue(cw_gen_t * gen);
 
@@ -412,7 +412,7 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen)
+static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
 	int snd_rv = cw_alsa.snd_pcm_open(&gen->alsa_data.pcm_handle,
 					  gen->sound_device,       /* name */

@@ -17,6 +17,7 @@
 #include "libcw_oss.h"
 #include "libcw_pa.h"
 #include "libcw_tq.h"
+#include "cw_config.h"
 
 
 
@@ -330,7 +331,7 @@ struct cw_gen_struct {
 	int dev_raw_sink;
 
 	/* Open and configure sound system handle stored in given generator. */
-	cw_ret_t (* open_and_configure_sound_device)(cw_gen_t * gen);
+	cw_ret_t (* open_and_configure_sound_device)(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 
 	/* Close sound system device stored in given generator. */
 	void (* close_sound_device)(cw_gen_t * gen);

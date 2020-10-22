@@ -109,7 +109,7 @@ static const int KIOCSOUND_CLOCK_TICK_RATE = 1193180;
 
 
 static void cw_console_close_sound_device_internal(cw_gen_t * gen);
-static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 static cw_ret_t cw_console_write_tone_to_sound_device_internal(cw_gen_t * gen, const cw_tone_t * tone);
 
 #ifdef LIBCW_CONSOLE_USE_SPKRTONE
@@ -211,11 +211,12 @@ bool cw_is_console_possible(const char * device_name)
    @reviewed 2020-07-14
 
    @param[in] gen generator for which to open and configure buzzer device
+   @param[in] gen_conf
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen)
+static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
 	assert (gen->sound_device);
 

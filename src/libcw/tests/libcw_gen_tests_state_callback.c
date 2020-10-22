@@ -493,8 +493,8 @@ cwt_retv test_cw_gen_state_callback(cw_test_executor_t * cte)
 
 static cwt_retv test_cw_gen_state_callback_sub(cw_test_executor_t * cte, test_data_t * test_data, const char * sound_device)
 {
-	cw_gen_t * gen = cw_gen_new(test_data->sound_system,
-				    sound_device);
+	cw_gen_config_t gen_conf = { .sound_system = test_data->sound_system, .sound_device = sound_device };
+	cw_gen_t * gen = cw_gen_new(&gen_conf);
 	cw_gen_set_speed(gen, test_data->speed);
 	cw_gen_set_frequency(gen, cte->config->frequency);
 

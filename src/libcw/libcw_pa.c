@@ -111,7 +111,7 @@ static cw_pa_handle_t g_cw_pa;
 
 static pa_simple  * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, unsigned int * sample_rate, int * error);
 static int          cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa);
-static cw_ret_t     cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t     cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 static void         cw_pa_close_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t     cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen);
 
@@ -356,11 +356,12 @@ static int cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa)
    @reviewed 2020-09-20
 
    @param[in,out] gen generator for which to open and configure sound system handle
+   @param[in] gen_conf
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen)
+static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
 	const char * dev = cw_gen_pick_device_name_internal(gen->sound_device, CW_AUDIO_PA);
 

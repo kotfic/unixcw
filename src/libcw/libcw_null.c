@@ -47,7 +47,7 @@
 
 
 
-static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen);
+static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 static void     cw_null_close_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t cw_null_write_tone_to_sound_device_internal(cw_gen_t * gen, const cw_tone_t * tone);
 
@@ -113,10 +113,11 @@ bool cw_is_null_possible(__attribute__((unused)) const char * device_name)
    @reviewed 2020-07-12
 
    @param[in] gen generator for which to open and configure sound system handle
+   @param[in] gen_conf
 
    @return CW_SUCCESS
 */
-static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen)
+static cw_ret_t cw_null_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
 	gen->sound_device_is_open = true;
 	return CW_SUCCESS;

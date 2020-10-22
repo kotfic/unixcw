@@ -927,7 +927,8 @@ void tester_start_test_code(tester_t * tester)
 	/* Using Null sound system because this generator is only used
 	   to enqueue text and control key. Sound will be played by
 	   main generator used by xcwcp */
-	tester->gen = cw_gen_new(CW_AUDIO_NULL, NULL);
+	cw_gen_config_t gen_conf = { .sound_system = CW_AUDIO_NULL, .sound_device = NULL };
+	tester->gen = cw_gen_new(&gen_conf);
 	cw_tq_register_low_level_callback_internal(tester->gen->tq, low_tone_queue_callback, tester, 5);
 
 	cw_key_register_generator(&tester->key, tester->gen);

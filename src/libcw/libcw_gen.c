@@ -512,13 +512,13 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 
 
 
-cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
+cw_gen_t * cw_gen_new(const cw_gen_config_t * gen_conf)
 {
 #ifdef LIBCW_WITH_DEV
 	fprintf(stderr, "libcw build %s %s\n", __DATE__, __TIME__);
 #endif
 
-	cw_assert (sound_system != CW_AUDIO_NONE, MSG_PREFIX "can't create generator with sound system '%s'", cw_get_audio_system_label(sound_system));
+	cw_assert (gen_conf->sound_system != CW_AUDIO_NONE, MSG_PREFIX "can't create generator with sound system '%s'", cw_get_audio_system_label(gen_conf->sound_system));
 
 	cw_gen_t * gen = (cw_gen_t *) calloc(1, sizeof (cw_gen_t));
 	if (NULL == gen) {
@@ -654,18 +654,18 @@ cw_gen_t * cw_gen_new(int sound_system, const char * device_name)
 		gen->pa_data.simple = NULL;
 #endif
 
-		cw_ret_t cwret = cw_gen_new_open_internal(gen, sound_system, device_name);
+		cw_ret_t cwret = cw_gen_new_open_internal(gen, gen_conf);
 		if (cwret == CW_FAILURE) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 				      MSG_PREFIX "failed to open sound sink for sound system '%s' and device '%s'",
-				      cw_get_audio_system_label(sound_system),
+				      cw_get_audio_system_label(gen_conf->sound_system),
 				      gen->sound_device);
 			cw_gen_delete(&gen);
 			return (cw_gen_t *) NULL;
 		}
 
-		if (sound_system == CW_AUDIO_NULL
-		    || sound_system == CW_AUDIO_CONSOLE) {
+		if (gen_conf->sound_system == CW_AUDIO_NULL
+		    || gen_conf->sound_system == CW_AUDIO_CONSOLE) {
 
 			; /* The two types of sound output don't require audio buffer. */
 		} else {
@@ -946,13 +946,12 @@ cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
    @endinternal
 
    @param[in] gen generator for which to open a sound system
-   @param[in] sound_system sound system to open and assign to the generator
-   @param[in] device_name name of sound device to be used instead of a default one
+   @param[in] gen_conf
 
    @return CW_SUCCESS on success
    @return CW_FAILURE otherwise
 */
-cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, int sound_system, const char * device_name)
+cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
 	/* FIXME: this functionality is partially duplicated in
 	   src/cwutils/cw_common.c/cw_gen_new_from_config() */
@@ -965,53 +964,53 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, int sound_system, const char *
 	   the three in separate 'if' clauses, I can check all other
 	   values of sound system as well. */
 
-	const bool device_provided = (NULL != device_name && '\0' != device_name[0]);
+	const bool device_provided = (NULL != gen_conf->sound_device && '\0' != gen_conf->sound_device[0]);
 
-	if (sound_system == CW_AUDIO_NULL) {
+	if (gen_conf->sound_system == CW_AUDIO_NULL) {
 
-		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_NULL];
+		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_NULL];
 		if (cw_is_null_possible(dev)) {
 			cw_null_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_sound_device(gen);
+			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
 
-	if (sound_system == CW_AUDIO_PA
-	    || sound_system == CW_AUDIO_SOUNDCARD) {
+	if (gen_conf->sound_system == CW_AUDIO_PA
+	    || gen_conf->sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_PA];
+		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_PA];
 		if (cw_is_pa_possible(dev)) {
 			cw_pa_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_sound_device(gen);
+			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
 
-	if (sound_system == CW_AUDIO_OSS
-	    || sound_system == CW_AUDIO_SOUNDCARD) {
+	if (gen_conf->sound_system == CW_AUDIO_OSS
+	    || gen_conf->sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_OSS];
+		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_OSS];
 		if (cw_is_oss_possible(dev)) {
 			cw_oss_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_sound_device(gen);
+			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
 
-	if (sound_system == CW_AUDIO_ALSA
-	    || sound_system == CW_AUDIO_SOUNDCARD) {
+	if (gen_conf->sound_system == CW_AUDIO_ALSA
+	    || gen_conf->sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_ALSA];
+		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_ALSA];
 		if (cw_is_alsa_possible(dev)) {
 			cw_alsa_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_sound_device(gen);
+			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
 
-	if (sound_system == CW_AUDIO_CONSOLE) {
+	if (gen_conf->sound_system == CW_AUDIO_CONSOLE) {
 
-		const char * dev = device_provided ? device_name : default_sound_devices[CW_AUDIO_CONSOLE];
+		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_CONSOLE];
 		if (cw_is_console_possible(dev)) {
 			cw_console_fill_gen_internal(gen, dev);
-			return gen->open_and_configure_sound_device(gen);
+			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
 

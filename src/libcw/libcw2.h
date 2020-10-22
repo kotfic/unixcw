@@ -54,6 +54,11 @@ typedef struct cw_key_struct cw_key_t;
 struct cw_rec_struct;
 typedef struct cw_rec_struct cw_rec_t;
 
+typedef struct cw_gen_config_t {
+	int sound_system;
+	const char * sound_device;
+	unsigned int alsa_period_size;
+} cw_gen_config_t;
 
 
 
@@ -90,16 +95,15 @@ cw_ret_t cw_get_package_version(int * major, int * minor, int * maintenance);
    cw_gen_delete().
 
    @internal
-   @reviewed 2020-08-04
+   @reviewed 2020-10-21
    @endinternal
 
-   @param[in] sound_system sound system with which the generator should work
-   @param[in] device_name name of sound device to be used (may be NULL, library will use its default for given @p sound_system).
+   @param[in] gen_conf configuration of generator to be used for new generator
 
    @return pointer to new generator on success
    @return NULL on failure
 */
-cw_gen_t * cw_gen_new(int sound_system, const char * device_name);
+cw_gen_t * cw_gen_new(const cw_gen_config_t * gen_conf);
 
 
 
