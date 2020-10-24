@@ -93,6 +93,9 @@ version 3.6.0 / 2020-XX-YY
   - cw_wait_for_tone_queue_critical() now sets errno to EINVAL and returns
     CW_FAILURE if function's argument is negative.
 
+  - there is a hard limit on length of sound device: 127 characters (+1 for
+    terminating NUL).
+
   xcwcp:
 
   - program's command line option "--sound" has been changed to

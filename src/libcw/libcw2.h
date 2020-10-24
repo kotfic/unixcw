@@ -27,14 +27,22 @@ extern "C"
    client code to distinguish instances of the same type.
 
    This size includes space for terminating NUL. */
-#define LIBCW_OBJECT_INSTANCE_LABEL_SIZE 16
+#define LIBCW_OBJECT_INSTANCE_LABEL_SIZE 32
 
 
 
 
-/* E.g. "default", "plughw", "/dev/something"
-   Includes space for terminating NUL. */
-#define LIBCW_SOUND_DEVICE_NAME_SIZE  64
+/*
+  E.g. "default", "plughw", "/dev/something"
+  Includes space for terminating NUL.
+
+  Console/ALSA/OSS device names are rather short. In case of PulseAudio we
+  should expect something longer.
+
+  pacmd list-sinks | grep "name:"
+       name: <alsa_output.pci-0000_00_1b.0.analog-stereo>
+*/
+#define LIBCW_SOUND_DEVICE_NAME_SIZE  128
 
 
 
