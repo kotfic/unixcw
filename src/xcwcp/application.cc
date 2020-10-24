@@ -1132,7 +1132,7 @@ void Application::make_auxiliaries_end(void)
 
 void Application::check_sound_system(cw_config_t *config)
 {
-	if (config->sound_system == CW_AUDIO_ALSA
+	if (config->gen_conf.sound_system == CW_AUDIO_ALSA
 	    && cw_is_pa_possible(NULL)) {
 
 		QMessageBox msgBox;

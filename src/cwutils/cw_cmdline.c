@@ -635,28 +635,28 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 		if (!strcmp(optarg, "null")
 		    || !strcmp(optarg, "n")) {
 
-			config->sound_system = CW_AUDIO_NULL;
+			config->gen_conf.sound_system = CW_AUDIO_NULL;
 		} else if (!strcmp(optarg, "alsa")
 		    || !strcmp(optarg, "a")) {
 
-			config->sound_system = CW_AUDIO_ALSA;
+			config->gen_conf.sound_system = CW_AUDIO_ALSA;
 		} else if (!strcmp(optarg, "oss")
 			   || !strcmp(optarg, "o")) {
 
-			config->sound_system = CW_AUDIO_OSS;
+			config->gen_conf.sound_system = CW_AUDIO_OSS;
 		} else if (!strcmp(optarg, "pulseaudio")
 			   || !strcmp(optarg, "p")) {
 
-			config->sound_system = CW_AUDIO_PA;
+			config->gen_conf.sound_system = CW_AUDIO_PA;
 		} else if (!strcmp(optarg, "console")
 			   || !strcmp(optarg, "c")) {
 
-			config->sound_system = CW_AUDIO_CONSOLE;
+			config->gen_conf.sound_system = CW_AUDIO_CONSOLE;
 
 		} else if (!strcmp(optarg, "soundcard")
 			   || !strcmp(optarg, "s")) {
 
-			config->sound_system = CW_AUDIO_SOUNDCARD;
+			config->gen_conf.sound_system = CW_AUDIO_SOUNDCARD;
 		} else {
 			fprintf(stderr, "%s: invalid sound system (option 's'): %s\n", config->program_name, optarg);
 			return CW_FAILURE;
@@ -666,7 +666,12 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 	case 'd':
 		// fprintf(stderr, "%s: d:%s\n", config->program_name, optarg);
 		if (optarg && strlen(optarg)) {
-			config->sound_device = strdup(optarg);
+			const size_t len_max = sizeof (config->gen_conf.sound_device) - 1;
+			if (strlen(optarg) >= len_max) {
+				fprintf(stderr, "%s: device name can't be longer than %zd characters\n", config->program_name, len_max);
+				return CW_FAILURE;
+			}
+			snprintf(config->gen_conf.sound_device, sizeof (config->gen_conf.sound_device), "%s", optarg);
 		} else {
 			fprintf(stderr, "%s: no device specified for option -d\n", config->program_name);
 			return CW_FAILURE;

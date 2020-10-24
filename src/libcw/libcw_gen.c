@@ -964,7 +964,7 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, const cw_gen_config_t * gen_co
 	   the three in separate 'if' clauses, I can check all other
 	   values of sound system as well. */
 
-	const bool device_provided = (NULL != gen_conf->sound_device && '\0' != gen_conf->sound_device[0]);
+	const bool device_provided = ('\0' != gen_conf->sound_device[0]);
 
 	if (gen_conf->sound_system == CW_AUDIO_NULL) {
 

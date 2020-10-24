@@ -71,8 +71,7 @@ static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, int seconds);
 */
 static cwt_retv gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen)
 {
-	cw_gen_config_t gen_conf = { .sound_system = cte->current_sound_system, .sound_device = cte->current_sound_device };
-	*gen = cw_gen_new(&gen_conf);
+	*gen = cw_gen_new(&cte->gen_conf);
 	if (!*gen) {
 		cte->log_error(cte, "Can't create generator, stopping the test\n");
 		return cwt_retv_err;
@@ -190,8 +189,7 @@ static cwt_retv test_cw_gen_new_start_stop_delete_sub(cw_test_executor_t * cte, 
 		cte->log_info(cte, "%s", "");
 		if (do_new) {
 			cte->log_info_cont(cte, "new ");
-			cw_gen_config_t gen_conf = { .sound_system = cte->current_sound_system, .sound_device = cte->current_sound_device };
-			gen = LIBCW_TEST_FUT(cw_gen_new)(&gen_conf);
+			gen = LIBCW_TEST_FUT(cw_gen_new)(&cte->gen_conf);
 			if (!cte->expect_valid_pointer_errors_only(cte, gen, "new() (loop #%d/%d)", i + 1, loops)) {
 				new_failure = true;
 				break;
@@ -318,13 +316,9 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 {
 	cte->print_test_header(cte, __func__);
 
-	const cw_sound_system sound_system = cte->current_sound_system;
-	const char * sound_device = cte->current_sound_device;
-
 	/* Test 0: test property of newly created generator. */
 	{
-		cw_gen_config_t gen_conf = { .sound_system = sound_system, .sound_device = sound_device };
-		cw_gen_t * gen = cw_gen_new(&gen_conf);
+		cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 		cte->assert2(cte, gen, "test 0: failed to create generator");
 
 		cte->expect_op_int(cte, CW_TONE_SLOPE_SHAPE_RAISED_COSINE, "==", gen->tone_slope.shape, "test 0: initial slope shape (%d)", gen->tone_slope.shape);
@@ -343,8 +337,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   shape and larger than zero slope duration. You just can't
 	   have rectangular slopes that have non-zero duration." */
 	{
-		cw_gen_config_t gen_conf = { .sound_system = sound_system, .sound_device = sound_device };
-		cw_gen_t * gen = cw_gen_new(&gen_conf);
+		cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 		cte->assert2(cte, gen, "test A: failed to create generator");
 
 		const int slope_duration = 10;
@@ -367,8 +360,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   returned.
 	*/
 	{
-		cw_gen_config_t gen_conf = { .sound_system = sound_system, .sound_device = sound_device };
-		cw_gen_t * gen = cw_gen_new(&gen_conf);
+		cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 		cte->assert2(cte, gen, "test B: failed to create generator");
 
 		const int shape_before = gen->tone_slope.shape;
@@ -392,9 +384,8 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   set only this generator's parameter that is different than
 	   '-1'." */
 	{
-		cw_gen_config_t gen_conf = { .sound_system = sound_system, .sound_device = sound_device};
 		cw_ret_t cwret;
-		cw_gen_t * gen = cw_gen_new(&gen_conf);
+		cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 		cte->assert2(cte, gen, "test C1: failed to create generator");
 
 
@@ -447,8 +438,7 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   function will set generator's slope duration to zero, even if
 	   value of \p slope_duration is '-1'." */
 	{
-		cw_gen_config_t gen_conf = { .sound_system = sound_system, .sound_device = sound_device};
-		cw_gen_t * gen = cw_gen_new(&gen_conf);
+		cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 		cte->assert2(cte, gen, "test C2: failed to create generator");
 
 		cw_ret_t cwret;
@@ -494,9 +484,8 @@ cwt_retv test_cw_gen_set_tone_slope(cw_test_executor_t * cte)
 	   shape with zero duration of the slopes. The slopes will be
 	   non-rectangular, but just unusually short." */
 	{
-		cw_gen_config_t gen_conf = { .sound_system = sound_system, .sound_device = sound_device };
 		cw_ret_t cwret;
-		cw_gen_t * gen = cw_gen_new(&gen_conf);
+		cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 		cte->assert2(cte, gen, "test D: failed to create generator");
 
 		const int expected_duration = 0;
@@ -605,8 +594,7 @@ cwt_retv test_cw_gen_forever_internal(cw_test_executor_t * cte)
 */
 static cwt_retv test_cw_gen_forever_sub(cw_test_executor_t * cte, __attribute__((unused)) int seconds)
 {
-	cw_gen_config_t gen_conf = { .sound_system = cte->current_sound_system, .sound_device = cte->current_sound_device };
-	cw_gen_t * gen = cw_gen_new(&gen_conf);
+	cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 	if (NULL == gen) {
 		cte->log_error(cte, "failed to create generator\n");
 		return cwt_retv_err;
@@ -680,8 +668,7 @@ cwt_retv test_cw_gen_get_timing_parameters_internal(cw_test_executor_t * cte)
 	int additional_space_duration = initial;
 	int adjustment_space_duration = initial;
 
-	cw_gen_config_t gen_conf = { .sound_system = cte->current_sound_system, .sound_device = cte->current_sound_device };
-	cw_gen_t * gen = cw_gen_new(&gen_conf);
+	cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 	cw_gen_start(gen);
 
 
@@ -732,8 +719,7 @@ cwt_retv test_cw_gen_parameter_getters_setters(cw_test_executor_t * cte)
 	   a good initial value. */
 	int off_limits = 10000;
 
-	cw_gen_config_t gen_conf = { .sound_system = cte->current_sound_system, .sound_device = cte->current_sound_device};
-	cw_gen_t * gen = cw_gen_new(&gen_conf);
+	cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 	/* It shouldn't matter for functions tested here if generator is started or not. */
 	cw_gen_start(gen);
 
@@ -873,8 +859,7 @@ cwt_retv test_cw_gen_volume_functions(cw_test_executor_t * cte)
 	const int tone_freq = cte->config->frequency;
 	const int tone_duration = 70000; /* [microseconds] Duration can't be too short, because the loops will run too fast. */
 
-	cw_gen_config_t gen_conf = { .sound_system = cte->current_sound_system, .sound_device = cte->current_sound_device };
-	cw_gen_t * gen = cw_gen_new(&gen_conf);
+	cw_gen_t * gen = cw_gen_new(&cte->gen_conf);
 
 
 

@@ -54,9 +54,11 @@ typedef struct cw_key_struct cw_key_t;
 struct cw_rec_struct;
 typedef struct cw_rec_struct cw_rec_t;
 
+typedef enum cw_audio_systems cw_sound_system_t;
+
 typedef struct cw_gen_config_t {
-	int sound_system;
-	const char * sound_device;
+	cw_sound_system_t sound_system;
+	char sound_device[LIBCW_SOUND_DEVICE_NAME_SIZE];
 	unsigned int alsa_period_size;
 } cw_gen_config_t;
 

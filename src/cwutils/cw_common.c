@@ -71,9 +71,9 @@ static int cw_generator_apply_config(cw_config_t * config);
 */
 int cw_generator_new_from_config(cw_config_t *config)
 {
-	if (config->sound_system == CW_AUDIO_NULL) {
-		if (cw_is_null_possible(config->sound_device)) {
-			if (cw_generator_new(CW_AUDIO_NULL, config->sound_device)) {
+	if (config->gen_conf.sound_system == CW_AUDIO_NULL) {
+		if (cw_is_null_possible(config->gen_conf.sound_device)) {
+			if (cw_generator_new(CW_AUDIO_NULL, config->gen_conf.sound_device)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
 				} else {
@@ -90,15 +90,15 @@ int cw_generator_new_from_config(cw_config_t *config)
 	}
 
 
-	if (config->sound_system == CW_AUDIO_NONE
-	    || config->sound_system == CW_AUDIO_PA
-	    || config->sound_system == CW_AUDIO_SOUNDCARD) {
+	if (config->gen_conf.sound_system == CW_AUDIO_NONE
+	    || config->gen_conf.sound_system == CW_AUDIO_PA
+	    || config->gen_conf.sound_system == CW_AUDIO_SOUNDCARD) {
 
 		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->sound_device, CW_AUDIO_PA);
+		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_PA);
 
-		if (cw_is_pa_possible(config->sound_device)) {
-			if (cw_generator_new(CW_AUDIO_PA, config->sound_device)) {
+		if (cw_is_pa_possible(config->gen_conf.sound_device)) {
+			if (cw_generator_new(CW_AUDIO_PA, config->gen_conf.sound_device)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
 				} else {
@@ -118,15 +118,15 @@ int cw_generator_new_from_config(cw_config_t *config)
 		/* fall through to try with next sound system type */
 	}
 
-	if (config->sound_system == CW_AUDIO_NONE
-	    || config->sound_system == CW_AUDIO_OSS
-	    || config->sound_system == CW_AUDIO_SOUNDCARD) {
+	if (config->gen_conf.sound_system == CW_AUDIO_NONE
+	    || config->gen_conf.sound_system == CW_AUDIO_OSS
+	    || config->gen_conf.sound_system == CW_AUDIO_SOUNDCARD) {
 
 		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->sound_device, CW_AUDIO_OSS);
+		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_OSS);
 
-		if (cw_is_oss_possible(config->sound_device)) {
-			if (cw_generator_new(CW_AUDIO_OSS, config->sound_device)) {
+		if (cw_is_oss_possible(config->gen_conf.sound_device)) {
+			if (cw_generator_new(CW_AUDIO_OSS, config->gen_conf.sound_device)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
 				} else {
@@ -148,15 +148,15 @@ int cw_generator_new_from_config(cw_config_t *config)
 	}
 
 
-	if (config->sound_system == CW_AUDIO_NONE
-	    || config->sound_system == CW_AUDIO_ALSA
-	    || config->sound_system == CW_AUDIO_SOUNDCARD) {
+	if (config->gen_conf.sound_system == CW_AUDIO_NONE
+	    || config->gen_conf.sound_system == CW_AUDIO_ALSA
+	    || config->gen_conf.sound_system == CW_AUDIO_SOUNDCARD) {
 
 		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->sound_device, CW_AUDIO_ALSA);
+		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_ALSA);
 
-		if (cw_is_alsa_possible(config->sound_device)) {
-			if (cw_generator_new(CW_AUDIO_ALSA, config->sound_device)) {
+		if (cw_is_alsa_possible(config->gen_conf.sound_device)) {
+			if (cw_generator_new(CW_AUDIO_ALSA, config->gen_conf.sound_device)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
 				} else {
@@ -178,14 +178,14 @@ int cw_generator_new_from_config(cw_config_t *config)
 	}
 
 
-	if (config->sound_system == CW_AUDIO_NONE
-	    || config->sound_system == CW_AUDIO_CONSOLE) {
+	if (config->gen_conf.sound_system == CW_AUDIO_NONE
+	    || config->gen_conf.sound_system == CW_AUDIO_CONSOLE) {
 
 		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->sound_device, CW_AUDIO_CONSOLE);
+		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_CONSOLE);
 
-		if (cw_is_console_possible(config->sound_device)) {
-			if (cw_generator_new(CW_AUDIO_CONSOLE, config->sound_device)) {
+		if (cw_is_console_possible(config->gen_conf.sound_device)) {
+			if (cw_generator_new(CW_AUDIO_CONSOLE, config->gen_conf.sound_device)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
 				} else {

@@ -76,8 +76,7 @@ typedef enum cw_audio_systems cw_sound_system; /* Someday it will go into libcw.
 
 typedef struct cw_config_t {
 	char * program_name;
-	cw_sound_system sound_system;
-	char * sound_device;
+	cw_gen_config_t gen_conf;
 	int send_speed;
 	int frequency;
 	int volume;

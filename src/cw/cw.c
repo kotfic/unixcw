@@ -603,7 +603,7 @@ int main (int argc, char *const argv[])
 		}
 	}
 
-	if (config->sound_system == CW_AUDIO_ALSA
+	if (config->gen_conf.sound_system == CW_AUDIO_ALSA
 	    && cw_is_pa_possible(NULL)) {
 
 		fprintf(stdout, "Selected sound system is ALSA, but sound on your system is handled by PulseAudio. Expect problems with timing.\n");

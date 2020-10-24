@@ -927,7 +927,7 @@ void tester_start_test_code(tester_t * tester)
 	/* Using Null sound system because this generator is only used
 	   to enqueue text and control key. Sound will be played by
 	   main generator used by xcwcp */
-	cw_gen_config_t gen_conf = { .sound_system = CW_AUDIO_NULL, .sound_device = NULL };
+	cw_gen_config_t gen_conf = { .sound_system = CW_AUDIO_NULL, .sound_device = { 0 } };
 	tester->gen = cw_gen_new(&gen_conf);
 	cw_tq_register_low_level_callback_internal(tester->gen->tq, low_tone_queue_callback, tester, 5);
 
@@ -1111,7 +1111,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 		cte->log_info(cte, "Test mode: poll representation, verify by polling character\n");
 	}
 
-	if (CW_SUCCESS != cw_generator_new(cte->current_sound_system, cte->current_sound_device)) {
+	if (CW_SUCCESS != cw_generator_new(cte->gen_conf.sound_system, cte->gen_conf.sound_device)) {
 		fprintf(stderr, "failed to create generator\n");
 		return cwt_retv_err;
 	}

@@ -50,12 +50,11 @@
 
 cw_config_t * cw_config_new(const char * program_name)
 {
-	cw_config_t *config = (cw_config_t *) malloc(sizeof (cw_config_t));
-	if (!config) {
+	cw_config_t *config = (cw_config_t *) calloc(1, sizeof (cw_config_t));
+	if (NULL == config) {
 		fprintf(stderr, "%s: can't allocate memory for configuration\n", program_name);
 		return NULL;
 	}
-	memset(config, 0, sizeof (cw_config_t));
 
 	config->program_name = strdup(program_name);
 	if (!(config->program_name)) {
@@ -67,8 +66,7 @@ cw_config_t * cw_config_new(const char * program_name)
 		return NULL;
 	}
 
-	config->sound_system = CW_AUDIO_NONE;
-	config->sound_device = NULL;
+	config->gen_conf.sound_system = CW_AUDIO_NONE;
 	config->send_speed = CW_SPEED_INITIAL;
 	config->frequency = CW_FREQUENCY_INITIAL;
 	config->volume = CW_VOLUME_INITIAL;
@@ -98,10 +96,6 @@ void cw_config_delete(cw_config_t ** config)
 			free((*config)->program_name);
 			(*config)->program_name = NULL;
 		}
-		if ((*config)->sound_device) {
-			free((*config)->sound_device);
-			(*config)->sound_device = NULL;
-		}
 		if ((*config)->input_file) {
 			free((*config)->input_file);
 			(*config)->input_file = NULL;
@@ -124,12 +118,12 @@ void cw_config_delete(cw_config_t ** config)
 int cw_config_is_valid(cw_config_t * config)
 {
 	/* Deal with odd argument combinations. */
-	if (config->sound_device) {
-		if (config->sound_system == CW_AUDIO_SOUNDCARD) {
+	if ('\0' != config->gen_conf.sound_device[0]) {
+		if (config->gen_conf.sound_system == CW_AUDIO_SOUNDCARD) {
 			fprintf(stderr, "libcw: a device has been specified for 'soundcard' sound system\n");
 			fprintf(stderr, "libcw: a device can be specified only for 'console', 'oss', 'alsa' or 'pulseaudio'\n");
 			return false;
-		} else if (config->sound_system == CW_AUDIO_NULL) {
+		} else if (config->gen_conf.sound_system == CW_AUDIO_NULL) {
 			fprintf(stderr, "libcw: a device has been specified for 'null' sound system\n");
 			fprintf(stderr, "libcw: a device can be specified only for 'console', 'oss', 'alsa' or 'pulseaudio'\n");
 			return false;

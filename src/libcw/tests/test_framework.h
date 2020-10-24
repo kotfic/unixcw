@@ -91,8 +91,7 @@ typedef struct cw_test_executor_t {
 
 	/* Sound system and test topic currently tested.
 	   Should be set right before calling a specific test function. */
-	enum cw_audio_systems current_sound_system;
-	char current_sound_device[LIBCW_SOUND_DEVICE_NAME_SIZE];
+	cw_gen_config_t gen_conf;
 	int current_topic;
 
 	/* Limit of characters that can be printed to console in one row. */

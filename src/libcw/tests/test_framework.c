@@ -781,7 +781,7 @@ void cw_test_print_test_footer(cw_test_executor_t * self, const char * test_name
 
 const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self)
 {
-	return cw_get_audio_system_label(self->current_sound_system);
+	return cw_get_audio_system_label(self->gen_conf.sound_system);
 }
 
 
@@ -789,7 +789,7 @@ const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self)
 
 const char * cw_test_get_current_sound_device(cw_test_executor_t * self)
 {
-	return self->current_sound_device;
+	return self->gen_conf.sound_device;
 }
 
 
@@ -831,13 +831,13 @@ const char * cw_test_get_current_topic_label(cw_test_executor_t * self)
 void cw_test_set_current_topic_and_sound_system(cw_test_executor_t * self, int topic, int sound_system)
 {
 	self->current_topic = topic;
-	self->current_sound_system = sound_system;
+	self->gen_conf.sound_system = sound_system;
 
-	self->current_sound_device[0] = '\0'; /* Clear value from previous run of test. */
-	switch (self->current_sound_system) {
+	self->gen_conf.sound_device[0] = '\0'; /* Clear value from previous run of test. */
+	switch (self->gen_conf.sound_system) {
 	case CW_AUDIO_ALSA:
 		if ('\0' != self->config->test_alsa_device_name[0]) {
-			snprintf(self->current_sound_device, sizeof (self->current_sound_device), "%s", self->config->test_alsa_device_name);
+			snprintf(self->gen_conf.sound_device, sizeof (self->gen_conf.sound_device), "%s", self->config->test_alsa_device_name);
 		}
 		break;
 	case CW_AUDIO_NULL:
@@ -1007,8 +1007,8 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 
 	self->console_n_cols = default_cw_test_print_n_chars;
 
-	self->current_sound_system = CW_AUDIO_NONE;
-	self->current_sound_device[0] = '\0';
+	self->gen_conf.sound_system = CW_AUDIO_NONE;
+	self->gen_conf.sound_device[0] = '\0';
 
 	snprintf(self->msg_prefix, sizeof (self->msg_prefix), "%s: ", msg_prefix);
 }
