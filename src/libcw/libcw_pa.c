@@ -361,7 +361,7 @@ static int cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
+static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
 {
 	const char * dev = cw_gen_pick_device_name_internal(gen->sound_device, CW_AUDIO_PA);
 

@@ -216,7 +216,7 @@ bool cw_is_console_possible(const char * device_name)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
+static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
 {
 	assert (gen->sound_device);
 

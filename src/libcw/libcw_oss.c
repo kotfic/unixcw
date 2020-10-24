@@ -259,7 +259,7 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
+cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
 {
 	/* TODO: there seems to be some redundancy between
 	   cw_oss_open_and_configure_sound_device_internal() and is_possible() function. */
