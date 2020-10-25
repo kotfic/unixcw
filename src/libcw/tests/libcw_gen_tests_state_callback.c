@@ -473,10 +473,10 @@ cwt_retv test_cw_gen_state_callback(cw_test_executor_t * cte)
 		if (CW_AUDIO_NONE == test_data->sound_system) {
 			continue;
 		}
-		if (cte->gen_conf.sound_system != test_data->sound_system) {
+		if (cte->current_gen_conf.sound_system != test_data->sound_system) {
 			continue;
 		}
-		if (cwt_retv_ok != test_cw_gen_state_callback_sub(cte, test_data, cte->gen_conf.sound_device)) {
+		if (cwt_retv_ok != test_cw_gen_state_callback_sub(cte, test_data, cte->current_gen_conf.sound_device)) {
 			retv = cwt_retv_err;
 			break;
 		}

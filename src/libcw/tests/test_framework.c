@@ -113,7 +113,7 @@ static const char * cw_test_get_current_topic_label(cw_test_executor_t * self);
 static const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self);
 static const char * cw_test_get_current_sound_device(cw_test_executor_t * self);
 
-static void cw_test_set_current_topic_and_sound_system(cw_test_executor_t * self, int topic, int sound_system);
+static void cw_test_set_current_topic_and_gen_config(cw_test_executor_t * self, int topic, int sound_system);
 
 static void cw_test_print_test_stats(cw_test_executor_t * self);
 
@@ -781,7 +781,7 @@ void cw_test_print_test_footer(cw_test_executor_t * self, const char * test_name
 
 const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self)
 {
-	return cw_get_audio_system_label(self->gen_conf.sound_system);
+	return cw_get_audio_system_label(self->current_gen_conf.sound_system);
 }
 
 
@@ -789,7 +789,7 @@ const char * cw_test_get_current_sound_system_label(cw_test_executor_t * self)
 
 const char * cw_test_get_current_sound_device(cw_test_executor_t * self)
 {
-	return self->gen_conf.sound_device;
+	return self->current_gen_conf.sound_device;
 }
 
 
@@ -824,20 +824,22 @@ const char * cw_test_get_current_topic_label(cw_test_executor_t * self)
    This is a private function so it is not put into cw_test_executor_t
    class.
 
-   Call this function before calling each test function. Topic and
-   sound system values to be passed to this function should be taken
-   from the same test set that the test function is taken.
+   Call this function before calling each test function. @p topic and @p
+   sound_system values to be passed to this function should be taken from the
+   same test set that the test function is taken.
 */
-void cw_test_set_current_topic_and_sound_system(cw_test_executor_t * self, int topic, int sound_system)
+static void cw_test_set_current_topic_and_gen_config(cw_test_executor_t * self, int topic, int sound_system)
 {
 	self->current_topic = topic;
-	self->gen_conf.sound_system = sound_system;
+	self->current_gen_conf.sound_system = sound_system;
 
-	self->gen_conf.sound_device[0] = '\0'; /* Clear value from previous run of test. */
-	switch (self->gen_conf.sound_system) {
+	self->current_gen_conf.sound_device[0] = '\0'; /* Clear value from previous run of test. */
+	switch (self->current_gen_conf.sound_system) {
 	case CW_AUDIO_ALSA:
 		if ('\0' != self->config->test_alsa_device_name[0]) {
-			snprintf(self->gen_conf.sound_device, sizeof (self->gen_conf.sound_device), "%s", self->config->test_alsa_device_name);
+			snprintf(self->current_gen_conf.sound_device,
+				 sizeof (self->current_gen_conf.sound_device),
+				 "%s", self->config->test_alsa_device_name);
 		}
 		break;
 	case CW_AUDIO_NULL:
@@ -1003,12 +1005,7 @@ void cw_test_init(cw_test_executor_t * self, FILE * stdout, FILE * stderr, const
 	self->get_total_errors_count = cw_test_get_total_errors_count;
 
 
-
-
 	self->console_n_cols = default_cw_test_print_n_chars;
-
-	self->gen_conf.sound_system = CW_AUDIO_NONE;
-	self->gen_conf.sound_device[0] = '\0';
 
 	snprintf(self->msg_prefix, sizeof (self->msg_prefix), "%s: ", msg_prefix);
 }
@@ -1363,7 +1360,7 @@ static cwt_retv iterate_over_test_objects(cw_test_executor_t * cte, cw_test_obje
 			resource_meas_start(&cte->resource_meas, LIBCW_TEST_MEAS_CPU_MEAS_INTERVAL_MSECS);
 		}
 
-		cw_test_set_current_topic_and_sound_system(cte, topic, sound_system);
+		cw_test_set_current_topic_and_gen_config(cte, topic, sound_system);
 		//fprintf(stderr, "+++ %s +++\n", test_obj->name);
 		const cwt_retv retv = test_obj->test_function(cte);
 

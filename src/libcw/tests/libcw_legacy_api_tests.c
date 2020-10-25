@@ -97,7 +97,7 @@ static int legacy_api_standalone_test_teardown(__attribute__((unused)) cw_test_e
 */
 int legacy_api_standalone_test_setup(cw_test_executor_t * cte, bool start_gen)
 {
-	if (CW_SUCCESS != cw_generator_new(cte->gen_conf.sound_system, cte->gen_conf.sound_device)) {
+	if (CW_SUCCESS != cw_generator_new(cte->current_gen_conf.sound_system, cte->current_gen_conf.sound_device)) {
 		cte->log_error(cte, "Can't create generator, stopping the test\n");
 		return cwt_retv_err;
 	}
@@ -1632,7 +1632,7 @@ int legacy_api_test_basic_gen_operations(cw_test_executor_t * cte)
 
 	/* Test setting up generator. */
 	{
-		cwret = LIBCW_TEST_FUT(cw_generator_new)(cte->gen_conf.sound_system, cte->gen_conf.sound_device);
+		cwret = LIBCW_TEST_FUT(cw_generator_new)(cte->current_gen_conf.sound_system, cte->current_gen_conf.sound_device);
 		cte->expect_op_int(cte, CW_SUCCESS, "==", cwret, "cw_generator_new()");
 		if (cwret != CW_SUCCESS) {
 			return -1;

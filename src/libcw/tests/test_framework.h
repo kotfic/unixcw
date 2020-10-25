@@ -89,9 +89,12 @@ typedef struct cw_test_executor_t {
 	/* Type suitable for srand48(). */
 	long int random_seed;
 
-	/* Sound system and test topic currently tested.
-	   Should be set right before calling a specific test function. */
-	cw_gen_config_t gen_conf;
+	/*
+	  Sound system and test topic currently tested.  Should be set right
+	  before calling a specific test function.  'current' word highlights
+	  the fact that this is configuration for current test.
+	*/
+	cw_gen_config_t current_gen_conf;
 	int current_topic;
 
 	/* Limit of characters that can be printed to console in one row. */

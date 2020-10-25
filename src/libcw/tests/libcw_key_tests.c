@@ -82,7 +82,7 @@ static int key_setup(cw_test_executor_t * cte, cw_key_t ** key, cw_gen_t ** gen)
 	}
 
 
-	*gen = cw_gen_new(&cte->gen_conf);
+	*gen = cw_gen_new(&cte->current_gen_conf);
 	if (!*gen) {
 		cte->log_error(cte, "Can't create gen, stopping the test\n");
 		return -1;

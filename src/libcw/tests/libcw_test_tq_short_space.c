@@ -122,7 +122,7 @@ int legacy_api_test_tq_short_space(cw_test_executor_t * cte)
 bool single_test_over_speed_range(struct tq_short_space_data * data, int i, int n)
 {
 	/* Library initialization. */
-	cw_generator_new(data->cte->gen_conf.sound_system, data->cte->gen_conf.sound_device);
+	cw_generator_new(data->cte->current_gen_conf.sound_system, data->cte->current_gen_conf.sound_device);
 	cw_generator_start();
 
 

@@ -94,7 +94,7 @@ int main(int argc, char * const argv[])
 		   the time (unless a specific feature is being
 		   debugged): show all warnings an errors. */
 		cw_debug_set_flags(&cw_debug_object, CW_DEBUG_MASK);
-		cw_debug_object.level = CW_DEBUG_WARNING;
+		cw_debug_object.level = CW_DEBUG_INFO;
 
 		cw_debug_set_flags(&cw_debug_object_dev, CW_DEBUG_MASK);
 		cw_debug_object_dev.level = CW_DEBUG_WARNING;

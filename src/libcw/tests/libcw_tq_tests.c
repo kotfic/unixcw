@@ -68,7 +68,7 @@ static cwt_retv test_helper_fill_queue(cw_test_executor_t * cte, cw_tone_queue_t
 
 static void gen_setup(cw_test_executor_t * cte, cw_gen_t ** gen)
 {
-	*gen = cw_gen_new(&cte->gen_conf);
+	*gen = cw_gen_new(&cte->current_gen_conf);
 	if (!*gen) {
 		cte->log_error(cte, "Can't create generator, stopping the test\n");
 		return;
@@ -1135,7 +1135,7 @@ cwt_retv test_cw_tq_wait_for_level_internal(cw_test_executor_t * cte)
 	cw_gen_t * gen = NULL;
 
 	for (int i = 0; i < loops; i++) {
-		gen = cw_gen_new(&cte->gen_conf);
+		gen = cw_gen_new(&cte->current_gen_conf);
 		cte->assert2(cte, gen, "failed to create a tone queue\n");
 		cw_gen_start(gen);
 
