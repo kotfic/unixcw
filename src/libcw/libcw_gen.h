@@ -11,13 +11,14 @@
 
 #include "libcw.h"
 #include "libcw2.h"
+
+#include "cw_config.h"
 #include "libcw_alsa.h"
 #include "libcw_console.h"
 #include "libcw_key.h"
 #include "libcw_oss.h"
 #include "libcw_pa.h"
 #include "libcw_tq.h"
-#include "cw_config.h"
 
 
 

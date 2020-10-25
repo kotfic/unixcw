@@ -285,7 +285,11 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, __attri
 	/* Get fragment size in bytes, may be different than requested
 	   with ioctl(..., SNDCTL_DSP_SETFRAGMENT), and, in particular,
 	   can be different than 2^N. */
-	int rv = ioctl(gen->oss_data.sound_sink_fd, SNDCTL_DSP_GETBLKSIZE, &size);
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
+	int rv = ioctl(gen->oss_data.sound_sink_fd, SNDCTL_DSP_GETBLKSIZE, &size); 
 	if (-1 == rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: ioctl(SNDCTL_DSP_GETBLKSIZE): '%s'", strerror(errno));
@@ -340,6 +344,10 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, __attri
 cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 {
 	int parameter = 0; /* Ignored. */
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, SNDCTL_DSP_SYNC, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_SYNC): '%s'", strerror(errno));
@@ -370,6 +378,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 	/* Don't cast second argument of ioctl() to int, because you will get
 	   this warning in dmesg (found on FreeBSD 12.1):
 	   "ioctl sign-extension ioctl ffffffffc0045005" */
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, SNDCTL_DSP_SETFMT, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_SETFMT): '%s'", strerror(errno));
@@ -387,6 +399,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 	/* Don't cast second argument of ioctl() to int, because you will get
 	   this warning in dmesg (found on FreeBSD 12.1):
 	   "ioctl sign-extension ioctl ffffffffc0045006" */
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, SNDCTL_DSP_CHANNELS, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_CHANNELS): '%s'", strerror(errno));
@@ -407,6 +423,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 		/* Don't cast second argument of ioctl() to int, because you will get
 		   this warning in dmesg (found on FreeBSD 12.1):
 		   "ioctl sign-extension ioctl ffffffffc0045002" */
+		/* Don't let clang-tidy report warning about signed. To fix
+		   the warning we would have to introduce casting, and that
+		   would introduce runtime warnings in dmesg on FreeBSD. */
+		/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 		if (0 == ioctl(fd, SNDCTL_DSP_SPEED, &rate)) {
 			if (rate != cw_supported_sample_rates[i]) {
 				cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING, MSG_PREFIX "ioctls: imprecise sample rate:");
@@ -430,6 +450,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 
 
 	audio_buf_info buff;
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, SNDCTL_DSP_GETOSPACE, &buff)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_GETOSPACE): '%s'", strerror(errno));
@@ -462,6 +486,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 	/* Don't cast second argument of ioctl() to int, because you will get
 	   this warning in dmesg (found on FreeBSD 12.1):
 	   "ioctl sign-extension ioctl ffffffffc004500a" */
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, SNDCTL_DSP_SETFRAGMENT, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_SETFRAGMENT): '%s'", strerror(errno));
@@ -471,6 +499,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 		      MSG_PREFIX "ioctls: fragment size is 2^%d = %d", parameter & 0x0000ffff, 2 << ((parameter & 0x0000ffffU) - 1));
 
 	/* Query fragment size just to get the driver buffers set. */
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, SNDCTL_DSP_GETBLKSIZE, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_DSP_GETBLKSIZE): '%s'", strerror(errno));
@@ -492,6 +524,10 @@ cw_ret_t cw_oss_open_device_ioctls_internal(int fd, unsigned int * sample_rate)
 	}
 #endif
 
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, SNDCTL_DSP_GETOSPACE, &buff)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "ioctls: ioctl(SNDCTL_GETOSPACE): '%s'", strerror(errno));
@@ -553,6 +589,10 @@ cw_ret_t cw_oss_get_version_internal(int fd, cw_oss_version_t * version)
 	assert (fd != -1);
 
 	int parameter = 0;
+	/* Don't let clang-tidy report warning about signed. To fix
+	   the warning we would have to introduce casting, and that
+	   would introduce runtime warnings in dmesg on FreeBSD. */
+	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
 	if (-1 == ioctl(fd, OSS_GETVERSION, &parameter)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "get version: ioctl OSS_GETVERSION");
