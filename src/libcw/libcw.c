@@ -1313,9 +1313,21 @@ int cw_get_noise_spike_threshold(void)
 void cw_get_receive_statistics(double *dot_sd, double *dash_sd,
 			       double *element_end_sd, double *character_end_sd)
 {
-	cw_rec_get_statistics_internal(&cw_receiver, (float *) dot_sd, (float *) dash_sd,
-				       (float *) element_end_sd, (float *) character_end_sd);
+	float dot_sd_f = 0.0F;
+	float dash_sd_f = 0.0F;
+	float element_end_sd_f = 0.0F;
+	float character_end_sd_f = 0.0F;
 
+	cw_rec_get_statistics_internal(&cw_receiver,
+				       &dot_sd_f,
+				       &dash_sd_f,
+				       &element_end_sd_f,
+				       &character_end_sd_f);
+
+	*dot_sd           = (double) dot_sd_f;
+	*dash_sd          = (double) dash_sd_f;
+	*element_end_sd   = (double) element_end_sd_f;
+	*character_end_sd = (double) character_end_sd_f;
 	return;
 }
 

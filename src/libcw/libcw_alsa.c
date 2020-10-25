@@ -816,7 +816,7 @@ static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_p
 		return CW_FAILURE;
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-			      MSG_PREFIX "set hw params: sample rate: %d", gen->sample_rate);
+			      MSG_PREFIX "set hw params: sample rate: %u", gen->sample_rate);
 		return CW_SUCCESS;
 	}
 }
@@ -956,7 +956,7 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
 	cw_alsa.snd_pcm_hw_params_set_periods(gen->alsa_data.pcm_handle, hw_params, n_periods, dir);
 	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "set hw params: can't set periods: %s / %u", cw_alsa.snd_strerror(snd_rv), n_periods);
+			      MSG_PREFIX "set hw params: can't set periods: %s / %d", cw_alsa.snd_strerror(snd_rv), n_periods);
 		return CW_FAILURE;
 	}
 
