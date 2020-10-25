@@ -153,7 +153,31 @@ int cw_generator_new(int audio_system, const char *device)
 {
 	cw_gen_config_t gen_conf = { .sound_system = audio_system };
 	snprintf(gen_conf.sound_device, sizeof (gen_conf.sound_device), "%s", device);
-	cw_generator = cw_gen_new(&gen_conf);
+	return cw_generator_new2(&gen_conf);
+}
+
+
+
+
+/**
+   \brief Create new generator from given config
+
+   Allocate memory for new generator data structure, set up default values
+   of some of the generator's properties.
+   The function does not start the generator (generator does not produce
+   a sound), you have to use cw_generator_start() for this.
+
+   Notice that the function doesn't return a generator variable. There
+   is at most one generator variable at any given time. You can't have
+   two generators. In some future version of the library the function
+   will return pointer to newly allocated generator, and then you
+   could have as many of them as you want, but not yet.
+
+   \param gen_conf configuration for generator
+*/
+int cw_generator_new2(const cw_gen_config_t * gen_conf)
+{
+	cw_generator = cw_gen_new(gen_conf);
 	if (!cw_generator) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
 			      "libcw: can't create generator");

@@ -51,6 +51,16 @@ enum { CW_SYMBOL_SPACE = ' ' };
 
 
 
+typedef struct cw_gen_durations_t {
+	int unit_duration;
+	int weighting_duration;
+	int dot_duration;
+	int dash_duration;
+} cw_gen_durations_t;
+
+
+
+
 struct cw_gen_struct {
 
 	/* Tone queue. */
@@ -440,9 +450,11 @@ void cw_generator_delete_internal(void);
 
 void cw_gen_reset_parameters_internal(cw_gen_t * gen);
 void cw_gen_sync_parameters_internal(cw_gen_t * gen);
+void cw_gen_calculate_durations_internal(cw_gen_durations_t * durations, int speed, int weighting);
 
 const char * cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system);
 
+int cw_generator_new2(const cw_gen_config_t * gen_conf);
 
 
 

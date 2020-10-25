@@ -231,12 +231,13 @@ typedef struct cw_alsa_handle_t cw_alsa_handle_t;
 /* Constants specific to ALSA sound system configuration */
 static const snd_pcm_format_t CW_ALSA_SAMPLE_FORMAT = SND_PCM_FORMAT_S16; /* "Signed 16 bit CPU endian"; I'm guessing that "CPU endian" == "native endianess" */
 
-static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params);
+static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t config_period_size);
 static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params);
-static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t * actual_period_size);
+static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t intended_period_size, snd_pcm_uframes_t * actual_period_size);
 static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t actual_period_size);
 static void cw_alsa_print_hw_params_internal(snd_pcm_hw_params_t * hw_params, const char * where);
 static void cw_alsa_test_hw_period_sizes(cw_gen_t * gen);
+static void cw_alsa_get_intended_period_size_internal(const cw_gen_t * gen, snd_pcm_uframes_t config_period_size, snd_pcm_uframes_t * intended_period_size);
 
 #if CW_ALSA_SW_PARAMS_CONFIG
 static cw_ret_t cw_alsa_set_sw_params_internal(cw_gen_t * gen, snd_pcm_sw_params_t * sw_params);
@@ -405,14 +406,15 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    You must use cw_gen_set_sound_device_internal() before calling
    this function. Otherwise generator @p gen won't know which device to open.
 
-   @reviewed 2020-07-07
+   @reviewed 2020-10-24
 
    @param[in] gen generator for which to open and configure PCM handle
+   @param[in] gen_conf
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
+static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
 	int snd_rv = cw_alsa.snd_pcm_open(&gen->alsa_data.pcm_handle,
 					  gen->sound_device,       /* name */
@@ -440,7 +442,7 @@ static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen,
 		return CW_FAILURE;
 	}
 
-	if (CW_SUCCESS != cw_alsa_set_hw_params_internal(gen, hw_params)) {
+	if (CW_SUCCESS != cw_alsa_set_hw_params_internal(gen, hw_params, gen_conf->alsa_period_size)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: can't set ALSA hw params");
 		cw_alsa.snd_pcm_hw_params_free(hw_params);
@@ -614,15 +616,19 @@ static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv
 /**
    @brief Set up hardware buffer parameters of ALSA sink
 
+   @p config_period_size period may be zero, the function will calculate 
+   the period size using its own criteria.
+
    @param[in] gen generator with opened ALSA PCM handle, for which HW parameters should be configured
    @param[in] hw_params allocated hw params data structure to be used by this function
+   @param[in] config_period_size period size passed through config or command line option
 
-   @reviewed 2020-07-09
+   @reviewed 2020-10-24
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params)
+static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t config_period_size)
 {
 	/* Get full configuration space. */
 	int snd_rv = cw_alsa.snd_pcm_hw_params_any(gen->alsa_data.pcm_handle, hw_params);
@@ -732,8 +738,10 @@ static cw_ret_t cw_alsa_set_hw_params_internal(cw_gen_t * gen, snd_pcm_hw_params
 	}
 
 	/* Set period size. */
-	snd_pcm_uframes_t actual_period_size = 0;
-	if (CW_SUCCESS != cw_alsa_set_hw_params_period_size_internal(gen, hw_params, &actual_period_size)) {
+	snd_pcm_uframes_t intended_period_size = 0; /* What we would like the period size to be. */
+	cw_alsa_get_intended_period_size_internal(gen, config_period_size, &intended_period_size);
+	snd_pcm_uframes_t actual_period_size = 0;   /* What it really is (what is allowed by HW). */
+	if (CW_SUCCESS != cw_alsa_set_hw_params_period_size_internal(gen, hw_params, intended_period_size, &actual_period_size)) {
 		return CW_FAILURE;
 	}
 
@@ -826,37 +834,18 @@ static cw_ret_t cw_alsa_set_hw_params_sample_rate_internal(cw_gen_t * gen, snd_p
 
    @param[in] gen generator with opened ALSA PCM handle, for which HW parameters should be configured
    @param[in] hw_params allocated hw params data structure to be used by this function
-   @param[out] actual_period_size period size that has been selected
+   @param[in] intended_period_size period size that we would like to set in ALSA
+   @param[out] actual_period_size period size that has been actually set in ALSA
 
-   @reviewed 2020-07-09
+   @reviewed 2020-10-24
 
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t * actual_period_size)
+static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_pcm_hw_params_t * hw_params, snd_pcm_uframes_t intended_period_size, snd_pcm_uframes_t * actual_period_size)
 {
 	int snd_rv = 0;
 	int dir = 0;
-
-	uint64_t n_alsa_frames_smallest = 0;
-	{
-		/* Calculate duration of shortest dot (at highest speed). */
-		const int unit_length = CW_DOT_CALIBRATION / CW_SPEED_MAX;
-		const int weighting_length = (2 * (CW_WEIGHTING_MIN - 50) * unit_length) / 100;
-		const int dot_len = unit_length + weighting_length;
-		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
-			      MSG_PREFIX "shortest dot = %d [us]", dot_len);
-
-
-		/* Now calculate count of ALSA frames that will be
-		   needed to play that shortest dot. */
-		n_alsa_frames_smallest = gen->sample_rate * dot_len / 1000000;
-		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
-			      MSG_PREFIX "n_samples for shortest dot = %"PRIu64" [us]", n_alsa_frames_smallest);
-	}
-
-	/* We want to have few periods per shortest dot. */
-	snd_pcm_uframes_t intended_period_size = n_alsa_frames_smallest / 5;
 
 	/* See if the intended period is within range of values supported by HW. */
 	snd_pcm_uframes_t period_size_min = 0;
@@ -1304,6 +1293,57 @@ void cw_alsa_drop_internal(cw_gen_t * gen)
 	cw_alsa.snd_pcm_drop(gen->alsa_data.pcm_handle);
 
 	return;
+}
+
+
+
+
+/**
+   @brief Calculate period size that we would like to try to set in ALSA
+
+   If @p config_period_size is zero, the function will try to calculate the
+   period size using duration of a shortest possible dot as basis.
+
+   If @p config_period_size is not zero (i.e. client code requested specific
+   period size), the value will be used instead.
+
+   The calculated @p intended_period_size should be passed to ALSA hw and it
+   may or may not be accepted by ALSA API.
+
+   @reviewed 2017-10-24
+
+   @param[in] gen generator with current sample rate
+   @param[in] config_period_size period size that is specified in client code configuration
+   @param[out] intended_period_size period size that we (client code or library) would like to have configured in ALSA
+*/
+static void cw_alsa_get_intended_period_size_internal(const cw_gen_t * gen, snd_pcm_uframes_t config_period_size, snd_pcm_uframes_t * intended_period_size)
+{
+	if (0 == config_period_size) {
+		/* Period size has not been specified in config or command
+		   line. Calculate it. */
+
+		/* Calculate duration of shortest dot (at highest speed). */
+		cw_gen_durations_t durations = { 0 };
+		cw_gen_calculate_durations_internal(&durations, CW_SPEED_MAX, CW_WEIGHTING_MIN);
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
+			      MSG_PREFIX "shortest dot = %d [us]", durations.dot_duration);
+
+		/* Now calculate count of ALSA frames that will be
+		   needed to play that shortest dot. */
+		const uint64_t n_alsa_frames_smallest = gen->sample_rate * durations.dot_duration / 1000000;
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
+			      MSG_PREFIX "n_samples for shortest dot = %"PRIu64" [samples]", n_alsa_frames_smallest);
+
+		/* We want to have few periods per shortest dot. */
+		*intended_period_size = n_alsa_frames_smallest / 5;
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+			      MSG_PREFIX "calculated intended period size = %lu [samples]", *intended_period_size);
+	} else {
+		/* Use value provided by user (by client program). */
+		*intended_period_size = config_period_size;
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
+			      MSG_PREFIX "config-provided intended period size = %lu [samples]", *intended_period_size);
+	}
 }
 
 

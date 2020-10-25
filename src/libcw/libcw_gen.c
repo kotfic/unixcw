@@ -3315,3 +3315,17 @@ const char * cw_gen_pick_device_name_internal(const char * alternative_device_na
 	return result;
 }
 
+
+
+
+void cw_gen_calculate_durations_internal(cw_gen_durations_t * durations, int speed, int weighting)
+{
+	durations->unit_duration = CW_DOT_CALIBRATION / speed;
+	durations->weighting_duration = (2 * (weighting - 50) * durations->unit_duration) / 100;
+	durations->dot_duration = durations->unit_duration + durations->weighting_duration;
+
+	return;
+}
+
+
+

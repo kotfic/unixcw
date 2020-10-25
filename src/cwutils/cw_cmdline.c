@@ -423,6 +423,10 @@ void cw_print_help(cw_config_t *config)
 		fprintf(stderr,       _("                         valid values: %d - %d\n"), CW_VOLUME_MIN, CW_VOLUME_MAX);
 		fprintf(stderr,       _("                         default value: %d\n"), CW_VOLUME_INITIAL);
 		fprintf(stderr, "\n");
+
+		fprintf(stderr, "%s", _("Options specific to sound systems (unstable):\n"));
+		fprintf(stderr, "%s", _("  -1, --alsa-period-size=size          set ALSA period size (in samples)\n"));
+		fprintf(stderr, "\n");
 	}
 
 	if (config->has_feature_dot_dash_params) {
@@ -544,6 +548,7 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 		append_option(buffer, size, &n, "w:|wpm");
 		append_option(buffer, size, &n, "t:|tone");
 		append_option(buffer, size, &n, "v:|volume");
+		append_option(buffer, size, &n, "1:|alsa-period-size");
 	}
 	if (config->has_feature_dot_dash_params) {
 		append_option(buffer, size, &n, "g:|gap");
@@ -604,7 +609,7 @@ cw_ret_t cw_process_program_arguments(int argc, char *const argv[], cw_config_t 
 	/* All options that can be present in command line. I will be
 	   snprintf()-ing to the buffer, so I specify N times the expected
 	   size, just to be safe. */
-	char all_cmdline_options[5 * sizeof ("s:|system,d:|device,w:|wpm,t:|tone,v:|volume,g:|gap,k:|weighting,f:|infile,F:|outfile,e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments,h|help,V|version")];
+	char all_cmdline_options[5 * sizeof ("s:|system,d:|device,w:|wpm,t:|tone,v:|volume,1:|alsa-period-size,g:|gap,k:|weighting,f:|infile,F:|outfile,e|noecho,m|nomessages,c|nocommands,o|nocombinations,p|nocomments,h|help,V|version")];
 	cw_config_get_supported_feature_cmdline_options(config, all_cmdline_options, sizeof (all_cmdline_options));
 
 	while (get_option(argc, argv, all_cmdline_options, &option, &argument)) {
@@ -776,24 +781,28 @@ int cw_process_option(int opt, const char *optarg, cw_config_t *config)
 		/* TODO: access() */
 		break;
 
-        case 'e':
+	case 'e':
 		config->do_echo = false;
 		break;
 
-        case 'm':
+	case 'm':
 		config->do_errors = false;
 		break;
 
-        case 'c':
+	case 'c':
 		config->do_commands = false;
 		break;
 
-        case 'o':
+	case 'o':
 		config->do_combinations = false;
 		break;
 
-        case 'p':
+	case 'p':
 		config->do_comments = false;
+		break;
+
+	case '1':
+		config->gen_conf.alsa_period_size = strtoul(optarg, NULL, 10);
 		break;
 
 	case 'h':

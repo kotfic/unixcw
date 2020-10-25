@@ -67,7 +67,7 @@ typedef enum cw_audio_systems cw_sound_system_t;
 typedef struct cw_gen_config_t {
 	cw_sound_system_t sound_system;
 	char sound_device[LIBCW_SOUND_DEVICE_NAME_SIZE];
-	unsigned int alsa_period_size;
+	long unsigned int alsa_period_size; /* "long unsigned" follows type of snd_pcm_uframes_t. */
 } cw_gen_config_t;
 
 

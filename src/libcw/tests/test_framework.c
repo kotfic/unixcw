@@ -833,6 +833,11 @@ static void cw_test_set_current_topic_and_gen_config(cw_test_executor_t * self, 
 	self->current_topic = topic;
 	self->current_gen_conf.sound_system = sound_system;
 
+	/* TODO: we have to somehow organize copying of these values from
+	   program config to test executor config. For now this is ad-hoc
+	   solution. */
+	self->current_gen_conf.alsa_period_size = self->config->gen_conf.alsa_period_size;
+
 	self->current_gen_conf.sound_device[0] = '\0'; /* Clear value from previous run of test. */
 	switch (self->current_gen_conf.sound_system) {
 	case CW_AUDIO_ALSA:
