@@ -2684,7 +2684,7 @@ void cw_gen_reset_parameters_internal(cw_gen_t * gen)
    @brief Synchronize generator's low level timing parameters
 
    @internal
-   @reviewed 2020-08-06
+   @reviewed 2020-10-24
    @endinternal
 
    @param[in] gen generator for which to synchronize parameters
@@ -2698,13 +2698,17 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 		return;
 	}
 
-	/* Set the length of a Dot to be a Unit with any weighting
-	   adjustment, and the length of a Dash as three Dot lengths.
-	   The weighting adjustment is by adding or subtracting a
-	   length based on 50 % as a neutral weighting. */
-	const int unit_length = CW_DOT_CALIBRATION / gen->send_speed;
-	const int weighting_length = (2 * (gen->weighting - 50) * unit_length) / 100;
-	gen->dot_duration = unit_length + weighting_length;
+	/*
+	  Set the length of a Dot to be a Unit with any weighting
+	  adjustment, and the length of a Dash as three Dot lengths.
+	  The weighting adjustment is by adding or subtracting a
+	  length based on 50 % as a neutral weighting.
+
+	  TODO: use cw_gen_calculate_durations_internal() here.
+	*/
+	const int unit_duration = CW_DOT_CALIBRATION / gen->send_speed;
+	const int weighting_duration = (2 * (gen->weighting - 50) * unit_duration) / 100;
+	gen->dot_duration = unit_duration + weighting_duration;
 	gen->dash_duration = 3 * gen->dot_duration;
 
 	/* In proper Morse code timing the following three rules are given:
@@ -2735,10 +2739,10 @@ void cw_gen_sync_parameters_internal(cw_gen_t * gen)
 	   timed (PARIS has 22 full units, and 28 empty ones).
 	   Inter-mark-space and end of character delays take
 	   weightings into account. */
-	gen->ims_duration = unit_length - (28 * weighting_length) / 22;
-	gen->ics_duration = 3 * unit_length - gen->ims_duration;
-	gen->iws_duration = 7 * unit_length - gen->ics_duration;
-	gen->additional_space_duration = gen->gap * unit_length;
+	gen->ims_duration = unit_duration - (28 * weighting_duration) / 22;
+	gen->ics_duration = 3 * unit_duration - gen->ims_duration;
+	gen->iws_duration = 7 * unit_duration - gen->ics_duration;
+	gen->additional_space_duration = gen->gap * unit_duration;
 
 	/* For "Farnsworth", there also needs to be an adjustment
 	   delay added to the end of words, otherwise the rhythm is
