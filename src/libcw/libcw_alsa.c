@@ -932,13 +932,19 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
 {
 	int snd_rv = 0;
 
-	/* ALSA documentation says about buffer size that it
-	   should be two times period size. See e.g. here:
-	   https://www.alsa-project.org/wiki/FramesPeriods:
-	   "Commonly this is 2*period size".
+	/*
+	  ALSA documentation says about buffer size that it should be
+	  two times period size. See e.g. here:
+	  https://www.alsa-project.org/wiki/FramesPeriods: "Commonly
+	  this is 2*period size".
 
-	   We can experiment here with other value. */
-	const int n_periods = 3;
+	  We can experiment here with other value.
+	  
+	  Initially it was set to 3, but that produced too many ALSA
+	  buffer underruns on my oldest test machine. Changing to 2
+	  made things worse. Increasing it to 4 improved situation.
+	*/
+	const int n_periods = 4;
 	snd_pcm_uframes_t intended_buffer_size = actual_period_size * n_periods;
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "Will try to set intended buffer size %lu", intended_buffer_size);
@@ -1323,6 +1329,9 @@ static void cw_alsa_get_intended_period_size_internal(const cw_gen_t * gen, snd_
 		   line. Calculate it. */
 
 		/* Calculate duration of shortest dot (at highest speed). */
+		/* TODO: maybe we could calculate the period size for
+		   *current* speed and re-configure ALSA hw buffer
+		   every time the speed changes? */
 		cw_gen_durations_t durations = { 0 };
 		cw_gen_calculate_durations_internal(&durations, CW_SPEED_MAX, CW_WEIGHTING_MIN);
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
@@ -1334,8 +1343,14 @@ static void cw_alsa_get_intended_period_size_internal(const cw_gen_t * gen, snd_
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_DEBUG,
 			      MSG_PREFIX "n_samples for shortest dot = %"PRIu64" [samples]", n_alsa_frames_smallest);
 
-		/* We want to have few periods per shortest dot. */
-		*intended_period_size = n_alsa_frames_smallest / 5;
+		/*
+		  We want to have few periods per shortest dot.
+
+		  Initial denominator '5' resulted in too many ALSA
+		  buffer underruns on my older test machine, so I
+		  decreased it to '3'.
+		*/
+		*intended_period_size = n_alsa_frames_smallest / 3;
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 			      MSG_PREFIX "calculated intended period size = %lu [samples]", *intended_period_size);
 	} else {
