@@ -77,6 +77,7 @@
 #if defined(__linux__)
 #include <sys/prctl.h> /* prctl() */
 #elif defined(__FreeBSD__)
+#include <pthread_np.h> /* pthread_set_name_np() */
 #endif
 
 
@@ -1058,6 +1059,7 @@ void * cw_gen_dequeue_and_generate_internal(void * arg)
 	   _GNU_SOURCE". */
 	prctl(PR_SET_NAME, name, 0, 0, 0);
 #elif defined(__FreeBSD__)
+	pthread_set_name_np(pthread_self(), name);
 #endif
 
 	/* Tone dequeued in previous call to cw_tq_dequeue_internal(). */
