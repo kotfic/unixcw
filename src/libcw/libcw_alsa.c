@@ -267,7 +267,7 @@ static cw_alsa_handle_t cw_alsa;
    -# whether it's possible to open ALSA device specified by @p device_name
 
    If it's possible to use ALSA with given device name, the function leaves
-   library handle (returned by dlopne()) open and some library function
+   library handle (returned by dlopen()) open and some library function
    symbols loaded, but does not leave any ALSA PCM handle open.
 
    @internal TODO: the function does too much. It a) checks if ALSA output is possible, and b) loads library symbols into global variable for the rest of the code to use. The function should have its own copy of cw_alsa_handle_t object, and the global object should go away (there should be per-generator cw_alsa_handle_t object). See FIXME/TODO notes in definition of struct cw_alsa_handle_t type. @endinternal

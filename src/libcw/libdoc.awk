@@ -191,7 +191,7 @@ function handle_function_documentation()
 		# \param in function's parameters specification,
 		# \return in function's return values specification.
 		sub(/^ *\\brief /, "Brief: ")
-		sub(/^ *@brief /, "\nBrief: ")
+		sub(/^ *@brief /, "Brief: ")
 
 		sub(/^ *\\param /, "Parameter: ")
 		sub(/^ *@param /, "Parameter: ")
