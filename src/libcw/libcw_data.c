@@ -802,8 +802,8 @@ bool cw_representation_is_valid(const char * representation)
    known character, function returns CW_SUCCESS. Additionally, if @p character is
    non-NULL, function puts the looked up character in @p character.
 
-   @p character should be allocated by caller. Function assumes that @p
-   character being NULL pointer is a valid situation, and can return
+   @p character should be allocated by caller. Function assumes that
+   @p character being NULL pointer is a valid situation, and can return
    CW_SUCCESS in such situation.
 
    On error, function returns CW_FAILURE. errno is set to EINVAL if any
@@ -851,8 +851,8 @@ int cw_lookup_representation(const char * representation, char * character)
    Function checks @p representation, and if it is valid and represents
    a known character, function returns the character (a non-zero value).
 
-   On error, function returns zero (character represented by @p
-   representation was not found).
+   On error, function returns zero (character represented by
+   @p representation was not found).
 
    @internal
    @reviewed 2020-07-26
@@ -1335,8 +1335,8 @@ int cw_check_character(char character)
 
    Space character (' ') is also considered to be a valid character.
 
-   @exception EINVAL on failure (when an invalid character has been found in @p
-   string).
+   @exception EINVAL on failure (when an invalid character has been found in
+   @p string).
 
    Notice the difference in errno set by cw_character_is_valid() (ENOENT) and
    cw_string_is_valid() (EINVAL). This different behaviour goes way back to

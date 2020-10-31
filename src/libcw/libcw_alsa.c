@@ -270,12 +270,7 @@ static cw_alsa_handle_t cw_alsa;
    library handle (returned by dlopne()) open and some library function
    symbols loaded, but does not leave any ALSA PCM handle open.
 
-   TODO: the function does too much. It a) checks if ALSA output is possible,
-   and b) loads library symbols into global variable for the rest of the code
-   to use. The function should have its own copy of cw_alsa_handle_t object,
-   and the global object should go away (there should be per-generator
-   cw_alsa_handle_t object).
-   See FIXME/TODO notes in definition of struct cw_alsa_handle_t type.
+   @internal TODO: the function does too much. It a) checks if ALSA output is possible, and b) loads library symbols into global variable for the rest of the code to use. The function should have its own copy of cw_alsa_handle_t object, and the global object should go away (there should be per-generator cw_alsa_handle_t object). See FIXME/TODO notes in definition of struct cw_alsa_handle_t type. @endinternal
 
    @reviewed 2020-07-04
 

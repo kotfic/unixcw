@@ -191,10 +191,9 @@ void cw_debug_set_flags(cw_debug_t * debug_object, uint32_t flags)
 
    @internal
    @reviewed 2020-08-01
-
-   TODO: there is some initialization code using LIBCW_DEBUG env. Perhaps we
-   should include it somehow in libcw2 code.
    @endinternal
+
+   @internal TODO: there is some initialization code using LIBCW_DEBUG env. Perhaps we should include it somehow in libcw2 code. @endinternal
 
    @return value of library's debug flags variable
 */

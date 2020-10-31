@@ -721,9 +721,8 @@ cw_ret_t cw_key_ik_update_graph_state_internal(volatile cw_key_t * key)
 
    @exception EBUSY if the tone queue or straight key are using the sound
    card, console speaker, or keying system.
-   @internal
-   TODO: clarify the above statement about "using X, Y, or Z"
-   @endinternal
+
+   @internal TODO: clarify the above statement about "using X, Y, or Z" @endinternal
 
    @internal
    @reviewed 2020-08-02

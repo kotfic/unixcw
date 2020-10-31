@@ -125,8 +125,8 @@ static cw_ret_t cw_console_kiocsound_wrapper_internal(cw_gen_t * gen, cw_key_val
 /**
    @brief Check if it is possible to open console buzzer output
 
-   Function does a test opening and test writing to console buzzer device @p
-   device_name, but it closes it before returning.
+   Function does a test opening and test writing to console buzzer device
+   @p device_name, but it closes it before returning.
 
    The function tests that the given console buzzer device exists, and that it
    will accept the KIOCSOUND ioctl.  It unconditionally returns false

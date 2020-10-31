@@ -886,9 +886,7 @@ void cw_rec_set_adaptive_mode_internal(cw_rec_t * rec, bool adaptive)
 
    See cw_rec_set_adaptive_mode_internal() for more info.
 
-   @internal
-   TODO: this function and cw_rec_set_adaptive_mode_internal() are redundant.
-   @endinternal
+   @internal TODO: this function and cw_rec_set_adaptive_mode_internal() are redundant. @endinternal
 
    @internal
    @reviewed 2020-08-09
@@ -910,9 +908,7 @@ void cw_rec_enable_adaptive_mode(cw_rec_t * rec)
 
    See cw_rec_set_adaptive_mode_internal() for more info.
 
-   @internal
-   TODO: this function and cw_rec_set_adaptive_mode_internal() are redundant.
-   @endinternal
+   @internal TODO: this function and cw_rec_set_adaptive_mode_internal() are redundant. @endinternal
 
    @internal
    @reviewed 2020-08-09
@@ -1509,8 +1505,8 @@ cw_ret_t cw_rec_add_mark(cw_rec_t * rec, const struct timeval * timestamp, char 
 
    Function returns a representation of a character. After the character may
    come an inter-character-space or inter-word-space. Which of the two occurs
-   depends on value of a timestamp, either passed explicitly through @p
-   timestamp, or generated internally by the function at the moment of the
+   depends on value of a timestamp, either passed explicitly through
+   @p timestamp, or generated internally by the function at the moment of the
    call. Depending on the duration of the Space, @p is_end_of_word is set
    accordingly.
 

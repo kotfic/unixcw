@@ -137,8 +137,8 @@ int cw_version(void)
 /**
    @brief Return version number of libcw library
 
-   Return version number of the library, split into @p current, @p
-   revision, @p age. These three properties are described here:
+   Return version number of the library, split into @p current,
+   @p revision, @p age. These three properties are described here:
    http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 
    @reviewed 2020-08-17
@@ -218,7 +218,7 @@ void cw_license(void)
 
    Returned pointer is owned and managed by the library.
 
-   TODO: change the declaration to "const char *const cw_get_audio_system_label(...)"?
+   @internal TODO: change the declaration to "const char *const cw_get_audio_system_label(...)"? @endinternal
 
    @reviewed 2020-08-17
 
