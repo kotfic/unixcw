@@ -455,7 +455,7 @@ void cw_gen_calculate_durations_internal(cw_gen_durations_t * durations, int spe
 
 const char * cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system);
 
-int cw_generator_new2(const cw_gen_config_t * gen_conf);
+int cw_generator_new_internal(const cw_gen_config_t * gen_conf);
 
 
 

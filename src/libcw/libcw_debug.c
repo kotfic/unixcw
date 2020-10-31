@@ -291,7 +291,7 @@ bool cw_debug_has_flag(const cw_debug_t * debug_object, uint32_t flag)
 
    @param[in] gen generator
 */
-void cw_dev_debug_print_generator_setup(const cw_gen_t * gen)
+void cw_dev_debug_print_generator_setup_internal(const cw_gen_t * gen)
 {
 	fprintf(stderr, "sound system:         %s\n",     cw_get_audio_system_label(gen->sound_system));
 #ifdef LIBCW_WITH_OSS

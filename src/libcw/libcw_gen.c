@@ -313,7 +313,7 @@ cw_ret_t cw_gen_start(cw_gen_t * gen)
 		   work incorrectly */
 		usleep(100000);
 #ifdef LIBCW_WITH_DEV
-		cw_dev_debug_print_generator_setup(gen);
+		cw_dev_debug_print_generator_setup_internal(gen);
 #endif
 		return CW_SUCCESS;
 	}
@@ -442,7 +442,7 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 		/* Just in case...
 		   TODO: is it still necessary after adding the quantum of
 		   silence above? */
-		cw_console_silence(gen);
+		cw_console_silence_internal(gen);
 	}
 
 	return cwret;
@@ -489,7 +489,7 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 
 		   TODO: is it still necessary after adding the
 		   quantum of silence above? */
-		cw_console_silence(gen);
+		cw_console_silence_internal(gen);
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_GENERATOR, CW_DEBUG_ERROR,
 			      MSG_PREFIX "called silence() function for generator without sound system specified");

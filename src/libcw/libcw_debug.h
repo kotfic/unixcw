@@ -224,7 +224,7 @@ enum {
 
 #ifdef LIBCW_WITH_DEV
 int  cw_dev_debug_raw_sink_write_internal(cw_gen_t * gen) __attribute__ ((deprecated));
-void cw_dev_debug_print_generator_setup(const cw_gen_t * gen) __attribute__ ((deprecated));
+void cw_dev_debug_print_generator_setup_internal(const cw_gen_t * gen) __attribute__ ((deprecated));
 #endif
 
 

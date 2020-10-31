@@ -153,7 +153,7 @@ int cw_generator_new(int audio_system, const char *device)
 {
 	cw_gen_config_t gen_conf = { .sound_system = audio_system };
 	snprintf(gen_conf.sound_device, sizeof (gen_conf.sound_device), "%s", device);
-	return cw_generator_new2(&gen_conf);
+	return cw_generator_new_internal(&gen_conf);
 }
 
 
@@ -175,7 +175,7 @@ int cw_generator_new(int audio_system, const char *device)
 
    \param gen_conf configuration for generator
 */
-int cw_generator_new2(const cw_gen_config_t * gen_conf)
+int cw_generator_new_internal(const cw_gen_config_t * gen_conf)
 {
 	cw_generator = cw_gen_new(gen_conf);
 	if (!cw_generator) {

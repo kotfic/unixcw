@@ -257,7 +257,7 @@ static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * g
    @return CW_SUCCESS on success
    @return CW_FAILURE on failure
 */
-cw_ret_t cw_console_silence(cw_gen_t * gen)
+cw_ret_t cw_console_silence_internal(cw_gen_t * gen)
 {
 	gen->console.cw_value = CW_KEY_VALUE_OPEN;
 
@@ -430,7 +430,7 @@ static cw_ret_t cw_console_write_with_kiocsound_internal(cw_gen_t * gen, const c
 		   buzzer would be turned off by "silence" tone coming right
 		   after an audible tone, but in practice it may not be
 		   always so.*/
-		cwret = cw_console_silence(gen);
+		cwret = cw_console_silence_internal(gen);
 		break;
 	case CW_SLOPE_MODE_NO_SLOPES: /* TODO: do we handle CW_SLOPE_MODE_NO_SLOPES correctly? */
 	case CW_SLOPE_MODE_RISING_SLOPE:
@@ -559,7 +559,7 @@ cw_ret_t cw_console_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __
 
 
 
-cw_ret_t cw_console_silence(__attribute__((unused)) cw_gen_t * gen)
+cw_ret_t cw_console_silence_internal(__attribute__((unused)) cw_gen_t * gen)
 {
 	return CW_FAILURE;
 }

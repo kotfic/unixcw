@@ -28,7 +28,7 @@ typedef struct {
 
 
 cw_ret_t cw_console_fill_gen_internal(cw_gen_t * gen, const char * device_name);
-cw_ret_t cw_console_silence(cw_gen_t * gen);
+cw_ret_t cw_console_silence_internal(cw_gen_t * gen);
 
 
 
