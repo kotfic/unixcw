@@ -158,6 +158,29 @@ void cw_event_debugging_flush_internal(cw_debug_t * debug_object)
 
 
 /**
+   @brief Set a value of internal debug flags variable
+
+   Assign specified value to library's internal debug flags variable.
+   Note that this function doesn't *append* given flag to the variable,
+   it erases existing value and assigns new one. Use cw_get_debug_flags()
+   if you want to OR new flag with existing ones.
+
+   @internal
+   @reviewed 2020-10-31
+   @endinternal
+
+   @param flags new value of flags to be assigned to the debug object
+*/
+void cw_set_debug_flags(uint32_t flags)
+{
+	cw_debug_object.flags = flags;
+	return;
+}
+
+
+
+
+/**
    @brief Set a value of debug flags in given debug variable
 
    Assign specified value to given debug variable.

@@ -1,20 +1,3 @@
-export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./src/libcw/tests/.libs/libcw_tests -N test_cw_gen_forever_internal -S p -t 300 -X plughw
-
-./tests/libcw_tests  -S a  -X plughw -N legacy_api_test_cw_queue_tone
-clicks
-
-
----------------
-No reproduction
-./src/libcw/tests/libcw_tests -S a -X plughw -A k --random-seed 1601917967
-
-Reproduction
-./src/libcw/tests/libcw_tests -S a -X plughw -A k --random-seed 1601917893
----------------
-
-
-
-
 * terminology and conventions for code
 
  - Use "duration" when describing how long (in microseconds or seconds) a
@@ -163,8 +146,13 @@ killall -9 pulseaudio
 
 * gdb
 
-export LD_LIBRARY_PATH=`pwd`/src/libcw/.libs  && gdb --args ./src/libcw/tests/.libs/libcw_tests -A r -S a -X plughw
+** Linux
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/src/libcw/.libs
+gdb --args ./src/libcw/tests/.libs/libcw_tests -A r -S a
 
+** FreeBSD
+setenv LD_LIBRARY_PATH $LD_LIBRARY_PATH:`pwd`/src/libcw/.libs
+gdb --args ./src/libcw/tests/.libs/libcw_tests -A r -S a
 
 * performance
 
@@ -212,3 +200,12 @@ Usually it's 2-5 microseconds, anything longer may be a sign of problems.
 To improve readability of debug messages, all values of MSG_PREFIX (like
 "libcw/gen" or "libcw/alsa") should have the same length.
 
+** Detect missing function definitions
+In order to detect libcw function declarations without definitions, write a
+code that tries to generate code that calls all libcw public functions. If
+definition of any function declared in public header is missing, linking
+phase will fail.
+
+Rationale: today I have detected (by sheer luck) that cw_set_debug_flags()
+declaration existed in libcw_debug.h, but the function was not defined
+anywhere.
