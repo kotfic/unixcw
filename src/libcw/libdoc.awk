@@ -139,6 +139,18 @@ function handle_function_specification()
 
 		return 0
 
+	} else if (name ~ / cw_gen_| cw_key_| cw_rec_| cw_get_lib_version/) {
+		# Function from modern API. Don't allow passing it
+		# to documentation of legacy public API.
+		delete_documentation(output_line - 1)
+		output_line = 0
+
+		while ($0 !~ /\)$/ && getline) {
+			# read and discard
+		}
+
+		return 0
+
 	} else if (name ~ /test_/) {
 		# Internal function, don't allow passing it
 		# to documentation of public API.
