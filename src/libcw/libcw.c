@@ -152,7 +152,9 @@ CW_STATIC_FUNC volatile cw_key_t cw_key = {
 int cw_generator_new(int audio_system, const char *device)
 {
 	cw_gen_config_t gen_conf = { .sound_system = audio_system };
-	snprintf(gen_conf.sound_device, sizeof (gen_conf.sound_device), "%s", device);
+	if (NULL != device) {
+		snprintf(gen_conf.sound_device, sizeof (gen_conf.sound_device), "%s", device);
+	}
 	return cw_generator_new_internal(&gen_conf);
 }
 
@@ -178,7 +180,7 @@ int cw_generator_new(int audio_system, const char *device)
 int cw_generator_new_internal(const cw_gen_config_t * gen_conf)
 {
 	cw_generator = cw_gen_new(gen_conf);
-	if (!cw_generator) {
+	if (NULL == cw_generator) {
 		cw_debug_msg ((&cw_debug_object), CW_DEBUG_STDLIB, CW_DEBUG_ERROR,
 			      "libcw: can't create generator");
 		return CW_FAILURE;
