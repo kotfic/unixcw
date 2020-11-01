@@ -51,6 +51,13 @@
 
    Looks simple, right? But it's the little details that ruin it all.
    One of the details is tone's slopes.
+
+   TODO: we need additional function that returns only after all tones have
+   been sent to sound sink AND played. Currently client program can call
+   cw_gen_wait_for_queue_level(gen, 0), but the function returns when the
+   last tone is still being played. That's too early in some situations, we
+   need a function that returns after the last tone has been played and
+   generator returned to "empty,idle" state.
 */
 
 
@@ -3298,8 +3305,12 @@ void cw_gen_register_value_tracking_callback_internal(cw_gen_t * gen, cw_gen_val
 
    TODO: use the function in all sound devices (currently it is used
    only in PA).
+
    TODO: selection of device names in libcw is a mess full of
-   repetitions. Re-think and re-implement it.
+   repetitions. Re-think and re-implement it. Keep in mind that for some
+   sound systems NULL passed to the sound system's API is allowed value,
+   indicating "use default". So we want to be able to pass NULL to the
+   API. So this function should be able to return NULL as valid value.
 
    @reviewed 2020-09-20
 
