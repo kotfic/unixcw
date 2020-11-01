@@ -47,7 +47,7 @@ program that uses the library looks like this (compile it with
 
 #include <libcw.h>
 
-int main ()
+int main(void)
 {
         /* Library initialization */
         cw_generator_new(CW_AUDIO_SOUNDCARD, NULL);
