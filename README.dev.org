@@ -137,12 +137,23 @@ echo 32 > /proc/asound/card0/pcm0p/sub0/prealloc
 
 ** PulseAudio
 
+*** Stop/start
+
 To kill pulseaudio server and prevent it from re-starting:
 emacs ~/.config/pulse/client.conf
 autospawn = no
-killall -9 pulseaudio
+pactl exit (or killall -9 pulseaudio)
 
+To re-start it again:
+emacs ~/.config/pulse/client.conf
+autospawn = yes
+pulseaudio &
 
+*** Valgrind
+
+Testing PulseAudio under valgrind may require setting "VALGRIND=1" env in
+command line. See this thread:
+https://bugs.freedesktop.org/show_bug.cgi?id=42942
 
 * gdb
 
