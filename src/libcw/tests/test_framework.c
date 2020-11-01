@@ -100,7 +100,7 @@ static void cw_test_print_test_header(cw_test_executor_t * self, const char * fm
 static void cw_test_print_test_footer(cw_test_executor_t * self, const char * test_name);
 static void cw_test_append_status_string(cw_test_executor_t * self, char * msg_buf, int n, const char * status_string);
 
-static int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[]);
+static cwt_retv cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[]);
 static int cw_test_get_loops_count(cw_test_executor_t * self);
 static int cw_test_fill_default_sound_systems_and_topics(cw_test_executor_t * self);
 
@@ -214,17 +214,18 @@ int cw_test_fill_default_sound_systems_and_topics(cw_test_executor_t * self)
 
 
 
-int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[])
+cwt_retv cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[])
 {
 	cw_test_fill_default_sound_systems_and_topics(self);
 	if (argc == 1) {
 		/* Use defaults configured by
 		   cw_test_fill_default_sound_systems_and_topics(). */
-		return 0;
+		srand48(time(0));
+		return cwt_retv_ok;
 	}
 
 	if (CW_SUCCESS != cw_process_program_arguments(argc, argv, self->config)) {
-		exit(EXIT_FAILURE);
+		return cwt_retv_err;
 	}
 
 	if (self->config->test_random_seed > 0) {
@@ -236,7 +237,7 @@ int cw_test_process_args(cw_test_executor_t * self, int argc, char * const argv[
 	}
 	srand48(self->random_seed);
 
-	return 0;
+	return cwt_retv_ok;
 }
 
 

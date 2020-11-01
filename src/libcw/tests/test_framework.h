@@ -255,8 +255,11 @@ typedef struct cw_test_executor_t {
 
 	   Function exits with EXIT_SUCCESS status when "help" option
 	   was requested. Help text is printed before the exit.
+
+	   @return cwt_retv_ok on success
+	   @return cwt_retv_err otherwise
 	*/
-	int (* process_args)(struct cw_test_executor_t * self, int argc, char * const argv[]);
+	cwt_retv (* process_args)(struct cw_test_executor_t * self, int argc, char * const argv[]);
 
 
 	/**

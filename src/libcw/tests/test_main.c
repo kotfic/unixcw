@@ -114,7 +114,9 @@ int main(int argc, char * const argv[])
 	cte->config->test_loops = 5;
 
 	/* May cause exit on errors or "-h" option. */
-	cte->process_args(cte, argc, argv);
+	if (cwt_retv_ok != cte->process_args(cte, argc, argv)) {
+		exit(EXIT_FAILURE);
+	}
 
 	cte->print_test_options(cte);
 	/* Let the test options be clearly visible for few seconds
