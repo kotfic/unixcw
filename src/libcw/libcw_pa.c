@@ -79,7 +79,9 @@ extern cw_debug_t cw_debug_object_dev;
 
 
 
-struct cw_pa_handle_t {
+typedef struct cw_pa_lib_handle_t {
+
+	/* Returned by dlopen(). To be cleaned up with dlclose(). */
 	void * lib_handle;
 
 	pa_simple *(* pa_simple_new)(const char * server_name, const char * name, pa_stream_direction_t dir, const char * device_name, const char * stream_name, const pa_sample_spec * ss, const pa_channel_map * map, const pa_buffer_attr * attr, int * error);
@@ -90,8 +92,7 @@ struct cw_pa_handle_t {
 
 	size_t     (* pa_usec_to_bytes)(pa_usec_t t, const pa_sample_spec * spec);
 	char      *(* pa_strerror)(int error);
-};
-typedef struct cw_pa_handle_t cw_pa_handle_t;
+} cw_pa_lib_handle_t;
 
 
 
@@ -104,13 +105,13 @@ typedef struct cw_pa_handle_t cw_pa_handle_t;
   Is it closed for all generators when first of these generators is destroyed?
   Do we need a reference counter for this structure?
 */
-static cw_pa_handle_t g_cw_pa;
+static cw_pa_lib_handle_t g_cw_pa_lib_handle;
 
 
 
 
 static pa_simple  * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, unsigned int * sample_rate, int * error);
-static int          cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa);
+static int          cw_pa_dlsym_internal(cw_pa_lib_handle_t * cw_pa);
 static cw_ret_t     cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 static void         cw_pa_close_sound_device_internal(cw_gen_t * gen);
 static cw_ret_t     cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen);
@@ -147,17 +148,17 @@ bool cw_is_pa_possible(const char * device_name)
 	   error. */
 
 	const char * const library_name = "libpulse-simple.so";
-	if (CW_SUCCESS != cw_dlopen_internal(library_name, &g_cw_pa.lib_handle)) {
+	if (CW_SUCCESS != cw_dlopen_internal(library_name, &g_cw_pa_lib_handle.lib_handle)) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "is possible: can't access PulseAudio library \"%s\"", library_name);
 		return false;
 	}
 
-	int rv = cw_pa_dlsym_internal(&g_cw_pa);
+	int rv = cw_pa_dlsym_internal(&g_cw_pa_lib_handle);
 	if (rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "is possible: failed to resolve PulseAudio symbol #%d, can't correctly load PulseAudio library", rv);
-		dlclose(g_cw_pa.lib_handle);
+		dlclose(g_cw_pa_lib_handle.lib_handle);
 		return false;
 	}
 
@@ -168,14 +169,14 @@ bool cw_is_pa_possible(const char * device_name)
 	pa_simple * simple = cw_pa_simple_new_internal(dev, "cw_is_pa_possible()", &sample_rate, &error);
 	if (NULL == simple) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR, /* TODO: is this really an error? */
-			      MSG_PREFIX "is possible: can't connect to PulseAudio server: %s", g_cw_pa.pa_strerror(error));
-		if (g_cw_pa.lib_handle) { /* FIXME: this closing of global handle won't work well for multi-generator library. */
-			dlclose(g_cw_pa.lib_handle);
+			      MSG_PREFIX "is possible: can't connect to PulseAudio server: %s", g_cw_pa_lib_handle.pa_strerror(error));
+		if (g_cw_pa_lib_handle.lib_handle) { /* FIXME: this closing of global handle won't work well for multi-generator library. */
+			dlclose(g_cw_pa_lib_handle.lib_handle);
 		}
 		return false;
 	} else {
-		/* TODO: verify this comment: We do dlclose(g_cw_pa.lib_handle) in cw_pa_close_sound_device_internal(). */
-		g_cw_pa.pa_simple_free(simple);
+		/* TODO: verify this comment: We do dlclose(g_cw_pa_lib_handle.lib_handle) in cw_pa_close_sound_device_internal(). */
+		g_cw_pa_lib_handle.pa_simple_free(simple);
 		simple = NULL;
 		return true;
 	}
@@ -231,10 +232,10 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
 	int error = 0;
 	size_t n_bytes = sizeof (gen->buffer[0]) * gen->buffer_n_samples;
-	int rv = g_cw_pa.pa_simple_write(gen->pa_data.simple, gen->buffer, n_bytes, &error);
+	int rv = g_cw_pa_lib_handle.pa_simple_write(gen->pa_data.simple, gen->buffer, n_bytes, &error);
 	if (rv < 0) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "write: pa_simple_write() failed: %s", g_cw_pa.pa_strerror(error));
+			      MSG_PREFIX "write: pa_simple_write() failed: %s", g_cw_pa_lib_handle.pa_strerror(error));
 		return CW_FAILURE;
 	} else {
 		//cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO, MSG_PREFIX "written %d samples with PulseAudio", gen->buffer_n_samples);
@@ -283,21 +284,21 @@ static pa_simple * cw_pa_simple_new_internal(const char * device_name, const cha
 	attr.prebuf    = (uint32_t) -1;
 	attr.fragsize  = (uint32_t) -1;
 	/* TODO: notice that the values are smaller than in the URL above. */
-	attr.tlength   = g_cw_pa.pa_usec_to_bytes(10 * 1000, &spec);
-	attr.minreq    = g_cw_pa.pa_usec_to_bytes(0, &spec);
-	attr.maxlength = g_cw_pa.pa_usec_to_bytes(10 * 1000, &spec);
+	attr.tlength   = g_cw_pa_lib_handle.pa_usec_to_bytes(10 * 1000, &spec);
+	attr.minreq    = g_cw_pa_lib_handle.pa_usec_to_bytes(0, &spec);
+	attr.maxlength = g_cw_pa_lib_handle.pa_usec_to_bytes(10 * 1000, &spec);
 	/* attr.prebuf = ; */ /* ? */
 	/* attr.fragsize = sizeof(uint32_t) -1; */ /* Not relevant to playback. */
 
-	pa_simple * simple = g_cw_pa.pa_simple_new(NULL,                  /* Server name (NULL for default). */
-						   "libcw",               /* Descriptive name of client (application name etc.). */
-						   PA_STREAM_PLAYBACK,    /* Stream direction. */
-						   dev,                   /* Device/sink name (NULL for default). */
-						   stream_name,           /* Stream name, descriptive name for this client (application name, song title, etc.). */
-						   &spec,                 /* Sample specification. */
-						   NULL,                  /* Channel map (NULL for default). */
-						   &attr,                 /* Buffering attributes (NULL for default). */
-						   error);                /* Error buffer (when routine returns NULL). */
+	pa_simple * simple = g_cw_pa_lib_handle.pa_simple_new(NULL,                  /* Server name (NULL for default). */
+							      "libcw",               /* Descriptive name of client (program name etc.). */
+							      PA_STREAM_PLAYBACK,    /* Stream direction. */
+							      dev,                   /* Device/sink name (NULL for default). */
+							      stream_name,           /* Stream name, descriptive name for this client (program name, song title, etc.). */
+							      &spec,                 /* Sample specification. */
+							      NULL,                  /* Channel map (NULL for default). */
+							      &attr,                 /* Buffering attributes (NULL for default). */
+							      error);                /* Error buffer (when routine returns NULL). */
 
 	*sample_rate = spec.rate;
 
@@ -324,22 +325,22 @@ static pa_simple * cw_pa_simple_new_internal(const char * device_name, const cha
    @return 0 on success
    @return negative value on failure
 */
-static int cw_pa_dlsym_internal(cw_pa_handle_t * cw_pa)
+static int cw_pa_dlsym_internal(cw_pa_lib_handle_t * cw_pa)
 {
 	*(void **) &(cw_pa->pa_simple_new)         = dlsym(cw_pa->lib_handle, "pa_simple_new");
-	if (!cw_pa->pa_simple_new)         return -1;
+	if (!cw_pa->pa_simple_new)         return -(__LINE__);
 	*(void **) &(cw_pa->pa_simple_free)        = dlsym(cw_pa->lib_handle, "pa_simple_free");
-	if (!cw_pa->pa_simple_free)        return -2;
+	if (!cw_pa->pa_simple_free)        return -(__LINE__);
 	*(void **) &(cw_pa->pa_simple_write)       = dlsym(cw_pa->lib_handle, "pa_simple_write");
-	if (!cw_pa->pa_simple_write)       return -3;
+	if (!cw_pa->pa_simple_write)       return -(__LINE__);
 	*(void **) &(cw_pa->pa_strerror)           = dlsym(cw_pa->lib_handle, "pa_strerror");
-	if (!cw_pa->pa_strerror)           return -4;
+	if (!cw_pa->pa_strerror)           return -(__LINE__);
 	*(void **) &(cw_pa->pa_simple_get_latency) = dlsym(cw_pa->lib_handle, "pa_simple_get_latency");
-	if (!cw_pa->pa_simple_get_latency) return -5;
+	if (!cw_pa->pa_simple_get_latency) return -(__LINE__);
 	*(void **) &(cw_pa->pa_simple_drain)       = dlsym(cw_pa->lib_handle, "pa_simple_drain");
-	if (!cw_pa->pa_simple_drain)       return -6;
+	if (!cw_pa->pa_simple_drain)       return -(__LINE__);
 	*(void **) &(cw_pa->pa_usec_to_bytes)      = dlsym(cw_pa->lib_handle, "pa_usec_to_bytes");
-	if (!cw_pa->pa_usec_to_bytes)      return -7;
+	if (!cw_pa->pa_usec_to_bytes)      return -(__LINE__);
 
 	return 0;
 }
@@ -374,17 +375,17 @@ static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, _
 
  	if (NULL == gen->pa_data.simple) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open device: can't connect to PulseAudio server: %s", g_cw_pa.pa_strerror(error));
+			      MSG_PREFIX "open device: can't connect to PulseAudio server: %s", g_cw_pa_lib_handle.pa_strerror(error));
 		return false;
 	}
 
 	gen->buffer_n_samples = CW_PA_BUFFER_N_SAMPLES;
 	gen->sample_rate = sample_rate;
-	gen->pa_data.latency_usecs = g_cw_pa.pa_simple_get_latency(gen->pa_data.simple, &error);
+	gen->pa_data.latency_usecs = g_cw_pa_lib_handle.pa_simple_get_latency(gen->pa_data.simple, &error);
 
 	if ((pa_usec_t) -1 == gen->pa_data.latency_usecs) {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open device: pa_simple_get_latency() failed: %s", g_cw_pa.pa_strerror(error));
+			      MSG_PREFIX "open device: pa_simple_get_latency() failed: %s", g_cw_pa_lib_handle.pa_strerror(error));
 	}
 
 #if CW_DEV_RAW_SINK
@@ -410,19 +411,19 @@ static void cw_pa_close_sound_device_internal(cw_gen_t * gen)
 	if (gen->pa_data.simple) {
 		/* Make sure that every single sample was played */
 		int error = 0;
-		if (g_cw_pa.pa_simple_drain(gen->pa_data.simple, &error) < 0) {
+		if (g_cw_pa_lib_handle.pa_simple_drain(gen->pa_data.simple, &error) < 0) {
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-				      MSG_PREFIX "close device: pa_simple_drain() failed: %s", g_cw_pa.pa_strerror(error));
+				      MSG_PREFIX "close device: pa_simple_drain() failed: %s", g_cw_pa_lib_handle.pa_strerror(error));
 		}
-		g_cw_pa.pa_simple_free(gen->pa_data.simple);
+		g_cw_pa_lib_handle.pa_simple_free(gen->pa_data.simple);
 		gen->pa_data.simple = NULL;
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
 			      MSG_PREFIX "close device: called the function for NULL PA sink");
 	}
 
-	if (g_cw_pa.lib_handle) { /* FIXME: this closing of global handle won't work well for multi-generator library. */
-		dlclose(g_cw_pa.lib_handle);
+	if (g_cw_pa_lib_handle.lib_handle) { /* FIXME: this closing of global handle won't work well for multi-generator library. */
+		dlclose(g_cw_pa_lib_handle.lib_handle);
 	}
 
 #if CW_DEV_RAW_SINK
