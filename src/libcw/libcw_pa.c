@@ -110,7 +110,7 @@ static cw_pa_lib_handle_t g_cw_pa_lib_handle;
 
 
 
-static pa_simple  * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, unsigned int * sample_rate, int * error);
+static pa_simple  * cw_pa_simple_new_internal(const char * picked_device_name, const char * stream_name, unsigned int * sample_rate, int * error);
 static int          cw_pa_dlsym_internal(cw_pa_lib_handle_t * cw_pa);
 static cw_ret_t     cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf);
 static void         cw_pa_close_sound_device_internal(cw_gen_t * gen);
@@ -162,11 +162,11 @@ bool cw_is_pa_possible(const char * device_name)
 		return false;
 	}
 
-	const char * dev = cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA);
+	const char * picked_device_name = cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA);
 
 	unsigned int sample_rate = 0;
 	int error = 0;
-	pa_simple * simple = cw_pa_simple_new_internal(dev, "cw_is_pa_possible()", &sample_rate, &error);
+	pa_simple * simple = cw_pa_simple_new_internal(picked_device_name, "cw_is_pa_possible()", &sample_rate, &error);
 	if (NULL == simple) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR, /* TODO: is this really an error? */
 			      MSG_PREFIX "is possible: can't connect to PulseAudio server: %s", g_cw_pa_lib_handle.pa_strerror(error));
@@ -262,7 +262,7 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
    @reviewed 2020-09-20
 
-   @param[in] device_name name of PulseAudio device to be used, or NULL for default device
+   @param[in] picked_device_name name of PulseAudio device to be used, returned by cw_gen_pick_device_name_internal()
    @param[in] stream_name descriptive name of client, passed to pa_simple_new
    @param[out] sample_rate sample rate configured for sound sink
    @param[out] error potential PulseAudio error code
@@ -270,14 +270,12 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    @return pointer to new PulseAudio sink on success
    @return NULL on failure
 */
-static pa_simple * cw_pa_simple_new_internal(const char * device_name, const char * stream_name, unsigned int * sample_rate, int * error)
+static pa_simple * cw_pa_simple_new_internal(const char * picked_device_name, const char * stream_name, unsigned int * sample_rate, int * error)
 {
 	pa_sample_spec spec = { 0 };
 	spec.format = CW_PA_SAMPLE_FORMAT;
 	spec.rate = 44100; /* TODO: why this value is hardcoded? */
 	spec.channels = 1;
-
-	const char * dev = cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA);
 
 	// http://www.mail-archive.com/pulseaudio-tickets@mail.0pointer.de/msg03295.html
 	pa_buffer_attr attr = { 0 };
@@ -293,7 +291,7 @@ static pa_simple * cw_pa_simple_new_internal(const char * device_name, const cha
 	pa_simple * simple = g_cw_pa_lib_handle.pa_simple_new(NULL,                  /* Server name (NULL for default). */
 							      "libcw",               /* Descriptive name of client (program name etc.). */
 							      PA_STREAM_PLAYBACK,    /* Stream direction. */
-							      dev,                   /* Device/sink name (NULL for default). */
+							      picked_device_name,    /* Device/sink name (NULL for default). */
 							      stream_name,           /* Stream name, descriptive name for this client (program name, song title, etc.). */
 							      &spec,                 /* Sample specification. */
 							      NULL,                  /* Channel map (NULL for default). */
@@ -364,11 +362,11 @@ static int cw_pa_dlsym_internal(cw_pa_lib_handle_t * cw_pa)
 */
 static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
 {
-	const char * dev = cw_gen_pick_device_name_internal(gen->sound_device, CW_AUDIO_PA);
+	const char * picked_device_name = cw_gen_pick_device_name_internal(gen->sound_device, CW_AUDIO_PA);
 
 	unsigned int sample_rate = 0;
 	int error = 0;
-	gen->pa_data.simple = cw_pa_simple_new_internal(dev,
+	gen->pa_data.simple = cw_pa_simple_new_internal(picked_device_name,
 							gen->library_client.name ? gen->library_client.name : "app",
 							&sample_rate,
 							&error);

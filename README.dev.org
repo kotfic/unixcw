@@ -137,6 +137,13 @@ echo 32 > /proc/asound/card0/pcm0p/sub0/prealloc
 
 ** PulseAudio
 
+*** Sinks
+
+List PulseAudio sink names (names that can be passed as values of '-d'
+command line switch):
+
+pactl list | grep -A2 'Sink #' | grep 'Name: ' | cut -d" " -f2
+
 *** Stop/start
 
 To kill pulseaudio server and prevent it from re-starting:
