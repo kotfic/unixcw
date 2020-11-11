@@ -956,7 +956,7 @@ enum
 };
 
 /* User interface event loop running flag. */
-static bool is_running = true;
+static bool g_is_running = true;
 
 /* Color definitions. */
 static const short color_array[] = {
@@ -1401,7 +1401,7 @@ static int interface_interpret(int c)
 	case PSEUDO_KEYF9:
 	case '\n':
 		if (mode_current_is_type(M_EXIT)) {
-			is_running = false;
+			g_is_running = false;
 		} else {
 			if (!mode_is_sending_active()) {
 				state_change_to_active();
@@ -1430,7 +1430,7 @@ static int interface_interpret(int c)
 	case 'C' - CTRL_OFFSET:
 		queue_discard_contents();
 		cw_flush_tone_queue();
-		is_running = false;
+		g_is_running = false;
 		break;
 
 	case KEY_RESIZE:
@@ -1660,12 +1660,8 @@ void ui_update_mode_selection(int old_mode, int current_mode)
 */
 void signal_handler(int signal_number)
 {
-	/* Attempt to wrestle the screen back from curses. */
-	ui_destroy();
-
-	/* Show the signal caught, and exit. */
 	fprintf(stderr, _("\nCaught signal %d, exiting...\n"), signal_number);
-	exit(EXIT_SUCCESS);
+	g_is_running = false;
 }
 
 
@@ -1767,7 +1763,7 @@ int main(int argc, char **argv)
 	   speed needs a 10ms (10,000usec) timeout. */
 	ui_initialize();
 	cw_generator_start();
-	while (is_running) {
+	while (g_is_running) {
 		ui_poll_user_input(fileno(stdin), 10000);
 		ui_handle_event(getch());
 	}

@@ -507,33 +507,39 @@ static void (*cw_signal_callbacks[CW_SIG_MAX])(int);
 
 
 /**
-   \brief Generic function calling signal handlers
+   @brief Generic function calling signal handlers
 
-   Signal handler function registered when cw_register_signal_handler()
-   is called.
-   The function resets the library (with cw_complete_reset()), and then,
-   depending on value of signal handler for given \p signal_number:
-   \li calls exit(EXIT_FAILURE) if signal handler is SIG_DFL, or
-   \li continues without further actions if signal handler is SIG_IGN, or
-   \li calls the signal handler.
+   Depending on value of signal handler for given @p signal_number the
+   function calls the registered signal handler.
 
-   The signal handler for given \p signal_number is either a pre-set, default
-   value, or is a value registered earlier with cw_register_signal_handler().
+   The signal handler for given @p signal_number is a value registered
+   earlier with cw_register_signal_handler().
 
-   \param signal_number
+   @internal
+   @reviewed 2020-11-11
+   @endinternal
+
+   @param[in] signal_number number of signal to handle
 */
 void cw_signal_main_handler_internal(int signal_number)
 {
 	cw_debug_msg ((&cw_debug_object), CW_DEBUG_FINALIZATION, CW_DEBUG_INFO,
 		      MSG_PREFIX "caught signal %d", signal_number);
 
-	/* Reset the library and retrieve the signal's handler. */
-	cw_complete_reset();
+	/* Don't call this function in signal handler context. It will
+	   lead to calling pthread_cond_*() functions, and that will
+	   lead to program hanging. */
+	//cw_complete_reset();
+	
 	void (*callback_func)(int) = cw_signal_callbacks[signal_number];
 
-	/* The default action is to stop the process; exit(1) seems to cover it. */
 	if (callback_func == SIG_DFL) {
-		exit(EXIT_FAILURE);
+		/* Calling exit() would lead to calls of functions
+		   registered with atexit(), which would be executed
+		   in signal handler context. Those functions called
+		   by atexit() could call pthread_cond_*() functions,
+		   and that would lead to program hanging. */
+		//exit(EXIT_FAILURE);
 	} else if (callback_func == SIG_IGN) {
 		/* continue */
 	} else {

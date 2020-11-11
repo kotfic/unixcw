@@ -62,13 +62,19 @@ static void write_to_cw_sender (const char *format, ...)
     __attribute__ ((__format__ (__printf__, 1, 2)));
 #endif
 
+static void signal_handler(int signal_number);
+static void cw_atexit(void);
+
+static cw_config_t *config = NULL; /* program-specific configuration */
+static bool generator = false;     /* have we created a generator? */
+static bool g_is_running = false;
+
+
+
 
 extern cw_debug_t cw_debug_object;
 
 
-static cw_config_t *config = NULL; /* program-specific configuration */
-static bool generator = false;     /* have we created a generator? */
-static void cw_atexit(void);
 
 
 /*---------------------------------------------------------------------*/
@@ -478,7 +484,7 @@ parse_stream (FILE *stream)
    * nested inside combinations, but not the other way around; that is,
    * combination starts and ends are not special within comments.
    */
-  for (c = fgetc (stream); !feof (stream); c = fgetc (stream))
+  for (c = fgetc (stream); g_is_running && !feof (stream); c = fgetc (stream))
     {
       switch (state)
         {
@@ -554,6 +560,24 @@ parse_stream (FILE *stream)
 
 
 
+static void signal_handler(int signal_number)
+{
+	fprintf(stderr, _("\nCaught signal %d, exiting...\n"), signal_number);
+	
+	/* Stop the main 'read char from stdin and process it'
+	   loop. Ultimately this will lead to exiting of program. */
+	g_is_running = false;
+
+	/* This is needed because if initially there are no characters
+	   available to consume by fgetc() in parse_stream(), the
+	   'for' loop in that function will be stuck at initial
+	   fgetc(). We need to force attempt at first iteration of the
+	   'for' loop. */
+	fclose(stdin);
+}
+
+
+
 
 /**
    \brief Parse command line args, then produce CW output until end of file
@@ -622,7 +646,7 @@ int main (int argc, char *const argv[])
 	/* Set up signal handlers to exit on a range of signals. */
 	static const int SIGNALS[] = { SIGHUP, SIGINT, SIGQUIT, SIGPIPE, SIGTERM, 0 };
 	for (int i = 0; SIGNALS[i]; i++) {
-		if (!cw_register_signal_handler(SIGNALS[i], SIG_DFL)) {
+		if (!cw_register_signal_handler(SIGNALS[i], signal_handler)) {
 			fprintf(stderr, _("%s: can't register signal: %s\n"), config->program_name, strerror(errno));
 			return EXIT_FAILURE;
 		}
@@ -631,6 +655,7 @@ int main (int argc, char *const argv[])
 	/* Start producing sine wave (amplitude of the wave will be
 	   zero as long as there are no characters to process). */
 	cw_generator_start();
+	g_is_running = true;
 
 	/* Send stdin stream to CW parsing. */
 	parse_stream(stdin);
