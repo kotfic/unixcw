@@ -2,9 +2,18 @@ version 3.6.0 / 2020-XX-YY
 
   libcw:
 
-  - libcw no longer uses signals (and SIGALRM in particular) for any internal
-    purpose. Internal communication between generator and queue has been
-    reimplemented using other mechanism.
+  - libcw no longer uses signals (and SIGALRM in particular) for any
+    internal purpose. Internal communication between generator and
+    queue has been re-implemented using other mechanism:
+    pthread_cond_wait() and pthread_cond_broadcast().
+
+  - in relation to the above, in order to avoid calling of
+    pthread_cond_wait() and pthread_cond_broadcast() in signal
+    handlers, the SIG_IGN and SIG_DFL values registered with
+    cw_register_signal_handler() are completely ignored. It is
+    strongly advised to avoid any libcw cleanup or calls to exit() in
+    signal handlers (registered with either with
+    cw_register_signal_handler() or with more direct methods).
 
   - enabling ALSA's configuration of HW period size.
 
@@ -27,8 +36,9 @@ version 3.6.0 / 2020-XX-YY
     Initial report of incorrect behaviour, initial debugging, and
     confirmation of a fix come from Matthew M5EVT. Thanks Matthew!
 
-  - ALSA period size (in samples) used by applications (cw, cwcp, xcwcp) can
-    be specifed in command line through --alsa-period-size command line arg.
+  - ALSA period size (in samples) used by applications (cw, cwcp,
+    xcwcp) can be specified in command line through --alsa-period-size
+    command line arg.
 
   - modifying PulseAudio parameters to decrease XRUNS and improve
     behaviour of callback registered by client code in library.
