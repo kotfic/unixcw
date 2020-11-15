@@ -103,7 +103,15 @@ portmaster -af
 
 ** Console
 
+*** Linux
+modprobe pcspkr
+-d /dev/console
+
 *** FreeBSD
+
+kldload speaker
+#define LIBCW_CONSOLE_USE_SPKRTONE && make
+-d /dev/speaker
 
 **** beep
 Text visible after installing 'beep' package on FreeBSD 12.1:
@@ -142,14 +150,14 @@ echo 32 > /proc/asound/card0/pcm0p/sub0/prealloc
 List PulseAudio sink names (names that can be passed as values of '-d'
 command line switch):
 
-pactl list | grep -A2 'Sink #' | grep 'Name: ' | cut -d" " -f2
+LC_ALL=C pactl list | grep -A2 'Sink #' | grep 'Name: ' | cut -d" " -f2
 
 *** Stop/start
 
 To kill pulseaudio server and prevent it from re-starting:
 emacs ~/.config/pulse/client.conf
 autospawn = no
-pactl exit (or killall -9 pulseaudio)
+pactl exit # (or killall -9 pulseaudio)
 
 To re-start it again:
 emacs ~/.config/pulse/client.conf
@@ -161,6 +169,13 @@ pulseaudio &
 Testing PulseAudio under valgrind may require setting "VALGRIND=1" env in
 command line. See this thread:
 https://bugs.freedesktop.org/show_bug.cgi?id=42942
+
+
+** OSS
+
+kldload snd_driver # FreeBSD
+cat /dev/sndstat
+./src/cw/cw -d /dev/dsp0.0
 
 * gdb
 
@@ -227,3 +242,4 @@ phase will fail.
 Rationale: today I have detected (by sheer luck) that cw_set_debug_flags()
 declaration existed in libcw_debug.h, but the function was not defined
 anywhere.
+
