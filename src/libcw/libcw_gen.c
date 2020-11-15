@@ -330,59 +330,6 @@ cw_ret_t cw_gen_start(cw_gen_t * gen)
 
 
 /**
-   @brief Set sound device name or path
-
-   Set path to sound device, or set name of sound device. The path/name will
-   be associated with given generator @p gen, and used when opening sound
-   device.
-
-   Use this function only when setting up a generator.
-
-   Function creates its own copy of input string.
-
-   @internal
-   @reviewed 2020-08-04
-   @endinternal
-
-   @param[in] gen generator to be updated
-   @param[in] device_name device to be assigned to generator @p gen
-
-   @return CW_SUCCESS on success
-   @return CW_FAILURE on errors
-*/
-cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_name)
-{
-	/* This should be NULL, either because it has been
-	   initialized statically as NULL, or set to
-	   NULL by generator destructor */
-	cw_assert (NULL == gen->sound_device, MSG_PREFIX "sound device already set\n");
-	cw_assert (gen->sound_system != CW_AUDIO_NONE, MSG_PREFIX "sound system not set\n");
-
-	if (gen->sound_system == CW_AUDIO_NONE) {
-		gen->sound_device = (char *) NULL;
-		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "no sound system specified");
-		return CW_FAILURE;
-	}
-
-	if (device_name) {
-		gen->sound_device = strdup(device_name);
-	} else {
-		gen->sound_device = strdup(default_sound_devices[gen->sound_system]);
-	}
-
-	if (NULL == gen->sound_device) {
-		cw_debug_msg (&cw_debug_object, CW_DEBUG_STDLIB, CW_DEBUG_ERROR, MSG_PREFIX "malloc()");
-		return CW_FAILURE;
-	} else {
-		return CW_SUCCESS;
-	}
-}
-
-
-
-
-/**
    @brief Silence the generator
 
    Force a sound sink currently used by generator @p gen to go
@@ -630,15 +577,8 @@ cw_gen_t * cw_gen_new(const cw_gen_config_t * gen_conf)
 
 	/* Sound system. */
 	{
-		gen->sound_device = NULL;
 		/* gen->sound_system = sound_system; */ /* We handle this field below. */
-		gen->sound_device_is_open = false;
 		gen->dev_raw_sink = -1;
-
-		gen->open_and_configure_sound_device = NULL;
-		gen->close_sound_device = NULL;
-		gen->write_buffer_to_sound_device = NULL;
-		gen->write_tone_to_sound_device = NULL;
 
 		/* Sound system - console. */
 		gen->console.sound_sink_fd = -1;
@@ -667,7 +607,7 @@ cw_gen_t * cw_gen_new(const cw_gen_config_t * gen_conf)
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 				      MSG_PREFIX "failed to open sound sink for sound system '%s' and device '%s'",
 				      cw_get_audio_system_label(gen_conf->sound_system),
-				      gen->sound_device);
+				      gen->picked_device_name);
 			cw_gen_delete(&gen);
 			return (cw_gen_t *) NULL;
 		}
@@ -735,9 +675,6 @@ void cw_gen_delete(cw_gen_t **gen)
 	   FIXME: magic number. I think that we can come up
 	   with algorithm for calculating the value. */
 	usleep(500);
-
-	free((*gen)->sound_device);
-	(*gen)->sound_device = NULL;
 
 	free((*gen)->buffer);
 	(*gen)->buffer = NULL;
@@ -950,7 +887,7 @@ cw_ret_t cw_gen_join_thread_internal(cw_gen_t * gen)
    device will be used.
 
    @internal
-   @reviewed 2020-08-04
+   @reviewed 2020-11-14
    @endinternal
 
    @param[in] gen generator for which to open a sound system
@@ -972,13 +909,11 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, const cw_gen_config_t * gen_co
 	   the three in separate 'if' clauses, I can check all other
 	   values of sound system as well. */
 
-	const bool device_provided = ('\0' != gen_conf->sound_device[0]);
 
 	if (gen_conf->sound_system == CW_AUDIO_NULL) {
 
-		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_NULL];
-		if (cw_is_null_possible(dev)) {
-			cw_null_fill_gen_internal(gen, dev);
+		if (cw_is_null_possible(gen_conf->sound_device)) {
+			cw_null_init_gen_internal(gen);
 			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
@@ -986,9 +921,8 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, const cw_gen_config_t * gen_co
 	if (gen_conf->sound_system == CW_AUDIO_PA
 	    || gen_conf->sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_PA];
-		if (cw_is_pa_possible(dev)) {
-			cw_pa_fill_gen_internal(gen, dev);
+		if (cw_is_pa_possible(gen_conf->sound_device)) {
+			cw_pa_init_gen_internal(gen);
 			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
@@ -996,9 +930,8 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, const cw_gen_config_t * gen_co
 	if (gen_conf->sound_system == CW_AUDIO_OSS
 	    || gen_conf->sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_OSS];
-		if (cw_is_oss_possible(dev)) {
-			cw_oss_fill_gen_internal(gen, dev);
+		if (cw_is_oss_possible(gen_conf->sound_device)) {
+			cw_oss_init_gen_internal(gen);
 			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
@@ -1006,18 +939,16 @@ cw_ret_t cw_gen_new_open_internal(cw_gen_t * gen, const cw_gen_config_t * gen_co
 	if (gen_conf->sound_system == CW_AUDIO_ALSA
 	    || gen_conf->sound_system == CW_AUDIO_SOUNDCARD) {
 
-		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_ALSA];
-		if (cw_is_alsa_possible(dev)) {
-			cw_alsa_fill_gen_internal(gen, dev);
+		if (cw_is_alsa_possible(gen_conf->sound_device)) {
+			cw_alsa_init_gen_internal(gen);
 			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
 
 	if (gen_conf->sound_system == CW_AUDIO_CONSOLE) {
 
-		const char * dev = device_provided ? gen_conf->sound_device : default_sound_devices[CW_AUDIO_CONSOLE];
-		if (cw_is_console_possible(dev)) {
-			cw_console_fill_gen_internal(gen, dev);
+		if (cw_is_console_possible(gen_conf->sound_device)) {
+			cw_console_init_gen_internal(gen);
 			return gen->open_and_configure_sound_device(gen, gen_conf);
 		}
 	}
@@ -3012,7 +2943,7 @@ cw_ret_t cw_gen_remove_last_character(cw_gen_t * gen)
 cw_ret_t cw_gen_get_sound_device(cw_gen_t const * gen, char * buffer, size_t size)
 {
 	cw_assert (NULL != gen, MSG_PREFIX "generator is NULL");
-	snprintf(buffer, size, "%s", gen->sound_device);
+	snprintf(buffer, size, "%s", gen->picked_device_name);
 	return CW_SUCCESS;
 }
 
@@ -3296,37 +3227,113 @@ void cw_gen_register_value_tracking_callback_internal(cw_gen_t * gen, cw_gen_val
 
 
 /**
-   @brief Pick one of the two provided device names
+   @brief Pick a device name for given sound system
 
-   Out of the two provided arguments pick and return device name for a
-   sound system. If @p alternative_device_name is not NULL and is not
-   equal to default device name of sound system @p sound_system, it
-   will be picked and returned by the function.
+   Don't call this function for CW_AUDIO_SOUNDCARD because this function
+   doesn't implement logic for selecting a current sound system out of a set
+   of systems that are able to use a soundcard (PulseAudio, ALSA, OSS).
 
-   TODO: use the function in all sound devices (currently it is used
-   only in PA).
+   For ALSA sound system the value returned through @p picked_device_name is
+   guaranteed to be non-empty.
 
-   TODO: selection of device names in libcw is a mess full of
-   repetitions. Re-think and re-implement it. Keep in mind that for some
-   sound systems NULL passed to the sound system's API is allowed value,
-   indicating "use default". So we want to be able to pass NULL to the
-   API. So this function should be able to return NULL as valid value.
+   For PulseAudio the value returned through @p picked_device_name will be
+   empty if default device is to be used. PA API accepts NULL pointer as
+   indication to use default device, so the empty value of @p
+   picked_device_name should be somehow "converted" to NULL pointer passed to
+   PulseAudio API.
 
-   @reviewed 2020-09-20
+   TODO: selection of device names in libcw is a mess full of repetitions.
+   Re-think and re-implement it. Keep in mind that for PulseAudio sound
+   system a NULL passed to the sound system's API is allowed value,
+   indicating "use default". So we want to be able to pass NULL to the API.
 
-   @param[in] alternative_device_name device name provided by library's client code (may be NULL)
+   @reviewed 2020-11-14
+
+   @param[in] alternative_device_name device name provided by library's client code (may be NULL or empty)
    @param[in] sound_system sound system for which the device name is being picked
+   @param[out] picked_device_name output buffer
+   @param[in] size size of @p picked_device_name buffer
 
-   @return NULL allowing sound system to use default device name
-   @return alternative_device_name otherwise
+   @return CW_SUCCESS if the device name has been picked successfully
+   @return CW_FAILURE otherwise
 */
-const char * cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system)
+cw_ret_t cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system, char * picked_device_name, size_t size)
 {
-	const char * result = NULL; /* NULL: let sound system use default device. */
-	if (NULL != alternative_device_name && 0 != strcmp(alternative_device_name, default_sound_devices[sound_system])) {
-		result = alternative_device_name; /* Non-default device. */
+	snprintf(picked_device_name, size, "%s", "");
+	cw_ret_t cwret = CW_FAILURE;
+
+	switch (sound_system) {
+	case CW_AUDIO_NULL:
+		/* This is an internal type of sound system (and device name
+		   isn't really used), and I decided that for simplicity the
+		   returned pointer will never be NULL. So behaviour is the
+		   same as for ALSA. */
+
+	case CW_AUDIO_CONSOLE:
+	case CW_AUDIO_OSS:
+		/* For above 2 sound systems the Unix open() function doesn't
+		   do any special interpretation of NULL pointer argument or
+		   empty string argument. We have to provide explicit device
+		   name or path. So behaviour is the same as for ALSA. */
+
+	case CW_AUDIO_ALSA:
+		/* When you want to tell ALSA to use ALSA's default device,
+		   don't pass NULL or empty string, because ALSA's
+		   snd_pcm_open() doesn't interpret NULL or empty string in
+		   any special way. Use explicit value of 'device name'
+		   argument. */
+		if (NULL == alternative_device_name
+		    || '\0' == alternative_device_name[0]
+		    || 0 == strcmp(alternative_device_name, default_sound_devices[sound_system])) {
+
+			/* No alternative device provided, use libcw's
+			   default. */
+			snprintf(picked_device_name, size, "%s", default_sound_devices[sound_system]);
+		} else {
+			/* Use non-default device provided by client code. */
+			snprintf(picked_device_name, size, "%s", alternative_device_name);
+		}
+		cwret = CW_SUCCESS;
+		break;
+
+	case CW_AUDIO_PA:
+		if (NULL == alternative_device_name
+		    || '\0' == alternative_device_name[0]
+		    || 0 == strcmp(alternative_device_name, default_sound_devices[sound_system])) {
+
+			/* Empty: code that will call PulseAudio API will
+			   have to recognize empty string and pass NULL to
+			   PulseAudio API. The API will recognize the NULL as
+			   'select PulseAudio's default device'. */
+			snprintf(picked_device_name, size, "%s", "");
+		} else {
+			/* Use non-default device name provided by client
+			   code. */
+			snprintf(picked_device_name, size, "%s", alternative_device_name);
+		}
+		cwret = CW_SUCCESS;
+		break;
+
+	case CW_AUDIO_SOUNDCARD:
+		/* This function should never be called for SOUNDCARD sound
+		   device. It should be called for specific sound systems
+		   only. */
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_ERROR,
+			      MSG_PREFIX "%s:%d unexpected sound system %d\n",
+			      __func__, __LINE__, sound_system);
+		cwret = CW_FAILURE;
+		break;
+
+	case CW_AUDIO_NONE:
+	default:
+		cw_debug_msg (&cw_debug_object, CW_DEBUG_KEYING, CW_DEBUG_ERROR,
+			      MSG_PREFIX "%s:%d invalid sound system %d\n",
+			      __func__, __LINE__, sound_system);
+		cwret = CW_FAILURE;
+		break;
 	}
-	return result;
+
+	return cwret;
 }
 
 

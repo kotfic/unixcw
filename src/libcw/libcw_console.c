@@ -139,10 +139,10 @@ static cw_ret_t cw_console_kiocsound_wrapper_internal(cw_gen_t * gen, cw_key_val
    as every other function called to perform console operations will
    happily assume that it is allowed to perform such operations.
 
-   @reviewed 2020-09-18
+   @reviewed 2020-11-14
 
    @param[in] device_name name of console buzzer device to be used; if NULL
-   then the function will use library-default device name.
+   or empty then the function will use library-default device name.
 
    @return true if opening console output succeeded
    @return false if opening console output failed
@@ -154,15 +154,14 @@ bool cw_is_console_possible(const char * device_name)
 	   not accessible on this machine, and this should not be logged as
 	   error. */
 
-	/* No need to allocate space for device path, just a
-	   pointer (to a memory allocated somewhere else by
-	   someone else) will be sufficient in local scope. */
-	const char * dev = device_name ? device_name : CW_DEFAULT_CONSOLE_DEVICE;
+	char picked_device_name[LIBCW_SOUND_DEVICE_NAME_SIZE] = { 0 };
+	cw_gen_pick_device_name_internal(device_name, CW_AUDIO_CONSOLE,
+					 picked_device_name, sizeof (picked_device_name));
 
-	int fd = open(dev, O_WRONLY);
+	int fd = open(picked_device_name, O_WRONLY);
 	if (fd == -1) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open(%s): %s", dev, strerror(errno));
+			      MSG_PREFIX "open(%s): %s", picked_device_name, strerror(errno));
 		return false;
 	}
 
@@ -184,10 +183,10 @@ bool cw_is_console_possible(const char * device_name)
 			   call ioctl()s on it, and - as a result - can't
 			   generate sound on the device. */
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-				      MSG_PREFIX "ioctl(%s): %s (you probably should be running this as root)", dev, strerror(errno));
+				      MSG_PREFIX "ioctl(%s): %s (you probably should be running this as root)", picked_device_name, strerror(errno));
 		} else {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-				      MSG_PREFIX "ioctl(%s): %s", dev, strerror(errno));
+				      MSG_PREFIX "ioctl(%s): %s", picked_device_name, strerror(errno));
 		}
 		return false;
 	} else {
@@ -205,10 +204,7 @@ bool cw_is_console_possible(const char * device_name)
    the client code must use cw_is_console_possible() instead, prior
    to calling this function.
 
-   You must use cw_gen_set_sound_device_internal() before calling
-   this function. Otherwise generator @p gen won't know which device to open.
-
-   @reviewed 2020-07-14
+   @reviewed 2020-11-12
 
    @param[in] gen generator for which to open and configure buzzer device
    @param[in] gen_conf
@@ -216,19 +212,20 @@ bool cw_is_console_possible(const char * device_name)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
+static cw_ret_t cw_console_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
-	assert (gen->sound_device);
-
 	if (gen->sound_device_is_open) {
-		/* Ignore the call if the console device is already open. */
+		/* Ignore the call if the device is already open. */
 		return CW_SUCCESS;
 	}
 
-	gen->console.sound_sink_fd = open(gen->sound_device, O_WRONLY);
+	cw_gen_pick_device_name_internal(gen_conf->sound_device, gen->sound_system,
+					 gen->picked_device_name, sizeof (gen->picked_device_name));
+
+	gen->console.sound_sink_fd = open(gen->picked_device_name, O_WRONLY);
 	if (-1 == gen->console.sound_sink_fd) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open(%s): '%s'", gen->sound_device, strerror(errno));
+			      MSG_PREFIX "open(%s): '%s'", gen->picked_device_name, strerror(errno));
 		return CW_FAILURE;
 	} else {
 		cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
@@ -365,6 +362,7 @@ static cw_ret_t cw_console_write_with_spkrtone_internal(cw_gen_t * gen, const cw
 		spkrtone.frequency = 0; /* https://man.netbsd.org/speaker.4: "A frequency of zero is interpreted as a rest." */
 	} else {
 		spkrtone.frequency = tone->frequency;
+		fprintf(stderr, "%d\n", tone->frequency);
 	}
 	spkrtone.duration = tone->duration / (10 * 1000); /* .duration in tone_t is "in 1/100ths of a second" (https://man.netbsd.org/speaker.4). */
 	const int rv = ioctl(gen->console.sound_sink_fd, SPKRTONE, &spkrtone);
@@ -507,23 +505,20 @@ cw_ret_t cw_console_kiocsound_wrapper_internal(cw_gen_t * gen, cw_key_value_t cw
 /**
    @brief Configure given @p gen variable to work with Console sound system
 
-   This function only sets some fields of @p gen (variables and function
-   pointers). It doesn't interact with Console sound system.
+   This function only initializes @p gen by setting some of its members. It
+   doesn't interact with sound system (doesn't try to open or configure it).
 
-   @reviewed 2020-07-16
+   @reviewed 2020-11-12
 
-   @param[in] gen generator structure in which to fill some fields
-   @param[in] device_name name of Console device to use
+   @param[in,out] gen generator structure to initialize
 
    @return CW_SUCCESS
 */
-cw_ret_t cw_console_fill_gen_internal(cw_gen_t * gen, const char * device_name)
+cw_ret_t cw_console_init_gen_internal(cw_gen_t * gen)
 {
 	assert (gen);
 
-	gen->sound_system = CW_AUDIO_CONSOLE;
-	cw_gen_set_sound_device_internal(gen, device_name);
-
+	gen->sound_system                    = CW_AUDIO_CONSOLE;
 	gen->open_and_configure_sound_device = cw_console_open_and_configure_sound_device_internal;
 	gen->close_sound_device              = cw_console_close_sound_device_internal;
 	gen->write_tone_to_sound_device      = cw_console_write_tone_to_sound_device_internal;
@@ -549,7 +544,7 @@ bool cw_is_console_possible(__attribute__((unused)) const char * device_name)
 
 
 
-cw_ret_t cw_console_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
+cw_ret_t cw_console_init_gen_internal(__attribute__((unused)) cw_gen_t * gen)
 {
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");

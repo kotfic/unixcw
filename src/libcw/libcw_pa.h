@@ -35,7 +35,7 @@ typedef struct cw_pa_data_struct {
 
 
 
-cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name);
+cw_ret_t cw_pa_init_gen_internal(cw_gen_t * gen);
 
 
 

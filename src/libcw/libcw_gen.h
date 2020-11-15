@@ -327,10 +327,9 @@ struct cw_gen_struct {
 
 	/* Sound system. */
 
-	/* Path to console file, or path to OSS soundcard file,
-	   or ALSA sound device name, or PulseAudio device name
-	   (it may be unused for PulseAudio) */
-	char * sound_device;
+	/* Path to console file, or path to OSS soundcard file, or ALSA sound
+	   device name, or PulseAudio device name. */
+	char picked_device_name[LIBCW_SOUND_DEVICE_NAME_SIZE];
 
 	/* none/null/console/OSS/ALSA/PulseAudio */
 	int sound_system;
@@ -443,7 +442,6 @@ cw_ret_t cw_gen_enqueue_begin_mark_internal(cw_gen_t * gen);
 cw_ret_t cw_gen_enqueue_begin_space_internal(cw_gen_t * gen);
 cw_ret_t cw_gen_enqueue_symbol_no_ims_internal(cw_gen_t * gen, char symbol);
 
-cw_ret_t cw_gen_set_sound_device_internal(cw_gen_t * gen, const char * device_name);
 cw_ret_t cw_gen_silence_internal(cw_gen_t * gen);
 char * cw_gen_get_sound_system_label_internal(const cw_gen_t * gen, char * buffer, size_t size);
 
@@ -453,7 +451,7 @@ void cw_gen_reset_parameters_internal(cw_gen_t * gen);
 void cw_gen_sync_parameters_internal(cw_gen_t * gen);
 void cw_gen_calculate_durations_internal(cw_gen_durations_t * durations, int speed, int weighting);
 
-const char * cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system);
+cw_ret_t cw_gen_pick_device_name_internal(const char * alternative_device_name, enum cw_audio_systems sound_system, char * picked_device_name, size_t size);
 
 int cw_generator_new_internal(const cw_gen_config_t * gen_conf);
 

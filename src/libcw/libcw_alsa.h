@@ -39,7 +39,7 @@ typedef struct cw_alsa_data_struct {
 
 
 
-cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name);
+cw_ret_t cw_alsa_init_gen_internal(cw_gen_t * gen);
 void cw_alsa_drop_internal(cw_gen_t * gen);
 
 

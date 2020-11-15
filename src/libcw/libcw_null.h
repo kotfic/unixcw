@@ -15,7 +15,7 @@
 
 
 
-cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name);
+cw_ret_t cw_null_init_gen_internal(cw_gen_t * gen);
 
 
 

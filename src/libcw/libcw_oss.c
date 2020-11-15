@@ -121,20 +121,22 @@ static void cw_oss_close_sound_device_internal(cw_gen_t * gen);
 
    @reviewed 2020-07-19
 
-   @param[in] device_name name of OSS device to be used; if NULL then the
-   function will use library-default device name.
+   @param[in] device_name name of OSS device to be used; if NULL or empty then the function will use library-default device name.
 
    @return true if opening OSS output succeeded
    @return false if opening OSS output failed
 */
 bool cw_is_oss_possible(const char * device_name)
 {
-	const char * dev = device_name ? device_name : CW_DEFAULT_OSS_DEVICE;
+	char picked_device_name[LIBCW_SOUND_DEVICE_NAME_SIZE] = { 0 };
+	cw_gen_pick_device_name_internal(device_name, CW_AUDIO_OSS,
+					 picked_device_name, sizeof (picked_device_name));
+
 	/* Open the given soundcard device file, for write only. */
-	int soundcard = open(dev, O_WRONLY);
+	int soundcard = open(picked_device_name, O_WRONLY);
 	if (soundcard == -1) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
-			      MSG_PREFIX "is possible: open(%s): '%s'", dev, strerror(errno));
+			      MSG_PREFIX "is possible: open(%s): '%s'", picked_device_name, strerror(errno));
 		return false;
 	}
 
@@ -188,23 +190,20 @@ bool cw_is_oss_possible(const char * device_name)
 /**
    @brief Configure given @p gen variable to work with OSS sound system
 
-   This function only sets some fields of @p gen (variables and function
-   pointers). It doesn't interact with OSS sound system.
+   This function only initializes @p gen by setting some of its members. It
+   doesn't interact with sound system (doesn't try to open or configure it).
 
-   @reviewed 2020-07-19
+   @reviewed 2020-11-12
 
-   @param[in] gen generator structure in which to fill some fields
-   @param[in] device_name name of OSS device to use
+   @param[in,out] gen generator structure to initialize
 
    @return CW_SUCCESS
 */
-cw_ret_t cw_oss_fill_gen_internal(cw_gen_t * gen, const char * device_name)
+cw_ret_t cw_oss_init_gen_internal(cw_gen_t * gen)
 {
 	assert (gen);
 
-	gen->sound_system = CW_AUDIO_OSS;
-	cw_gen_set_sound_device_internal(gen, device_name);
-
+	gen->sound_system                    = CW_AUDIO_OSS;
 	gen->open_and_configure_sound_device = cw_oss_open_and_configure_sound_device_internal;
 	gen->close_sound_device              = cw_oss_close_sound_device_internal;
 	gen->write_buffer_to_sound_device    = cw_oss_write_buffer_to_sound_device_internal;
@@ -248,10 +247,7 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 /**
    @brief Open and configure OSS handle stored in given generator
 
-   You must use cw_gen_set_sound_device_internal() before calling
-   this function. Otherwise generator @p gen won't know which device to open.
-
-   @reviewed 2020-07-19
+   @reviewed 2020-11-14
 
    @param[in] gen generator for which to open and configure sound system handle
    @param[in] gen_conf
@@ -259,16 +255,24 @@ cw_ret_t cw_oss_write_buffer_to_sound_device_internal(cw_gen_t * gen)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
+cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
+	if (gen->sound_device_is_open) {
+		/* Ignore the call if the device is already open. */
+		return CW_SUCCESS;
+	}
+
+	cw_gen_pick_device_name_internal(gen_conf->sound_device, gen->sound_system,
+					 gen->picked_device_name, sizeof (gen->picked_device_name));
+
 	/* TODO: there seems to be some redundancy between
 	   cw_oss_open_and_configure_sound_device_internal() and is_possible() function. */
 
 	/* Open the given soundcard device file, for write only. */
-	gen->oss_data.sound_sink_fd = open(gen->sound_device, O_WRONLY);
+	gen->oss_data.sound_sink_fd = open(gen->picked_device_name, O_WRONLY);
 	if (-1 == gen->oss_data.sound_sink_fd) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: open(%s): '%s'", gen->sound_device, strerror(errno));
+			      MSG_PREFIX "open: open(%s): '%s'", gen->picked_device_name, strerror(errno));
 		return CW_FAILURE;
 	}
 
@@ -289,7 +293,7 @@ cw_ret_t cw_oss_open_and_configure_sound_device_internal(cw_gen_t * gen, __attri
 	   the warning we would have to introduce casting, and that
 	   would introduce runtime warnings in dmesg on FreeBSD. */
 	/* NOLINTNEXTLINE(hicpp-signed-bitwise) */
-	int rv = ioctl(gen->oss_data.sound_sink_fd, SNDCTL_DSP_GETBLKSIZE, &size); 
+	int rv = ioctl(gen->oss_data.sound_sink_fd, SNDCTL_DSP_GETBLKSIZE, &size);
 	if (-1 == rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "open: ioctl(SNDCTL_DSP_GETBLKSIZE): '%s'", strerror(errno));
@@ -624,7 +628,7 @@ bool cw_is_oss_possible(__attribute__((unused)) const char * device)
 
 
 
-cw_ret_t cw_oss_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
+cw_ret_t cw_oss_init_gen_internal(__attribute__((unused)) cw_gen_t * gen)
 {
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");

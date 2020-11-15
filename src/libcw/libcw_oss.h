@@ -31,7 +31,7 @@ typedef struct cw_oss_data_struct {
 
 
 
-cw_ret_t cw_oss_fill_gen_internal(cw_gen_t * gen, const char * device_name);
+cw_ret_t cw_oss_init_gen_internal(cw_gen_t * gen);
 
 
 

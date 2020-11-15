@@ -57,25 +57,20 @@ static cw_ret_t cw_null_write_tone_to_sound_device_internal(cw_gen_t * gen, cons
 /**
    @brief Configure given @p gen variable to work with Null sound system
 
-   This function only sets some fields of @p gen (variables and function
-   pointers). It doesn't interact with Null sound system. @p device_name
-   variable is used, but the value of the variable doesn't really matter for
-   NULL sound system.
+   This function only initializes @p gen by setting some of its members. It
+   doesn't interact with sound system (doesn't try to open or configure it).
 
-   @reviewed 2020-07-12
+   @reviewed 2020-11-12
 
-   @param[in] gen generator structure in which to fill some fields
-   @param[in] device_name name of Null device to use
+   @param[in,out] gen generator structure to initialize
 
    @return CW_SUCCESS
 */
-cw_ret_t cw_null_fill_gen_internal(cw_gen_t * gen, const char * device_name)
+cw_ret_t cw_null_init_gen_internal(cw_gen_t * gen)
 {
 	assert (gen);
 
-	gen->sound_system = CW_AUDIO_NULL;
-	cw_gen_set_sound_device_internal(gen, device_name);
-
+	gen->sound_system                    = CW_AUDIO_NULL;
 	gen->open_and_configure_sound_device = cw_null_open_and_configure_sound_device_internal;
 	gen->close_sound_device              = cw_null_close_sound_device_internal;
 	gen->write_tone_to_sound_device      = cw_null_write_tone_to_sound_device_internal;

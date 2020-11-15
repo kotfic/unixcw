@@ -787,7 +787,7 @@ void cw_reset_send_receive_parameters(void)
 */
 const char *cw_get_console_device(void)
 {
-	return cw_generator->sound_device;
+	return cw_generator->picked_device_name;
 }
 
 
@@ -803,7 +803,7 @@ const char *cw_get_console_device(void)
 */
 const char *cw_get_soundcard_device(void)
 {
-	return cw_generator->sound_device;
+	return cw_generator->picked_device_name;
 }
 
 

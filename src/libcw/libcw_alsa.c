@@ -272,10 +272,10 @@ static cw_alsa_handle_t cw_alsa;
 
    @internal TODO: the function does too much. It a) checks if ALSA output is possible, and b) loads library symbols into global variable for the rest of the code to use. The function should have its own copy of cw_alsa_handle_t object, and the global object should go away (there should be per-generator cw_alsa_handle_t object). See FIXME/TODO notes in definition of struct cw_alsa_handle_t type. @endinternal
 
-   @reviewed 2020-07-04
+   @reviewed 2020-11-14
 
-   @param[in] device_name name of ALSA device to be used; if NULL then the
-   function will use library-default device name.
+   @param[in] device_name name of ALSA device to be used; if NULL or empty
+   then the function will use library-default device name.
 
    @return true if opening ALSA output succeeded
    @return false if opening ALSA output failed
@@ -302,15 +302,18 @@ bool cw_is_alsa_possible(const char * device_name)
 		return false;
 	}
 
-	const char * dev = device_name ? device_name : CW_DEFAULT_ALSA_DEVICE;
+	char picked_device_name[LIBCW_SOUND_DEVICE_NAME_SIZE] = { 0 };
+	cw_gen_pick_device_name_internal(device_name, CW_AUDIO_ALSA,
+					 picked_device_name, sizeof (picked_device_name));
+
 	snd_pcm_t * pcm = NULL;
 	int snd_rv = cw_alsa.snd_pcm_open(&pcm,
-					  dev,                     /* name */
+					  picked_device_name,      /* name */
 					  SND_PCM_STREAM_PLAYBACK, /* stream (playback/capture) */
 					  0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
 	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "is possible: can't open ALSA device '%s': %s", dev, cw_alsa.snd_strerror(snd_rv));
+			      MSG_PREFIX "is possible: can't open ALSA device '%s': %s", picked_device_name, cw_alsa.snd_strerror(snd_rv));
 		dlclose(cw_alsa.lib_handle);
 		return false;
 	} else {
@@ -335,21 +338,18 @@ bool cw_is_alsa_possible(const char * device_name)
 /**
    @brief Configure given @p gen variable to work with ALSA sound system
 
-   This function only sets some fields of @p gen (variables and function
-   pointers). It doesn't interact with ALSA sound system.
+   This function only initializes @p gen by setting some of its members. It
+   doesn't interact with sound system (doesn't try to open or configure it).
 
-   @reviewed 2020-07-07
+   @reviewed 2020-11-12
 
-   @param[in] gen generator structure in which to fill some fields
-   @param[in] device_name name of ALSA device to use
+   @param[in,out] gen generator structure to initialize
 
    @return CW_SUCCESS
 */
-cw_ret_t cw_alsa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
+cw_ret_t cw_alsa_init_gen_internal(cw_gen_t * gen)
 {
-	gen->sound_system = CW_AUDIO_ALSA;
-	cw_gen_set_sound_device_internal(gen, device_name);
-
+	gen->sound_system                    = CW_AUDIO_ALSA;
 	gen->open_and_configure_sound_device = cw_alsa_open_and_configure_sound_device_internal;
 	gen->close_sound_device              = cw_alsa_close_sound_device_internal;
 	gen->write_buffer_to_sound_device    = cw_alsa_write_buffer_to_sound_device_internal;
@@ -398,10 +398,7 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 /**
    @brief Open and configure ALSA handle stored in given generator
 
-   You must use cw_gen_set_sound_device_internal() before calling
-   this function. Otherwise generator @p gen won't know which device to open.
-
-   @reviewed 2020-10-24
+   @reviewed 2020-11-12
 
    @param[in] gen generator for which to open and configure PCM handle
    @param[in] gen_conf
@@ -411,13 +408,21 @@ static cw_ret_t cw_alsa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 */
 static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
+	if (gen->sound_device_is_open) {
+		/* Ignore the call if the device is already open. */
+		return CW_SUCCESS;
+	}
+
+	cw_gen_pick_device_name_internal(gen_conf->sound_device, gen->sound_system,
+					 gen->picked_device_name, sizeof (gen->picked_device_name));
+
 	int snd_rv = cw_alsa.snd_pcm_open(&gen->alsa_data.pcm_handle,
-					  gen->sound_device,       /* name */
+					  gen->picked_device_name, /* name */
 					  SND_PCM_STREAM_PLAYBACK, /* stream (playback/capture) */
 					  0);                      /* mode, 0 | SND_PCM_NONBLOCK | SND_PCM_ASYNC */
 	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "open: can't open ALSA device '%s': %s", gen->sound_device, cw_alsa.snd_strerror(snd_rv));
+			      MSG_PREFIX "open: can't open ALSA device '%s': %s", gen->picked_device_name, cw_alsa.snd_strerror(snd_rv));
 		return CW_FAILURE;
 	}
 	/* This is commented because blocking mode is probably already
@@ -485,6 +490,8 @@ static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen,
 		fprintf(stderr, MSG_PREFIX "open: failed to open dev raw sink file: '%s'\n", strerror(errno));
 	}
 #endif
+
+	gen->sound_device_is_open = true;
 
 	return CW_SUCCESS;
 }
@@ -611,7 +618,7 @@ static cw_ret_t cw_alsa_debug_evaluate_write_internal(cw_gen_t * gen, int snd_rv
 /**
    @brief Set up hardware buffer parameters of ALSA sink
 
-   @p config_period_size period may be zero, the function will calculate 
+   @p config_period_size period may be zero, the function will calculate
    the period size using its own criteria.
 
    @param[in] gen generator with opened ALSA PCM handle, for which HW parameters should be configured
@@ -934,7 +941,7 @@ static cw_ret_t cw_alsa_set_hw_params_buffer_size_internal(cw_gen_t * gen, snd_p
 	  this is 2*period size".
 
 	  We can experiment here with other value.
-	  
+
 	  Initially it was set to 3, but that produced too many ALSA
 	  buffer underruns on my oldest test machine. Changing to 2
 	  made things worse. Increasing it to 4 improved situation.
@@ -1374,7 +1381,7 @@ bool cw_is_alsa_possible(__attribute__((unused)) const char * device_name)
 
 
 
-cw_ret_t cw_alsa_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
+cw_ret_t cw_alsa_init_gen_internal(__attribute__((unused)) cw_gen_t * gen)
 {
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");

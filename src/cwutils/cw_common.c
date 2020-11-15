@@ -71,7 +71,12 @@ static int cw_generator_apply_config(cw_config_t * config);
 */
 int cw_generator_new_from_config(cw_config_t *config)
 {
+	char picked_device_name[LIBCW_SOUND_DEVICE_NAME_SIZE] = { 0 };
+
 	if (config->gen_conf.sound_system == CW_AUDIO_NULL) {
+		/* For Null sound system I'm not calling
+		   cw_gen_pick_device_name_internal() because this pseudo
+		   sound system doesn't really use a sound device. */
 		if (cw_is_null_possible(config->gen_conf.sound_device)) {
 			config->gen_conf.sound_system = CW_AUDIO_NULL;
 			if (cw_generator_new_internal(&config->gen_conf)) {
@@ -95,11 +100,16 @@ int cw_generator_new_from_config(cw_config_t *config)
 	    || config->gen_conf.sound_system == CW_AUDIO_PA
 	    || config->gen_conf.sound_system == CW_AUDIO_SOUNDCARD) {
 
-		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_PA);
+		/* For PulseAudio 'picked_device_name' may be empty, which
+		   will indicate "use default device". */
+		cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_PA,
+						 picked_device_name, sizeof (picked_device_name));
 
-		if (cw_is_pa_possible(config->gen_conf.sound_device)) {
+		if (cw_is_pa_possible(picked_device_name)) {
+
 			config->gen_conf.sound_system = CW_AUDIO_PA;
+			snprintf(config->gen_conf.sound_device, sizeof (config->gen_conf.sound_device), "%s", picked_device_name);
+
 			if (cw_generator_new_internal(&config->gen_conf)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
@@ -110,12 +120,12 @@ int cw_generator_new_from_config(cw_config_t *config)
 			} else {
 				fprintf(stderr, "%s: failed to open PulseAudio output with device '%s'\n",
 					config->program_name,
-					dev ? dev : CW_DEFAULT_PA_DEVICE);
+					'\0' == picked_device_name[0] ? CW_DEFAULT_PA_DEVICE : picked_device_name);
 			}
 		} else {
 			fprintf(stderr, "%s: PulseAudio output is not available with device '%s'\n",
 				config->program_name,
-				dev ? dev : CW_DEFAULT_PA_DEVICE);
+				'\0' == picked_device_name[0] ? CW_DEFAULT_PA_DEVICE : picked_device_name);
 		}
 		/* fall through to try with next sound system type */
 	}
@@ -124,11 +134,14 @@ int cw_generator_new_from_config(cw_config_t *config)
 	    || config->gen_conf.sound_system == CW_AUDIO_OSS
 	    || config->gen_conf.sound_system == CW_AUDIO_SOUNDCARD) {
 
-		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_OSS);
+		cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_OSS,
+						 picked_device_name, sizeof (picked_device_name));
 
-		if (cw_is_oss_possible(config->gen_conf.sound_device)) {
+		if (cw_is_oss_possible(picked_device_name)) {
+
 			config->gen_conf.sound_system = CW_AUDIO_OSS;
+			snprintf(config->gen_conf.sound_device, sizeof (config->gen_conf.sound_device), "%s", picked_device_name);
+
 			if (cw_generator_new_internal(&config->gen_conf)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
@@ -137,15 +150,12 @@ int cw_generator_new_from_config(cw_config_t *config)
 					return CW_FAILURE;
 				}
 			} else {
-				fprintf(stderr,
-					"%s: failed to open OSS output with device '%s'\n",
-					config->program_name,
-					dev ? dev : CW_DEFAULT_OSS_DEVICE);
+				fprintf(stderr, "%s: failed to open OSS output with device '%s'\n",
+					config->program_name, picked_device_name);
 			}
 		} else {
 			fprintf(stderr, "%s: OSS output is not available with device '%s'\n",
-				config->program_name,
-				dev ? dev : CW_DEFAULT_OSS_DEVICE);
+				config->program_name, picked_device_name);
 		}
 		/* fall through to try with next sound system type */
 	}
@@ -155,11 +165,14 @@ int cw_generator_new_from_config(cw_config_t *config)
 	    || config->gen_conf.sound_system == CW_AUDIO_ALSA
 	    || config->gen_conf.sound_system == CW_AUDIO_SOUNDCARD) {
 
-		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_ALSA);
+		cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_ALSA,
+						 picked_device_name, sizeof (picked_device_name));
 
-		if (cw_is_alsa_possible(config->gen_conf.sound_device)) {
+		if (cw_is_alsa_possible(picked_device_name)) {
+
 			config->gen_conf.sound_system = CW_AUDIO_ALSA;
+			snprintf(config->gen_conf.sound_device, sizeof (config->gen_conf.sound_device), "%s", picked_device_name);
+
 			if (cw_generator_new_internal(&config->gen_conf)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
@@ -168,15 +181,12 @@ int cw_generator_new_from_config(cw_config_t *config)
 					return CW_FAILURE;
 				}
 			} else {
-				fprintf(stderr,
-					"%s: failed to open ALSA output with device '%s'\n",
-					config->program_name,
-					dev ? dev : CW_DEFAULT_ALSA_DEVICE);
+				fprintf(stderr, "%s: failed to open ALSA output with device '%s'\n",
+					config->program_name, picked_device_name);
 			}
 		} else {
 			fprintf(stderr, "%s: ALSA output is not available with device '%s'\n",
-				config->program_name,
-				dev ? dev : CW_DEFAULT_ALSA_DEVICE);
+				config->program_name, picked_device_name);
 		}
 		/* fall through to try with next sound system type */
 	}
@@ -185,11 +195,14 @@ int cw_generator_new_from_config(cw_config_t *config)
 	if (config->gen_conf.sound_system == CW_AUDIO_NONE
 	    || config->gen_conf.sound_system == CW_AUDIO_CONSOLE) {
 
-		/* 'dev' may be NULL, sound system will use default device. */
-		const char * dev = cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_CONSOLE);
+		cw_gen_pick_device_name_internal(config->gen_conf.sound_device, CW_AUDIO_CONSOLE,
+						 picked_device_name, sizeof (picked_device_name));
 
-		if (cw_is_console_possible(config->gen_conf.sound_device)) {
+		if (cw_is_console_possible(picked_device_name)) {
+
 			config->gen_conf.sound_system = CW_AUDIO_CONSOLE;
+			snprintf(config->gen_conf.sound_device, sizeof (config->gen_conf.sound_device), "%s", picked_device_name);
+
 			if (cw_generator_new_internal(&config->gen_conf)) {
 				if (cw_generator_apply_config(config)) {
 					return CW_SUCCESS;
@@ -198,15 +211,12 @@ int cw_generator_new_from_config(cw_config_t *config)
 					return CW_FAILURE;
 				}
 			} else {
-				fprintf(stderr,
-					"%s: failed to open console output with device '%s'\n",
-					config->program_name,
-					dev ? dev : CW_DEFAULT_CONSOLE_DEVICE);
+				fprintf(stderr, "%s: failed to open console output with device '%s'\n",
+					config->program_name, picked_device_name);
 			}
 		} else {
 			fprintf(stderr, "%s: console output is not available with device '%s'\n",
-				config->program_name,
-				dev ? dev : CW_DEFAULT_CONSOLE_DEVICE);
+				config->program_name, picked_device_name);
 		}
 		/* fall through to try with next sound system type */
 	}

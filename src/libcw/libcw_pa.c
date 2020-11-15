@@ -132,7 +132,7 @@ static const int CW_PA_BUFFER_N_SAMPLES = 256;
    Function first tries to load PulseAudio library, and then does a test
    opening of PulseAudio output, but it closes it before returning.
 
-   @reviewed 2020-09-20
+   @reviewed 2020-11-14
 
    @param[in] device_name name of PulseAudio device to be used; if NULL then
    the function will use library-default device name.
@@ -162,7 +162,9 @@ bool cw_is_pa_possible(const char * device_name)
 		return false;
 	}
 
-	const char * picked_device_name = cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA);
+	char picked_device_name[LIBCW_SOUND_DEVICE_NAME_SIZE] = { 0 };
+	cw_gen_pick_device_name_internal(device_name, CW_AUDIO_PA,
+					 picked_device_name, sizeof (picked_device_name));
 
 	unsigned int sample_rate = 0;
 	int error = 0;
@@ -188,23 +190,20 @@ bool cw_is_pa_possible(const char * device_name)
 /**
    @brief Configure given @p gen variable to work with PulseAudio sound system
 
-   This function only sets some fields of @p gen (variables and function
-   pointers). It doesn't interact with PulseAudio sound system.
+   This function only initializes @p gen by setting some of its members. It
+   doesn't interact with sound system (doesn't try to open or configure it).
 
-   @reviewed 2020-07-20
+   @reviewed 2020-11-12
 
-   @param[in] gen generator structure in which to fill some fields
-   @param[in] device_name name of PulseAudio device to use
+   @param[in,out] gen generator structure to initialize
 
    @return CW_SUCCESS
 */
-cw_ret_t cw_pa_fill_gen_internal(cw_gen_t * gen, const char * device_name)
+cw_ret_t cw_pa_init_gen_internal(cw_gen_t * gen)
 {
 	assert (gen);
 
-	gen->sound_system = CW_AUDIO_PA;
-	cw_gen_set_sound_device_internal(gen, device_name);
-
+	gen->sound_system                    = CW_AUDIO_PA;
 	gen->open_and_configure_sound_device = cw_pa_open_and_configure_sound_device_internal;
 	gen->close_sound_device              = cw_pa_close_sound_device_internal;
 	gen->write_buffer_to_sound_device    = cw_pa_write_buffer_to_sound_device_internal;
@@ -260,9 +259,9 @@ static cw_ret_t cw_pa_write_buffer_to_sound_device_internal(cw_gen_t * gen)
 
    The function *does not* set size of sound buffer in libcw's generator.
 
-   @reviewed 2020-09-20
+   @reviewed 2020-11-11
 
-   @param[in] picked_device_name name of PulseAudio device to be used, returned by cw_gen_pick_device_name_internal()
+   @param[in] picked_device_name name of PulseAudio device to be used. Non-NULL pointer only. Empty string for default device.
    @param[in] stream_name descriptive name of client, passed to pa_simple_new
    @param[out] sample_rate sample rate configured for sound sink
    @param[out] error potential PulseAudio error code
@@ -288,10 +287,15 @@ static pa_simple * cw_pa_simple_new_internal(const char * picked_device_name, co
 	/* attr.prebuf = ; */ /* ? */
 	/* attr.fragsize = sizeof(uint32_t) -1; */ /* Not relevant to playback. */
 
+	/* If 'picked_device_name' is empty, it means 'use default device
+	   name'. In that case we have to pass NULL pointer to PulseAudio
+	   API. */
+	const char * dev = ('\0' == picked_device_name[0]) ? NULL : picked_device_name;
+
 	pa_simple * simple = g_cw_pa_lib_handle.pa_simple_new(NULL,                  /* Server name (NULL for default). */
 							      "libcw",               /* Descriptive name of client (program name etc.). */
 							      PA_STREAM_PLAYBACK,    /* Stream direction. */
-							      picked_device_name,    /* Device/sink name (NULL for default). */
+							      dev,                   /* Device/sink name (NULL for default). */
 							      stream_name,           /* Stream name, descriptive name for this client (program name, song title, etc.). */
 							      &spec,                 /* Sample specification. */
 							      NULL,                  /* Channel map (NULL for default). */
@@ -349,9 +353,6 @@ static int cw_pa_dlsym_internal(cw_pa_lib_handle_t * cw_pa)
 /**
    @brief Open and configure PulseAudio handle stored in given generator
 
-   You must use cw_gen_set_sound_device_internal() before calling this
-   function. Otherwise generator @p gen won't know which device to open.
-
    @reviewed 2020-09-20
 
    @param[in,out] gen generator for which to open and configure sound system handle
@@ -360,13 +361,19 @@ static int cw_pa_dlsym_internal(cw_pa_lib_handle_t * cw_pa)
    @return CW_FAILURE on errors
    @return CW_SUCCESS on success
 */
-static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, __attribute__((unused)) const cw_gen_config_t * gen_conf)
+static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, const cw_gen_config_t * gen_conf)
 {
-	const char * picked_device_name = cw_gen_pick_device_name_internal(gen->sound_device, CW_AUDIO_PA);
+	if (gen->sound_device_is_open) {
+		/* Ignore the call if the device is already open. */
+		return CW_SUCCESS;
+	}
+
+	cw_gen_pick_device_name_internal(gen_conf->sound_device, gen->sound_system,
+					 gen->picked_device_name, sizeof (gen->picked_device_name));
 
 	unsigned int sample_rate = 0;
 	int error = 0;
-	gen->pa_data.simple = cw_pa_simple_new_internal(picked_device_name,
+	gen->pa_data.simple = cw_pa_simple_new_internal(gen->picked_device_name,
 							gen->library_client.name ? gen->library_client.name : "app",
 							&sample_rate,
 							&error);
@@ -390,6 +397,8 @@ static cw_ret_t cw_pa_open_and_configure_sound_device_internal(cw_gen_t * gen, _
 	gen->dev_raw_sink = open("/tmp/cw_file.pa.raw", O_WRONLY | O_TRUNC | O_NONBLOCK);
 #endif
 	assert (gen && gen->pa_data.simple);
+
+	gen->sound_device_is_open = true;
 
 	return CW_SUCCESS;
 }
@@ -424,6 +433,8 @@ static void cw_pa_close_sound_device_internal(cw_gen_t * gen)
 		dlclose(g_cw_pa_lib_handle.lib_handle);
 	}
 
+	gen->sound_device_is_open = false;
+
 #if CW_DEV_RAW_SINK
 	if (gen->dev_raw_sink != -1) {
 		close(gen->dev_raw_sink);
@@ -451,7 +462,7 @@ bool cw_is_pa_possible(__attribute__((unused)) const char * device_name)
 
 
 
-cw_ret_t cw_pa_fill_gen_internal(__attribute__((unused)) cw_gen_t * gen, __attribute__((unused)) const char * device_name)
+cw_ret_t cw_pa_init_gen_internal(__attribute__((unused)) cw_gen_t * gen)
 {
 	cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_INFO,
 		      MSG_PREFIX "This sound system has been disabled during compilation");
