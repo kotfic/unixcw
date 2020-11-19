@@ -168,7 +168,7 @@ parse_stream_query (FILE *stream)
 {
   int c, value;
 
-  c = toupper (fgetc (stream));
+  c = toupper (fgetc_unlocked (stream));
   switch (c)
     {
     case EOF:
@@ -225,7 +225,7 @@ parse_stream_cwquery (FILE *stream)
   int c, value;
   const char *format;
 
-  c = toupper (fgetc (stream));
+  c = toupper (fgetc_unlocked (stream));
   switch (c)
     {
     case EOF:
@@ -383,7 +383,7 @@ parse_stream_command (FILE *stream)
 {
   int c;
 
-  c = toupper (fgetc (stream));
+  c = toupper (fgetc_unlocked (stream));
   switch (c)
     {
     case EOF:
@@ -483,8 +483,12 @@ parse_stream (FILE *stream)
    * Cycle round states depending on input characters.  Comments may be
    * nested inside combinations, but not the other way around; that is,
    * combination starts and ends are not special within comments.
+   *
+   * We need an _unlocked variant of fgetc because otherwise attempt to close
+   * stdin in signal handler (to signal termination of the loop) won't be
+   * possible: fclose() will just hang because stdin will be locked.
    */
-  for (c = fgetc (stream); g_is_running && !feof (stream); c = fgetc (stream))
+  for (c = fgetc_unlocked (stream); g_is_running && !feof (stream); c = fgetc_unlocked (stream))
     {
       switch (state)
         {
@@ -536,7 +540,7 @@ parse_stream (FILE *stream)
                */
               int lookahead;
 
-              lookahead = fgetc (stream);
+              lookahead = fgetc_unlocked (stream);
               ungetc (lookahead, stream);
               send_cw_character (c, lookahead != CW_COMBINATION_END);
             }
@@ -563,7 +567,7 @@ parse_stream (FILE *stream)
 static void signal_handler(int signal_number)
 {
 	fprintf(stderr, _("\nCaught signal %d, exiting...\n"), signal_number);
-	
+
 	/* Stop the main 'read char from stdin and process it'
 	   loop. Ultimately this will lead to exiting of program. */
 	g_is_running = false;
