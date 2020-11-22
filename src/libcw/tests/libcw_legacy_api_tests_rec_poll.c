@@ -197,8 +197,9 @@ void test_callback_func(void * arg, int key_state);
 void tester_start_test_code(tester_t * tester);
 void tester_stop_test_code(tester_t * tester);
 
+void tester_init(tester_t * tester);
 void tester_compare_text_buffers(tester_t * tester);
-void tester_prepare_input_text_buffer(tester_t * tester);
+void tester_init_text_buffers(tester_t * tester, size_t len);
 
 
 
@@ -577,7 +578,7 @@ void receiver_poll_character_r_c(Receiver * xcwcp_receiver)
 				failure = true;
 			}
 
-			const char * looked_up_representation = cw_character_to_representation(test.character);
+			char * looked_up_representation = cw_character_to_representation(test.character);
 			if (!cte->expect_valid_pointer_errors_only(cte, looked_up_representation,
 								   "Lookup representation of character")) {
 				failure = true;
@@ -595,6 +596,8 @@ void receiver_poll_character_r_c(Receiver * xcwcp_receiver)
 			cte->expect_op_int(cte, failure, "==", false, "Poll representation");
 
 			g_tester.received_string[g_tester.received_string_i++] = test.character;
+			
+			free(looked_up_representation);
 		}
 
 		/* A full character has been received. Directly after it
@@ -918,11 +921,28 @@ void * receiver_input_generator_fn(void * arg)
 
 
 
+void tester_init(tester_t * tester)
+{
+	/* Configure test parameters. */
+	tester->characters_to_enqueue = 5;
+
+	/* TODO: more thorough reset of tester. */
+	
+	memset(tester->input_string, 0, sizeof (tester->input_string));
+	tester->input_string_i = 0;
+
+	memset(tester->received_string, 0, sizeof (tester->received_string));
+	tester->received_string_i = 0;
+}
+
+
+
+
 void tester_start_test_code(tester_t * tester)
 {
 	tester->generating_in_progress = true;
 
-	tester_prepare_input_text_buffer(tester);
+	tester_init_text_buffers(tester, 1);
 
 	/* Using Null sound system because this generator is only used
 	   to enqueue text and control key. Sound will be played by
@@ -955,25 +975,30 @@ void tester_stop_test_code(tester_t * tester)
 
 
 
-void tester_prepare_input_text_buffer(tester_t * tester)
+void tester_init_text_buffers(tester_t * tester, size_t len)
 {
+	memset(tester->input_string, 0, sizeof (tester->input_string));
+	tester->input_string_i = 0;
+
+	memset(tester->received_string, 0, sizeof (tester->received_string));
+	tester->received_string_i = 0;
+	
 	/* TODO: generate the text randomly. */
 
-	/* Long text for longer tests. */
+	if (0 == len) {
+		/* Short text for occasions where I need a quick test. */
+#define BASIC_SET_SHORT "one two three four paris"
+		const char input[REC_TEST_BUFFER_SIZE] = BASIC_SET_SHORT;
+		snprintf(tester->input_string, sizeof (tester->input_string), "%s", input);
+	} else {
+		/* Long text for longer tests. */
 #define BASIC_SET_LONG \
 	"the quick brown fox jumps over the lazy dog. 01234567890 paris paris paris "    \
 	"abcdefghijklmnopqrstuvwxyz0123456789\"'$()+,-./:;=?_@<>!&^~ paris paris paris " \
 	"one two three four five six seven eight nine ten eleven paris paris paris "
-
-	/* Short text for occasions where I need a quick test. */
-#define BASIC_SET_SHORT "one two three four paris"
-
-#if 1
-	const char input[REC_TEST_BUFFER_SIZE] = BASIC_SET_LONG BASIC_SET_LONG;
-#else
-	const char input[REC_TEST_BUFFER_SIZE] = BASIC_SET_SHORT;
-#endif
-	snprintf(tester->input_string, sizeof (tester->input_string), "%s", input);
+		const char input[REC_TEST_BUFFER_SIZE] = BASIC_SET_LONG BASIC_SET_LONG;
+		snprintf(tester->input_string, sizeof (tester->input_string), "%s", input);
+	}
 
 	return;
 }
@@ -1117,13 +1142,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 	}
 
 
-	/* Configure test parameters. */
-	g_tester.characters_to_enqueue = 5;
-
-	/* TODO: more thorough reset of tester. */
-	g_tester.input_string_i = 0;
-	g_tester.received_string[0] = '\0';
-	g_tester.received_string_i = 0;
+	tester_init(&g_tester);
 
 
 	cw_clear_receive_buffer();
@@ -1169,9 +1188,23 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 #endif
 	}
 
-	/* Stop thread with test code.
-	   Is this really needed? The thread should already be stopped
-	   if we get here. */
+	/*
+	  Stop thread with test code.
+	  
+	  TODO: Is this really needed? The thread should already be stopped
+	  if we get here. Calling this function leads to this problem in valgrind:
+	  
+	  ==2402==    by 0x596DEDA: pthread_cancel_init (unwind-forcedunwind.c:52)
+	  ==2402==    by 0x596A4EF: pthread_cancel (pthread_cancel.c:38)
+	  ==2402==    by 0x1118BE: tester_stop_test_code (libcw_legacy_api_tests_rec_poll.c:958)
+	  ==2402==    by 0x1118BE: legacy_api_test_rec_poll_inner (libcw_legacy_api_tests_rec_poll.c:1181)
+	  ==2402==    by 0x111C6D: legacy_api_test_rec_poll (libcw_legacy_api_tests_rec_poll.c:1098)
+	  ==2402==    by 0x11E1D5: iterate_over_test_objects (test_framework.c:1372)
+	  ==2402==    by 0x11E1D5: iterate_over_sound_systems (test_framework.c:1329)
+	  ==2402==    by 0x11E1D5: iterate_over_topics (test_framework.c:1306)
+	  ==2402==    by 0x11E1D5: cw_test_main_test_loop (test_framework.c:1282)
+	  ==2402==    by 0x10E703: main (test_main.c:130)
+	*/
 	tester_stop_test_code(&g_tester);
 
 
