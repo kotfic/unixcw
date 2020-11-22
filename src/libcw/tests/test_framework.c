@@ -220,7 +220,8 @@ cwt_retv cw_test_process_args(cw_test_executor_t * self, int argc, char * const 
 	if (argc == 1) {
 		/* Use defaults configured by
 		   cw_test_fill_default_sound_systems_and_topics(). */
-		srand48(time(0));
+		self->random_seed = time(0);
+		srand48(self->random_seed);
 		return cwt_retv_ok;
 	}
 
