@@ -607,7 +607,7 @@ cw_gen_t * cw_gen_new(const cw_gen_config_t * gen_conf)
 			cw_debug_msg (&cw_debug_object_dev, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 				      MSG_PREFIX "failed to open sound sink for sound system '%s' and device '%s'",
 				      cw_get_audio_system_label(gen_conf->sound_system),
-				      gen->picked_device_name);
+				      gen_conf->sound_device);
 			cw_gen_delete(&gen);
 			return (cw_gen_t *) NULL;
 		}
