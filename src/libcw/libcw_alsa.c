@@ -314,6 +314,10 @@ bool cw_is_alsa_possible(const char * device_name)
 	if (0 != snd_rv) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
 			      MSG_PREFIX "is possible: can't open ALSA device '%s': %s", picked_device_name, cw_alsa.snd_strerror(snd_rv));
+#if WITH_ALSA_FREE_GLOBAL_CONFIG
+		/* This is needed even after failed snd_pcm_open(). */
+		cw_alsa.snd_config_update_free_global();
+#endif
 		dlclose(cw_alsa.lib_handle);
 		return false;
 	} else {
