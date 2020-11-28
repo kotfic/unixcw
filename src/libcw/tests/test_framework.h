@@ -86,6 +86,11 @@ typedef struct cw_test_executor_t {
 	resource_meas resource_meas;
 	bool use_resource_meas;
 
+	/* Uptime at begin and end of tests. Used to measure duration
+	   of tests. */
+	long uptime_begin;
+	long uptime_end;
+
 	/* Type suitable for srand48(). */
 	long int random_seed;
 

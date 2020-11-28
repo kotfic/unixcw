@@ -34,16 +34,17 @@
 
 
 
-#include <getopt.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <limits.h>
-#include <unistd.h>
-#include <errno.h>
 #include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <getopt.h>
+#include <limits.h>
+#include <signal.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/sysinfo.h>
+#include <unistd.h>
 
 #if defined(HAVE_STRING_H)
 # include <string.h>
@@ -952,6 +953,13 @@ void cw_test_print_test_stats(cw_test_executor_t * self)
 		fprintf(self->file_err,       "%s", SEPARATOR_LINE);
 	}
 
+	struct sysinfo sys_info;
+	sysinfo(&sys_info);
+	self->uptime_end = sys_info.uptime;
+	const long test_duration = self->uptime_end - self->uptime_begin;
+	fprintf(self->file_err, "Duration of tests = %ld minutes, %ld seconds\n",
+		test_duration / 60, test_duration % 60);
+
 	return;
 }
 
@@ -1276,6 +1284,10 @@ bool cw_test_sound_system_is_member(__attribute__((unused)) cw_test_executor_t *
 
 cwt_retv cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 {
+	struct sysinfo sys_info;
+	sysinfo(&sys_info);
+	cte->uptime_begin = sys_info.uptime;
+
 	int set = 0;
 	while (LIBCW_TEST_SET_VALID == test_sets[set].set_valid) {
 		cw_test_set_t * test_set = &test_sets[set];
