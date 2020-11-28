@@ -123,6 +123,11 @@ typedef struct tester_t {
 
 	cwtest_param_ranger_t speed_ranger;
 
+	/* Parameters used in "compare" function that verifies if
+	   input and received strings are similar enough to pass the
+	   test. */
+	float acceptable_error_rate;
+	size_t acceptable_last_mismatch_index;
 
 	/* Input variable for the test. Decreasing or increasing
 	   decides how many characters are enqueued with the same
@@ -200,6 +205,10 @@ void tester_stop_test_code(tester_t * tester);
 void tester_init(tester_t * tester);
 void tester_compare_text_buffers(tester_t * tester);
 void tester_init_text_buffers(tester_t * tester, size_t len);
+
+static void tester_normalize_input_and_received(tester_t * tester);
+static int  tester_compare_input_and_received(tester_t * tester);
+static void tester_display_differences(const tester_t * tester);
 
 
 
@@ -1024,66 +1033,21 @@ void tester_compare_text_buffers(tester_t * tester)
 	fprintf(stderr, "[II] Sent:     \n\n'%s'\n\n", tester->input_string);
 	fprintf(stderr, "[II] Received: \n\n'%s'\n\n", tester->received_string);
 
-	/* Trim input string. */
-	if (1) {
-		const size_t len = strlen(tester->input_string);
-		size_t i = len - 1;
-		while (tester->input_string[i] == ' ') {
-			tester->input_string[i] = '\0';
-			i--;
-		}
-	}
+	tester_normalize_input_and_received(tester);
 
-	/* Normalize and trim received string. */
-	{
-		const size_t len = strlen(tester->received_string);
-		for (size_t i = 0; i < len; i++) {
-			tester->received_string[i] = tolower(tester->received_string[i]);
-		}
+	fprintf(stderr, "[II] Sent (normalized):     \n\n'%s'\n\n", tester->input_string);
+	fprintf(stderr, "[II] Received (normalized): \n\n'%s'\n\n", tester->received_string);
 
-		size_t i = len - 1;
-		while (tester->received_string[i] == ' ') {
-			tester->received_string[i] = '\0';
-			i--;
-		}
-	}
-
-
-	const int compare_result = strcmp(tester->input_string, tester->received_string);
+	tester->acceptable_error_rate = 0.01F;
+	tester->acceptable_last_mismatch_index = 10;
+	const int compare_result = tester_compare_input_and_received(tester);
+	
+	tester_display_differences(tester);
 	if (g_xcwcp_receiver.cte->expect_op_int(g_xcwcp_receiver.cte, 0, "==", compare_result, "Final comparison of sent and received strings")) {
 		fprintf(stderr, "[II] Test result: success\n");
 	} else {
 		fprintf(stderr, "[EE] Test result: failure\n");
 		fprintf(stderr, "[EE] '%s' != '%s'\n", tester->input_string, tester->received_string);
-
-		fprintf(stderr, "\n");
-
-		/* Show exactly where the difference is */
-		const size_t len_in = strlen(tester->input_string);
-		const size_t len_rec = strlen(tester->received_string);
-		const int diffs_to_show_max = 5;
-
-		fprintf(stderr, "[EE] Printing up to %d first differences\n", diffs_to_show_max);
-		int reported = 0;
-		for (size_t i = 0; i < len_in && i < len_rec; i++) {
-			if (tester->input_string[i] != tester->received_string[i]) {
-				fprintf(stderr, "[EE] char %6zd: input %4d (%c) vs. received %4d (%c)\n",
-					i,
-					(int) tester->input_string[i], (int) tester->input_string[i],
-					tester->received_string[i], tester->received_string[i]);
-				reported++;
-			}
-			if (reported == diffs_to_show_max) {
-				/* Don't print them all if there are more of X differences. */
-				fprintf(stderr, "[EE] more differences may be present, but not showing them\n");
-				break;
-			}
-		}
-		if (0 == reported) {
-			/* Because of condition in 'for' loop we might
-			   skipped checking end of one of strings. */
-			fprintf(stderr, "[EE] difference appears to be at end of one of strings\n");
-		}
 
 		fprintf(stderr, "\n");
 	}
@@ -1190,10 +1154,10 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 
 	/*
 	  Stop thread with test code.
-	  
+
 	  TODO: Is this really needed? The thread should already be stopped
 	  if we get here. Calling this function leads to this problem in valgrind:
-	  
+
 	  ==2402==    by 0x596DEDA: pthread_cancel_init (unwind-forcedunwind.c:52)
 	  ==2402==    by 0x596A4EF: pthread_cancel (pthread_cancel.c:38)
 	  ==2402==    by 0x1118BE: tester_stop_test_code (libcw_legacy_api_tests_rec_poll.c:958)
@@ -1240,3 +1204,232 @@ void low_tone_queue_callback(void * arg)
 
 	return;
 }
+
+
+
+
+/**
+   @brief Make detailed comparison of input and received strings
+
+   The function does more than just simple strcmp(). We accept that
+   for different reasons the receiver doesn't work 100% correctly, and
+   we allow some differences between input and received strings. The
+   function uses some criteria (error rate and position of last
+   mismatch) to check how similar the two strings are.
+
+   Start comparing from the end.  At the beginning the receiver may
+   not be tuned into incoming data, so at the beginning the errors are
+   very probable, but after that there should be no errors.
+
+   Comparing from the end makes sure that after first 5-10 characters
+   the receiver performs 100% correctly.
+
+   Also because of possible receive errors, the input string and
+   received string may have different lengths. If we started comparing
+   from the beginning, all received characters may be recognized as
+   non-matching.
+
+   @return 0 if input and received string are similar enough
+   @return -1 otherwise
+*/
+static int tester_compare_input_and_received(tester_t * tester)
+{
+	const size_t input_len = strlen(tester->input_string);
+	const size_t received_len = strlen(tester->received_string);
+
+	/* Find shorter string's length. */
+	const size_t len = input_len <= received_len ? input_len : received_len;
+
+	size_t mismatch_count = 0;
+	/* Index of last mismatched character. "Last" when looking
+	   from the beginning of the string. */
+	size_t last_mismatch_index = (size_t) -1;
+
+	for (size_t i = 0; i < len; i++) {
+		const size_t input_index = input_len - 1 - i;
+		const size_t received_index = received_len - 1 - i;
+
+		if (tester->input_string[input_index] != tester->received_string[received_index]) {
+#if 0
+			fprintf(stderr, "[WW] mismatch of '%c' vs '%c'\n",
+				tester->input_string[input_index],
+				tester->received_string[received_index]);
+#endif
+			mismatch_count++;
+			
+			if ((size_t) -1 == last_mismatch_index) {
+				last_mismatch_index = input_index;
+			}
+		}
+	}
+
+
+	if (0 != mismatch_count) {
+		const float error_rate = 1.0F * mismatch_count / len;
+		if (error_rate > tester->acceptable_error_rate) {
+			/* High error rate is never acceptable. */
+			fprintf(stderr, "[EE] Length of input string = %zd, mismatch count = %zd, error rate = %f (too high)\n",
+				len, mismatch_count, (double) error_rate);
+			return -1;
+		} else {
+			fprintf(stderr, "[NN] Length of input string = %zd, mismatch count = %zd, error rate = %f (acceptable)\n",
+				len, mismatch_count, (double) error_rate);
+		}
+	} else {
+		fprintf(stderr, "[II] Length of input string = %zd, last mismatch count = 0\n",
+			len);
+	}
+
+
+	if (((size_t) -1 != last_mismatch_index)) {
+		if (last_mismatch_index > tester->acceptable_last_mismatch_index) {
+			/* Errors are acceptable only at the beginning, where
+			   receiver didn't tune yet into stream of incoming
+			   data. */
+			fprintf(stderr, "[EE] Length of input string = %zd, last mismatch index = %zd (too far from beginning)\n",
+				len, last_mismatch_index);
+			return -1;
+		} else {
+			fprintf(stderr, "[NN] Length of input string = %zd, last mismatch index = %zd (acceptable)\n",
+				len, last_mismatch_index);
+		}
+	} else {
+		fprintf(stderr, "[II] Length of input string = %zd, last mismatch index = none\n",
+			len);
+	}
+
+
+	return 0;
+}
+
+
+
+
+static void string_trim_end(char * string)
+{
+	if (NULL == string) {
+		return;
+	}
+
+	const size_t len = strlen(string);
+	if (0 == len) {
+		return;
+	}
+
+	size_t i = len - 1;
+	while (string[i] == ' ') {
+		string[i] = '\0';
+		i--;
+	}
+}
+
+
+
+
+static void string_tolower(char * string)
+{
+	if (NULL == string) {
+		return;
+	}
+
+	const size_t len = strlen(string);
+	if (0 == len) {
+		return;
+	}
+
+	for (size_t i = 0; i < len; i++) {
+		string[i] = tolower(string[i]);
+	}
+}
+
+
+
+
+/**
+   @brief Remove all non-consequential differences in input and received string
+
+   Remove ending space characters make strings lower case case.
+*/
+static void tester_normalize_input_and_received(tester_t * tester)
+{
+	/* Normalize input string. */
+	string_trim_end(tester->input_string);
+
+	/* Normalize received string. */
+	string_trim_end(tester->received_string);
+	string_tolower(tester->received_string);
+}
+
+
+
+
+/**
+   @brief Display differences between input and received string
+   
+   Start displaying differences from the end of string.  Few
+   differences at the beginning may be inevitable because the receiver
+   didn't tune yet into incoming data. But if there are some
+   differences at the end of the string, then those are much more
+   interesting and should be displayed first.
+
+   Also because of possible receive errors, the input string and
+   received string may have different lengths. If we started comparing
+   from the beginning, all received characters may be recognized as
+   non-matching.
+*/
+static void tester_display_differences(const tester_t * tester)
+{
+	if (0 == strcmp(tester->input_string, tester->received_string)) {
+		/* No differences to display. */
+		return;
+	}
+
+	/* If there are 1000 differences, there is no reason to
+	   display them all. */
+	const size_t diffs_to_report_max = 10;
+	size_t diffs_reported = 0;
+	fprintf(stderr,
+		"[II] Displaying at most last %zd different characters\n",
+		diffs_to_report_max);
+
+	const size_t input_len = strlen(tester->input_string);
+	const size_t received_len = strlen(tester->received_string);
+	/* Find shorter string's length. */
+	const size_t len = input_len <= received_len ? input_len : received_len;
+
+	for (size_t i = 0; i < len; i++) {
+		const size_t input_index = input_len - 1 - i;
+		const size_t received_index = received_len - 1 - i;
+
+		if (tester->input_string[input_index] != tester->received_string[received_index]) {
+			fprintf(stderr, "[WW] char input[%6zd] = %4d/0x%02x/'%c' vs. received[%6zd] = %4d/0x%02x/'%c'\n",
+
+				input_index,
+				(int) tester->input_string[input_index],
+				(unsigned int) tester->input_string[input_index],
+				tester->input_string[input_index],
+
+				received_index,
+				(int) tester->received_string[received_index],
+				(unsigned int) tester->received_string[received_index],
+				tester->received_string[received_index]);
+
+			diffs_reported++;
+		}
+		if (diffs_reported == diffs_to_report_max) {
+			/* Don't print them all if there are more of X differences. */
+			fprintf(stderr, "[EE] more differences may be present, but not showing them\n");
+			break;
+		}
+	}
+
+	if (0 != strcmp(tester->input_string, tester->received_string)) {
+		if (0 == diffs_reported) {
+			/* Because of condition in 'for' loop we might
+			   skipped checking end of one of strings. */
+			fprintf(stderr, "[EE] difference appears to be at beginning of one of strings\n");
+		}
+	}
+	return;
+}
+
