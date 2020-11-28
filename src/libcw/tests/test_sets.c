@@ -153,7 +153,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_OTHER, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			/* cw_utils topic */
@@ -174,7 +174,7 @@ cw_test_set_t cw_test_sets[] = {
 		LIBCW_TEST_API_MODERN,
 
 		{ LIBCW_TEST_TOPIC_DATA, LIBCW_TEST_TOPIC_MAX }, /* Topics. */
-		{ CW_AUDIO_NULL, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
+		{ CW_AUDIO_NULL, CW_AUDIO_CONSOLE, CW_AUDIO_OSS, CW_AUDIO_ALSA, CW_AUDIO_PA, CW_AUDIO_NONE /* Guard. */ }, /* Sound systems. */
 
 		{
 			/* cw_data topic */
