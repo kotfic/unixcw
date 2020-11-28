@@ -142,6 +142,8 @@ Then restart devfs to load the new rules:
 https://alsa.opensrc.org/Proc_asound_documentation
 echo 32 > /proc/asound/card0/pcm0p/sub0/prealloc
 
+modprobe snd_hda_intel
+
 
 ** PulseAudio
 
@@ -173,7 +175,15 @@ https://bugs.freedesktop.org/show_bug.cgi?id=42942
 
 ** OSS
 
-kldload snd_driver # FreeBSD
+*** Ubuntu
+
+When ALSA or PulseAudio is already installed:
+apt install oss-compat
+apt install osspd
+
+*** FreeBSD
+
+kldload snd_driver
 cat /dev/sndstat
 ./src/cw/cw -d /dev/dsp0.0
 
