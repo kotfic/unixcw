@@ -253,3 +253,10 @@ Rationale: today I have detected (by sheer luck) that cw_set_debug_flags()
 declaration existed in libcw_debug.h, but the function was not defined
 anywhere.
 
+** Fix long duration of valgrind tests
+When libcw tests binary is executed under valgrind, its execution
+takes a lot of time because the tests call vsnprintf() a lot
+(indirectly through snprintf() and vsnprintf()). We can really shorten
+the duration of tests if only we will find a way to decrease usage of
+these functions.
+

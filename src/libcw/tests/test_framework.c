@@ -258,6 +258,7 @@ bool cw_test_expect_op_int(struct cw_test_executor_t * self, int expected_value,
 	char va_buf[128] = { 0 };
 	va_list ap;
 	va_start(ap, fmt);
+	/* FIXME: this vsnprintf() introduces large delays when running tests under valgrind/callgrind. */
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
@@ -272,6 +273,7 @@ bool cw_test_expect_op_int_errors_only(struct cw_test_executor_t * self, int exp
 	char va_buf[128] = { 0 };
 	va_list ap;
 	va_start(ap, fmt);
+	/* FIXME: this vsnprintf() introduces large delays when running tests under valgrind/callgrind. */
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
@@ -286,6 +288,7 @@ static bool cw_test_expect_op_int_sub(struct cw_test_executor_t * self, int expe
 	bool as_expected = false;
 
 	char msg_buf[1024] = { 0 };
+	/* FIXME: these snprintf() call introduce large delays when running tests under valgrind/callgrind. */
 	int n = snprintf(msg_buf, sizeof (msg_buf), "%s", self->msg_prefix);
 	const int message_len = n + snprintf(msg_buf + n, sizeof (msg_buf) - n, "%s", va_buf);
 	n += snprintf(msg_buf + n, sizeof (msg_buf) - n, "%-*s", (self->console_n_cols - n), va_buf);
@@ -320,7 +323,11 @@ static bool cw_test_expect_op_int_sub(struct cw_test_executor_t * self, int expe
 		if (!errors_only) {
 			self->stats->successes++;
 
+			/* FIXME: believe it or not, this line
+			   introduces large delays when running tests
+			   under valgrind/callgrind. */
 			cw_test_append_status_string(self, msg_buf, message_len, "[ OK ]");
+
 			self->log_info(self, "%s\n", msg_buf);
 		}
 		as_expected = true;
@@ -1046,6 +1053,9 @@ int cw_test_log_info(struct cw_test_executor_t * self, const char * fmt, ...)
 
 	va_list ap;
 	va_start(ap, fmt);
+	/* FIXME: this vsnprintf() introduces *some* delays when
+	   running tests under valgrind/callgrind. Fixing this FIXME
+	   will have very small impact, so try this as last. */
 	vsnprintf(va_buf, sizeof (va_buf), fmt, ap);
 	va_end(ap);
 
