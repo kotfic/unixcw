@@ -130,7 +130,8 @@ nodist_xcwcp_OBJECTS = xcwcp-moc_application.$(OBJEXT)
 xcwcp_OBJECTS = $(am_xcwcp_OBJECTS) $(nodist_xcwcp_OBJECTS)
 am__DEPENDENCIES_1 =
 xcwcp_DEPENDENCIES = $(top_builddir)/src/cwutils/lib_xcwcp.a \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) \
+	$(top_builddir)/src/cwutils/lib_rec_tests.a
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -396,11 +397,15 @@ xcwcp_SOURCES = \
 nodist_xcwcp_SOURCES = moc_application.cc
 
 # target-specific preprocessor flags (#defs and include dirs)
-xcwcp_CPPFLAGS = $(AM_CPPFLAGS) $(AC_QT5_CFLAGS) $(AC_CFLAG_PIC)
+xcwcp_CPPFLAGS = $(AM_CPPFLAGS) $(AC_QT5_CFLAGS) $(AC_CFLAG_PIC) \
+	-DXCWCP_WITH_REC_TEST
 # Target-specific linker flags (objects to link). Order is important:
 # first static library then dynamic. Otherwise linker may not find
 # symbols from the dynamic library.
-xcwcp_LDADD = $(top_builddir)/src/cwutils/lib_xcwcp.a -L$(top_builddir)/src/libcw/.libs -lcw $(AC_QT5_LIBS) -lpthread $(INTL_LIB)
+xcwcp_LDADD = $(top_builddir)/src/cwutils/lib_xcwcp.a \
+	-L$(top_builddir)/src/libcw/.libs -lcw $(AC_QT5_LIBS) \
+	-lpthread $(INTL_LIB) \
+	$(top_builddir)/src/cwutils/lib_rec_tests.a
 
 # copy man page to proper directory during installation
 man_MANS = xcwcp.1
