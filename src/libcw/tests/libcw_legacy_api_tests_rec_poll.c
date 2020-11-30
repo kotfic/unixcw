@@ -35,6 +35,7 @@
 #endif
 
 #include <cw_common.h>
+#include <cw_rec_tester.h>
 
 
 
@@ -76,12 +77,6 @@
 
 
 
-/**
-   Used to determine size of input data and of buffer for received
-   (polled from receiver) characters.
-*/
-#define REC_TEST_BUFFER_SIZE 4096
-
 
 
 
@@ -97,49 +92,8 @@ typedef struct received_data {
 
 
 
-typedef struct tester_t {
 
-	/* Whether generating timed events for receiver by test code
-	   is in progress. */
-	bool generating_in_progress;
-
-	pthread_t receiver_test_code_thread_id;
-
-	char input_string[REC_TEST_BUFFER_SIZE];
-
-	/* Iterator to the array above. */
-	size_t input_string_i;
-
-	/* Array large enough to contain characters received (polled)
-	   correctly and possible additional characters received
-	   incorrectly. */
-	char received_string[10 * REC_TEST_BUFFER_SIZE];
-
-	/* Iterator to the array above. */
-	size_t received_string_i;
-
-	cw_gen_t * gen;
-	cw_key_t key;
-
-	cwtest_param_ranger_t speed_ranger;
-
-	/* Parameters used in "compare" function that verifies if
-	   input and received strings are similar enough to pass the
-	   test. */
-	float acceptable_error_rate;
-	size_t acceptable_last_mismatch_index;
-
-	/* Input variable for the test. Decreasing or increasing
-	   decides how many characters are enqueued with the same
-	   speed S1. Next batch of characters will be enqueued with
-	   another speed S2. Depending on how long it will take to
-	   dequeue this batch, the difference between S2 and S1 may be
-	   significant and this will throw receiver off. */
-	int characters_to_enqueue;
-
-} tester_t;
-
-static tester_t g_tester;
+static cw_rec_tester_t g_tester;
 
 
 typedef struct Receiver {
@@ -199,16 +153,8 @@ void receiver_poll_space_c_r(Receiver * xcwcp_receiver);
 void receiver_poll_space_r_c(Receiver * xcwcp_receiver);
 
 void test_callback_func(void * arg, int key_state);
-void tester_start_test_code(tester_t * tester);
-void tester_stop_test_code(tester_t * tester);
-
-void tester_init(tester_t * tester);
-void tester_compare_text_buffers(tester_t * tester);
-void tester_init_text_buffers(tester_t * tester, size_t len);
-
-static void tester_normalize_input_and_received(tester_t * tester);
-static int  tester_compare_input_and_received(tester_t * tester);
-static void tester_display_differences(const tester_t * tester);
+void tester_start_test_code(cw_rec_tester_t * tester);
+void tester_stop_test_code(cw_rec_tester_t * tester);
 
 
 
@@ -895,7 +841,7 @@ void receiver_sk_event(Receiver * xcwcp_receiver, bool is_down)
 */
 void * receiver_input_generator_fn(void * arg)
 {
-	tester_t * tester = arg;
+	cw_rec_tester_t * tester = arg;
 
 	/* Start sending the test string. Registered callback will be
 	   called on every mark/space. Enqueue only initial part of
@@ -921,8 +867,12 @@ void * receiver_input_generator_fn(void * arg)
 	tester->generating_in_progress = false;
 
 
-	tester_compare_text_buffers(tester);
-
+	const int receive_correctness = cw_rec_tester_evaluate_receive_correctness(tester);
+	if (g_xcwcp_receiver.cte->expect_op_int(g_xcwcp_receiver.cte, 0, "==", receive_correctness, "Final comparison of receive correctness")) {
+		fprintf(stderr, "[II] Test result: success\n");
+	} else {
+		fprintf(stderr, "[EE] Test result: failure\n");
+	}
 
 	return NULL;
 }
@@ -930,28 +880,11 @@ void * receiver_input_generator_fn(void * arg)
 
 
 
-void tester_init(tester_t * tester)
-{
-	/* Configure test parameters. */
-	tester->characters_to_enqueue = 5;
-
-	/* TODO: more thorough reset of tester. */
-	
-	memset(tester->input_string, 0, sizeof (tester->input_string));
-	tester->input_string_i = 0;
-
-	memset(tester->received_string, 0, sizeof (tester->received_string));
-	tester->received_string_i = 0;
-}
-
-
-
-
-void tester_start_test_code(tester_t * tester)
+void tester_start_test_code(cw_rec_tester_t * tester)
 {
 	tester->generating_in_progress = true;
 
-	tester_init_text_buffers(tester, 1);
+	cw_rec_tester_init_text_buffers(tester, 1);
 
 	/* Using Null sound system because this generator is only used
 	   to enqueue text and control key. Sound will be played by
@@ -976,83 +909,9 @@ void tester_start_test_code(tester_t * tester)
 
 
 
-void tester_stop_test_code(tester_t * tester)
+void tester_stop_test_code(cw_rec_tester_t * tester)
 {
 	pthread_cancel(tester->receiver_test_code_thread_id);
-}
-
-
-
-
-void tester_init_text_buffers(tester_t * tester, size_t len)
-{
-	memset(tester->input_string, 0, sizeof (tester->input_string));
-	tester->input_string_i = 0;
-
-	memset(tester->received_string, 0, sizeof (tester->received_string));
-	tester->received_string_i = 0;
-	
-	/* TODO: generate the text randomly. */
-
-	if (0 == len) {
-		/* Short text for occasions where I need a quick test. */
-#define BASIC_SET_SHORT "one two three four paris"
-		const char input[REC_TEST_BUFFER_SIZE] = BASIC_SET_SHORT;
-		snprintf(tester->input_string, sizeof (tester->input_string), "%s", input);
-	} else {
-		/* Long text for longer tests. */
-#define BASIC_SET_LONG \
-	"the quick brown fox jumps over the lazy dog. 01234567890 paris paris paris "    \
-	"abcdefghijklmnopqrstuvwxyz0123456789\"'$()+,-./:;=?_@<>!&^~ paris paris paris " \
-	"one two three four five six seven eight nine ten eleven paris paris paris "
-		const char input[REC_TEST_BUFFER_SIZE] = BASIC_SET_LONG BASIC_SET_LONG;
-		snprintf(tester->input_string, sizeof (tester->input_string), "%s", input);
-	}
-
-	return;
-}
-
-
-
-
-/* Compare buffers with text that was sent to test generator and text
-   that was received from tested production receiver.
-
-   Compare input text with what the receiver received. */
-void tester_compare_text_buffers(tester_t * tester)
-{
-	/* Luckily for us the text enqueued in test generator and
-	   played at ~12WPM is recognized by xcwcp receiver from the
-	   beginning without any problems, so we will be able to do
-	   simple strcmp(). */
-
-	/* Use multiple newlines to clearly present sent and received
-	   string. It will be easier to do visual comparison of the
-	   two strings if they are presented that way. */
-
-	fprintf(stderr, "[II] Sent:     \n\n'%s'\n\n", tester->input_string);
-	fprintf(stderr, "[II] Received: \n\n'%s'\n\n", tester->received_string);
-
-	tester_normalize_input_and_received(tester);
-
-	fprintf(stderr, "[II] Sent (normalized):     \n\n'%s'\n\n", tester->input_string);
-	fprintf(stderr, "[II] Received (normalized): \n\n'%s'\n\n", tester->received_string);
-
-	tester->acceptable_error_rate = 0.01F;
-	tester->acceptable_last_mismatch_index = 10;
-	const int compare_result = tester_compare_input_and_received(tester);
-	
-	tester_display_differences(tester);
-	if (g_xcwcp_receiver.cte->expect_op_int(g_xcwcp_receiver.cte, 0, "==", compare_result, "Final comparison of sent and received strings")) {
-		fprintf(stderr, "[II] Test result: success\n");
-	} else {
-		fprintf(stderr, "[EE] Test result: failure\n");
-		fprintf(stderr, "[EE] '%s' != '%s'\n", tester->input_string, tester->received_string);
-
-		fprintf(stderr, "\n");
-	}
-
-	return;
 }
 
 
@@ -1106,7 +965,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 	}
 
 
-	tester_init(&g_tester);
+	cw_rec_tester_init(&g_tester);
 
 
 	cw_clear_receive_buffer();
@@ -1188,7 +1047,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 
 void low_tone_queue_callback(void * arg)
 {
-	tester_t * tester = (tester_t *) arg;
+	cw_rec_tester_t * tester = (cw_rec_tester_t *) arg;
 
 	for (int i = 0; i < tester->characters_to_enqueue; i++) {
 		const char c = tester->input_string[tester->input_string_i];
@@ -1202,234 +1061,6 @@ void low_tone_queue_callback(void * arg)
 		}
 	}
 
-	return;
-}
-
-
-
-
-/**
-   @brief Make detailed comparison of input and received strings
-
-   The function does more than just simple strcmp(). We accept that
-   for different reasons the receiver doesn't work 100% correctly, and
-   we allow some differences between input and received strings. The
-   function uses some criteria (error rate and position of last
-   mismatch) to check how similar the two strings are.
-
-   Start comparing from the end.  At the beginning the receiver may
-   not be tuned into incoming data, so at the beginning the errors are
-   very probable, but after that there should be no errors.
-
-   Comparing from the end makes sure that after first 5-10 characters
-   the receiver performs 100% correctly.
-
-   Also because of possible receive errors, the input string and
-   received string may have different lengths. If we started comparing
-   from the beginning, all received characters may be recognized as
-   non-matching.
-
-   @return 0 if input and received string are similar enough
-   @return -1 otherwise
-*/
-static int tester_compare_input_and_received(tester_t * tester)
-{
-	const size_t input_len = strlen(tester->input_string);
-	const size_t received_len = strlen(tester->received_string);
-
-	/* Find shorter string's length. */
-	const size_t len = input_len <= received_len ? input_len : received_len;
-
-	size_t mismatch_count = 0;
-	/* Index of last mismatched character. "Last" when looking
-	   from the beginning of the string. */
-	size_t last_mismatch_index = (size_t) -1;
-
-	for (size_t i = 0; i < len; i++) {
-		const size_t input_index = input_len - 1 - i;
-		const size_t received_index = received_len - 1 - i;
-
-		if (tester->input_string[input_index] != tester->received_string[received_index]) {
-#if 0
-			fprintf(stderr, "[WW] mismatch of '%c' vs '%c'\n",
-				tester->input_string[input_index],
-				tester->received_string[received_index]);
-#endif
-			mismatch_count++;
-			
-			if ((size_t) -1 == last_mismatch_index) {
-				last_mismatch_index = input_index;
-			}
-		}
-	}
-
-
-	if (0 != mismatch_count) {
-		const float error_rate = 1.0F * mismatch_count / len;
-		if (error_rate > tester->acceptable_error_rate) {
-			/* High error rate is never acceptable. */
-			fprintf(stderr, "[EE] Length of input string = %zd, mismatch count = %zd, error rate = %f (too high)\n",
-				len, mismatch_count, (double) error_rate);
-			return -1;
-		} else {
-			fprintf(stderr, "[NN] Length of input string = %zd, mismatch count = %zd, error rate = %f (acceptable)\n",
-				len, mismatch_count, (double) error_rate);
-		}
-	} else {
-		fprintf(stderr, "[II] Length of input string = %zd, last mismatch count = 0\n",
-			len);
-	}
-
-
-	if (((size_t) -1 != last_mismatch_index)) {
-		if (last_mismatch_index > tester->acceptable_last_mismatch_index) {
-			/* Errors are acceptable only at the beginning, where
-			   receiver didn't tune yet into stream of incoming
-			   data. */
-			fprintf(stderr, "[EE] Length of input string = %zd, last mismatch index = %zd (too far from beginning)\n",
-				len, last_mismatch_index);
-			return -1;
-		} else {
-			fprintf(stderr, "[NN] Length of input string = %zd, last mismatch index = %zd (acceptable)\n",
-				len, last_mismatch_index);
-		}
-	} else {
-		fprintf(stderr, "[II] Length of input string = %zd, last mismatch index = none\n",
-			len);
-	}
-
-
-	return 0;
-}
-
-
-
-
-static void string_trim_end(char * string)
-{
-	if (NULL == string) {
-		return;
-	}
-
-	const size_t len = strlen(string);
-	if (0 == len) {
-		return;
-	}
-
-	size_t i = len - 1;
-	while (string[i] == ' ') {
-		string[i] = '\0';
-		i--;
-	}
-}
-
-
-
-
-static void string_tolower(char * string)
-{
-	if (NULL == string) {
-		return;
-	}
-
-	const size_t len = strlen(string);
-	if (0 == len) {
-		return;
-	}
-
-	for (size_t i = 0; i < len; i++) {
-		string[i] = tolower(string[i]);
-	}
-}
-
-
-
-
-/**
-   @brief Remove all non-consequential differences in input and received string
-
-   Remove ending space characters make strings lower case case.
-*/
-static void tester_normalize_input_and_received(tester_t * tester)
-{
-	/* Normalize input string. */
-	string_trim_end(tester->input_string);
-
-	/* Normalize received string. */
-	string_trim_end(tester->received_string);
-	string_tolower(tester->received_string);
-}
-
-
-
-
-/**
-   @brief Display differences between input and received string
-   
-   Start displaying differences from the end of string.  Few
-   differences at the beginning may be inevitable because the receiver
-   didn't tune yet into incoming data. But if there are some
-   differences at the end of the string, then those are much more
-   interesting and should be displayed first.
-
-   Also because of possible receive errors, the input string and
-   received string may have different lengths. If we started comparing
-   from the beginning, all received characters may be recognized as
-   non-matching.
-*/
-static void tester_display_differences(const tester_t * tester)
-{
-	if (0 == strcmp(tester->input_string, tester->received_string)) {
-		/* No differences to display. */
-		return;
-	}
-
-	/* If there are 1000 differences, there is no reason to
-	   display them all. */
-	const size_t diffs_to_report_max = 10;
-	size_t diffs_reported = 0;
-	fprintf(stderr,
-		"[II] Displaying at most last %zd different characters\n",
-		diffs_to_report_max);
-
-	const size_t input_len = strlen(tester->input_string);
-	const size_t received_len = strlen(tester->received_string);
-	/* Find shorter string's length. */
-	const size_t len = input_len <= received_len ? input_len : received_len;
-
-	for (size_t i = 0; i < len; i++) {
-		const size_t input_index = input_len - 1 - i;
-		const size_t received_index = received_len - 1 - i;
-
-		if (tester->input_string[input_index] != tester->received_string[received_index]) {
-			fprintf(stderr, "[WW] char input[%6zd] = %4d/0x%02x/'%c' vs. received[%6zd] = %4d/0x%02x/'%c'\n",
-
-				input_index,
-				(int) tester->input_string[input_index],
-				(unsigned int) tester->input_string[input_index],
-				tester->input_string[input_index],
-
-				received_index,
-				(int) tester->received_string[received_index],
-				(unsigned int) tester->received_string[received_index],
-				tester->received_string[received_index]);
-
-			diffs_reported++;
-		}
-		if (diffs_reported == diffs_to_report_max) {
-			/* Don't print them all if there are more of X differences. */
-			fprintf(stderr, "[EE] more differences may be present, but not showing them\n");
-			break;
-		}
-	}
-
-	if (0 != strcmp(tester->input_string, tester->received_string)) {
-		if (0 == diffs_reported) {
-			/* Because of condition in 'for' loop we might
-			   skipped checking end of one of strings. */
-			fprintf(stderr, "[EE] difference appears to be at beginning of one of strings\n");
-		}
-	}
 	return;
 }
 

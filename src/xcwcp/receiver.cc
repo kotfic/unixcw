@@ -35,9 +35,11 @@
 #include "i18n.h"
 
 
-#ifdef REC_TEST_CODE
+#ifdef XCWCP_WITH_REC_TEST
 #include <cctype>
 #include <unistd.h>
+
+#include <cw_rec_tester.h>
 
 #include "libcw2.h"
 #include "../libcw/libcw_key.h"
@@ -475,10 +477,10 @@ void Receiver::poll_character()
 		   character. Display it. */
 		textarea->append(c);
 
-#ifdef REC_TEST_CODE
+#ifdef XCWCP_WITH_REC_TEST
 		fprintf(stderr, "[II] Character: '%c'\n", c);
 
-		this->test_received_string[this->test_received_string_i++] = c;
+		this->rec_tester.received_string[this->rec_tester.received_string_i++] = c;
 
 		bool is_end_of_word_r = false;
 		bool is_error_r = false;
@@ -604,7 +606,7 @@ void Receiver::poll_space()
 		//fprintf(stderr, "End of word '%c'\n\n", c);
 		textarea->append(' ');
 
-#ifdef REC_TEST_CODE
+#ifdef XCWCP_WITH_REC_TEST
 		fprintf(stderr, "[II] Space:\n");
 
 		/* cw_receive_character() will return through 'c'
@@ -620,7 +622,7 @@ void Receiver::poll_space()
 		}
 
 
-		this->test_received_string[this->test_received_string_i++] = ' ';
+		this->rec_tester.received_string[this->rec_tester.received_string_i++] = ' ';
 
 		bool is_end_of_word_r = false;
 		bool is_error_r = false;
@@ -664,63 +666,25 @@ void Receiver::poll_space()
 
 
 
-#ifdef REC_TEST_CODE
+#ifdef XCWCP_WITH_REC_TEST
 
 
 
 
-void prepare_input_text_buffer(Receiver * xcwcp_receiver)
+void low_tone_queue_callback(void * arg)
 {
-#if 0
-	const char input[REC_TEST_BUFFER_SIZE] =
-		"the quick brown fox jumps over the lazy dog. 01234567890 "     /* Simple test. */
-		"abcdefghijklmnopqrstuvwxyz0123456789\"'$()+,-./:;=?_@<>!&^~ "  /* Almost all characters. */
-		"one two three four five six seven eight nine ten eleven";      /* Words and spaces. */
-#else
-	/* Short test for occasions where I need a quick test. */
-	const char input[REC_TEST_BUFFER_SIZE] = "one two";
-	//const char input[REC_TEST_BUFFER_SIZE] = "the quick brown fox jumps over the lazy dog. 01234567890";
-#endif
-	snprintf(xcwcp_receiver->test_input_string, sizeof (xcwcp_receiver->test_input_string), "%s", input);
+	cw_rec_tester_t * tester = (cw_rec_tester_t *) arg;
 
-	return;
-}
-
-
-
-
-/* Compare buffers with text that was sent to test generator and text
-   that was received from tested production receiver.
-
-   Compare input text with what the receiver received. */
-void compare_text_buffers(Receiver * xcwcp_receiver)
-{
-	/* Luckily for us the text enqueued in test generator and
-	   played at ~12WPM is recognized by xcwcp receiver from the
-	   beginning without any problems, so we will be able to do
-	   simple strcmp(). */
-
-	fprintf(stderr, "[II] Sent:     '%s'\n", xcwcp_receiver->test_input_string);
-	fprintf(stderr, "[II] Received: '%s'\n", xcwcp_receiver->test_received_string);
-
-	/* Normalize received string. */
-	{
-		const size_t len = strlen(xcwcp_receiver->test_received_string);
-		for (size_t i = 0; i < len; i++) {
-			xcwcp_receiver->test_received_string[i] = tolower(xcwcp_receiver->test_received_string[i]);
+	for (int i = 0; i < tester->characters_to_enqueue; i++) {
+		const char c = tester->input_string[tester->input_string_i];
+		if ('\0' == c) {
+			/* Unregister ourselves. */
+			cw_tq_register_low_level_callback_internal(tester->gen->tq, NULL, NULL, 0);
+			break;
+		} else {
+			cw_gen_enqueue_character(tester->gen, c);
+			tester->input_string_i++;
 		}
-		if (xcwcp_receiver->test_received_string[len - 1] == ' ') {
-			xcwcp_receiver->test_received_string[len - 1] = '\0';
-		}
-	}
-
-
-	const int compare_result = strcmp(xcwcp_receiver->test_input_string, xcwcp_receiver->test_received_string);
-	if (0 == compare_result) {
-		fprintf(stderr, "[II] Test result: success\n");
-	} else {
-		fprintf(stderr, "[EE] Test result: failure\n");
-		fprintf(stderr, "[EE] '%s' != '%s'\n", xcwcp_receiver->test_input_string, xcwcp_receiver->test_received_string);
 	}
 
 	return;
@@ -756,33 +720,51 @@ void * receiver_input_generator_fn(void * arg)
 {
 	Receiver * xcwcp_receiver = (Receiver *) arg;
 
-
-	prepare_input_text_buffer(xcwcp_receiver);
+	cw_rec_tester_init(&xcwcp_receiver->rec_tester);
+	cw_rec_tester_init_text_buffers(&xcwcp_receiver->rec_tester, 1);
 
 
 	/* Using Null sound system because this generator is only used
 	   to enqueue text and control key. Sound will be played by
 	   main generator used by xcwcp */
-	cw_gen_t * gen = cw_gen_new(CW_AUDIO_NULL, NULL);
+	cw_gen_config_t gen_conf;
+	memset(&gen_conf, 0, sizeof (gen_conf));
+	gen_conf.sound_system = CW_AUDIO_NULL;
+
+	cw_gen_t * gen = cw_gen_new(&gen_conf);
 	cw_key_t key;
+
+	xcwcp_receiver->rec_tester.gen = gen;
+	cw_tq_register_low_level_callback_internal(xcwcp_receiver->rec_tester.gen->tq, low_tone_queue_callback, &xcwcp_receiver->rec_tester, 5);
 
 	cw_key_register_generator(&key, gen);
 	cw_gen_register_value_tracking_callback_internal(gen, test_callback_func, arg);
 	//cw_key_register_keying_callback(&key, test_callback_func, arg);
 
 	/* Start sending the test string. Registered callback will be
-	   called on every mark/space. */
+	   called on every mark/space. Enqueue only initial part of
+	   string, just to start sending, the rest should be sent by
+	   'low watermark' callback. */
 	cw_gen_start(gen);
-	cw_gen_enqueue_string(gen, xcwcp_receiver->test_input_string);
+	for (int i = 0; i < 5; i++) {
+		const char c = xcwcp_receiver->rec_tester.input_string[xcwcp_receiver->rec_tester.input_string_i];
+		if ('\0' == c) {
+			/* A very short input string. */
+			break;
+		} else {
+			cw_gen_enqueue_character(xcwcp_receiver->rec_tester.gen, c);
+			xcwcp_receiver->rec_tester.input_string_i++;
+		}
+	}
 
 	/* Wait for all characters to be played out. */
 	cw_tq_wait_for_level_internal(gen->tq, 0);
 	cw_usleep_internal(1000 * 1000);
 
 	cw_gen_delete(&gen);
+	xcwcp_receiver->rec_tester.generating_in_progress = false;
 
-
-	compare_text_buffers(xcwcp_receiver);
+	cw_rec_tester_evaluate_receive_correctness(&xcwcp_receiver->rec_tester);
 
 
 	return NULL;

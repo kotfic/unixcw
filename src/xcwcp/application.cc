@@ -306,7 +306,7 @@ void Application::start()
 
 	sender->clear();
 	receiver->clear();
-#ifdef REC_TEST_CODE
+#ifdef XCWCP_WITH_REC_TEST
 	receiver->start_test_code();
 #endif
 
@@ -351,7 +351,7 @@ void Application::stop()
 	poll_timer->stop();
 	sender->clear();
 	receiver->clear();
-#ifdef REC_TEST_CODE
+#ifdef XCWCP_WITH_REC_TEST
 	receiver->stop_test_code();
 #endif
 

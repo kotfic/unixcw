@@ -22,6 +22,9 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 
+#ifdef XCWCP_WITH_REC_TEST
+#include <cw_rec_tester.h>
+#endif
 
 
 
@@ -77,20 +80,12 @@ namespace cw {
 		/* Clear out queued data on stop, mode change, etc. */
 		void clear();
 
-#ifdef REC_TEST_CODE
+#ifdef XCWCP_WITH_REC_TEST
 		void start_test_code();
 		void stop_test_code();
 		pthread_t receiver_test_code_thread_id;
 
-		char test_input_string[REC_TEST_BUFFER_SIZE] = { 0 };
-
-		/* Array large enough to contain characters received
-		   (polled) correctly and possible additional
-		   characters received incorrectly. */
-		char test_received_string[10 * REC_TEST_BUFFER_SIZE] = { 0 };
-
-		 /* Iterator to the array above. */
-		int test_received_string_i = 0;
+		cw_rec_tester_t rec_tester;
 #endif
 
 		/* Timer for measuring length of dots and dashes.

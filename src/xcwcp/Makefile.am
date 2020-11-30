@@ -44,6 +44,11 @@ xcwcp_LDADD = $(top_builddir)/src/cwutils/lib_xcwcp.a -L$(top_builddir)/src/libc
 
 
 
+xcwcp_CPPFLAGS+=-DXCWCP_WITH_REC_TEST
+xcwcp_LDADD+=$(top_builddir)/src/cwutils/lib_rec_tests.a
+
+
+
 # copy man page to proper directory during installation
 man_MANS = xcwcp.1
 # and mark it as distributable, too

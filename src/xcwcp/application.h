@@ -36,11 +36,6 @@
 #include "cw_common.h"
 
 
-//#define REC_TEST_CODE
-
-/* Used to determine size of input data and of buffer for received
-  (polled from receiver) characters. */
-#define REC_TEST_BUFFER_SIZE 4096
 
 
 namespace cw {
