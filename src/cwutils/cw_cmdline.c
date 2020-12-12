@@ -593,7 +593,7 @@ char * cw_config_get_supported_feature_cmdline_options(const cw_config_t * confi
 		append_option(buffer, size, &n, "h|help,V|version");
 	}
 
-	fprintf(stderr, "Command line options for supported features: '%s'\n", buffer);
+	//fprintf(stderr, "Command line options for supported features: '%s'\n", buffer);
 
 	return buffer;
 }
