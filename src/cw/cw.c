@@ -168,7 +168,7 @@ parse_stream_query (FILE *stream)
 {
   int c, value;
 
-  c = toupper (fgetc_unlocked (stream));
+  c = toupper (getc_unlocked (stream));
   switch (c)
     {
     case EOF:
@@ -225,7 +225,7 @@ parse_stream_cwquery (FILE *stream)
   int c, value;
   const char *format;
 
-  c = toupper (fgetc_unlocked (stream));
+  c = toupper (getc_unlocked (stream));
   switch (c)
     {
     case EOF:
@@ -383,7 +383,7 @@ parse_stream_command (FILE *stream)
 {
   int c;
 
-  c = toupper (fgetc_unlocked (stream));
+  c = toupper (getc_unlocked (stream));
   switch (c)
     {
     case EOF:
@@ -488,7 +488,7 @@ parse_stream (FILE *stream)
    * stdin in signal handler (to signal termination of the loop) won't be
    * possible: fclose() will just hang because stdin will be locked.
    */
-  for (c = fgetc_unlocked (stream); g_is_running && !feof (stream); c = fgetc_unlocked (stream))
+  for (c = getc_unlocked (stream); g_is_running && !feof (stream); c = getc_unlocked (stream))
     {
       switch (state)
         {
@@ -540,7 +540,7 @@ parse_stream (FILE *stream)
                */
               int lookahead;
 
-              lookahead = fgetc_unlocked (stream);
+              lookahead = getc_unlocked (stream);
               ungetc (lookahead, stream);
               send_cw_character (c, lookahead != CW_COMBINATION_END);
             }
