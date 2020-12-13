@@ -43,15 +43,18 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/sysinfo.h>
 #include <unistd.h>
 
+#ifndef __FreeBSD__
+#include <sys/sysinfo.h>
+#endif
+
 #if defined(HAVE_STRING_H)
-# include <string.h>
+#include <string.h>
 #endif
 
 #if defined(HAVE_STRINGS_H)
-# include <strings.h>
+#include <strings.h>
 #endif
 
 
@@ -960,12 +963,14 @@ void cw_test_print_test_stats(cw_test_executor_t * self)
 		fprintf(self->file_err,       "%s", SEPARATOR_LINE);
 	}
 
+#ifndef __FreeBSD__
 	struct sysinfo sys_info;
 	sysinfo(&sys_info);
 	self->uptime_end = sys_info.uptime;
 	const long test_duration = self->uptime_end - self->uptime_begin;
 	fprintf(self->file_err, "Duration of tests = %ld minutes, %ld seconds\n",
 		test_duration / 60, test_duration % 60);
+#endif
 
 	return;
 }
@@ -1294,10 +1299,11 @@ bool cw_test_sound_system_is_member(__attribute__((unused)) cw_test_executor_t *
 
 cwt_retv cw_test_main_test_loop(cw_test_executor_t * cte, cw_test_set_t * test_sets)
 {
+#ifndef __FreeBSD__
 	struct sysinfo sys_info;
 	sysinfo(&sys_info);
 	cte->uptime_begin = sys_info.uptime;
-
+#endif
 	int set = 0;
 	while (LIBCW_TEST_SET_VALID == test_sets[set].set_valid) {
 		cw_test_set_t * test_set = &test_sets[set];

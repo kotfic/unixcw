@@ -86,10 +86,13 @@ typedef struct cw_test_executor_t {
 	resource_meas resource_meas;
 	bool use_resource_meas;
 
+#ifndef __FreeBSD__
+	/* TODO: add calculation of test duration on BSD. */
 	/* Uptime at begin and end of tests. Used to measure duration
 	   of tests. */
 	long uptime_begin;
 	long uptime_end;
+#endif
 
 	/* Type suitable for srand48(). */
 	long int random_seed;
