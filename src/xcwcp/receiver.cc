@@ -365,7 +365,7 @@ void Receiver::handle_libcw_keying_event(struct timeval *t, int key_state)
 		//fprintf(stderr, "start receive tone: %10ld . %10ld\n", t->tv_sec, t->tv_usec);
 		if (!cw_start_receive_tone(t)) {
 			perror("cw_start_receive_tone");
-			abort();
+			return;
 		}
 	} else {
 		/* Key up. */
@@ -390,7 +390,7 @@ void Receiver::handle_libcw_keying_event(struct timeval *t, int key_state)
 				break;
 			default:
 				perror("cw_end_receive_tone");
-				abort();
+				return;
 			}
 		}
 	}
@@ -565,7 +565,7 @@ void Receiver::poll_character()
 
 		default:
 			perror("cw_receive_character");
-			abort();
+			return;
 		}
 	}
 

@@ -162,8 +162,9 @@ void Sender::dequeue_and_play_character()
 	queue.pop_front();
 	if (!cw_send_character(c)) {
 		perror("cw_send_character");
-		/* TODO: don't call abort(). */
-		abort();
+		QString status = _("Failed to send character '%1'");
+		app->show_status(status.arg(c));
+		return;
 	}
 
 	/* Update the status bar with the character being played.  Put

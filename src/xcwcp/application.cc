@@ -427,7 +427,7 @@ void Application::sync_speed()
 			cw_disable_adaptive_receive();
 			if (!cw_set_receive_speed(speed_spin->value())) {
 				perror("cw_set_receive_speed");
-				abort();
+				return;
 			}
 			cw_enable_adaptive_receive();
 		}
@@ -452,12 +452,12 @@ void Application::change_speed()
 	if (is_using_libcw) {
 		if (!cw_set_send_speed(speed_spin->value())) {
 			perror("cw_set_send_speed");
-			abort();
+			return;
 		}
 		if (!cw_get_adaptive_receive_state()) {
 			if (!cw_set_receive_speed(speed_spin->value())) {
 				perror("cw_set_receive_speed");
-				abort();
+				return;
 			}
 		}
 	}
@@ -481,7 +481,7 @@ void Application::change_frequency()
 	if (is_using_libcw) {
 		if (!cw_set_frequency(frequency_spin->value())) {
 			perror("cw_set_frequency");
-			abort();
+			return;
 		}
 	}
 
@@ -504,7 +504,7 @@ void Application::change_volume()
 	if (is_using_libcw) {
 		if (!cw_set_volume(volume_spin->value())) {
 			perror("cw_set_volume");
-			abort();
+			return;
 		}
 	}
 
@@ -527,7 +527,7 @@ void Application::change_gap()
 	if (is_using_libcw) {
 		if (!cw_set_gap(gap_spin->value())) {
 			perror("cw_set_gap");
-			abort();
+			return;
 		}
 	}
 
@@ -608,7 +608,7 @@ void Application::change_adaptive_receive()
 			cw_disable_adaptive_receive();
 			if (!cw_set_receive_speed(saved_receive_speed)) {
 				perror("cw_set_receive_speed");
-				abort();
+				return;
 			}
 			cw_enable_adaptive_receive();
 		} else {
@@ -619,7 +619,7 @@ void Application::change_adaptive_receive()
 			cw_disable_adaptive_receive();
 			if (!cw_set_receive_speed(speed_spin->value())) {
 				perror("cw_set_receive_speed");
-				abort();
+				return;
 			}
 		}
 	}
