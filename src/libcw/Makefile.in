@@ -152,7 +152,7 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(man3dir)" \
 	"$(DESTDIR)$(man7dir)" "$(DESTDIR)$(pkgconfigdir)" \
 	"$(DESTDIR)$(libcw_includedir)"
-LTLIBRARIES = $(lib_LTLIBRARIES)
+LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 libcw_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__objects_1 = libcw_la-libcw.lo libcw_la-libcw_gen.lo \
@@ -436,8 +436,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = tests
 
-# targets to be built in this directory
-lib_LTLIBRARIES = libcw.la libcw_test.la
+# Targets to be built in this directory. Only libcw.X should be
+# installed. Test library should not be installed.
+lib_LTLIBRARIES = libcw.la
+noinst_LTLIBRARIES = libcw_test.la
 man_MANS = libcw.3 cw.7
 pkgconfig_DATA = libcw.pc
 EXTRA_DIST = include.awk libdoc.awk libfuncs.awk libpc.awk libsigs.awk \
@@ -585,11 +587,22 @@ clean-libLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; \
+	locs=`for p in $$list; do echo $$p; done | \
+	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
+	      sort -u`; \
+	test -z "$$locs" || { \
+	  echo rm -f $${locs}; \
+	  rm -f $${locs}; \
+	}
+
 libcw.la: $(libcw_la_OBJECTS) $(libcw_la_DEPENDENCIES) $(EXTRA_libcw_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libcw_la_LINK) -rpath $(libdir) $(libcw_la_OBJECTS) $(libcw_la_LIBADD) $(LIBS)
 
 libcw_test.la: $(libcw_test_la_OBJECTS) $(libcw_test_la_DEPENDENCIES) $(EXTRA_libcw_test_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libcw_test_la_LINK) -rpath $(libdir) $(libcw_test_la_OBJECTS) $(libcw_test_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libcw_test_la_LINK)  $(libcw_test_la_OBJECTS) $(libcw_test_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -1173,7 +1186,7 @@ maintainer-clean-generic:
 clean: clean-recursive
 
 clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	mostlyclean-am
+	clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
@@ -1249,20 +1262,20 @@ uninstall-man: uninstall-man3 uninstall-man7
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
 	check-am clean clean-generic clean-libLTLIBRARIES \
-	clean-libtool cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
-	install-libLTLIBRARIES install-libcw_includeHEADERS \
-	install-man install-man3 install-man7 install-pdf \
-	install-pdf-am install-pkgconfigDATA install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-libLTLIBRARIES \
+	clean-libtool clean-noinstLTLIBRARIES cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-libLTLIBRARIES \
+	install-libcw_includeHEADERS install-man install-man3 \
+	install-man7 install-pdf install-pdf-am install-pkgconfigDATA \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-libLTLIBRARIES \
 	uninstall-libcw_includeHEADERS uninstall-man uninstall-man3 \
 	uninstall-man7 uninstall-pkgconfigDATA
 
