@@ -20,8 +20,10 @@ SUBDIRS=tests
 
 -include $(top_builddir)/Makefile.inc
 
-# targets to be built in this directory
-lib_LTLIBRARIES=libcw.la libcw_test.la
+# Targets to be built in this directory. Only libcw.X should be
+# installed. Test library should not be installed.
+lib_LTLIBRARIES=libcw.la
+noinst_LTLIBRARIES=libcw_test.la
 man_MANS=libcw.3 cw.7
 pkgconfig_DATA=libcw.pc
 
