@@ -2,7 +2,15 @@
 
 PACKAGE="unixcw"
 VERSION="3.5.1"
-debuild_command='debuild -us -uc'
+
+# https://lintian.debian.org/tags/bad-distribution-in-changes-file.html
+# https://bugs.launchpad.net/ubuntu/+source/lintian/+bug/1303603
+# https://manpages.debian.org/jessie/devscripts/debuild.1.en.html
+# /usr/share/lintian/profiles
+VENDOR="debian"
+LINTIAN_OPTS="--lintian-opts --profile $VENDOR"
+
+debuild_command='debuild -us -uc $LINTIAN_OPTS'
 
 
 
@@ -11,6 +19,7 @@ echo ""
 echo ""
 echo "********** Preparing directories **********"
 sleep 1;
+cd ..
 REPO=`pwd`
 if [ -z "$REPO"  ]; then
     echo "REPO is empty, exiting"
@@ -133,6 +142,7 @@ echo "********** Starting build **********"
 sleep 1;
 # go to final build dir and start building Debian package
 cd $dist_dir
+echo "dist_dir = $dist_dir, pwd = `pwd`"
 eval $debuild_command
 
 
