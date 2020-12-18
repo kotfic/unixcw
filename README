@@ -139,6 +139,10 @@ Primary development platform for unixcw is Debian GNU/Linux. An effort has
 been made to compile and test this version of unixcw package (or at least
 parts of this package) on following platforms:
 
+Debian GNU/Linux 9, x86_64, gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516
+Alpine Linux 3.12, x86_64, gcc (Alpine 9.3.0) 9.3.0
+Ubuntu 18.04.5 LTS, x86_64, gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
+FreeBSD 12.1-RELEASE-p6 amd64, gcc (FreeBSD Ports Collection) 9.3.0
 
 
 
