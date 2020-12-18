@@ -1442,23 +1442,23 @@ int cw_gen_calculate_sample_amplitude_internal(cw_gen_t * gen, const cw_tone_t *
    slope length. You just can't have rectangular slopes that have
    non-zero length.
 
-   B: If you pass to function '-1' as value of both @p slope_shape and
+   B: If you pass to function '\-1' as value of both @p slope_shape and
    @p slope_duration, the function won't change any of the related two
    generator's parameters.
 
-   C1: If you pass to function '-1' as value of either @p slope_shape or
+   C1: If you pass to function '\-1' as value of either @p slope_shape or
    @p slope_duration, the function will attempt to set only this generator's
-   parameter that is different than '-1'.
+   parameter that is different than '\-1'.
 
-   C2: However, if selected slope shape is rectangular, function will set
-   generator's slope length to zero, even if value of p slope_duration is
-   '-1'.
+   C2: However, if selected slope shape is rectangular, function will
+   set generator's slope length to zero, even if value of \p
+   slope_duration is '\-1'.
 
    D: Notice that the function allows non-rectangular slope shape with
    zero length of the slopes. The slopes will be non-rectangular, but
    just unusually short.
 
-   @internal TODO: Seriously, these rules (A-D) for setting a slope are too compilcated. Simplify them. Accept only a small subset of valid/sane values. Perhaps split the function into two separate functions: for setting slope shape and slope duration. @endinternal
+   @internal TODO: Seriously, these rules (A-D) for setting a slope are too complicated. Simplify them. Accept only a small subset of valid/sane values. Perhaps split the function into two separate functions: for setting slope shape and slope duration. @endinternal
 
    The function should be called every time one of following
    parameters change:
