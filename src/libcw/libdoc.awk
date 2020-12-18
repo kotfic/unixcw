@@ -215,7 +215,7 @@ function handle_function_documentation()
 		sub(/^ *\\return /, " Returns: ")
 		sub(/^ *@return /, " Returns: ")
 
-		sub(/@internal[ a-zA-Z0-9_\-/\(\):\",]*/, "")
+		sub(/@internal[ a-zA-Z0-9_\-/\(\):\"\.,]*/, "")
 		sub(/@reviewed[ a-zA-Z0-9_\-/\(\):\",]*/, "")
 		sub(/@endinternal[ a-zA-Z0-9_\-/\(\):\",]*/, "")
 
