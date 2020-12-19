@@ -937,9 +937,10 @@ void test_callback_func(void * arg, int key_state)
 */
 cwt_retv legacy_api_test_rec_poll(cw_test_executor_t * cte)
 {
-	if (cwt_retv_ok == legacy_api_test_rec_poll_inner(cte, true)
-	    && cwt_retv_ok == legacy_api_test_rec_poll_inner(cte, false)) {
+	const cwt_retv retv1 = legacy_api_test_rec_poll_inner(cte, true);
+	const cwt_retv retv2 = legacy_api_test_rec_poll_inner(cte, false);
 
+	if (cwt_retv_ok == retv1 && cwt_retv_ok == retv2) {
 		return cwt_retv_ok;
 	} else {
 		return cwt_retv_err;
@@ -1028,7 +1029,8 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 	  ==2402==    by 0x11E1D5: cw_test_main_test_loop (test_framework.c:1282)
 	  ==2402==    by 0x10E703: main (test_main.c:130)
 	*/
-	tester_stop_test_code(&g_tester);
+	/* TODO: remove this function altogether. */
+	//tester_stop_test_code(&g_tester);
 
 
 	/* Tell legacy objects of libcw (those in production code) to stop working. */
