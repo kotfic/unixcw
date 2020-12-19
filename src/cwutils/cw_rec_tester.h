@@ -57,7 +57,7 @@ typedef struct cw_rec_tester_t {
 	/* Parameters used in "compare" function that verifies if
 	   input and received strings are similar enough to pass the
 	   test. */
-	float acceptable_error_rate;
+	float acceptable_error_rate_percent; /* [percents] */
 	size_t acceptable_last_mismatch_index;
 
 	/* Input variable for the test. Decreasing or increasing

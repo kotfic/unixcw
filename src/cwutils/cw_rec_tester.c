@@ -47,7 +47,7 @@ int cw_rec_tester_evaluate_receive_correctness(cw_rec_tester_t * tester)
 	fprintf(stderr, "[II] Sent (normalized):     \n\n'%s'\n\n", tester->input_string);
 	fprintf(stderr, "[II] Received (normalized): \n\n'%s'\n\n", tester->received_string);
 
-	tester->acceptable_error_rate = 0.01F;
+	tester->acceptable_error_rate_percent = 1.0F;
 	tester->acceptable_last_mismatch_index = 10;
 	const int compare_result = cw_rec_tester_compare_input_and_received(tester);
 
@@ -153,38 +153,42 @@ int cw_rec_tester_compare_input_and_received(cw_rec_tester_t * tester)
 		}
 	}
 
-
+#define PERC_FMT "%.3f%%"
 	if (0 != mismatch_count) {
-		const float error_rate = 1.0F * mismatch_count / len;
-		if (error_rate > tester->acceptable_error_rate) {
+		const float error_rate_percent = 100.0F * mismatch_count / len;
+		if (error_rate_percent > tester->acceptable_error_rate_percent) {
 			/* High error rate is never acceptable. */
-			fprintf(stderr, "[EE] Length of input string = %zd, mismatch count = %zd, error rate = %f (too high)\n",
-				len, mismatch_count, (double) error_rate);
+			fprintf(stderr, "[EE] Input len %zd, mismatch cnt %zd, err rate "PERC_FMT" (too high, thresh "PERC_FMT")\n",
+				len, mismatch_count,
+				(double) error_rate_percent,
+				(double) tester->acceptable_error_rate_percent);
 			return -1;
 		} else {
-			fprintf(stderr, "[NN] Length of input string = %zd, mismatch count = %zd, error rate = %f (acceptable)\n",
-				len, mismatch_count, (double) error_rate);
+			fprintf(stderr, "[NN] Input len %zd, mismatch cnt %zd, err rate "PERC_FMT" (acceptable, thresh "PERC_FMT")\n",
+				len, mismatch_count,
+				(double) error_rate_percent,
+				(double) tester->acceptable_error_rate_percent);
 		}
 	} else {
-		fprintf(stderr, "[II] Length of input string = %zd, last mismatch count = 0\n",
+		fprintf(stderr, "[II] Input len %zd, mismatch cnt 0\n",
 			len);
 	}
-
+#undef PERC_FMT
 
 	if (((size_t) -1 != last_mismatch_index)) {
 		if (last_mismatch_index > tester->acceptable_last_mismatch_index) {
 			/* Errors are acceptable only at the beginning, where
 			   receiver didn't tune yet into stream of incoming
 			   data. */
-			fprintf(stderr, "[EE] Length of input string = %zd, last mismatch index = %zd (too far from beginning)\n",
-				len, last_mismatch_index);
+			fprintf(stderr, "[EE] Input len %zd, last mismatch idx %zd (too far from beginning, thresh %zd)\n",
+				len, last_mismatch_index, tester->acceptable_last_mismatch_index);
 			return -1;
 		} else {
-			fprintf(stderr, "[NN] Length of input string = %zd, last mismatch index = %zd (acceptable)\n",
-				len, last_mismatch_index);
+			fprintf(stderr, "[NN] Input len %zd, last mismatch idx %zd (acceptable, thresh %zd)\n",
+				len, last_mismatch_index, tester->acceptable_last_mismatch_index);
 		}
 	} else {
-		fprintf(stderr, "[II] Length of input string = %zd, last mismatch index = none\n",
+		fprintf(stderr, "[II] Input len %zd, last mismatch idx none\n",
 			len);
 	}
 
