@@ -323,7 +323,7 @@ void cw_dev_debug_print_generator_setup_internal(const cw_gen_t * gen)
 			gen->oss_data.version.x, gen->oss_data.version.y, gen->oss_data.version.z);
 	}
 #endif
-	fprintf(stderr, "sound device:         \"%s\"\n",  gen->sound_device);
+	fprintf(stderr, "picked sound device:  \"%s\"\n",  gen->picked_device_name);
 	fprintf(stderr, "sample rate:          %u Hz\n",  gen->sample_rate);
 
 	/* Temporarily disabled because gen->pa_data.ba is missing. */
