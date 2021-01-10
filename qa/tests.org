@@ -1,0 +1,120 @@
+#+TODO: TODO STARTED FAILED | DONE SKIPPED
+# The vertical bar indicates which states are final states.
+
+* TODO Template for tests plan for unixcw version X
+Version of template: 2021.01.09.
+** TODO <Machine/OS identifier>
+<Description of machine/OS>
+*** TODO Build system tests
+**** TODO make distcheck
+*Steps*
+Run "make distcheck" in main directory of unixcw.
+
+*Expected result*
+Distribution package is built correctly
+
+**** TODO ./configure flags
+
+Test that all flags supported by ./configure script produce "buildable" code.
+
+*Steps*
+Run ./qa/test_configure_flags.sh
+
+*Expected result*
+
+The script should not report any failure.
+
+Example of failed test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags FAILED
+$ echo $?
+255
+
+Example of successful test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+127: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+126: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+[...]
+3: ./configure --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+2: ./configure --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+1: ./configure &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags SUCCEEDED
+
+
+*Notes*
+The shell script may not work on systems without bash.
+
+*** TODO libcw tests
+Tests using tools from unixcw/src/libcw.
+
+**** TODO Main test binary - Null sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S n
+
+*Expected results*
+
+Test logs and summary table for tests shows only well-known problems.
+
+**** TODO Main test binary - Console sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S c
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+**** TODO Main test binary - OSS sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S o
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+**** TODO Main test binary - ALSA sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S a
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+**** TODO Main test binary - PulseAudio sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S p
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*** TODO cw tests
+Tests of basic usage of unixcw/src/cw/cw program.
+
+Tests that use *.cw files:
+./src/cw/cw -f src/cw/test.cw
+./src/cw/cw -f src/cw/demo.cw
+./src/cw/cw -f src/cw/prelude.cw
+
+
+*** TODO cwcp tests
+Tests of basic usage of unixcw/src/cwcp/cwcp program.
+
+*** TODO xcwcp tests
+Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
+
+*** TODO cwgen tests
+Tests of basic usage of unixcw/src/cwgen/cwgen program.
+
+
+
+
