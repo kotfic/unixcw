@@ -36,8 +36,10 @@ options[6]="--enable-dev"
 
 
 
-# Set up a starting point for tests - sometimes it's useful not to run
-# the tests from the beginning
+# Set up a starting point for tests - sometimes it's useful not to run the
+# tests from the beginning but from specific test (specific combination of
+# flags). E.g. when compilation with combination #X fails, you fix the
+# compilation error and re-start the test script from combination #X.
 if [ $1 ]; then
     let i=$1
 else
@@ -83,7 +85,12 @@ do
 
     # $? is the result code of last command.
     if [ $? != 0 ]; then
-	echo "FAILED"
-	break
+	echo "Test of configuration flags FAILED"
+	exit -1
     fi
 done
+
+
+echo "Test of configuration flags SUCCEEDED"
+exit 0
+
