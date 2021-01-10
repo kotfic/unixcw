@@ -61,6 +61,8 @@ cd src/libcw/tests
 
 Test logs and summary table for tests shows only well-known problems.
 
+*Test statistics table*
+
 **** TODO Main test binary - Console sound system
 
 *Steps*
@@ -69,6 +71,8 @@ cd src/libcw/tests
 
 *Expected results*
 Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
 
 **** TODO Main test binary - OSS sound system
 
@@ -79,6 +83,8 @@ cd src/libcw/tests
 *Expected results*
 Test logs and summary table for tests shows only well-known problems.
 
+*Test statistics table*
+
 **** TODO Main test binary - ALSA sound system
 
 *Steps*
@@ -88,6 +94,8 @@ cd src/libcw/tests
 *Expected results*
 Test logs and summary table for tests shows only well-known problems.
 
+*Test statistics table*
+
 **** TODO Main test binary - PulseAudio sound system
 
 *Steps*
@@ -96,6 +104,442 @@ cd src/libcw/tests
 
 *Expected results*
 Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+*** TODO cw tests
+Tests of basic usage of unixcw/src/cw/cw program.
+
+Tests that use *.cw files:
+./src/cw/cw -f src/cw/test.cw
+./src/cw/cw -f src/cw/demo.cw
+./src/cw/cw -f src/cw/prelude.cw
+
+*** TODO cwcp tests
+Tests of basic usage of unixcw/src/cwcp/cwcp program.
+
+*** TODO xcwcp tests
+Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
+
+*** TODO cwgen tests
+Tests of basic usage of unixcw/src/cwgen/cwgen program.
+
+
+
+
+
+
+* STARTED Tests for unixcw version 3.6.0
+Version of template: 2021.01.09.
+
+** STARTED Alpine Linux 3.12
+<Description of machine/OS>
+*** DONE Build system tests
+**** DONE make distcheck
+*Steps*
+Run "make distcheck" in main directory of unixcw.
+
+*Expected result*
+Distribution package is built correctly
+
+**** DONE ./configure flags
+
+Test that all flags supported by ./configure script produce "buildable" code.
+
+*Steps*
+Run ./qa/test_configure_flags.sh
+
+*Expected result*
+
+The script should not report any failure.
+
+Example of failed test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags FAILED
+$ echo $?
+255
+
+Example of successful test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+127: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+126: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+[...]
+3: ./configure --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+2: ./configure --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+1: ./configure &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags SUCCEEDED
+
+
+*Notes*
+The shell script may not work on systems without bash.
+
+*** TODO libcw tests
+Tests using tools from unixcw/src/libcw.
+
+**** TODO Main test binary - Null sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S n
+
+*Expected results*
+
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** SKIPPED Main test binary - Console sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S c
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** SKIPPED Main test binary - OSS sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S o
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** TODO Main test binary - ALSA sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S a
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** SKIPPED Main test binary - PulseAudio sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S p
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+*** TODO cw tests
+Tests of basic usage of unixcw/src/cw/cw program.
+
+Tests that use *.cw files:
+./src/cw/cw -f src/cw/test.cw
+./src/cw/cw -f src/cw/demo.cw
+./src/cw/cw -f src/cw/prelude.cw
+
+*** TODO cwcp tests
+Tests of basic usage of unixcw/src/cwcp/cwcp program.
+
+*** SKIPPED xcwcp tests
+Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
+
+*** TODO cwgen tests
+Tests of basic usage of unixcw/src/cwgen/cwgen program.
+
+
+
+
+
+** STARTED Debian GNU/Linux 9
+<Description of machine/OS>
+*** DONE Build system tests
+**** DONE make distcheck
+*Steps*
+Run "make distcheck" in main directory of unixcw.
+
+*Expected result*
+Distribution package is built correctly
+
+**** DONE ./configure flags
+
+Test that all flags supported by ./configure script produce "buildable" code.
+
+*Steps*
+Run ./qa/test_configure_flags.sh
+
+*Expected result*
+
+The script should not report any failure.
+
+Example of failed test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags FAILED
+$ echo $?
+255
+
+Example of successful test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+127: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+126: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+[...]
+3: ./configure --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+2: ./configure --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+1: ./configure &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags SUCCEEDED
+
+
+*Notes*
+The shell script may not work on systems without bash.
+
+*** DONE libcw tests
+Tests using tools from unixcw/src/libcw.
+
+**** DONE Main test binary - Null sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S n
+
+*Expected results*
+
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> N |         0 |         1 |         0 |         0 |         0 |         0 |<-
+   N |       151 |       586 |        48 |      1397 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> P |         0 |         5 |         0 |         0 |         0 |         0 |<-
+   P |       151 |       586 |        48 |      1391 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 43 minutes, 19 seconds
+
+**** SKIPPED Main test binary - Console sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S c
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** SKIPPED Main test binary - OSS sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S o
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** DONE Main test binary - ALSA sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S a
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+libcw tests: Statistics of tests (failures/total)
+
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   N |           |           |           |           |           |           |  
+   N |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> A |         0 |         2 |         0 |         0 |         0 |         0 |<-
+   A |       151 |       586 |        48 |      1397 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 21 minutes, 37 seconds
+
+
+**** DONE Main test binary - PulseAudio sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S p
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> N |         0 |         1 |         0 |         0 |         0 |         0 |<-
+   N |       151 |       586 |        48 |      1397 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> P |         0 |         5 |         0 |         0 |         0 |         0 |<-
+   P |       151 |       586 |        48 |      1391 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 43 minutes, 19 seconds
+
+*** TODO cw tests
+Tests of basic usage of unixcw/src/cw/cw program.
+
+Tests that use *.cw files:
+./src/cw/cw -f src/cw/test.cw
+./src/cw/cw -f src/cw/demo.cw
+./src/cw/cw -f src/cw/prelude.cw
+
+*** TODO cwcp tests
+Tests of basic usage of unixcw/src/cwcp/cwcp program.
+
+*** TODO xcwcp tests
+Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
+
+*** TODO cwgen tests
+Tests of basic usage of unixcw/src/cwgen/cwgen program.
+
+
+
+** TODO Ubuntu 18.04.5 LTS
+<Description of machine/OS>
+*** TODO Build system tests
+**** TODO make distcheck
+*Steps*
+Run "make distcheck" in main directory of unixcw.
+
+*Expected result*
+Distribution package is built correctly
+
+**** TODO ./configure flags
+
+Test that all flags supported by ./configure script produce "buildable" code.
+
+*Steps*
+Run ./qa/test_configure_flags.sh
+
+*Expected result*
+
+The script should not report any failure.
+
+Example of failed test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags FAILED
+$ echo $?
+255
+
+Example of successful test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+127: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+126: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+[...]
+3: ./configure --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+2: ./configure --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+1: ./configure &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags SUCCEEDED
+
+
+*Notes*
+The shell script may not work on systems without bash.
+
+*** TODO libcw tests
+Tests using tools from unixcw/src/libcw.
+
+**** TODO Main test binary - Null sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S n
+
+*Expected results*
+
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** TODO Main test binary - Console sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S c
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** SKIPPED Main test binary - OSS sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S o
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** TODO Main test binary - ALSA sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S a
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** TODO Main test binary - PulseAudio sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S p
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
 
 *** TODO cw tests
 Tests of basic usage of unixcw/src/cw/cw program.
@@ -110,6 +554,129 @@ Tests that use *.cw files:
 Tests of basic usage of unixcw/src/cwcp/cwcp program.
 
 *** TODO xcwcp tests
+Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
+
+*** TODO cwgen tests
+Tests of basic usage of unixcw/src/cwgen/cwgen program.
+
+
+
+** TODO FreeBSD 12.1
+<Description of machine/OS>
+*** TODO Build system tests
+**** TODO make distcheck
+*Steps*
+Run "make distcheck" in main directory of unixcw.
+
+*Expected result*
+Distribution package is built correctly
+
+**** TODO ./configure flags
+
+Test that all flags supported by ./configure script produce "buildable" code.
+
+*Steps*
+Run ./qa/test_configure_flags.sh
+
+*Expected result*
+
+The script should not report any failure.
+
+Example of failed test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags FAILED
+$ echo $?
+255
+
+Example of successful test:
+
+$ qa/test_configure_flags.sh
+128: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+127: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+126: ./configure --enable-dev --disable-xcwcp --disable-cwcp --disable-pulseaudio --disable-alsa --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+[...]
+3: ./configure --disable-oss &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+2: ./configure --disable-console &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+1: ./configure &>/dev/null && make &>/dev/null && make check &>/dev/null && make clean &>/dev/null
+Test of configuration flags SUCCEEDED
+
+
+*Notes*
+The shell script may not work on systems without bash.
+
+*** TODO libcw tests
+Tests using tools from unixcw/src/libcw.
+
+**** TODO Main test binary - Null sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S n
+
+*Expected results*
+
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** TODO Main test binary - Console sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S c
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** TODO Main test binary - OSS sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S o
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** SKIPPED Main test binary - ALSA sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S a
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+**** SKIPPED Main test binary - PulseAudio sound system
+
+*Steps*
+cd src/libcw/tests
+./libcw_tests -S p
+
+*Expected results*
+Test logs and summary table for tests shows only well-known problems.
+
+*Test statistics table*
+
+*** TODO cw tests
+Tests of basic usage of unixcw/src/cw/cw program.
+
+Tests that use *.cw files:
+./src/cw/cw -f src/cw/test.cw
+./src/cw/cw -f src/cw/demo.cw
+./src/cw/cw -f src/cw/prelude.cw
+
+*** TODO cwcp tests
+Tests of basic usage of unixcw/src/cwcp/cwcp program.
+
+*** SKIPPED xcwcp tests
 Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
 
 *** TODO cwgen tests
