@@ -132,7 +132,7 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 * STARTED Tests for unixcw version 3.6.0
 Version of template: 2021.01.09.
 
-** STARTED Alpine Linux 3.12
+** STARTED Alpine Linux 3.12 (N150)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -256,8 +256,7 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
-
-** STARTED Debian GNU/Linux 9
+** STARTED Debian GNU/Linux 9 (main laptop)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -437,17 +436,17 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
-** TODO Ubuntu 18.04.5 LTS
+** STARTED Ubuntu 18.04.5 LTS (Celeron)
 <Description of machine/OS>
-*** TODO Build system tests
-**** TODO make distcheck
+*** DONE Build system tests
+**** DONE make distcheck
 *Steps*
 Run "make distcheck" in main directory of unixcw.
 
 *Expected result*
 Distribution package is built correctly
 
-**** TODO ./configure flags
+**** DONE ./configure flags
 
 Test that all flags supported by ./configure script produce "buildable" code.
 
@@ -482,10 +481,10 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** TODO libcw tests
+*** STARTED libcw tests
 Tests using tools from unixcw/src/libcw.
 
-**** TODO Main test binary - Null sound system
+**** DONE Main test binary - Null sound system
 
 *Steps*
 cd src/libcw/tests
@@ -496,6 +495,25 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> N |         0 |         1 |         0 |         1 |         0 |         0 |<-
+   N |       151 |       586 |        48 |      1396 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 21 minutes, 47 seconds
+
 
 **** TODO Main test binary - Console sound system
 
@@ -530,7 +548,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** TODO Main test binary - PulseAudio sound system
+**** DONE Main test binary - PulseAudio sound system
 
 *Steps*
 cd src/libcw/tests
@@ -540,6 +558,25 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   N |           |           |           |           |           |           |  
+   N |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> P |         0 |         6 |         0 |         1 |         0 |         0 |<-
+   P |       151 |       586 |        48 |      1396 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 21 minutes, 48 seconds
+
 
 *** TODO cw tests
 Tests of basic usage of unixcw/src/cw/cw program.
@@ -561,7 +598,7 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
-** TODO FreeBSD 12.1
+** TODO FreeBSD 12.1 (Celeron)
 <Description of machine/OS>
 *** TODO Build system tests
 **** TODO make distcheck
