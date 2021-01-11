@@ -489,7 +489,9 @@ static cw_ret_t cw_alsa_open_and_configure_sound_device_internal(cw_gen_t * gen,
 	}
 
 #if CW_DEV_RAW_SINK
-	gen->dev_raw_sink = open("/tmp/cw_file.alsa.raw", O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK);
+	gen->dev_raw_sink = open("/tmp/cw_file.alsa.raw",
+				 O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK,
+				 S_IRUSR | S_IWUSR);
 	if (gen->dev_raw_sink == -1) {
 		fprintf(stderr, MSG_PREFIX "open: failed to open dev raw sink file: '%s'\n", strerror(errno));
 	}
