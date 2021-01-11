@@ -270,7 +270,8 @@ void xcwcp_handle_libcw_keying_event(void * timer, int key_state)
 		//fprintf(stderr, "start receive tone: %10ld . %10ld\n", t->tv_sec, t->tv_usec);
 		if (!cw_start_receive_tone(t)) {
 			perror("cw_start_receive_tone");
-			abort();
+			// TODO: Perhaps this should be counted as test error
+			return;
 		}
 	} else {
 		/* Key up. */
@@ -295,7 +296,8 @@ void xcwcp_handle_libcw_keying_event(void * timer, int key_state)
 				break;
 			default:
 				perror("cw_end_receive_tone");
-				abort();
+				// TODO: Perhaps this should be counted as test error
+				return;
 			}
 		}
 	}
@@ -461,7 +463,8 @@ void receiver_poll_character_c_r(Receiver * xcwcp_receiver)
 
 		default:
 			perror("cw_receive_character");
-			abort();
+			// TODO: Perhaps this should be counted as test error
+			return;
 		}
 	}
 
@@ -602,7 +605,8 @@ void receiver_poll_character_r_c(Receiver * xcwcp_receiver)
 
 		default:
 			perror("cw_receive_representation");
-			abort();
+			// TODO: Perhaps this should be counted as test error
+			return;
 		}
 	}
 
