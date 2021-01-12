@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: the path to bash on FreeBSD is /usr/local/bin/bash
+
 # Test configuration and compilation of software for all
 # combinations of './configure' flags.
 #
