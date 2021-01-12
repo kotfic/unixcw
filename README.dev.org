@@ -37,6 +37,11 @@
 
 
 
+* Test machines
+10GB of disc space for FreeBSD 12.1 is not enough to have comfortable
+working env, as I'm constantly running into "no free space left"
+message. 15GB or even 20GB would be more adequate.
+
 * Operating systems
 
 ** Linux
