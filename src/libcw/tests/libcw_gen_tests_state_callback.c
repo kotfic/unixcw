@@ -148,6 +148,11 @@ static void clear_data(cw_element_t * test_input_elements);
   https://github.com/m5evt/unixcw-3.5.1/commit/2d5491a461587ac4686e2d1b897619c98be05c9e
   https://github.com/m5evt/unixcw-3.5.1/commit/c86785b595a6d711aae915150df2ccb848ace05c
 
+  For OSS sound system I'm copying results for ALSA.
+
+  For Console sound system I'm copying results for Null sound system
+  (both systems simulate a blocking write with sleep function).
+
 Null sound system, 4 WMP
 [II] duration of  dashes: min/avg/max = 900130/900208/900239, expected = 900000, divergence min/avg/max =    0.014%/   0.023%/   0.027%
 [II] duration of    dots: min/avg/max = 300123/300204/300225, expected = 300000, divergence min/avg/max =    0.041%/   0.068%/   0.075%
@@ -208,6 +213,18 @@ static test_data_t g_test_data[] = {
 	{ .sound_system = CW_AUDIO_NULL,      .speed = 24, .reference_div_dots = {    0.220,    0.316,    0.444 }, .reference_div_dashes = {    0.077,    0.131,    0.170 }},
 	{ .sound_system = CW_AUDIO_NULL,      .speed = 36, .reference_div_dots = {    0.354,    0.492,    0.702 }, .reference_div_dashes = {    0.150,    0.218,    0.261 }},
 	{ .sound_system = CW_AUDIO_NULL,      .speed = 60, .reference_div_dots = {    0.630,    0.890,    1.145 }, .reference_div_dashes = {    0.238,    0.343,    0.427 }},
+
+	{ .sound_system = CW_AUDIO_CONSOLE,   .speed =  4, .reference_div_dots = {    0.041,    0.068,    0.075 }, .reference_div_dashes = {    0.014,    0.023,    0.027 }},
+	{ .sound_system = CW_AUDIO_CONSOLE,   .speed = 12, .reference_div_dots = {    0.113,    0.189,    0.241 }, .reference_div_dashes = {    0.034,    0.064,    0.079 }},
+	{ .sound_system = CW_AUDIO_CONSOLE,   .speed = 24, .reference_div_dots = {    0.220,    0.316,    0.444 }, .reference_div_dashes = {    0.077,    0.131,    0.170 }},
+	{ .sound_system = CW_AUDIO_CONSOLE,   .speed = 36, .reference_div_dots = {    0.354,    0.492,    0.702 }, .reference_div_dashes = {    0.150,    0.218,    0.261 }},
+	{ .sound_system = CW_AUDIO_CONSOLE,   .speed = 60, .reference_div_dots = {    0.630,    0.890,    1.145 }, .reference_div_dashes = {    0.238,    0.343,    0.427 }},
+
+	{ .sound_system = CW_AUDIO_OSS,       .speed =  4, .reference_div_dots = {   -2.304,   -1.263,   -0.172 }, .reference_div_dashes = {   -0.838,   -0.475,   -0.191 }},
+	{ .sound_system = CW_AUDIO_OSS,       .speed = 12, .reference_div_dots = {   -6.692,   -3.542,   -1.060 }, .reference_div_dashes = {   -2.413,   -1.410,   -0.301 }},
+	{ .sound_system = CW_AUDIO_OSS,       .speed = 24, .reference_div_dots = {  -10.538,   -5.278,   -1.056 }, .reference_div_dashes = {   -5.349,   -1.480,    3.331 }},
+	{ .sound_system = CW_AUDIO_OSS,       .speed = 36, .reference_div_dots = {  -14.388,   -1.671,   23.991 }, .reference_div_dashes = {   -6.334,   -1.211,    6.537 }},
+	{ .sound_system = CW_AUDIO_OSS,       .speed = 60, .reference_div_dots = {  -39.465,  -19.180,  -16.215 }, .reference_div_dashes = {  -12.443,   -6.295,   -3.437 }},
 
 	{ .sound_system = CW_AUDIO_ALSA,      .speed =  4, .reference_div_dots = {   -2.304,   -1.263,   -0.172 }, .reference_div_dashes = {   -0.838,   -0.475,   -0.191 }},
 	{ .sound_system = CW_AUDIO_ALSA,      .speed = 12, .reference_div_dots = {   -6.692,   -3.542,   -1.060 }, .reference_div_dashes = {   -2.413,   -1.410,   -0.301 }},
