@@ -229,26 +229,19 @@ autoreconf -fvi
 libtoolize
 
 * TODO
+** code
+*** Use suseconds_t for duration variables?
 
-** Use suseconds_t for duration variables?
-
-** Count ALSA errors in tests framework:
- + write: writei: Input/output error / -5
- + underruns
- + other
-This will require propagating them from libcw's ALSA module up to test
-framework, but it would help a lot in registering and tracking problems.
-
-** Detect unusually long times when joining generator's thread
+*** Detect unusually long times when joining generator's thread
 
 Usually it's 2-5 microseconds, anything longer may be a sign of problems.
 
-** Module prefixes of equal length
+*** Module prefixes of equal length
 
 To improve readability of debug messages, all values of MSG_PREFIX (like
 "libcw/gen" or "libcw/alsa") should have the same length.
 
-** Detect missing function definitions
+*** Detect missing function definitions
 In order to detect libcw function declarations without definitions, write a
 code that tries to generate code that calls all libcw public functions. If
 definition of any function declared in public header is missing, linking
@@ -258,37 +251,31 @@ Rationale: today I have detected (by sheer luck) that cw_set_debug_flags()
 declaration existed in libcw_debug.h, but the function was not defined
 anywhere.
 
-** Fix long duration of valgrind tests
-When libcw tests binary is executed under valgrind, its execution
-takes a lot of time because the tests call vsnprintf() a lot
-(indirectly through snprintf() and vsnprintf()). We can really shorten
-the duration of tests if only we will find a way to decrease usage of
-these functions.
-
-** Add to configure.ac a check for GNU make on build machine
+** build system
+*** Add to configure.ac a check for GNU make on build machine
 
 unixcw's Makefiles may not work with non-GNU make on non Linux machines.
 
-** Add to configure.ac a check for pkg-config
+*** Add to configure.ac a check for pkg-config
 
  It is necessary for configuring QT4 application (xcwcp).
 
-** Make qa_test_configure_flags.sh portable
+*** Make qa_test_configure_flags.sh portable
 
 Some shells (on FreeBSD) don't like the options[] table.
 
-** Flags for disabling modules
+*** Flags for disabling modules
 
 After finalizing split of libcw into modules, add configure flags for
 disabling modules (e.g. --disable-libcw-receiver, --disable-libcw-key).
 
-** pkg-config + ncurses
+*** pkg-config + ncurses
 
 Check if it's possible to use pkg-config to get ncurses compilation flags.
 
 
-** "level 1" in test_cw_tq_gen_operations_B
-
+** libcw tests
+*** "level 1" in test_cw_tq_gen_operations_B
 Investigate value "1" in this test. Is it valid/acceptable for tests?
 
 [II] Beginning of test
@@ -304,8 +291,8 @@ Investigate value "1" in this test. Is it valid/acceptable for tests?
 [II] libcw/tests: waiting for level 1 (down)                              [ OK ]
 [II] libcw/tests: waiting for level 0 (final)                             [ OK ]
 [II] End of test: test_cw_tq_gen_operations_B
-** Receiver errors
 
+*** Receiver errors
 [II] libcw/tests: Poll representation                                     [ OK ]
 [EE] cw_rec_poll_representation: 1597: libcw/rec: 'global rec': poll: space duration == INT_MAX
 
@@ -316,3 +303,33 @@ cw_start_receive_tone: Numerical result out of range
 [EE] cw_rec_mark_end: 1070: libcw/rec: 'global rec': mark_end: receiver state not RS_MARK: RS_IDLE
 [II] Polled character 'U'
 
+*** Each failed test should be logged to file
+Having the failed tests logged to a file will make it easier to track
+problems and come back to them later. Right now all we have is a long,
+long log of tests (where both successful and failed tests are printed)
+and a test summary table. The full log is too long, and the summary
+table is not detailed enough.
+
+The separate log file with only failed tests (full logs of failed
+tests) would be a useful middle ground.
+
+This would require buffering of a test in memory and dumping it to
+file on errors.
+*** Count ALSA errors in tests framework:
+ + write: writei: Input/output error / -5
+ + underruns
+ + other
+This will require propagating them from libcw's ALSA module up to test
+framework, but it would help a lot in registering and tracking problems.
+
+*** Print summary table also to disc file
+It will be easier to copy/paste test results on non-X systems from a
+disc file to qa/tests.org.
+
+** other tests
+*** Fix long duration of valgrind tests
+When libcw tests binary is executed under valgrind, its execution
+takes a lot of time because the tests call vsnprintf() a lot
+(indirectly through snprintf() and vsnprintf()). We can really shorten
+the duration of tests if only we will find a way to decrease usage of
+these functions.
