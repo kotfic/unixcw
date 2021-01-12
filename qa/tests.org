@@ -598,17 +598,17 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
-** TODO FreeBSD 12.1 (Celeron)
+** STARTED FreeBSD 12.1 (Celeron)
 <Description of machine/OS>
-*** TODO Build system tests
-**** TODO make distcheck
+*** DONE Build system tests
+**** DONE make distcheck
 *Steps*
 Run "make distcheck" in main directory of unixcw.
 
 *Expected result*
 Distribution package is built correctly
 
-**** TODO ./configure flags
+**** DONE ./configure flags
 
 Test that all flags supported by ./configure script produce "buildable" code.
 
@@ -646,7 +646,7 @@ The shell script may not work on systems without bash.
 *** TODO libcw tests
 Tests using tools from unixcw/src/libcw.
 
-**** TODO Main test binary - Null sound system
+**** DONE Main test binary - Null sound system
 
 *Steps*
 cd src/libcw/tests
@@ -657,6 +657,26 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+
+libcw tests: Statistics of tests (failures/total)
+
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> N |         0 |        30 |         0 |         1 |         0 |         0 |<-
+   N |       151 |       586 |        48 |      1399 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
 
 **** TODO Main test binary - Console sound system
 
