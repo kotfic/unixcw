@@ -304,7 +304,6 @@ void cwgen_parse_command_line(int argc, char **argv, struct cwgen_config *config
 				fprintf(stderr, _("%s: invalid limit value: %s\n"), config->program_name, argument);
 				exit(EXIT_FAILURE);
 			}
-			fprintf(stderr, _("%s: valid limit value: %s\n"), config->program_name, argument);
 			break;
 
 		case 'c':
