@@ -425,13 +425,17 @@ Tests that use *.cw files:
 ./src/cw/cw -f src/cw/demo.cw
 ./src/cw/cw -f src/cw/prelude.cw
 
-*** TODO cwcp tests
+*** DONE cwcp tests
 Tests of basic usage of unixcw/src/cwcp/cwcp program.
 
-*** TODO xcwcp tests
+*** DONE xcwcp tests
 Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
 
-*** TODO cwgen tests
+*Notes*
+Sometimes clicks are present when receiving key data with PulseAudio
+sound systems. The problem does not occur with ALSA.
+
+*** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
@@ -598,7 +602,7 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
-** STARTED FreeBSD 12.1 (Celeron)
+** DONE FreeBSD 12.1 (Celeron)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -643,7 +647,7 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** TODO libcw tests
+*** DONE libcw tests
 Tests using tools from unixcw/src/libcw.
 
 **** DONE Main test binary - Null sound system
@@ -678,7 +682,7 @@ libcw tests: Statistics of tests (failures/total)
    P |           |           |           |           |           |           |  
    --+-----------+-----------+-----------+-----------+-----------+-----------+
 
-**** TODO Main test binary - Console sound system
+**** SKIPPED Main test binary - Console sound system
 
 *Steps*
 cd src/libcw/tests
@@ -689,7 +693,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** TODO Main test binary - OSS sound system
+**** DONE Main test binary - OSS sound system
 
 *Steps*
 cd src/libcw/tests
@@ -699,6 +703,26 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+
+libcw tests: Statistics of tests (failures/total)
+
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   N |           |           |           |           |           |           |  
+   N |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> O |         2 |        17 |         0 |         1 |         0 |         0 |<-
+   O |       152 |       586 |        48 |      1399 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
 
 **** SKIPPED Main test binary - ALSA sound system
 
@@ -722,7 +746,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-*** TODO cw tests
+*** DONE cw tests
 Tests of basic usage of unixcw/src/cw/cw program.
 
 Tests that use *.cw files:
@@ -730,13 +754,13 @@ Tests that use *.cw files:
 ./src/cw/cw -f src/cw/demo.cw
 ./src/cw/cw -f src/cw/prelude.cw
 
-*** TODO cwcp tests
+*** DONE cwcp tests
 Tests of basic usage of unixcw/src/cwcp/cwcp program.
 
 *** SKIPPED xcwcp tests
 Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
 
-*** TODO cwgen tests
+*** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
