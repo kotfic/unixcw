@@ -251,6 +251,11 @@ Rationale: today I have detected (by sheer luck) that cw_set_debug_flags()
 declaration existed in libcw_debug.h, but the function was not defined
 anywhere.
 
+*** Don't display unsupported sound systems
+Don't show in help texts ("-h") information about sound systems
+disabled during compilation. Don't show ALSA/PulseAudio information on
+FreeBSD.
+
 ** build system
 *** Add to configure.ac a check for GNU make on build machine
 
