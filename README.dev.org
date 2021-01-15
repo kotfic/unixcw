@@ -256,6 +256,21 @@ Don't show in help texts ("-h") information about sound systems
 disabled during compilation. Don't show ALSA/PulseAudio information on
 FreeBSD.
 
+*** 'Enter' in cw
+Just pressing 'Enter' in cw leads to calls of
+gen->write_buffer_to_sound_device(). It should not.
+
+*** CPU usage of pulseaudio
+Verify cpu usage of "pulseadio" process when "cw" is started and is doing
+nothing at all.
+
+*** math library in dependencies
+
+Look at this warning displayed when Debian packages are being built:
+
+dpkg-shlibdeps: warning: package could avoid a useless dependency if debian/cw/usr/bin/cwgen debian/cw/usr/bin/cw were not linked against libm.so.6 (they use none of the library's symbols)
+dpkg-shlibdeps: warning: package could avoid a useless dependency if debian/cwcp/usr/bin/cwcp was not linked against libm.so.6 (it uses none of the library's symbols)
+
 ** build system
 *** Add to configure.ac a check for GNU make on build machine
 
