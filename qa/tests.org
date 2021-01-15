@@ -132,7 +132,7 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 * STARTED Tests for unixcw version 3.6.0
 Version of template: 2021.01.09.
 
-** STARTED Alpine Linux 3.12 (N150)
+** DONE Alpine Linux 3.12 (N150)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -177,10 +177,10 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** TODO libcw tests
+*** DONE libcw tests
 Tests using tools from unixcw/src/libcw.
 
-**** TODO Main test binary - Null sound system
+**** DONE Main test binary - Null sound system
 
 *Steps*
 cd src/libcw/tests
@@ -191,6 +191,27 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+
+libcw tests: Statistics of tests (failures/total)
+
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> N |         0 |        30 |         0 |         1 |         0 |         1 |<-
+   N |       151 |       586 |        48 |      1399 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 22 minutes, 5 seconds
 
 **** SKIPPED Main test binary - Console sound system
 
@@ -214,7 +235,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** TODO Main test binary - ALSA sound system
+**** DONE Main test binary - ALSA sound system
 
 *Steps*
 cd src/libcw/tests
@@ -224,6 +245,27 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+
+libcw tests: Statistics of tests (failures/total)
+
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   N |           |           |           |           |           |           |  
+   N |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> A |         0 |        12 |         0 |         1 |         0 |         0 |<-
+   A |       151 |       586 |        48 |      1402 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 22 minutes, 3 seconds
 
 **** SKIPPED Main test binary - PulseAudio sound system
 
@@ -236,7 +278,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-*** TODO cw tests
+*** DONE cw tests
 Tests of basic usage of unixcw/src/cw/cw program.
 
 Tests that use *.cw files:
@@ -244,19 +286,19 @@ Tests that use *.cw files:
 ./src/cw/cw -f src/cw/demo.cw
 ./src/cw/cw -f src/cw/prelude.cw
 
-*** TODO cwcp tests
+*** DONE cwcp tests
 Tests of basic usage of unixcw/src/cwcp/cwcp program.
 
 *** SKIPPED xcwcp tests
 Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
 
-*** TODO cwgen tests
+*** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
 
-** STARTED Debian GNU/Linux 9 (main laptop)
+** DONE Debian GNU/Linux 9 (main laptop)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -417,7 +459,7 @@ Test logs and summary table for tests shows only well-known problems.
    --+-----------+-----------+-----------+-----------+-----------+-----------+
 Duration of tests = 43 minutes, 19 seconds
 
-*** TODO cw tests
+*** DONE cw tests
 Tests of basic usage of unixcw/src/cw/cw program.
 
 Tests that use *.cw files:
