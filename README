@@ -1,4 +1,4 @@
-This is README file for unixcw project version 3.5.1.
+This is README file for unixcw project version 3.6.0.
 
 unixcw is a project providing libcw library and a set of programs
 using the library: cw, cwgen, cwcp and xcwcp. The programs are
@@ -130,6 +130,7 @@ following:
     3.4.2       6.4.1      2015-06-17
     3.5.0       6.5.1      2015-10-06
     3.5.1       6.6.1      2017-02-12
+    3.6.0       7.0.0      2021-XX-yy
 
 
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PACKAGE="unixcw"
-VERSION="3.5.1"
+VERSION="3.6.0"
 
 # https://lintian.debian.org/tags/bad-distribution-in-changes-file.html
 # https://bugs.launchpad.net/ubuntu/+source/lintian/+bug/1303603

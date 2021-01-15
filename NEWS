@@ -1,4 +1,4 @@
-version 3.6.0 / 2020-XX-YY
+version 3.6.0 / 2021-XX-YY
 
   libcw:
 
@@ -108,6 +108,8 @@ version 3.6.0 / 2020-XX-YY
 
   - there is a hard limit on length of name of sound device: 127
     characters (+1 for terminating NUL).
+
+  - library soname/version changed from 6.6.1 to 7.0.0.
 
   xcwcp:
 
