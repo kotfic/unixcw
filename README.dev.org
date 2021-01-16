@@ -1,4 +1,4 @@
-* terminology and conventions for code
+* Terminology and conventions for code
 
  - Use "duration" when describing how long (in microseconds or seconds) a
    tone will last. Don't use length when speaking about how long (in
@@ -35,8 +35,6 @@
    }
 
 
-
-
 * Test machines
 10GB of disc space for FreeBSD 12.1 is not enough to have comfortable
 working env, as I'm constantly running into "no free space left"
@@ -59,6 +57,11 @@ C-x C-f /remotehost:filename
 Get all #defines seen by a compiler
 gcc -march=native -dM -E - </dev/null
 
+
+*** Extra packages to install
+
+Systems with X windows: xterm meld
+Debian: debhelper
 
 ** FreeBSD
 
@@ -102,7 +105,6 @@ make install clean
 portmaster -a
 or in case of errors:
 portmaster -af
-
 
 * Sound systems
 
@@ -202,7 +204,7 @@ gdb --args ./src/libcw/tests/.libs/libcw_tests -A r -S a
 setenv LD_LIBRARY_PATH $LD_LIBRARY_PATH:`pwd`/src/libcw/.libs
 gdb --args ./src/libcw/tests/.libs/libcw_tests -A r -S a
 
-* performance
+* Performance
 
 ** callgring + kcachegrind
 
@@ -222,11 +224,26 @@ perf record --call-graph dwarf -F 200  -g  ./src/libcw/tests/.libs/libcw_test_al
 perf report --stdio
 perf report
 
-
-* build system
+* Build system
 autoheader
 autoreconf -fvi
 libtoolize
+
+* Lessons learned
+
+   1. Use the test template that you created in qa/tests.org. It's a
+      time saver and a good way to organize tests.
+   2. Learn how to muffle the console buzzer. It's really annoying
+      during long tests.
+   3. CPU usage is important, especially on older/weaker
+      machines. Learn how to measure it and monitor it during
+      execution of programs and tests.
+   4. Lower latency of audio streams leads to higher CPU usage,
+      especially for PulseAudio. Find a good way to balance these two
+      things.
+   5. Set limited and clear goals for each release at the beginning of
+      development phase. This will allow you to avoid long development cycles
+      and feature creep.
 
 * TODO
 ** code
@@ -271,6 +288,8 @@ Look at this warning displayed when Debian packages are being built:
 dpkg-shlibdeps: warning: package could avoid a useless dependency if debian/cw/usr/bin/cwgen debian/cw/usr/bin/cw were not linked against libm.so.6 (they use none of the library's symbols)
 dpkg-shlibdeps: warning: package could avoid a useless dependency if debian/cwcp/usr/bin/cwcp was not linked against libm.so.6 (it uses none of the library's symbols)
 
+*** Space in xcwcp
+Double-check if the first character added to text area in xcwcp is a space. If it is, then fix it.
 ** build system
 *** Add to configure.ac a check for GNU make on build machine
 
@@ -292,7 +311,6 @@ disabling modules (e.g. --disable-libcw-receiver, --disable-libcw-key).
 *** pkg-config + ncurses
 
 Check if it's possible to use pkg-config to get ncurses compilation flags.
-
 
 ** libcw tests
 *** "level 1" in test_cw_tq_gen_operations_B
@@ -345,7 +363,9 @@ framework, but it would help a lot in registering and tracking problems.
 *** Print summary table also to disc file
 It will be easier to copy/paste test results on non-X systems from a
 disc file to qa/tests.org.
-
+*** Track failing tests
+Learn how to recognize which functions fail, learn how to count their
+failures and track them over time and over OSes.
 ** other tests
 *** Fix long duration of valgrind tests
 When libcw tests binary is executed under valgrind, its execution
@@ -353,3 +373,17 @@ takes a lot of time because the tests call vsnprintf() a lot
 (indirectly through snprintf() and vsnprintf()). We can really shorten
 the duration of tests if only we will find a way to decrease usage of
 these functions.
+*** Implement a fully automatic testing of cwgen's output
+Pass to cwgen all combinations of command line args, and examine if
+cwgen's output is generating what is requested. Also check randomness
+of output.
+*** Test of installation and usage of library
+Add following test to tests of unixcw:
+1. Compile the install unixcw:
+./configure --prefix=$HOME && make && make install
+2. Compile cwdaemon using libcw headers and library installed in
+   $HOME.
+PKG_CONFIG_PATH=$HOME/lib/pkgconfig/ ./configure && make
+3. Run cwdaemon using libcw library installed in $HOME.
+LD_LIBRARY_PATH+=$LD_LIBRARY_PATH:$HOME/lib ./src/cwdaemon -x p -n
+./examples/example.sh
