@@ -478,7 +478,7 @@ sound systems. The problem does not occur with ALSA.
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
-** STARTED Ubuntu 18.04.5 LTS (Celeron)
+** DONE Ubuntu 18.04.5 LTS (Celeron)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -523,7 +523,7 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** STARTED libcw tests
+*** DONE libcw tests
 Tests using tools from unixcw/src/libcw.
 
 **** DONE Main test binary - Null sound system
@@ -556,8 +556,7 @@ Test logs and summary table for tests shows only well-known problems.
    --+-----------+-----------+-----------+-----------+-----------+-----------+
 Duration of tests = 21 minutes, 47 seconds
 
-
-**** TODO Main test binary - Console sound system
+**** DONE Main test binary - Console sound system
 
 *Steps*
 cd src/libcw/tests
@@ -567,6 +566,27 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+
+libcw tests: Statistics of tests (failures/total)
+
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   N |           |           |           |           |           |           |  
+   N |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> C |         0 |        12 |         0 |         1 |         0 |         0 |<-
+   C |       151 |       586 |        48 |      1396 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   A |           |           |           |           |           |           |  
+   A |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 21 minutes, 43 seconds
 
 **** SKIPPED Main test binary - OSS sound system
 
@@ -579,7 +599,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** TODO Main test binary - ALSA sound system
+**** DONE Main test binary - ALSA sound system
 
 *Steps*
 cd src/libcw/tests
@@ -589,6 +609,27 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
+
+libcw tests: Statistics of tests (failures/total)
+
+     | tone queue| generator |    key    |  receiver |    data   |    other  |
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   N |           |           |           |           |           |           |  
+   N |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   C |           |           |           |           |           |           |  
+   C |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   O |           |           |           |           |           |           |  
+   O |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+-> A |         0 |        17 |         0 |         0 |         0 |         0 |<-
+   A |       151 |       586 |        48 |      1400 |        30 |        94 |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+   P |           |           |           |           |           |           |  
+   P |           |           |           |           |           |           |  
+   --+-----------+-----------+-----------+-----------+-----------+-----------+
+Duration of tests = 21 minutes, 43 seconds
 
 **** DONE Main test binary - PulseAudio sound system
 
@@ -619,8 +660,7 @@ Test logs and summary table for tests shows only well-known problems.
    --+-----------+-----------+-----------+-----------+-----------+-----------+
 Duration of tests = 21 minutes, 48 seconds
 
-
-*** TODO cw tests
+*** DONE cw tests
 Tests of basic usage of unixcw/src/cw/cw program.
 
 Tests that use *.cw files:
@@ -628,16 +668,14 @@ Tests that use *.cw files:
 ./src/cw/cw -f src/cw/demo.cw
 ./src/cw/cw -f src/cw/prelude.cw
 
-
-*** TODO cwcp tests
+*** DONE cwcp tests
 Tests of basic usage of unixcw/src/cwcp/cwcp program.
 
-*** TODO xcwcp tests
+*** DONE xcwcp tests
 Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
 
-*** TODO cwgen tests
+*** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
-
 
 
 ** DONE FreeBSD 12.1 (Celeron)
