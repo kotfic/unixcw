@@ -59,8 +59,8 @@ case $response in
         echo "OK"
         ;;
     *)
-	echo "Aborting build"
-    exit
+        echo "Aborting build"
+        exit
         ;;
 esac
 
@@ -80,11 +80,16 @@ rm -rf $BUILD/*
 
 echo ""
 echo ""
-echo "********** make dist in repository **********"
+echo "********** Running 'mmake dist' in repository **********"
 sleep 1;
 # prepare $PACKAGE_X.Y.Z.debian.tar.gz
 cd $REPO
 rm -rf *.tar.gz
+
+if [ ! -f Makefile ]; then
+    ./configure
+fi
+
 # 'make' returns zero on success
 if ! (make dist) ; then
     echo "Failed to build 'make dist' target, exiting"
@@ -120,6 +125,7 @@ tar xvfz $dist
 rm $dist
 dist_dir=`ls`
 echo "directory with contents of distribution package is $dist_dir"
+sleep 1;
 
 
 
@@ -155,14 +161,13 @@ echo
 case $response in
     [yY][eE][sS]|[yY])
         echo "OK"
-	eval $debuild_command
-	echo "Second build completed"
+        eval $debuild_command
+        echo "Second build completed"
         ;;
-
     *)
-	echo "Not executing second build"
-	# pass
+        echo "Not executing second build"
+        # pass
         ;;
-
 esac
+
 echo
