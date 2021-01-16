@@ -375,8 +375,11 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 #if 1
 	/* Tell 'dequeue and generate' thread function to go silent.
 
-	   TODO: What if the last tone on queue is a Very Long Tone, and
-	   silencing the generator will take a long time? */
+	   TODO: What if the last tone on queue is a Very Long Tone,
+	   and silencing the generator will take a long time? This is
+	   a real problem that can be observed with large GAP
+	   parameter (e.g. 60): a program that is using long gaps is
+	   waiting for a long time before exiting on Ctrl-C. */
 	gen->silencing_initialized = true;
 	cw_gen_wait_for_queue_level(gen, 0);
 
@@ -384,7 +387,12 @@ cw_ret_t cw_gen_silence_internal(cw_gen_t * gen)
 	   it go "up", regardless of sound sink (even for CW_AUDIO_NULL,
 	   because that sound system can also be used with a key).  Otherwise
 	   the key may stay in "down" state forever and the sound will be
-	   played after "silencing" of the generator. */
+	   played after "silencing" of the generator.
+
+	   TODO: this code is not being called in some of libcw tests,
+	   e.g. in this one:
+	   ./src/libcw/tests/libcw_tests -S c -d /dev/console -N legacy_api_test_send_character_and_string
+	*/
 	cw_tone_t tone;
 	CW_TONE_INIT(&tone, 0, gen->quantum_duration, CW_SLOPE_MODE_NO_SLOPES);
 	tone.debug_id = 'd';
