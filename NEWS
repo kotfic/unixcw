@@ -116,8 +116,25 @@ version 3.6.0 / 2021-XX-YY
   xcwcp:
 
   - program's command line option "--sound" has been changed to
-    "--system", for consistency with similar option in other unixcw's
+    "--system", for consistency with similar option in other unixcw
     programs.
+
+
+
+
+  Plans for next release:
+
+  - improve quality and quantity of tests of libcw functions.
+
+  - fix some of FIXMEs and do some of TODOs that don't break
+    compatibility.
+
+  - do full review of cwgen's code.
+
+  - introduce fully automatic tests of cwgen's output.
+
+  - perhaps improve PulseAudio parameters.
+
 
 ----------------------------------------------------------------------------
 
