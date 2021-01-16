@@ -901,10 +901,12 @@ static cw_ret_t cw_alsa_set_hw_params_period_size_internal(cw_gen_t * gen, snd_p
 		/* Sometimes, for some reason, these two values can be different.
 		   On my PC max = min+1 */
 		dir = -1;
-		snd_rv = cw_alsa.snd_pcm_hw_params_set_period_size_max(gen->alsa_data.pcm_handle, hw_params, &period_size_min, &dir);
+		snd_rv = cw_alsa.snd_pcm_hw_params_set_period_size_max(gen->alsa_data.pcm_handle, hw_params, &period_size_max, &dir);
 		if (0 != snd_rv) {
 			cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_WARNING,
-				      MSG_PREFIX "Unable to set period_size_max: %s", cw_alsa.snd_strerror(snd_rv));
+				      MSG_PREFIX "Unable to set period_size_max = %lu: %s",
+				      period_size_max,
+				      cw_alsa.snd_strerror(snd_rv));
 		}
 	}
 

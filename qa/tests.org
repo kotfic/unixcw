@@ -131,8 +131,7 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 * STARTED Tests for unixcw version 3.6.0
 Version of template: 2021.01.09.
-
-** DONE Alpine Linux 3.12 (N150)
+** STARTED Alpine Linux 3.12 (N150)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -177,7 +176,7 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** DONE libcw tests
+*** STARTED libcw tests
 Tests using tools from unixcw/src/libcw.
 
 **** DONE Main test binary - Null sound system
@@ -235,7 +234,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** DONE Main test binary - ALSA sound system
+**** TODO Main test binary - ALSA sound system
 
 *Steps*
 cd src/libcw/tests
@@ -297,8 +296,7 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
-
-** DONE Debian GNU/Linux 9 (main laptop)
+** STARTED Debian GNU/Linux 9 (main laptop)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -343,7 +341,7 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** DONE libcw tests
+*** STARTED libcw tests
 Tests using tools from unixcw/src/libcw.
 
 **** DONE Main test binary - Null sound system
@@ -398,7 +396,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** DONE Main test binary - ALSA sound system
+**** TODO Main test binary - ALSA sound system
 
 *Steps*
 cd src/libcw/tests
@@ -428,7 +426,6 @@ libcw tests: Statistics of tests (failures/total)
    P |           |           |           |           |           |           |  
    --+-----------+-----------+-----------+-----------+-----------+-----------+
 Duration of tests = 21 minutes, 37 seconds
-
 
 **** DONE Main test binary - PulseAudio sound system
 
@@ -479,7 +476,6 @@ sound systems. The problem does not occur with ALSA.
 
 *** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
-
 
 
 ** STARTED Ubuntu 18.04.5 LTS (Celeron)
