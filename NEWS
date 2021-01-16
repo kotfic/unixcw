@@ -109,6 +109,8 @@ version 3.6.0 / 2021-XX-YY
   - there is a hard limit on length of name of sound device: 127
     characters (+1 for terminating NUL).
 
+  - fixing Debian bug #979113 (https://bugs.debian.org/979113).
+
   - library soname/version changed from 6.6.1 to 7.0.0.
 
   xcwcp:

@@ -147,10 +147,26 @@ bool cw_is_pa_possible(const char * device_name)
 	   accessible on this machine, and this should not be logged as
 	   error. */
 
-	const char * const library_name = "libpulse-simple.so";
-	if (CW_SUCCESS != cw_dlopen_internal(library_name, &g_cw_pa_lib_handle.lib_handle)) {
+	/*
+	  https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=979113
+	  TODO: consider removing the unversioned library name in the future,
+	  after testing presence and usage of .so.0 on more platforms.
+	*/
+	const char * const library_name[] = {
+		"libpulse-simple.so.0",
+		"libpulse-simple.so",
+		NULL,
+	};
+	int i = 0;
+	while (NULL != library_name[i]) {
+		if (CW_SUCCESS == cw_dlopen_internal(library_name[i], &g_cw_pa_lib_handle.lib_handle)) {
+			break;
+		}
+		i++;
+	}
+	if (NULL == g_cw_pa_lib_handle.lib_handle) {
 		cw_debug_msg (&cw_debug_object, CW_DEBUG_SOUND_SYSTEM, CW_DEBUG_ERROR,
-			      MSG_PREFIX "is possible: can't access PulseAudio library \"%s\"", library_name);
+			      MSG_PREFIX "is possible: can't open PulseAudio 'libpulse-simple' library");
 		return false;
 	}
 
