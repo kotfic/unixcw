@@ -412,6 +412,9 @@ shorter duration. This may be occurring on other machines too.
 [II] Call  10, state 1, representation = '-', duration of previous element = 298646 us
 [II] Call  11, state 0, representation = '^', duration of previous element = 896103 us
 
+*** Add code checkers tests
+Add "run clang-tidy and cppcheck" for each platform and each package to
+qa/tests.org.
 
 ** other tests
 *** Fix long duration of valgrind tests
@@ -434,3 +437,5 @@ PKG_CONFIG_PATH=$HOME/lib/pkgconfig/ ./configure && make
 3. Run cwdaemon using libcw library installed in $HOME.
 LD_LIBRARY_PATH+=$LD_LIBRARY_PATH:$HOME/lib ./src/cwdaemon -x p -n
 ./examples/example.sh
+*** Add 'build Debian package' test
+Add "run 'build Debian package' test" to list of tests in qa/tests.org.
