@@ -34,12 +34,6 @@
            return CW_FAILURE;
    }
 
-
-* Test machines
-10GB of disc space for FreeBSD 12.1 is not enough to have comfortable
-working env, as I'm constantly running into "no free space left"
-message. 15GB or even 20GB would be more adequate.
-
 * Operating systems
 
 ** Linux
@@ -60,6 +54,7 @@ gcc -march=native -dM -E - </dev/null
 
 *** Extra packages to install
 
+mc git
 Systems with X windows: xterm meld
 Debian: debhelper
 
@@ -244,6 +239,10 @@ libtoolize
    5. Set limited and clear goals for each release at the beginning of
       development phase. This will allow you to avoid long development cycles
       and feature creep.
+   6. 10GB of disc space for FreeBSD 12.1 is not enough to have comfortable
+      working env, as I'm constantly running into "no free space left"
+      message. 15GB or even 20GB would be more adequate.
+
 
 * TODO
 ** code
@@ -290,6 +289,19 @@ dpkg-shlibdeps: warning: package could avoid a useless dependency if debian/cwcp
 
 *** Space in xcwcp
 Double-check if the first character added to text area in xcwcp is a space. If it is, then fix it.
+*** Slope duration for tones at highest speeds
+For tones at highest speeds the current tone slope duration may be too long,
+and the tones may be malformed. The duration may have to be shortened.
+*** Correct source of frequency in console code
+libcw tests that should generate varying frequency (like
+legacy_api_test_cw_queue_tone()) don't generate the varying
+frequencies for console sound system. This is probably related to
+where cw_console_write_tone_to_sound_device_internal() gets frequency
+argument from.
+
+This doesn't have impact on cw/cwcp/xcwcp, but should be fixed
+nevertheless.
+
 ** build system
 *** Add to configure.ac a check for GNU make on build machine
 
@@ -365,7 +377,42 @@ It will be easier to copy/paste test results on non-X systems from a
 disc file to qa/tests.org.
 *** Track failing tests
 Learn how to recognize which functions fail, learn how to count their
-failures and track them over time and over OSes.
+failures and track them over time and over OSes. Perhaps each test should
+have its unique id that would be preserved even if a test function was
+renamed or split.
+*** Short first element in test_cw_gen_state_callback
+
+On Alpine/N150 the first recorded element in test_cw_gen_state_callback has
+shorter duration. This may be occurring on other machines too.
+
+[II] Beginning of test
+[II]  ---------------------------------------------------------------------
+[II] Test name: test_cw_gen_state_callback
+[II] Current test topic: gen
+[II] Current sound system: ALSA
+[II] Current sound device: ''
+[II]  ---------------------------------------------------------------------
+[II] dot duration  = 300000 us
+[II] dash duration = 900000 us
+[II] eoe duration  = 300000 us
+[II] ics duration  = 600000 us
+[II] iws duration  = 1500000 us
+[II] additional duration =      0 us
+[II] adjustment duration =      0 us
+[II] speed = 4 WPM
+[II] Call   1, state 0, representation = '^', duration of previous element = 813530 us  <---- Here, noticeably shorter than 896056 or 896076 or 917133 below.
+[II] Call   2, state 1, representation = '-', duration of previous element = 298656 us
+[II] Call   3, state 0, representation = '^', duration of previous element = 896056 us
+[II] Call   4, state 1, representation = '-', duration of previous element = 298629 us
+[II] Call   5, state 0, representation = '^', duration of previous element = 896076 us
+[II] Call   6, state 1, representation = '-', duration of previous element = 917133 us
+[II] Call   7, state 0, representation = '^', duration of previous element = 896001 us
+[II] Call   8, state 1, representation = '-', duration of previous element = 298677 us
+[II] Call   9, state 0, representation = '^', duration of previous element = 896039 us
+[II] Call  10, state 1, representation = '-', duration of previous element = 298646 us
+[II] Call  11, state 0, representation = '^', duration of previous element = 896103 us
+
+
 ** other tests
 *** Fix long duration of valgrind tests
 When libcw tests binary is executed under valgrind, its execution
