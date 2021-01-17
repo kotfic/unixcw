@@ -129,9 +129,9 @@ Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
 
 
-* STARTED Tests for unixcw version 3.6.0
+* DONE Tests for unixcw version 3.6.0
 Version of template: 2021.01.09.
-** STARTED Alpine Linux 3.12 (N150)
+** DONE Alpine Linux 3.12 (N150)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -176,7 +176,7 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** STARTED libcw tests
+*** DONE libcw tests
 Tests using tools from unixcw/src/libcw.
 
 **** DONE Main test binary - Null sound system
@@ -234,7 +234,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** TODO Main test binary - ALSA sound system
+**** DONE Main test binary - ALSA sound system
 
 *Steps*
 cd src/libcw/tests
@@ -244,7 +244,6 @@ cd src/libcw/tests
 Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
-
 libcw tests: Statistics of tests (failures/total)
 
      | tone queue| generator |    key    |  receiver |    data   |    other  |
@@ -258,13 +257,14 @@ libcw tests: Statistics of tests (failures/total)
    O |           |           |           |           |           |           |  
    O |           |           |           |           |           |           |  
    --+-----------+-----------+-----------+-----------+-----------+-----------+
--> A |         0 |        12 |         0 |         1 |         0 |         0 |<-
-   A |       151 |       586 |        48 |      1402 |        30 |        94 |  
+-> A |         0 |        12 |         0 |         0 |         0 |         0 |<-
+   A |       151 |       586 |        48 |      1400 |        30 |        94 |  
    --+-----------+-----------+-----------+-----------+-----------+-----------+
    P |           |           |           |           |           |           |  
    P |           |           |           |           |           |           |  
    --+-----------+-----------+-----------+-----------+-----------+-----------+
 Duration of tests = 22 minutes, 3 seconds
+
 
 **** SKIPPED Main test binary - PulseAudio sound system
 
@@ -294,9 +294,7 @@ Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
 *** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
 
-
-
-** STARTED Debian GNU/Linux 9 (main laptop)
+** DONE Debian GNU/Linux 9 (main laptop)
 <Description of machine/OS>
 *** DONE Build system tests
 **** DONE make distcheck
@@ -341,7 +339,7 @@ Test of configuration flags SUCCEEDED
 *Notes*
 The shell script may not work on systems without bash.
 
-*** STARTED libcw tests
+*** DONE libcw tests
 Tests using tools from unixcw/src/libcw.
 
 **** DONE Main test binary - Null sound system
@@ -396,7 +394,7 @@ Test logs and summary table for tests shows only well-known problems.
 
 *Test statistics table*
 
-**** TODO Main test binary - ALSA sound system
+**** DONE Main test binary - ALSA sound system
 
 *Steps*
 cd src/libcw/tests
@@ -426,7 +424,6 @@ libcw tests: Statistics of tests (failures/total)
    P |           |           |           |           |           |           |  
    --+-----------+-----------+-----------+-----------+-----------+-----------+
 Duration of tests = 21 minutes, 37 seconds
-
 **** DONE Main test binary - PulseAudio sound system
 
 *Steps*
@@ -476,7 +473,6 @@ sound systems. The problem does not occur with ALSA.
 
 *** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
-
 
 ** DONE Ubuntu 18.04.5 LTS (Celeron)
 <Description of machine/OS>
@@ -676,7 +672,6 @@ Tests of basic usage of unixcw/src/xcwcp/xcwcp program.
 
 *** DONE cwgen tests
 Tests of basic usage of unixcw/src/cwgen/cwgen program.
-
 
 ** DONE FreeBSD 12.1 (Celeron)
 <Description of machine/OS>
