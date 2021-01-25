@@ -302,6 +302,9 @@ argument from.
 This doesn't have impact on cw/cwcp/xcwcp, but should be fixed
 nevertheless.
 
+*** Integrate contents of recent debian/ directory
+Use contents of the latest files from debian.org.
+
 ** build system
 *** Add to configure.ac a check for GNU make on build machine
 
@@ -323,6 +326,10 @@ disabling modules (e.g. --disable-libcw-receiver, --disable-libcw-key).
 *** pkg-config + ncurses
 
 Check if it's possible to use pkg-config to get ncurses compilation flags.
+
+*** Debian patch for reproducible builds
+Integrate this patch:
+https://salsa.debian.org/debian-hamradio-team/unixcw/-/blob/master/debian/patches/0004-reprotest_collate_make_fix.patch
 
 ** libcw tests
 *** "level 1" in test_cw_tq_gen_operations_B
@@ -439,3 +446,5 @@ LD_LIBRARY_PATH+=$LD_LIBRARY_PATH:$HOME/lib ./src/cwdaemon -x p -n
 ./examples/example.sh
 *** Add 'build Debian package' test
 Add "run 'build Debian package' test" to list of tests in qa/tests.org.
+*** Add qa/ script for reproducible Debian builds
+https://manpages.debian.org/buster/reprotest/reprotest.1.en.html
