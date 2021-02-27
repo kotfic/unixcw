@@ -305,6 +305,17 @@ nevertheless.
 *** Integrate contents of recent debian/ directory
 Use contents of the latest files from debian.org.
 
+*** freedesktop.org menu file
+
+From Debian people:
+
+"
+The one change that may be worth including into upstream is the updated
+freedesktop.org menu file.  That commit on salsa.debian.org can be viewed
+at the link below. [...]
+https://salsa.debian.org/debian-hamradio-team/unixcw/-/commit/91a480d31452ba356e1b30ef172fc9cc830053fc
+"
+
 ** build system
 *** Add to configure.ac a check for GNU make on build machine
 
