@@ -186,8 +186,8 @@ void Application::libcw_keying_event_static(void *arg, int key_state)
 
 		//fprintf(stderr, "calling callback, stage 1 (key = %d)\n", key_state);
 
-		struct timeval *t = (struct timeval *) arg;
-		app->receiver->handle_libcw_keying_event(t, key_state);
+		easy_rec_t * easy_rec = (easy_rec_t *) arg;
+		easy_rec_handle_libcw_keying_event(easy_rec, key_state);
 	}
 
 	return;
@@ -1106,17 +1106,9 @@ void Application::make_auxiliaries_end(void)
 	   paddles are pressed, but (since it doesn't receive timing
 	   parameters) it won't be able to identify entered Morse
 	   code. */
-	cw_register_keying_callback(libcw_keying_event_static, &receiver->main_timer);
+	cw_register_keying_callback(libcw_keying_event_static, receiver->easy_rec);
 
-	/* The call above registered receiver->main_timer as a generic
-	   argument to a callback. However, libcw needs to know when
-	   the argument happens to be of type 'struct timeval'. This
-	   is why we have this second call, explicitly passing
-	   receiver's timer to libcw. */
-	cw_iambic_keyer_register_timer(&receiver->main_timer);
-
-	gettimeofday(&(receiver->main_timer), NULL);
-	//fprintf(stderr, "time on aux config: %10ld : %10ld\n", receiver->main_timer.tv_sec, receiver->main_timer.tv_usec);
+	easy_rec_start(receiver->easy_rec);
 
 	QString label("Output: ");
 	label += cw_generator_get_audio_system_label();
