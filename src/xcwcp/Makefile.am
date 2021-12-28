@@ -45,8 +45,10 @@ xcwcp_LDADD = $(top_builddir)/src/cwutils/lib_xcwcp.a -L$(top_builddir)/src/libc
 
 
 
-# xcwcp_CPPFLAGS+=-DXCWCP_WITH_REC_TEST
-# xcwcp_LDADD+=$(top_builddir)/src/cwutils/lib_rec_tests.a
+if WITH_XCWCP_REC_TEST
+xcwcp_CPPFLAGS+=-DXCWCP_WITH_REC_TEST
+xcwcp_LDADD+=$(top_builddir)/src/cwutils/lib_rec_tests.a
+endif
 
 
 

@@ -234,6 +234,21 @@ else
 fi
 
 
+# Build xcwcp with receiver test? No by default.
+AC_ARG_ENABLE(xcwcp_rec_test,
+    AS_HELP_STRING([--enable-xcwcp-rec-test], [Include receiver test in xcwcp]),
+    [],
+    [enable_xcwcp_rec_test=no])
+
+AC_MSG_CHECKING([whether to build xcwcp with receiver test])
+if test "$enable_xcwcp_rec_test" = "yes" ; then
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([WITH_XCWCP_REC_TEST], [test $enable_xcwcp_rec_test = "yes"])
+
+
 # Enable development debugging? No by default.
 AC_ARG_ENABLE(dev,
     AS_HELP_STRING([--enable-dev], [enable development support (messages/debug code/asserts)]),
@@ -361,7 +376,6 @@ else
 	AC_MSG_WARN([Cannot find libcurses - unable to build cwcp])
     fi
 fi
-
 
 
 if test "$enable_xcwcp" = "no" ; then
@@ -656,6 +670,9 @@ AC_MSG_NOTICE([  build cw:  ..............................  yes])
 AC_MSG_NOTICE([  build cwgen:  ...........................  yes])
 AC_MSG_NOTICE([  build cwcp:  ............................  $WITH_CWCP])
 AC_MSG_NOTICE([  build xcwcp:  ...........................  $WITH_XCWCP])
+if test "$enable_xcwcp_rec_test" = 'yes' ; then
+    AC_MSG_NOTICE([      include dev receiver test:  .........  $enable_xcwcp_rec_test])
+fi
 AC_MSG_NOTICE([  CFLAGS:  ................................  $CFLAGS])
 if test "$WITH_XCWCP" = 'yes' ; then
     AC_MSG_NOTICE([  Qt5 CFLAGS:  ............................  $QT5_CFLAGS])
