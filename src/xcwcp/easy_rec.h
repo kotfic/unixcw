@@ -49,8 +49,10 @@ typedef struct easy_rec_t easy_rec_t;
 
 typedef struct {
 	char c;
+	char representation[20]; /* TODO: use a constant for representation's size. */
 	int errno_val;
 	bool is_end_of_word;
+	bool is_error;
 } easy_rec_data_t;
 
 

@@ -35,8 +35,6 @@
 #include "../libcw/libcw_tq.h"
 #include "../libcw/libcw_utils.h"
 
-void test_callback_func(void * arg, int key_state);
-void low_tone_queue_callback(void * arg);
 #endif
 
 
@@ -93,6 +91,10 @@ struct easy_rec_t {
 
 #ifdef XCWCP_WITH_REC_TEST
 static void * receiver_input_generator_fn(void * arg);
+void test_callback_func(void * arg, int key_state);
+void low_tone_queue_callback(void * arg);
+int easy_rec_test_on_character(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer);
+int easy_rec_test_on_space(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer);
 #endif
 
 
@@ -284,40 +286,9 @@ bool easy_rec_poll_character(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 	if (received) {
 
 #ifdef XCWCP_WITH_REC_TEST
-		fprintf(stderr, "[II] Character: '%c'\n", erd->c);
-
-		easy_rec->rec_tester.received_string[easy_rec->rec_tester.received_string_i++] = erd->c;
-
-		bool is_end_of_word_r = false;
-		bool is_error_r = false;
-		char representation[20] = { 0 };
-		int cw_ret = cw_receive_representation(&timer2, representation, &is_end_of_word_r, &is_error_r);
-		if (CW_SUCCESS != cw_ret) {
-			fprintf(stderr, "[EE] Character: failed to get representation\n");
+		if (CW_SUCCESS != easy_rec_test_on_character(easy_rec, erd, &timer2)) {
 			exit(EXIT_FAILURE);
 		}
-
-		if (is_end_of_word_r != erd->is_end_of_word) {
-			fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, erd->is_end_of_word);
-			exit(EXIT_FAILURE);
-		}
-
-		if (is_end_of_word_r) {
-			fprintf(stderr, "[EE] Character: 'is end of word' marker is unexpectedly 'true'\n");
-			exit(EXIT_FAILURE);
-		}
-
-		const char looked_up = cw_representation_to_character(representation);
-		if (0 == looked_up) {
-			fprintf(stderr, "[EE] Character: Failed to look up character for representation\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (looked_up != erd->c) {
-			fprintf(stderr, "[EE] Character: Looked up character is different than received: %c != %c\n", looked_up, erd->c);
-		}
-
-		fprintf(stderr, "[II] Character: Representation: %c -> '%s'\n", erd->c, representation);
 #endif
 		/* A full character has been received. Directly after
 		   it comes a space. Either a short inter-character
@@ -388,49 +359,15 @@ void easy_rec_poll_space(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 	gettimeofday(&timer2, NULL);
 	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
 
-	char c = 0;
-	cw_receive_character(&timer2, &c, &erd->is_end_of_word, NULL);
+	cw_receive_character(&timer2, &erd->c, &erd->is_end_of_word, NULL);
 	if (erd->is_end_of_word) {
-		//fprintf(stderr, "End of word '%c'\n\n", c);
+		//fprintf(stderr, "End of word '%c'\n\n", erd->c);
 
 #ifdef XCWCP_WITH_REC_TEST
-		fprintf(stderr, "[II] Space:\n");
-
-		/* cw_receive_character() will return through 'c'
-		   variable the last character that was polled before
-		   space.
-
-		   Maybe this is good, maybe this is bad, but this is
-		   the legacy behaviour that we will keep
-		   supporting. */
-		if (' ' == c) {
-			fprintf(stderr, "[EE] Space: returned character should not be space\n");
-			exit(EXIT_FAILURE);
-		}
-
-
-		easy_rec->rec_tester.received_string[easy_rec->rec_tester.received_string_i++] = ' ';
-
-		bool is_end_of_word_r = false;
-		bool is_error_r = false;
-		char representation[20] = { 0 };
-		int cw_ret = cw_receive_representation(&timer2, representation, &is_end_of_word_r, &is_error_r);
-		if (CW_SUCCESS != cw_ret) {
-			fprintf(stderr, "[EE] Space: Failed to get representation\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (is_end_of_word_r != erd->is_end_of_word) {
-			fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", is_end_of_word_r, erd->is_end_of_word);
-			exit(EXIT_FAILURE);
-		}
-
-		if (!is_end_of_word_r) {
-			fprintf(stderr, "[EE] Space: 'is end of word' marker is unexpectedly 'false'\n");
+		if (CW_SUCCESS != easy_rec_test_on_space(easy_rec, erd, &timer2)) {
 			exit(EXIT_FAILURE);
 		}
 #endif
-
 
 		cw_clear_receive_buffer();
 		easy_rec->is_pending_inter_word_space = false;
@@ -668,6 +605,92 @@ void low_tone_queue_callback(void * arg)
 
 	return;
 }
+
+
+
+
+int easy_rec_test_on_character(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer)
+{
+	fprintf(stderr, "[II] Character: '%c'\n", erd->c);
+
+	easy_rec->rec_tester.received_string[easy_rec->rec_tester.received_string_i++] = erd->c;
+
+	easy_rec_data_t test_data = { 0 };
+	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_end_of_word, &test_data.is_error);
+	if (CW_SUCCESS != cw_ret) {
+		fprintf(stderr, "[EE] Character: failed to get representation\n");
+		return CW_FAILURE;
+	}
+
+	if (test_data.is_end_of_word != erd->is_end_of_word) {
+		fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", test_data.is_end_of_word, erd->is_end_of_word);
+		return CW_FAILURE;
+	}
+
+	if (test_data.is_end_of_word) {
+		fprintf(stderr, "[EE] Character: 'is end of word' marker is unexpectedly 'true'\n");
+		return CW_FAILURE;
+	}
+
+	const char looked_up = cw_representation_to_character(test_data.representation);
+	if (0 == looked_up) {
+		fprintf(stderr, "[EE] Character: Failed to look up character for representation\n");
+		return CW_FAILURE;
+	}
+
+	if (looked_up != erd->c) {
+		fprintf(stderr, "[EE] Character: Looked up character is different than received: %c != %c\n", looked_up, erd->c);
+	}
+
+	fprintf(stderr, "[II] Character: Representation: %c -> '%s'\n",
+		erd->c, test_data.representation);
+
+	/* Not entirely a success if looked up char does not match received
+	   character, but returning failure here would lead to calling
+	   exit(). */
+	return CW_SUCCESS;
+}
+
+
+
+
+int easy_rec_test_on_space(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer)
+{
+	fprintf(stderr, "[II] Space:\n");
+
+	/* cw_receive_character() will return through 'c' variable the last
+	   character that was polled before space.
+
+	   Maybe this is good, maybe this is bad, but this is the legacy
+	   behaviour that we will keep supporting. */
+	if (' ' == erd->c) {
+		fprintf(stderr, "[EE] Space: returned character should not be space\n");
+		return CW_FAILURE;
+	}
+
+
+	easy_rec->rec_tester.received_string[easy_rec->rec_tester.received_string_i++] = ' ';
+
+	easy_rec_data_t test_data = { 0 };
+	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_end_of_word, &test_data.is_error);
+	if (CW_SUCCESS != cw_ret) {
+		fprintf(stderr, "[EE] Space: Failed to get representation\n");
+		return CW_FAILURE;
+	}
+
+	if (test_data.is_end_of_word != erd->is_end_of_word) {
+		fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", test_data.is_end_of_word, erd->is_end_of_word);
+		return CW_FAILURE;
+	}
+
+	if (!test_data.is_end_of_word) {
+		fprintf(stderr, "[EE] Space: 'is end of word' marker is unexpectedly 'false'\n");
+		return CW_FAILURE;
+	}
+
+	return CW_SUCCESS;
+}
+
 
 
 
