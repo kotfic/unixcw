@@ -307,7 +307,9 @@ void Application::start()
 	sender->clear();
 	receiver->clear();
 #ifdef XCWCP_WITH_REC_TEST
-	receiver->start_test_code();
+	if (current_mode()->is_receiver_test()) {
+		receiver->start_test_code();
+	}
 #endif
 
 	/* Accessing proper action through this->startstop should also
@@ -352,7 +354,9 @@ void Application::stop()
 	sender->clear();
 	receiver->clear();
 #ifdef XCWCP_WITH_REC_TEST
-	receiver->stop_test_code();
+	if (current_mode()->is_receiver_test()) {
+		receiver->stop_test_code();
+	}
 #endif
 
 	/* Saving speed for restore on next start. */
@@ -1170,5 +1174,13 @@ void Application::clear_status()
 
 
 
+const Mode * Application::current_mode() const
+{
+	return modeset.get(mode_combo->currentIndex());
+}
+
+
+
 
 }  /* namespace cw */
+

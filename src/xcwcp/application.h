@@ -71,6 +71,8 @@ namespace cw {
 		void show_status(const QString &status);
 		void clear_status();
 
+		const Mode * current_mode() const;
+
 	protected:
 		void closeEvent(QCloseEvent *event);
 

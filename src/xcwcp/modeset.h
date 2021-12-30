@@ -41,6 +41,7 @@ namespace cw {
 	class DictionaryMode;
 	class KeyboardMode;
 	class ReceiveMode;
+	class ReceiverTestMode;
 
 
 
@@ -63,6 +64,7 @@ namespace cw {
 		inline virtual bool is_dictionary() const { return false; };
 		inline virtual bool is_keyboard()   const { return false; };
 		inline virtual bool is_receive()    const { return false; };
+		inline virtual bool is_receiver_test()    const { return false; };
 
 		virtual const DictionaryMode *get_dmode() const { return NULL; };
 		virtual const KeyboardMode *get_kmode()   const { return NULL; };
@@ -135,6 +137,26 @@ namespace cw {
 		ReceiveMode &operator=(const ReceiveMode &);
 	};
 
+
+
+
+#ifdef XCWCP_WITH_REC_TEST
+	class ReceiverTestMode : public Mode {
+	public:
+		ReceiverTestMode(const std::string &descr) : Mode (descr) { }
+
+		/* This is also a receive mode. In this mode we receive
+		   events from test generator, not from keyboard or mouse. */
+		inline virtual bool is_receive() const override { return true; };
+
+		inline virtual bool is_receiver_test() const override { return true; } ;
+
+	private:
+		/* Prevent unwanted operations. */
+		ReceiverTestMode(const ReceiverTestMode &);
+		ReceiverTestMode &operator=(const ReceiverTestMode &);
+	};
+#endif
 
 
 

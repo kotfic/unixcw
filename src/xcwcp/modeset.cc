@@ -37,7 +37,8 @@ bool Mode::is_same_type_as(const Mode *other) const
 {
 	return (is_dictionary() && other->is_dictionary())
 		|| (is_keyboard() && other->is_keyboard())
-		|| (is_receive() && other->is_receive());
+		|| (is_receive() && other->is_receive())
+		|| (is_receiver_test() && other->is_receiver_test());
 }
 
 
@@ -109,6 +110,10 @@ ModeSetHelper::ModeSetHelper()
 	/* Add keyboard send and keyer receive. */
 	modes.push_back(new KeyboardMode("Send Keyboard CW"));
 	modes.push_back(new ReceiveMode("Receive Keyed CW"));
+
+#ifdef XCWCP_WITH_REC_TEST
+	modes.push_back(new ReceiverTestMode("Run Receiver Test"));
+#endif
 
 	return;
 }
