@@ -230,6 +230,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 		/* Key down. */
 		//fprintf(stderr, "start receive tone: %10ld . %10ld\n", easy_rec->main_timer->tv_sec, easy_rec->main_timer->tv_usec);
 		if (!cw_start_receive_tone(&easy_rec->main_timer)) {
+			// TODO: Perhaps this should be counted as test error
 			perror("cw_start_receive_tone");
 			return;
 		}
@@ -256,6 +257,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 				break;
 			default:
 				perror("cw_end_receive_tone");
+				// TODO: Perhaps this should be counted as test error
 				return;
 			}
 		}
