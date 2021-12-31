@@ -45,47 +45,10 @@
 
 
 
-struct easy_rec_t {
-	/* Timer for measuring length of dots and dashes.
-
-	   Initial value of the timestamp is created by xcwcp's receiver on
-	   first "paddle down" event in a character. The timestamp is then
-	   updated by libcw on specific time intervals. The intervals are a
-	   function of keyboard key presses or mouse button presses recorded
-	   by xcwcp. */
-	struct timeval main_timer;
-
-	/* Safety flag to ensure that we keep the library in sync with keyer
-	   events. Without, there's a chance that of a on-off event, one half
-	   will go to one application instance, and the other to another
-	   instance. */
-	volatile bool tracked_key_state;
-
-	/* Flag indicating if receive polling has received a character, and
-	   may need to augment it with a word space on a later poll. */
-	volatile bool is_pending_inter_word_space;
-
-	/* Flag indicating possible receive errno detected in signal handler
-	   context and needing to be passed to the foreground. */
-	volatile int libcw_receive_errno;
-
-	/* State of left and right paddle of iambic keyer. The
-	   flags are common for keying with keyboard keys and
-	   with mouse buttons.
-
-	   A timestamp for libcw needs to be generated only in
-	   situations when one of the paddles comes down and
-	   the other is up. This is why we observe state of
-	   both paddles separately. */
-	bool is_left_down;
-	bool is_right_down;
-
 #ifdef XCWCP_WITH_REC_TEST
-	pthread_t receiver_test_code_thread_id;
-	cw_rec_tester_t rec_tester;
+pthread_t g_receiver_test_code_thread_id;
+cw_rec_tester_t g_rec_tester;
 #endif
-};
-
 
 
 
@@ -93,33 +56,14 @@ struct easy_rec_t {
 static void * receiver_input_generator_fn(void * arg);
 void test_callback_func(void * arg, int key_state);
 void low_tone_queue_callback(void * arg);
-int easy_rec_test_on_character(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer);
-int easy_rec_test_on_space(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer);
+int easy_rec_test_on_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
+int easy_rec_test_on_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
 #endif
 
 
 
 
-easy_rec_t * easy_rec_new(void)
-{
-	return (easy_rec_t *) calloc(1, sizeof (easy_rec_t));
-}
-
-
-
-
-void easy_rec_delete(easy_rec_t ** easy_rec)
-{
-	if (easy_rec && *easy_rec) {
-		free(*easy_rec);
-		*easy_rec = NULL;
-	}
-}
-
-
-
-
-void easy_rec_start(easy_rec_t * easy_rec)
+void easy_rec_start(cw_easy_receiver_t * easy_rec)
 {
 	/* The call above registered receiver->main_timer as a generic
 	   argument to a callback. However, libcw needs to know when
@@ -133,40 +77,6 @@ void easy_rec_start(easy_rec_t * easy_rec)
 }
 
 
-
-
-/**
-   \brief Handle straight key event
-
-   \param is_down
-*/
-void easy_rec_sk_event(easy_rec_t * easy_rec, bool is_down)
-{
-	/* Inform xcwcp receiver (which will inform libcw receiver)
-	   about new state of straight key ("sk").
-
-	   libcw receiver will process the new state and we will later
-	   try to poll a character or space from it. */
-
-	//fprintf(stderr, "Callback function, key state = %d\n", key_state);
-
-
-	/* Prepare timestamp for libcw on both "key up" and "key down"
-	   events. There is no code in libcw that would generate
-	   updated consecutive timestamps for us (as it does in case
-	   of iambic keyer).
-
-	   TODO: see in libcw how iambic keyer updates a timer, and
-	   how straight key does not. Apparently the timer is used to
-	   recognize and distinguish dots from dashes. Maybe straight
-	   key could have such timer as well? */
-	gettimeofday(&easy_rec->main_timer, NULL);
-	//fprintf(stderr, "time on Skey down:  %10ld : %10ld\n", easy_rec->main_timer.tv_sec, easy_rec->main_timer.tv_usec);
-
-	cw_notify_straight_key_event(is_down);
-
-	return;
-}
 
 
 /**
@@ -192,7 +102,7 @@ void easy_rec_sk_event(easy_rec_t * easy_rec, bool is_down)
    particular, it goes out of its way to deliver results by setting
    flags that are later handled by receive polling.
 */
-void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
+void easy_rec_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state)
 {
 	/* Ignore calls where the key state matches our tracked key
 	   state.  This avoids possible problems where this event
@@ -209,7 +119,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 
 	/* If this is a tone start and we're awaiting an inter-word
 	   space, cancel that wait and clear the receive buffer. */
-	if (key_state && easy_rec->is_pending_inter_word_space) {
+	if (key_state && easy_rec->is_pending_iws) {
 		/* Tell receiver to prepare (to make space) for
 		   receiving new character. */
 		cw_clear_receive_buffer();
@@ -219,7 +129,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 		   inter-word space is possible at this point in
 		   time. The space that we were observing/waiting for,
 		   was just inter-character space. */
-		easy_rec->is_pending_inter_word_space = false;
+		easy_rec->is_pending_iws = false;
 	}
 
 	//fprintf(stderr, "calling callback, stage 2\n");
@@ -269,7 +179,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 
 
 
-bool easy_rec_poll_character(easy_rec_t * easy_rec, easy_rec_data_t * erd)
+bool easy_rec_poll_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd)
 {
 	/* Don't use receiver.easy_rec->main_timer - it is used exclusively for
 	   marking initial "key down" events. Use local throw-away
@@ -283,7 +193,7 @@ bool easy_rec_poll_character(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
 
 	errno = 0;
-	const bool received = cw_receive_character(&timer2, &erd->c, &erd->is_end_of_word, NULL);
+	const bool received = cw_receive_character(&timer2, &erd->character, &erd->is_iws, NULL);
 	erd->errno_val = errno;
 	if (received) {
 
@@ -301,9 +211,9 @@ bool easy_rec_poll_character(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 
 		   Set a flag indicating that next poll may result in
 		   inter-word space. */
-		easy_rec->is_pending_inter_word_space = true;
+		easy_rec->is_pending_iws = true;
 
-		//fprintf(stderr, "Received character '%c'\n", erd->c);
+		//fprintf(stderr, "Received character '%c'\n", erd->character);
 
 		return true;
 
@@ -345,14 +255,14 @@ bool easy_rec_poll_character(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 
 // TODO: can we return true when a space has been successfully polled,
 // instead of returning it through erd?
-void easy_rec_poll_space(easy_rec_t * easy_rec, easy_rec_data_t * erd)
+void easy_rec_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd)
 {
 	/* We expect the receiver to contain a character, but we don't
 	   ask for it this time. The receiver should also store
 	   information about an inter-character space. If it is longer
 	   than a regular inter-character space, then the receiver
 	   will treat it as inter-word space, and communicate it over
-	   is_end_of_word.
+	   is_iws.
 
 	   Don't use receiver.easy_rec->main_timer - it is used eclusively for
 	   marking initial "key down" events. Use local throw-away
@@ -361,9 +271,9 @@ void easy_rec_poll_space(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 	gettimeofday(&timer2, NULL);
 	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
 
-	cw_receive_character(&timer2, &erd->c, &erd->is_end_of_word, NULL);
-	if (erd->is_end_of_word) {
-		//fprintf(stderr, "End of word '%c'\n\n", erd->c);
+	cw_receive_character(&timer2, &erd->character, &erd->is_iws, NULL);
+	if (erd->is_iws) {
+		//fprintf(stderr, "End of word '%c'\n\n", erd->character);
 
 #ifdef XCWCP_WITH_REC_TEST
 		if (CW_SUCCESS != easy_rec_test_on_space(easy_rec, erd, &timer2)) {
@@ -372,9 +282,9 @@ void easy_rec_poll_space(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 #endif
 
 		cw_clear_receive_buffer();
-		easy_rec->is_pending_inter_word_space = false;
+		easy_rec->is_pending_iws = false;
 	} else {
-		/* We don't reset easy_rec->is_pending_inter_word_space. The
+		/* We don't reset easy_rec->is_pending_iws. The
 		   space that currently lasts, and isn't long enough
 		   to be considered inter-word space, may grow to
 		   become the inter-word space. Or not.
@@ -392,97 +302,33 @@ void easy_rec_poll_space(easy_rec_t * easy_rec, easy_rec_data_t * erd)
 
 
 
-int easy_rec_get_libcw_errno(const easy_rec_t * easy_rec)
+int easy_rec_get_libcw_errno(const cw_easy_receiver_t * easy_rec)
 {
 	return easy_rec->libcw_receive_errno;
 }
 
 
-void easy_rec_clear_libcw_errno(easy_rec_t * easy_rec)
+void easy_rec_clear_libcw_errno(cw_easy_receiver_t * easy_rec)
 {
 	easy_rec->libcw_receive_errno = 0;
 }
 
 
 
-bool easy_rec_is_pending_inter_word_space(const easy_rec_t * easy_rec)
+bool easy_rec_is_pending_inter_word_space(const cw_easy_receiver_t * easy_rec)
 {
-	return easy_rec->is_pending_inter_word_space;
+	return easy_rec->is_pending_iws;
 }
 
 
 
 
-void easy_rec_clear(easy_rec_t * easy_rec)
+void easy_rec_clear(cw_easy_receiver_t * easy_rec)
 {
 	cw_clear_receive_buffer();
-	easy_rec->is_pending_inter_word_space = false;
+	easy_rec->is_pending_iws = false;
 	easy_rec->libcw_receive_errno = 0;
 	easy_rec->tracked_key_state = false;
-}
-
-
-
-
-
-void easy_rec_ik_left_event(easy_rec_t * easy_rec, bool is_down, bool is_reverse_paddles)
-{
-	easy_rec->is_left_down = is_down;
-	if (easy_rec->is_left_down && !easy_rec->is_right_down) {
-		/* Prepare timestamp for libcw, but only for initial
-		   "paddle down" event at the beginning of
-		   character. Don't create the timestamp for any
-		   successive "paddle down" events inside a character.
-
-		   In case of iambic keyer the timestamps for every
-		   next (non-initial) "paddle up" or "paddle down"
-		   event in a character will be created by libcw.
-
-		   TODO: why libcw can't create such timestamp for
-		   first event for us? */
-		gettimeofday(&easy_rec->main_timer, NULL);
-		//fprintf(stderr, "time on Lkey down:  %10ld : %10ld\n", easy_rec->main_timer.tv_sec, easy_rec->main_timer.tv_usec);
-	}
-
-	/* Inform libcw about state of left paddle regardless of state
-	   of the other paddle. */
-	is_reverse_paddles
-		? cw_notify_keyer_dash_paddle_event(is_down)
-		: cw_notify_keyer_dot_paddle_event(is_down);
-	return;
-}
-
-
-
-
-/**
-   \brief Handle event on right paddle of iambic keyer
-
-   \param is_down
-   \param is_reverse_paddles
-*/
-void easy_rec_ik_right_event(easy_rec_t * easy_rec, bool is_down, bool is_reverse_paddles)
-{
-	easy_rec->is_right_down = is_down;
-	if (easy_rec->is_right_down && !easy_rec->is_left_down) {
-		/* Prepare timestamp for libcw, but only for initial
-		   "paddle down" event at the beginning of
-		   character. Don't create the timestamp for any
-		   successive "paddle down" events inside a character.
-
-		   In case of iambic keyer the timestamps for every
-		   next (non-initial) "paddle up" or "paddle down"
-		   event in a character will be created by libcw. */
-		gettimeofday(&easy_rec->main_timer, NULL);
-		//fprintf(stderr, "time on Rkey down:  %10ld : %10ld\n", easy_rec->main_timer.tv_sec, easy_rec->main_timer.tv_usec);
-	}
-
-	/* Inform libcw about state of left paddle regardless of state
-	   of the other paddle. */
-	is_reverse_paddles
-		? cw_notify_keyer_dot_paddle_event(is_down)
-		: cw_notify_keyer_dash_paddle_event(is_down);
-	return;
 }
 
 
@@ -493,17 +339,17 @@ void easy_rec_ik_right_event(easy_rec_t * easy_rec, bool is_down, bool is_revers
 
 
 
-void easy_rec_start_test_code(easy_rec_t * easy_rec)
+void easy_rec_start_test_code(cw_easy_receiver_t * easy_rec)
 {
-	pthread_create(&easy_rec->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, easy_rec);
+	pthread_create(&g_receiver_test_code_thread_id, NULL, receiver_input_generator_fn, easy_rec);
 }
 
 
 
 
-void easy_rec_stop_test_code(easy_rec_t * easy_rec)
+void easy_rec_stop_test_code(cw_easy_receiver_t * easy_rec)
 {
-	pthread_cancel(easy_rec->receiver_test_code_thread_id);
+	pthread_cancel(g_receiver_test_code_thread_id);
 }
 
 
@@ -517,9 +363,9 @@ void test_callback_func(void * arg, int key_state)
 	   libcw receiver will process the new state and we will later
 	   try to poll a character or space from it. */
 
-	easy_rec_t * easy_rec = (easy_rec_t *) arg;
+	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
 	//fprintf(stderr, "Callback function, key state = %d\n", key_state);
-	easy_rec_sk_event(easy_rec, key_state);
+	cw_easy_receiver_sk_event(easy_rec, key_state);
 }
 
 
@@ -534,10 +380,10 @@ void test_callback_func(void * arg, int key_state)
 */
 void * receiver_input_generator_fn(void * arg)
 {
-	easy_rec_t * easy_rec = (easy_rec_t *) arg;
+	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
 
-	cw_rec_tester_init(&easy_rec->rec_tester);
-	cw_rec_tester_init_text_buffers(&easy_rec->rec_tester, 1);
+	cw_rec_tester_init(&g_rec_tester);
+	cw_rec_tester_init_text_buffers(&g_rec_tester, 1);
 
 
 	/* Using Null sound system because this generator is only used
@@ -550,8 +396,8 @@ void * receiver_input_generator_fn(void * arg)
 	cw_gen_t * gen = cw_gen_new(&gen_conf);
 	cw_key_t key;
 
-	easy_rec->rec_tester.gen = gen;
-	cw_tq_register_low_level_callback_internal(easy_rec->rec_tester.gen->tq, low_tone_queue_callback, &easy_rec->rec_tester, 5);
+	g_rec_tester.gen = gen;
+	cw_tq_register_low_level_callback_internal(g_rec_tester.gen->tq, low_tone_queue_callback, &g_rec_tester, 5);
 
 	cw_key_register_generator(&key, gen);
 	cw_gen_register_value_tracking_callback_internal(gen, test_callback_func, arg);
@@ -563,13 +409,13 @@ void * receiver_input_generator_fn(void * arg)
 	   'low watermark' callback. */
 	cw_gen_start(gen);
 	for (int i = 0; i < 5; i++) {
-		const char c = easy_rec->rec_tester.input_string[easy_rec->rec_tester.input_string_i];
+		const char c = g_rec_tester.input_string[g_rec_tester.input_string_i];
 		if ('\0' == c) {
 			/* A very short input string. */
 			break;
 		} else {
-			cw_gen_enqueue_character(easy_rec->rec_tester.gen, c);
-			easy_rec->rec_tester.input_string_i++;
+			cw_gen_enqueue_character(g_rec_tester.gen, c);
+			g_rec_tester.input_string_i++;
 		}
 	}
 
@@ -578,9 +424,9 @@ void * receiver_input_generator_fn(void * arg)
 	cw_usleep_internal(1000 * 1000);
 
 	cw_gen_delete(&gen);
-	easy_rec->rec_tester.generating_in_progress = false;
+	g_rec_tester.generating_in_progress = false;
 
-	cw_rec_tester_evaluate_receive_correctness(&easy_rec->rec_tester);
+	cw_rec_tester_evaluate_receive_correctness(&g_rec_tester);
 
 
 	return NULL;
@@ -611,25 +457,25 @@ void low_tone_queue_callback(void * arg)
 
 
 
-int easy_rec_test_on_character(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer)
+int easy_rec_test_on_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer)
 {
-	fprintf(stderr, "[II] Character: '%c'\n", erd->c);
+	fprintf(stderr, "[II] Character: '%c'\n", erd->character);
 
-	easy_rec->rec_tester.received_string[easy_rec->rec_tester.received_string_i++] = erd->c;
+	g_rec_tester.received_string[g_rec_tester.received_string_i++] = erd->character;
 
-	easy_rec_data_t test_data = { 0 };
-	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_end_of_word, &test_data.is_error);
+	cw_rec_data_t test_data = { 0 };
+	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_iws, &test_data.is_error);
 	if (CW_SUCCESS != cw_ret) {
 		fprintf(stderr, "[EE] Character: failed to get representation\n");
 		return CW_FAILURE;
 	}
 
-	if (test_data.is_end_of_word != erd->is_end_of_word) {
-		fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", test_data.is_end_of_word, erd->is_end_of_word);
+	if (test_data.is_iws != erd->is_iws) {
+		fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", test_data.is_iws, erd->is_iws);
 		return CW_FAILURE;
 	}
 
-	if (test_data.is_end_of_word) {
+	if (test_data.is_iws) {
 		fprintf(stderr, "[EE] Character: 'is end of word' marker is unexpectedly 'true'\n");
 		return CW_FAILURE;
 	}
@@ -640,12 +486,12 @@ int easy_rec_test_on_character(easy_rec_t * easy_rec, easy_rec_data_t * erd, str
 		return CW_FAILURE;
 	}
 
-	if (looked_up != erd->c) {
-		fprintf(stderr, "[EE] Character: Looked up character is different than received: %c != %c\n", looked_up, erd->c);
+	if (looked_up != erd->character) {
+		fprintf(stderr, "[EE] Character: Looked up character is different than received: %c != %c\n", looked_up, erd->character);
 	}
 
 	fprintf(stderr, "[II] Character: Representation: %c -> '%s'\n",
-		erd->c, test_data.representation);
+		erd->character, test_data.representation);
 
 	/* Not entirely a success if looked up char does not match received
 	   character, but returning failure here would lead to calling
@@ -656,7 +502,7 @@ int easy_rec_test_on_character(easy_rec_t * easy_rec, easy_rec_data_t * erd, str
 
 
 
-int easy_rec_test_on_space(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct timeval * timer)
+int easy_rec_test_on_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer)
 {
 	fprintf(stderr, "[II] Space:\n");
 
@@ -665,27 +511,27 @@ int easy_rec_test_on_space(easy_rec_t * easy_rec, easy_rec_data_t * erd, struct 
 
 	   Maybe this is good, maybe this is bad, but this is the legacy
 	   behaviour that we will keep supporting. */
-	if (' ' == erd->c) {
+	if (' ' == erd->character) {
 		fprintf(stderr, "[EE] Space: returned character should not be space\n");
 		return CW_FAILURE;
 	}
 
 
-	easy_rec->rec_tester.received_string[easy_rec->rec_tester.received_string_i++] = ' ';
+	g_rec_tester.received_string[g_rec_tester.received_string_i++] = ' ';
 
-	easy_rec_data_t test_data = { 0 };
-	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_end_of_word, &test_data.is_error);
+	cw_rec_data_t test_data = { 0 };
+	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_iws, &test_data.is_error);
 	if (CW_SUCCESS != cw_ret) {
 		fprintf(stderr, "[EE] Space: Failed to get representation\n");
 		return CW_FAILURE;
 	}
 
-	if (test_data.is_end_of_word != erd->is_end_of_word) {
-		fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", test_data.is_end_of_word, erd->is_end_of_word);
+	if (test_data.is_iws != erd->is_iws) {
+		fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", test_data.is_iws, erd->is_iws);
 		return CW_FAILURE;
 	}
 
-	if (!test_data.is_end_of_word) {
+	if (!test_data.is_iws) {
 		fprintf(stderr, "[EE] Space: 'is end of word' marker is unexpectedly 'false'\n");
 		return CW_FAILURE;
 	}

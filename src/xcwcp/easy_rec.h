@@ -29,6 +29,7 @@
 
 
 
+#include <cw_rec_utils.h>
 #ifdef XCWCP_WITH_REC_TEST
 #include <cw_rec_tester.h>
 #endif
@@ -43,47 +44,25 @@ extern "C"
 
 
 
-typedef struct easy_rec_t easy_rec_t;
-
-
-
-typedef struct {
-	char c;
-	char representation[20]; /* TODO: use a constant for representation's size. */
-	int errno_val;
-	bool is_end_of_word;
-	bool is_error;
-} easy_rec_data_t;
-
-
-
-
 /* CW library keying event handler. */
-void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state);
+void easy_rec_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
 
 
-easy_rec_t * easy_rec_new(void);
-void easy_rec_delete(easy_rec_t ** easy_rec); // TODO: implement and use
+void easy_rec_start(cw_easy_receiver_t * easy_rec);
+void easy_rec_clear(cw_easy_receiver_t * easy_rec);
 
-void easy_rec_start(easy_rec_t * easy_rec);
-void easy_rec_clear(easy_rec_t * easy_rec);
+bool easy_rec_poll_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd);
+void easy_rec_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd);
 
-void easy_rec_sk_event(easy_rec_t * easy_rec, bool is_down);
-void easy_rec_ik_left_event(easy_rec_t * easy_rec, bool is_down, bool is_reverse_paddles);
-void easy_rec_ik_right_event(easy_rec_t * easy_rec, bool is_down, bool is_reverse_paddles);
+bool easy_rec_is_pending_inter_word_space(const cw_easy_receiver_t * easy_rec);
 
-bool easy_rec_poll_character(easy_rec_t * easy_rec, easy_rec_data_t * erd);
-void easy_rec_poll_space(easy_rec_t * easy_rec, easy_rec_data_t * erd);
-
-bool easy_rec_is_pending_inter_word_space(const easy_rec_t * easy_rec);
-
-int easy_rec_get_libcw_errno(const easy_rec_t * easy_rec);
-void easy_rec_clear_libcw_errno(easy_rec_t * easy_rec);
+int easy_rec_get_libcw_errno(const cw_easy_receiver_t * easy_rec);
+void easy_rec_clear_libcw_errno(cw_easy_receiver_t * easy_rec);
 
 
 #ifdef XCWCP_WITH_REC_TEST
-void easy_rec_start_test_code(easy_rec_t * easy_rec);
-void easy_rec_stop_test_code(easy_rec_t * easy_rec);
+void easy_rec_start_test_code(cw_easy_receiver_t * easy_rec);
+void easy_rec_stop_test_code(cw_easy_receiver_t * easy_rec);
 #endif
 
 

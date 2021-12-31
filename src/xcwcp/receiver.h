@@ -52,11 +52,11 @@ namespace cw {
 	class Receiver {
 	public:
 		Receiver(Application *a, TextArea *t) :
-	        app (a),
+		app (a),
 		textarea (t)
-			{ easy_rec = easy_rec_new(); }
+			{ easy_rec = cw_easy_receiver_new(); }
 
-                ~Receiver() { easy_rec_delete(&easy_rec); }
+		~Receiver() { cw_easy_receiver_delete(&easy_rec); }
 
 		/* Poll timeout handler. */
 		void poll(const Mode *current_mode);
@@ -83,7 +83,7 @@ namespace cw {
 		void start_test_code();
 		void stop_test_code();
 #endif
-		easy_rec_t * easy_rec = nullptr;
+		cw_easy_receiver_t * easy_rec = nullptr;
 
 	private:
 		Application *app = nullptr;

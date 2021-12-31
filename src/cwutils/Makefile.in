@@ -149,13 +149,14 @@ am_lib_libcw_tests_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
 lib_libcw_tests_a_OBJECTS = $(am_lib_libcw_tests_a_OBJECTS)
 lib_rec_tests_a_AR = $(AR) $(ARFLAGS)
 lib_rec_tests_a_LIBADD =
-am_lib_rec_tests_a_OBJECTS = cw_rec_tester.$(OBJEXT)
+am_lib_rec_tests_a_OBJECTS = cw_rec_tester.$(OBJEXT) \
+	cw_rec_utils.$(OBJEXT)
 lib_rec_tests_a_OBJECTS = $(am_lib_rec_tests_a_OBJECTS)
 lib_xcwcp_a_AR = $(AR) $(ARFLAGS)
 lib_xcwcp_a_LIBADD =
 am_lib_xcwcp_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
 	cw_cmdline.$(OBJEXT) memory.$(OBJEXT) cw_common.$(OBJEXT) \
-	dictionary.$(OBJEXT)
+	dictionary.$(OBJEXT) cw_rec_utils.$(OBJEXT)
 lib_xcwcp_a_OBJECTS = $(am_lib_xcwcp_a_OBJECTS)
 am_cw_dictionary_tests_OBJECTS =  \
 	cw_dictionary_tests-dictionary.$(OBJEXT) \
@@ -196,8 +197,9 @@ am__depfiles_remade = ./$(DEPDIR)/cw_cmdline.Po \
 	./$(DEPDIR)/cw_dictionary_tests-dictionary.Po \
 	./$(DEPDIR)/cw_dictionary_tests-i18n.Po \
 	./$(DEPDIR)/cw_dictionary_tests-memory.Po \
-	./$(DEPDIR)/cw_rec_tester.Po ./$(DEPDIR)/dictionary.Po \
-	./$(DEPDIR)/i18n.Po ./$(DEPDIR)/memory.Po
+	./$(DEPDIR)/cw_rec_tester.Po ./$(DEPDIR)/cw_rec_utils.Po \
+	./$(DEPDIR)/dictionary.Po ./$(DEPDIR)/i18n.Po \
+	./$(DEPDIR)/memory.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -615,10 +617,10 @@ cw_dictionary_tests_CFLAGS = -rdynamic
 noinst_LIBRARIES = lib_cw.a lib_cwcp.a lib_cwgen.a lib_xcwcp.a lib_libcw_tests.a lib_rec_tests.a
 lib_cw_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h
 lib_cwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
-lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h
+lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h cw_rec_utils.c cw_rec_utils.h
 lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h
 lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h
-lib_rec_tests_a_SOURCES = cw_rec_tester.c cw_rec_tester.h
+lib_rec_tests_a_SOURCES = cw_rec_tester.c cw_rec_tester.h cw_rec_utils.c cw_rec_utils.h
 
 # Test targets; no self-test, but make sure all is built.
 #check: all
@@ -725,6 +727,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-i18n.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_dictionary_tests-memory.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_rec_tester.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_rec_utils.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dictionary.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i18n.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@ # am--include-marker
@@ -1135,6 +1138,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/cw_dictionary_tests-i18n.Po
 	-rm -f ./$(DEPDIR)/cw_dictionary_tests-memory.Po
 	-rm -f ./$(DEPDIR)/cw_rec_tester.Po
+	-rm -f ./$(DEPDIR)/cw_rec_utils.Po
 	-rm -f ./$(DEPDIR)/dictionary.Po
 	-rm -f ./$(DEPDIR)/i18n.Po
 	-rm -f ./$(DEPDIR)/memory.Po
@@ -1192,6 +1196,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/cw_dictionary_tests-i18n.Po
 	-rm -f ./$(DEPDIR)/cw_dictionary_tests-memory.Po
 	-rm -f ./$(DEPDIR)/cw_rec_tester.Po
+	-rm -f ./$(DEPDIR)/cw_rec_utils.Po
 	-rm -f ./$(DEPDIR)/dictionary.Po
 	-rm -f ./$(DEPDIR)/i18n.Po
 	-rm -f ./$(DEPDIR)/memory.Po

@@ -68,9 +68,9 @@ void Receiver::poll(const Mode *current_mode)
 		*/
 		/* Check if receiver received the pending inter-word
 		   space. */
-		easy_rec_data_t erd = { };
+		cw_rec_data_t erd = { };
 		easy_rec_poll_space(easy_rec, &erd);
-		if (erd.is_end_of_word) {
+		if (erd.is_iws) {
 			//fprintf(stderr, "End of word '%c'\n\n", c);
 			textarea->append(' ');
 		}
@@ -206,7 +206,7 @@ void Receiver::handle_mouse_event(QMouseEvent *event, bool is_reverse_paddles)
 */
 void Receiver::sk_event(bool is_down)
 {
-	easy_rec_sk_event(this->easy_rec, is_down);
+	cw_easy_receiver_sk_event(this->easy_rec, is_down);
 	return;
 }
 
@@ -222,7 +222,7 @@ void Receiver::sk_event(bool is_down)
 */
 void Receiver::ik_left_event(bool is_down, bool is_reverse_paddles)
 {
-	easy_rec_ik_left_event(this->easy_rec, is_down, is_reverse_paddles);
+	cw_easy_receiver_ik_left_event(this->easy_rec, is_down, is_reverse_paddles);
 	return;
 }
 
@@ -238,7 +238,7 @@ void Receiver::ik_left_event(bool is_down, bool is_reverse_paddles)
 */
 void Receiver::ik_right_event(bool is_down, bool is_reverse_paddles)
 {
-	easy_rec_ik_right_event(this->easy_rec, is_down, is_reverse_paddles);
+	cw_easy_receiver_ik_right_event(this->easy_rec, is_down, is_reverse_paddles);
 	return;
 }
 
@@ -297,11 +297,11 @@ void Receiver::poll_report_error()
 */
 void Receiver::poll_character()
 {
-	easy_rec_data_t erd = { };
+	cw_rec_data_t erd = { };
 	if (easy_rec_poll_character(this->easy_rec, &erd)) {
 		/* Receiver stores full, well formed
 		   character. Display it. */
-		textarea->append(erd.c);
+		textarea->append(erd.character);
 
 		/* Update the status bar to show the character
 		   received.  Put the received char at the end of
@@ -309,8 +309,8 @@ void Receiver::poll_character()
 		   width of glyph of received char changes at variable
 		   font width. */
 		QString status = _("Received at %1 WPM: '%2'");
-		app->show_status(status.arg(cw_get_receive_speed()).arg(erd.c));
-		//fprintf(stderr, "Received character '%c'\n", c);
+		app->show_status(status.arg(cw_get_receive_speed()).arg(erd.character));
+		//fprintf(stderr, "Received character '%c'\n", erd.character);
 
 	} else {
 		/* Handle receive error detected on trying to read a character. */

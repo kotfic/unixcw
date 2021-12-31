@@ -36,6 +36,7 @@
 
 #include <cw_common.h>
 #include <cw_rec_tester.h>
+#include <cw_rec_utils.h>
 
 
 
@@ -78,88 +79,38 @@
 
 
 
-/* TODO: move this type to libcw_rec.h and use it to pass arguments to
-   functions such as cw_rec_poll_representation_ics_internal(). */
-typedef struct {
-	char character;
-	char representation[20]; /* TODO: use a constant for representation's size. */
-	int errno_val;
-	bool is_iws; /* Is receiver in 'found inter-word-space' state? */
-	bool is_error;
-} easy_rec_data_t;
-
-
-
 
 static cw_rec_tester_t g_tester;
-
-typedef struct easy_rec_t easy_rec_t;
-
-
-struct easy_rec_t {
-	cw_test_executor_t * cte;
-
-
-	/* Timer for measuring length of dots and dashes.
-
-	   Initial value of the timestamp is created by
-	   xcwcp's receiver on first "paddle down" event in a
-	   character. The timestamp is then updated by libcw
-	   on specific time intervals. The intervals are a
-	   function of keyboard key presses or mouse button
-	   presses recorded by xcwcp. */
-	struct timeval main_timer;
-
-
-	/* Flag indicating if receive polling has received a
-	   character, and may need to augment it with a word
-	   space on a later poll. */
-	volatile bool is_pending_inter_word_space;
-
-	/* Flag indicating possible receive errno detected in
-	   signal handler context and needing to be passed to
-	   the foreground. */
-	volatile int libcw_receive_errno;
-
-	/* Safety flag to ensure that we keep the library in
-	   sync with keyer events.  Without, there's a chance
-	   that of a on-off event, one half will go to one
-	   application instance, and the other to another
-	   instance. */
-	volatile bool tracked_key_state;
-
-	bool c_r;
-};
-
-static easy_rec_t g_easy_rec;
+static cw_easy_receiver_t g_easy_rec;
+static cw_test_executor_t * g_cte;
 
 
 
 
 /* Callback. */
-void xcwcp_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state);
+void xcwcp_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
 void low_tone_queue_callback(void * arg);
 
 static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_r);
 void * receiver_input_generator_fn(void * arg);
-void easy_rec_sk_event(easy_rec_t * easy_rec, bool is_down);
+
 
 /* Main poll function and its helpers. */
-void receiver_poll_receiver(easy_rec_t * easy_rec);
-void receiver_poll_report_error(easy_rec_t * easy_rec);
-void receiver_poll_character_c_r(easy_rec_t * easy_rec);
-void receiver_poll_character_r_c(easy_rec_t * easy_rec);
-void receiver_poll_space_c_r(easy_rec_t * easy_rec);
-void receiver_poll_space_r_c(easy_rec_t * easy_rec);
+void receiver_poll_receiver(cw_easy_receiver_t * easy_rec);
+void receiver_poll_report_error(cw_easy_receiver_t * easy_rec);
+void receiver_poll_character_c_r(cw_easy_receiver_t * easy_rec);
+void receiver_poll_character_r_c(cw_easy_receiver_t * easy_rec);
+void receiver_poll_space_c_r(cw_easy_receiver_t * easy_rec);
+void receiver_poll_space_r_c(cw_easy_receiver_t * easy_rec);
 
 void test_callback_func(void * arg, int key_state);
 void tester_start_test_code(cw_rec_tester_t * tester);
 void tester_stop_test_code(cw_rec_tester_t * tester);
 
-static int easy_rec_test_on_character_c_r(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer);
-static int easy_rec_test_on_character_r_c(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer);
-static int easy_rec_test_on_space_r_c(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer);
-static int easy_rec_test_on_space_c_r(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer);
+static int easy_rec_test_on_character_c_r(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer);
+static int easy_rec_test_on_character_r_c(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer);
+static int easy_rec_test_on_space_r_c(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer);
+static int easy_rec_test_on_space_c_r(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer);
 
 
 
@@ -168,13 +119,13 @@ static int easy_rec_test_on_space_c_r(easy_rec_t * easy_rec, easy_rec_data_t * e
    \brief Poll the CW library receive buffer and handle anything found
    in the buffer
 */
-void receiver_poll_receiver(easy_rec_t * easy_rec)
+void receiver_poll_receiver(cw_easy_receiver_t * easy_rec)
 {
 	if (easy_rec->libcw_receive_errno != 0) {
 		receiver_poll_report_error(easy_rec);
 	}
 
-	if (easy_rec->is_pending_inter_word_space) {
+	if (easy_rec->is_pending_iws) {
 		/* Check if receiver received the pending inter-word-space. */
 		if (easy_rec->c_r) {
 			/* Poll character, then poll representation. */
@@ -184,7 +135,7 @@ void receiver_poll_receiver(easy_rec_t * easy_rec)
 			receiver_poll_space_r_c(easy_rec);
 		}
 
-		if (!easy_rec->is_pending_inter_word_space) {
+		if (!easy_rec->is_pending_iws) {
 			/* We received the pending space. After it the
 			   receiver may have received another
 			   character.  Try to get it too. */
@@ -235,7 +186,7 @@ void receiver_poll_receiver(easy_rec_t * easy_rec)
    particular, it goes out of its way to deliver results by setting
    flags that are later handled by receive polling.
 */
-void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
+void easy_rec_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state)
 {
 	/* Ignore calls where the key state matches our tracked key
 	   state.  This avoids possible problems where this event
@@ -252,7 +203,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 
 	/* If this is a tone start and we're awaiting an inter-word-space,
 	   cancel that wait and clear the receive buffer. */
-	if (key_state && easy_rec->is_pending_inter_word_space) {
+	if (key_state && easy_rec->is_pending_iws) {
 		/* Tell receiver to prepare (to make space) for
 		   receiving new character. */
 		cw_clear_receive_buffer();
@@ -262,7 +213,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 		   inter-word-space is possible at this point in
 		   time. The space that we were observing/waiting for,
 		   was just inter-character-space. */
-		easy_rec->is_pending_inter_word_space = false;
+		easy_rec->is_pending_iws = false;
 	}
 
 	//fprintf(stderr, "calling callback, stage 2\n");
@@ -315,7 +266,7 @@ void easy_rec_handle_libcw_keying_event(easy_rec_t * easy_rec, int key_state)
 /**
    \brief Handle any error registered when handling a libcw keying event
 */
-void receiver_poll_report_error(easy_rec_t * easy_rec)
+void receiver_poll_report_error(cw_easy_receiver_t * easy_rec)
 {
 	easy_rec->libcw_receive_errno = 0;
 
@@ -333,7 +284,7 @@ void receiver_poll_report_error(easy_rec_t * easy_rec)
 
    @reviewed TODO
 */
-void receiver_poll_character_c_r(easy_rec_t * easy_rec)
+void receiver_poll_character_c_r(cw_easy_receiver_t * easy_rec)
 {
 	/* Don't use easy_rec->main_timer - it is used exclusively for
 	   marking initial "key down" events. Use local throw-away
@@ -350,7 +301,7 @@ void receiver_poll_character_c_r(easy_rec_t * easy_rec)
 	const bool debug_errnos = false;
 	static int prev_errno = 0;
 
-	easy_rec_data_t erd = { 0 };
+	cw_rec_data_t erd = { 0 };
 	cw_ret_t cwret = LIBCW_TEST_FUT(cw_receive_character)(&local_timer, &erd.character, &erd.is_iws, NULL);
 	if (CW_SUCCESS == cwret) {
 
@@ -371,7 +322,7 @@ void receiver_poll_character_c_r(easy_rec_t * easy_rec)
 
 		   Set a flag indicating that next poll may result in
 		   inter-word-space. */
-		easy_rec->is_pending_inter_word_space = true;
+		easy_rec->is_pending_iws = true;
 
 	} else {
 		/* Handle receive error detected on trying to read a character. */
@@ -436,7 +387,7 @@ void receiver_poll_character_c_r(easy_rec_t * easy_rec)
 
    @reviewed TODO
 */
-void receiver_poll_character_r_c(easy_rec_t * easy_rec)
+void receiver_poll_character_r_c(cw_easy_receiver_t * easy_rec)
 {
 	/* Don't use easy_rec->main_timer - it is used exclusively for
 	   marking initial "key down" events. Use local throw-away
@@ -453,7 +404,7 @@ void receiver_poll_character_r_c(easy_rec_t * easy_rec)
 	const bool debug_errnos = false;
 	static int prev_errno = 0;
 
-	easy_rec_data_t erd = { 0 };
+	cw_rec_data_t erd = { 0 };
 	cw_ret_t cwret = LIBCW_TEST_FUT(cw_receive_representation)(&local_timer, erd.representation, &erd.is_iws, &erd.is_error);
 	if (CW_SUCCESS == cwret) {
 
@@ -474,7 +425,7 @@ void receiver_poll_character_r_c(easy_rec_t * easy_rec)
 
 		   Set a flag indicating that next poll may result in
 		   inter-word-space. */
-		easy_rec->is_pending_inter_word_space = true;
+		easy_rec->is_pending_iws = true;
 
 	} else {
 		/* Handle receive error detected on trying to read a character. */
@@ -533,7 +484,7 @@ void receiver_poll_character_r_c(easy_rec_t * easy_rec)
 
    @reviewed TODO
 */
-void receiver_poll_space_c_r(easy_rec_t * easy_rec)
+void receiver_poll_space_c_r(cw_easy_receiver_t * easy_rec)
 {
 	/* Recheck the receive buffer for end of word. */
 
@@ -551,7 +502,7 @@ void receiver_poll_space_c_r(easy_rec_t * easy_rec)
 	gettimeofday(&local_timer, NULL);
 	//fprintf(stderr, "receiver_poll_space(): %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
 
-	easy_rec_data_t erd = { 0 };
+	cw_rec_data_t erd = { 0 };
 	LIBCW_TEST_FUT(cw_receive_character)(&local_timer, NULL, &erd.is_iws, NULL);
 	if (erd.is_iws) {
 		fprintf(stderr, "[II] Polled inter-word-space\n");
@@ -560,9 +511,9 @@ void receiver_poll_space_c_r(easy_rec_t * easy_rec)
 		easy_rec_test_on_space_c_r(easy_rec, &erd, &local_timer);
 
 		cw_clear_receive_buffer();
-		easy_rec->is_pending_inter_word_space = false;
+		easy_rec->is_pending_iws = false;
 	} else {
-		/* We don't reset is_pending_inter_word_space. The
+		/* We don't reset is_pending_iws. The
 		   space that currently lasts, and isn't long enough
 		   to be considered inter-word-space, may grow to
 		   become the inter-word-space. Or not.
@@ -591,7 +542,7 @@ void receiver_poll_space_c_r(easy_rec_t * easy_rec)
 
    @reviewed TODO
 */
-void receiver_poll_space_r_c(easy_rec_t * easy_rec)
+void receiver_poll_space_r_c(cw_easy_receiver_t * easy_rec)
 {
 	/* Recheck the receive buffer for end of word. */
 
@@ -610,7 +561,7 @@ void receiver_poll_space_r_c(easy_rec_t * easy_rec)
 	//fprintf(stderr, "receiver_poll_space_r_c(): %10ld : %10ld\n", local_timer.tv_sec, local_timer.tv_usec);
 
 
-	easy_rec_data_t erd = { 0 };
+	cw_rec_data_t erd = { 0 };
 	LIBCW_TEST_FUT(cw_receive_representation)(&local_timer, erd.representation, &erd.is_iws, NULL);
 	if (erd.is_iws) {
 		fprintf(stderr, "[II] Polled inter-word-space\n");
@@ -619,9 +570,9 @@ void receiver_poll_space_r_c(easy_rec_t * easy_rec)
 		easy_rec_test_on_space_r_c(easy_rec, &erd, &local_timer);
 
 		cw_clear_receive_buffer();
-		easy_rec->is_pending_inter_word_space = false;
+		easy_rec->is_pending_iws = false;
 	} else {
-		/* We don't reset is_pending_inter_word_space. The
+		/* We don't reset is_pending_iws. The
 		   space that currently lasts, and isn't long enough
 		   to be considered inter-word-space, may grow to
 		   become the inter-word-space. Or not.
@@ -633,19 +584,6 @@ void receiver_poll_space_r_c(easy_rec_t * easy_rec)
 		   word. And since a new character begins, the flag
 		   will be reset (elsewhere). */
 	}
-
-	return;
-}
-
-
-
-
-void easy_rec_sk_event(easy_rec_t * easy_rec, bool is_down)
-{
-	gettimeofday(&easy_rec->main_timer, NULL);
-	//fprintf(stderr, "time on Skey down:  %10ld : %10ld\n", easy_rec->main_timer.tv_sec, easy_rec->main_timer.tv_usec);
-
-	cw_notify_straight_key_event(is_down);
 
 	return;
 }
@@ -689,7 +627,7 @@ void * receiver_input_generator_fn(void * arg)
 
 
 	const int receive_correctness = cw_rec_tester_evaluate_receive_correctness(tester);
-	if (g_easy_rec.cte->expect_op_int(g_easy_rec.cte, 0, "==", receive_correctness, "Final comparison of receive correctness")) {
+	if (g_cte->expect_op_int(g_cte, 0, "==", receive_correctness, "Final comparison of receive correctness")) {
 		fprintf(stderr, "[II] Test result: success\n");
 	} else {
 		fprintf(stderr, "[EE] Test result: failure\n");
@@ -745,9 +683,9 @@ void test_callback_func(void * arg, int key_state)
 	   libcw receiver will process the new state and we will later
 	   try to poll a character or space from it. */
 
-	easy_rec_t * easy_rec = (easy_rec_t *) arg;
+	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
 	//fprintf(stderr, "Callback function, key state = %d\n", key_state);
-	easy_rec_sk_event(easy_rec, key_state);
+	cw_easy_receiver_sk_event(easy_rec, key_state);
 }
 
 
@@ -812,7 +750,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool c_
 
 	/* Prepare easy_rec object. */
 	memset(&g_easy_rec, 0, sizeof (g_easy_rec));
-	g_easy_rec.cte = cte;
+	g_cte = cte;
 	g_easy_rec.c_r = c_r;
 
 
@@ -891,11 +829,11 @@ void low_tone_queue_callback(void * arg)
 
 
 
-static int easy_rec_test_on_character_c_r(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer)
+static int easy_rec_test_on_character_c_r(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer)
 {
 	int test_cwret = CW_SUCCESS;
-	easy_rec_data_t test = { 0 };
-	cw_test_executor_t * cte = easy_rec->cte;
+	cw_rec_data_t test = { 0 };
+	cw_test_executor_t * cte = g_cte;
 
 	cw_ret_t cwret = cw_receive_representation(timer, test.representation, &test.is_iws, &test.is_error);
 	if (!cte->expect_op_int_errors_only(cte,
@@ -949,11 +887,11 @@ static int easy_rec_test_on_character_c_r(easy_rec_t * easy_rec, easy_rec_data_t
 
 
 
-static int easy_rec_test_on_character_r_c(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer)
+static int easy_rec_test_on_character_r_c(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer)
 {
 	int test_cwret = CW_SUCCESS;
-	easy_rec_data_t test = { 0 };
-	cw_test_executor_t * cte = easy_rec->cte;
+	cw_rec_data_t test = { 0 };
+	cw_test_executor_t * cte = g_cte;
 
 	cw_ret_t cwret = cw_receive_character(timer, &test.character, &test.is_iws, &test.is_error);
 	if (!cte->expect_op_int_errors_only(cte,
@@ -1007,11 +945,11 @@ static int easy_rec_test_on_character_r_c(easy_rec_t * easy_rec, easy_rec_data_t
 
 
 
-static int easy_rec_test_on_space_r_c(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer)
+static int easy_rec_test_on_space_r_c(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer)
 {
 	int test_cwret = CW_SUCCESS;
-	easy_rec_data_t test = { 0 };
-	cw_test_executor_t * cte = easy_rec->cte;
+	cw_rec_data_t test = { 0 };
+	cw_test_executor_t * cte = g_cte;
 #if 0
 	/* cw_receive_character() will return through
 	   'c' variable the last character that was
@@ -1060,11 +998,11 @@ static int easy_rec_test_on_space_r_c(easy_rec_t * easy_rec, easy_rec_data_t * e
 
 
 
-static int easy_rec_test_on_space_c_r(easy_rec_t * easy_rec, easy_rec_data_t * erd, const struct timeval * timer)
+static int easy_rec_test_on_space_c_r(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer)
 {
 	int test_cwret = CW_SUCCESS;
-	easy_rec_data_t test = { 0 };
-	cw_test_executor_t * cte = easy_rec->cte;
+	cw_rec_data_t test = { 0 };
+	cw_test_executor_t * cte = g_cte;
 #if 0
 	/* cw_receive_character() will return through
 	   'c' variable the last character that was
