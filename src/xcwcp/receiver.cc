@@ -37,6 +37,13 @@
 
 
 
+#ifdef XCWCP_WITH_REC_TEST
+extern cw_rec_tester_t g_rec_tester;
+#endif
+
+
+
+
 namespace cw {
 
 
@@ -336,6 +343,8 @@ void Receiver::poll_character()
 }
 
 
+
+
 #ifdef XCWCP_WITH_REC_TEST
 
 
@@ -343,7 +352,8 @@ void Receiver::poll_character()
 
 void Receiver::start_test_code()
 {
-	easy_rec_start_test_code(this->easy_rec);
+	this->easy_rec_tester = &g_rec_tester;
+	easy_rec_start_test_code(this->easy_rec, this->easy_rec_tester);
 }
 
 
@@ -351,7 +361,7 @@ void Receiver::start_test_code()
 
 void Receiver::stop_test_code()
 {
-	easy_rec_stop_test_code(this->easy_rec);
+	easy_rec_stop_test_code(this->easy_rec_tester);
 }
 
 

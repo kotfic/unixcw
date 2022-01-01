@@ -135,3 +135,103 @@ void cw_easy_receiver_ik_right_event(cw_easy_receiver_t * easy_rec, bool is_down
 	return;
 }
 
+
+
+
+
+/**
+   \brief Handler for the keying callback from the CW library
+   indicating that the state of a key has changed.
+
+   The "key" is libcw's internal key structure. It's state is updated
+   by libcw when e.g. one iambic keyer paddle is constantly
+   pressed. It is also updated in other situations. In any case: the
+   function is called whenever state of this key changes.
+
+   Notice that the description above talks about a key, not about a
+   receiver. Key's states need to be interpreted by receiver, which is
+   a separate task. Key and receiver are separate concepts. This
+   function connects them.
+
+   This function, called on key state changes, calls receiver
+   functions to ensure that receiver does "receive" the key state
+   changes.
+
+   This function is called in signal handler context, and it takes
+   care to call only functions that are safe within that context.  In
+   particular, it goes out of its way to deliver results by setting
+   flags that are later handled by receive polling.
+*/
+void cw_easy_receiver_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state)
+{
+	/* Ignore calls where the key state matches our tracked key
+	   state.  This avoids possible problems where this event
+	   handler is redirected between application instances; we
+	   might receive an end of tone without seeing the start of
+	   tone. */
+	if (key_state == easy_rec->tracked_key_state) {
+		//fprintf(stderr, "tracked key state == %d\n", easy_rec->tracked_key_state);
+		return;
+	} else {
+		//fprintf(stderr, "tracked key state := %d\n", key_state);
+		easy_rec->tracked_key_state = key_state;
+	}
+
+	/* If this is a tone start and we're awaiting an inter-word
+	   space, cancel that wait and clear the receive buffer. */
+	if (key_state && easy_rec->is_pending_iws) {
+		/* Tell receiver to prepare (to make space) for
+		   receiving new character. */
+		cw_clear_receive_buffer();
+
+		/* The tone start means that we're seeing the next
+		   incoming character within the same word, so no
+		   inter-word space is possible at this point in
+		   time. The space that we were observing/waiting for,
+		   was just inter-character space. */
+		easy_rec->is_pending_iws = false;
+	}
+
+	//fprintf(stderr, "calling callback, stage 2\n");
+
+	/* Pass tone state on to the library.  For tone end, check to
+	   see if the library has registered any receive error. */
+	if (key_state) {
+		/* Key down. */
+		//fprintf(stderr, "start receive tone: %10ld . %10ld\n", easy_rec->main_timer->tv_sec, easy_rec->main_timer->tv_usec);
+		if (!cw_start_receive_tone(&easy_rec->main_timer)) {
+			// TODO: Perhaps this should be counted as test error
+			perror("cw_start_receive_tone");
+			return;
+		}
+	} else {
+		/* Key up. */
+		//fprintf(stderr, "end receive tone:   %10ld . %10ld\n", easy_rec->main_timer->tv_sec, easy_rec->main_timer->tv_usec);
+		if (!cw_end_receive_tone(&easy_rec->main_timer)) {
+			/* Handle receive error detected on tone end.
+			   For ENOMEM and ENOENT we set the error in a
+			   class flag, and display the appropriate
+			   message on the next receive poll. */
+			switch (errno) {
+			case EAGAIN:
+				/* libcw treated the tone as noise (it
+				   was shorter than noise threshold).
+				   No problem, not an error. */
+				break;
+			case ENOMEM:
+			case ERANGE:
+			case EINVAL:
+			case ENOENT:
+				easy_rec->libcw_receive_errno = errno;
+				cw_clear_receive_buffer();
+				break;
+			default:
+				perror("cw_end_receive_tone");
+				// TODO: Perhaps this should be counted as test error
+				return;
+			}
+		}
+	}
+
+	return;
+}

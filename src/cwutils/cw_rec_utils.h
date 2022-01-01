@@ -53,7 +53,9 @@ struct cw_easy_receiver_t {
 	bool is_left_down;
 	bool is_right_down;
 
-	bool c_r;
+	/* Whether to get a representation or a character from receiver's
+	   internals with libcw low-level API. */
+	bool get_representation;
 };
 typedef struct cw_easy_receiver_t cw_easy_receiver_t;
 
@@ -108,6 +110,9 @@ void cw_easy_receiver_ik_left_event(cw_easy_receiver_t * easy_rec, bool is_down,
 void cw_easy_receiver_ik_right_event(cw_easy_receiver_t * easy_rec, bool is_down, bool is_reverse_paddles);
 
 
+
+/* CW library keying event handler. */
+void cw_easy_receiver_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
 
 
 

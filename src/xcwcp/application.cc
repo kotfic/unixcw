@@ -187,7 +187,7 @@ void Application::libcw_keying_event_static(void *arg, int key_state)
 		//fprintf(stderr, "calling callback, stage 1 (key = %d)\n", key_state);
 
 		cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
-		easy_rec_handle_libcw_keying_event(easy_rec, key_state);
+		cw_easy_receiver_handle_libcw_keying_event(easy_rec, key_state);
 	}
 
 	return;

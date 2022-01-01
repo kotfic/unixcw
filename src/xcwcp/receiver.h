@@ -82,6 +82,7 @@ namespace cw {
 #ifdef XCWCP_WITH_REC_TEST
 		void start_test_code();
 		void stop_test_code();
+		cw_rec_tester_t * easy_rec_tester = nullptr;
 #endif
 		cw_easy_receiver_t * easy_rec = nullptr;
 

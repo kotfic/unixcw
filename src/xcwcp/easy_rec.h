@@ -44,9 +44,6 @@ extern "C"
 
 
 
-/* CW library keying event handler. */
-void easy_rec_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
-
 
 void easy_rec_start(cw_easy_receiver_t * easy_rec);
 void easy_rec_clear(cw_easy_receiver_t * easy_rec);
@@ -61,8 +58,8 @@ void easy_rec_clear_libcw_errno(cw_easy_receiver_t * easy_rec);
 
 
 #ifdef XCWCP_WITH_REC_TEST
-void easy_rec_start_test_code(cw_easy_receiver_t * easy_rec);
-void easy_rec_stop_test_code(cw_easy_receiver_t * easy_rec);
+void easy_rec_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester);
+void easy_rec_stop_test_code(cw_rec_tester_t * tester);
 #endif
 
 
