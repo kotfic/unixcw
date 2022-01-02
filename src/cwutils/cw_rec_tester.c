@@ -5,6 +5,11 @@
 
 
 
+#include <libcw_gen.h>
+
+
+
+
 #include "cw_rec_tester.h"
 
 
@@ -12,6 +17,9 @@
 
 static int  cw_rec_tester_compare_input_and_received(cw_rec_tester_t * tester);
 static void cw_rec_tester_normalize_input_and_received(cw_rec_tester_t * tester);
+
+static void test_callback_func(void * arg, int key_state);
+static void low_tone_queue_callback(void * arg);
 
 
 
@@ -313,4 +321,76 @@ void cw_rec_tester_display_differences(const cw_rec_tester_t * tester)
 
 	return;
 }
+
+
+
+
+void cw_rec_tester_configure(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, bool use_ranger)
+{
+	cw_rec_tester_init_text_buffers(tester, 1);
+	/* Using Null sound system because this generator is only
+	   used to enqueue text and control key. Sound will be played
+	   by main generator used by xcwcp */
+	cw_gen_config_t gen_conf = {
+		  .sound_system = CW_AUDIO_NULL
+		, .sound_device = { 0 }
+	};
+
+	tester->gen = cw_gen_new(&gen_conf);
+
+	cw_tq_register_low_level_callback_internal(tester->gen->tq, low_tone_queue_callback, tester, 5);
+
+	cw_key_register_generator(&tester->key, tester->gen);
+	cw_gen_register_value_tracking_callback_internal(tester->gen, test_callback_func, (void *) easy_rec);
+	//cw_key_register_keying_callback(&key, test_callback_func, (void *) easy_rec);
+
+	if (use_ranger) {
+#if 0 /* TODO: restore the code, use ranger code from libcw test. */
+		/* TODO: use full range of allowed speeds. */
+		cwtest_param_ranger_init(&tester->speed_ranger, 6 /* CW_SPEED_MIN */, 40 /* CW_SPEED_MAX */, 1, cw_gen_get_speed(tester->gen));
+		cwtest_param_ranger_set_interval_sec(&tester->speed_ranger, 4);
+		cwtest_param_ranger_set_plateau_length(&tester->speed_ranger, 6);
+#endif
+	}
+}
+
+
+
+
+void test_callback_func(void * arg, int key_state)
+{
+	/* Inform libcw receiver about new state of straight key ("sk").
+
+	   libcw receiver will process the new state and we will later
+	   try to poll a character or space from it. */
+
+	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
+	//fprintf(stderr, "Callback function, key state = %d\n", key_state);
+	cw_easy_receiver_sk_event(easy_rec, key_state);
+}
+
+
+
+
+void low_tone_queue_callback(void * arg)
+{
+	cw_rec_tester_t * tester = (cw_rec_tester_t *) arg;
+
+	for (int i = 0; i < tester->characters_to_enqueue; i++) {
+		const char c = tester->input_string[tester->input_string_i];
+		if ('\0' == c) {
+			/* Unregister ourselves. */
+			cw_tq_register_low_level_callback_internal(tester->gen->tq, NULL, NULL, 0);
+			break;
+		} else {
+			cw_gen_enqueue_character(tester->gen, c);
+			tester->input_string_i++;
+		}
+	}
+
+	return;
+}
+
+
+
 

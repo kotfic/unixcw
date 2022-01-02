@@ -78,8 +78,6 @@
 
 
 
-
-
 static cw_rec_tester_t g_tester;
 static cw_easy_receiver_t g_easy_rec;
 static cw_test_executor_t * g_cte;
@@ -89,10 +87,9 @@ static cw_test_executor_t * g_cte;
 
 /* Callback. */
 void xcwcp_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
-void low_tone_queue_callback(void * arg);
 
 static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool get_representation);
-void * receiver_input_generator_fn(void * arg);
+void * receiver_input_generator_fn(void * arg_tester);
 
 
 /* Main poll function and its helpers. */
@@ -103,8 +100,7 @@ void receiver_poll_character_r_c(cw_easy_receiver_t * easy_rec);
 void receiver_poll_space_c_r(cw_easy_receiver_t * easy_rec);
 void receiver_poll_space_r_c(cw_easy_receiver_t * easy_rec);
 
-void test_callback_func(void * arg, int key_state);
-void tester_start_test_code(cw_rec_tester_t * tester);
+void tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester);
 void tester_stop_test_code(cw_rec_tester_t * tester);
 
 static int easy_rec_test_on_character_c_r(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer);
@@ -499,9 +495,9 @@ void receiver_poll_space_r_c(cw_easy_receiver_t * easy_rec)
   timestamps and a call to usleep(), but instead we are using a new
   generator that can inform us when marks/spaces start.
 */
-void * receiver_input_generator_fn(void * arg)
+void * receiver_input_generator_fn(void * arg_tester)
 {
-	cw_rec_tester_t * tester = arg;
+	cw_rec_tester_t * tester = arg_tester;
 
 	/* Start sending the test string. Registered callback will be
 	   called on every mark/space. Enqueue only initial part of
@@ -540,28 +536,12 @@ void * receiver_input_generator_fn(void * arg)
 
 
 
-void tester_start_test_code(cw_rec_tester_t * tester)
+void tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester)
 {
 	tester->generating_in_progress = true;
 
-	cw_rec_tester_init_text_buffers(tester, 1);
-
-	/* Using Null sound system because this generator is only used
-	   to enqueue text and control key. Sound will be played by
-	   main generator used by xcwcp */
-	cw_gen_config_t gen_conf = { .sound_system = CW_AUDIO_NULL, .sound_device = { 0 } };
-	tester->gen = cw_gen_new(&gen_conf);
-	cw_tq_register_low_level_callback_internal(tester->gen->tq, low_tone_queue_callback, tester, 5);
-
-	cw_key_register_generator(&tester->key, tester->gen);
-	cw_gen_register_value_tracking_callback_internal(tester->gen, test_callback_func, &g_easy_rec);
-
-
-	/* TODO: use full range of allowed speeds. */
-	cwtest_param_ranger_init(&tester->speed_ranger, 6 /* CW_SPEED_MIN */, 40 /* CW_SPEED_MAX */, 1, cw_gen_get_speed(tester->gen));
-	cwtest_param_ranger_set_interval_sec(&tester->speed_ranger, 4);
-	cwtest_param_ranger_set_plateau_length(&tester->speed_ranger, 6);
-
+	cw_rec_tester_init(tester);
+	cw_rec_tester_configure(tester, easy_rec, true);
 
 	pthread_create(&tester->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, tester);
 }
@@ -572,21 +552,6 @@ void tester_start_test_code(cw_rec_tester_t * tester)
 void tester_stop_test_code(cw_rec_tester_t * tester)
 {
 	pthread_cancel(tester->receiver_test_code_thread_id);
-}
-
-
-
-
-void test_callback_func(void * arg, int key_state)
-{
-	/* Inform libcw receiver about new state of straight key ("sk").
-
-	   libcw receiver will process the new state and we will later
-	   try to poll a character or space from it. */
-
-	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
-	//fprintf(stderr, "Callback function, key state = %d\n", key_state);
-	cw_easy_receiver_sk_event(easy_rec, key_state);
 }
 
 
@@ -626,9 +591,6 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 	}
 
 
-	cw_rec_tester_init(&g_tester);
-
-
 	cw_clear_receive_buffer();
 	cw_set_frequency(cte->config->frequency);
 	cw_generator_start();
@@ -656,7 +618,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 
 
 	/* Start thread with test code. */
-	tester_start_test_code(&g_tester);
+	tester_start_test_code(&g_easy_rec, &g_tester);
 
 
 	while (g_tester.generating_in_progress) {
@@ -664,7 +626,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 		   library needs a 10ms timeout. */
 		usleep(10);
 		receiver_poll_receiver(&g_easy_rec);
-#if 1
+#if 0 /* TODO: restore ranger code. */
 		int new_speed = 0;
 		if (cwtest_param_ranger_get_next(&g_tester.speed_ranger, &new_speed)) {
 			cw_gen_set_speed(g_tester.gen, new_speed);
@@ -703,29 +665,6 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 
 	return cwt_retv_ok;
 }
-
-
-
-
-void low_tone_queue_callback(void * arg)
-{
-	cw_rec_tester_t * tester = (cw_rec_tester_t *) arg;
-
-	for (int i = 0; i < tester->characters_to_enqueue; i++) {
-		const char c = tester->input_string[tester->input_string_i];
-		if ('\0' == c) {
-			/* Unregister ourselves. */
-			cw_tq_register_low_level_callback_internal(tester->gen->tq, NULL, NULL, 0);
-			break;
-		} else {
-			cw_gen_enqueue_character(tester->gen, c);
-			tester->input_string_i++;
-		}
-	}
-
-	return;
-}
-
 
 
 

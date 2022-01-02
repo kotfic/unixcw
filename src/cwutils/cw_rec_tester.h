@@ -8,6 +8,8 @@
 #include "../libcw/libcw_key.h"
 #include "../libcw/tests/test_framework_tools.h"
 
+#include "cw_rec_utils.h"
+
 
 
 
@@ -77,6 +79,11 @@ typedef struct cw_rec_tester_t {
    @brief Initialize @p tester variable
 */
 void cw_rec_tester_init(cw_rec_tester_t * tester);
+
+
+
+
+void cw_rec_tester_configure(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, bool use_ranger);
 
 
 

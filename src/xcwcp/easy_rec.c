@@ -52,9 +52,8 @@ cw_rec_tester_t g_rec_tester;
 
 
 #ifdef XCWCP_WITH_REC_TEST
-static void * receiver_input_generator_fn(void * arg);
-void test_callback_func(void * arg, int key_state);
-void low_tone_queue_callback(void * arg);
+static void * receiver_input_generator_fn(void * arg_tester);
+
 int easy_rec_test_on_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
 int easy_rec_test_on_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
 #endif
@@ -244,7 +243,12 @@ void easy_rec_clear(cw_easy_receiver_t * easy_rec)
 
 void easy_rec_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester)
 {
-	pthread_create(&tester->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, easy_rec);
+	tester->generating_in_progress = true;
+
+	cw_rec_tester_init(tester);
+	cw_rec_tester_configure(tester, easy_rec, false);
+
+	pthread_create(&tester->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, tester);
 }
 
 
@@ -258,22 +262,6 @@ void easy_rec_stop_test_code(cw_rec_tester_t * tester)
 
 
 
-void test_callback_func(void * arg, int key_state)
-{
-	/* Inform xcwcp receiver (which will inform libcw receiver)
-	   about new state of straight key ("sk").
-
-	   libcw receiver will process the new state and we will later
-	   try to poll a character or space from it. */
-
-	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
-	//fprintf(stderr, "Callback function, key state = %d\n", key_state);
-	cw_easy_receiver_sk_event(easy_rec, key_state);
-}
-
-
-
-
 /*
   Code that generates info about timing of input events for receiver.
 
@@ -281,80 +269,37 @@ void test_callback_func(void * arg, int key_state)
   timestamps and a call to usleep(), but instead we are using a new
   generator that can inform us when marks/spaces start.
 */
-void * receiver_input_generator_fn(void * arg)
+void * receiver_input_generator_fn(void * arg_tester)
 {
-	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
-
-	cw_rec_tester_init(&g_rec_tester);
-	cw_rec_tester_init_text_buffers(&g_rec_tester, 1);
-
-
-	/* Using Null sound system because this generator is only used
-	   to enqueue text and control key. Sound will be played by
-	   main generator used by xcwcp */
-	cw_gen_config_t gen_conf;
-	memset(&gen_conf, 0, sizeof (gen_conf));
-	gen_conf.sound_system = CW_AUDIO_NULL;
-
-	cw_gen_t * gen = cw_gen_new(&gen_conf);
-	cw_key_t key;
-
-	g_rec_tester.gen = gen;
-	cw_tq_register_low_level_callback_internal(g_rec_tester.gen->tq, low_tone_queue_callback, &g_rec_tester, 5);
-
-	cw_key_register_generator(&key, gen);
-	cw_gen_register_value_tracking_callback_internal(gen, test_callback_func, arg);
-	//cw_key_register_keying_callback(&key, test_callback_func, arg);
+	cw_rec_tester_t * tester = arg_tester;
 
 	/* Start sending the test string. Registered callback will be
 	   called on every mark/space. Enqueue only initial part of
 	   string, just to start sending, the rest should be sent by
 	   'low watermark' callback. */
-	cw_gen_start(gen);
+	cw_gen_start(tester->gen);
 	for (int i = 0; i < 5; i++) {
 		const char c = g_rec_tester.input_string[g_rec_tester.input_string_i];
 		if ('\0' == c) {
 			/* A very short input string. */
 			break;
 		} else {
-			cw_gen_enqueue_character(g_rec_tester.gen, c);
+			cw_gen_enqueue_character(tester->gen, c);
 			g_rec_tester.input_string_i++;
 		}
 	}
 
 	/* Wait for all characters to be played out. */
-	cw_tq_wait_for_level_internal(gen->tq, 0);
+	cw_tq_wait_for_level_internal(tester->gen->tq, 0);
 	cw_usleep_internal(1000 * 1000);
 
-	cw_gen_delete(&gen);
+	cw_gen_delete(&tester->gen);
 	g_rec_tester.generating_in_progress = false;
 
 	cw_rec_tester_evaluate_receive_correctness(&g_rec_tester);
 
 
 	return NULL;
-}
-
-
-
-
-void low_tone_queue_callback(void * arg)
-{
-	cw_rec_tester_t * tester = (cw_rec_tester_t *) arg;
-
-	for (int i = 0; i < tester->characters_to_enqueue; i++) {
-		const char c = tester->input_string[tester->input_string_i];
-		if ('\0' == c) {
-			/* Unregister ourselves. */
-			cw_tq_register_low_level_callback_internal(tester->gen->tq, NULL, NULL, 0);
-			break;
-		} else {
-			cw_gen_enqueue_character(tester->gen, c);
-			tester->input_string_i++;
-		}
-	}
-
-	return;
 }
 
 
