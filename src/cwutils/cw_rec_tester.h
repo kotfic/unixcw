@@ -85,6 +85,12 @@ void cw_rec_tester_init(cw_rec_tester_t * tester);
 
 void cw_rec_tester_configure(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, bool use_ranger);
 
+void * cw_rec_tester_receiver_input_generator_fn(void * arg_tester);
+
+void cw_rec_tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester);
+
+void cw_rec_tester_stop_test_code(cw_rec_tester_t * tester);
+
 
 
 

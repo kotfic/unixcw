@@ -52,8 +52,6 @@ cw_rec_tester_t g_rec_tester;
 
 
 #ifdef XCWCP_WITH_REC_TEST
-static void * receiver_input_generator_fn(void * arg_tester);
-
 int easy_rec_test_on_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
 int easy_rec_test_on_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
 #endif
@@ -237,70 +235,6 @@ void easy_rec_clear(cw_easy_receiver_t * easy_rec)
 
 
 #ifdef XCWCP_WITH_REC_TEST
-
-
-
-
-void easy_rec_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester)
-{
-	tester->generating_in_progress = true;
-
-	cw_rec_tester_init(tester);
-	cw_rec_tester_configure(tester, easy_rec, false);
-
-	pthread_create(&tester->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, tester);
-}
-
-
-
-
-void easy_rec_stop_test_code(cw_rec_tester_t * tester)
-{
-	pthread_cancel(tester->receiver_test_code_thread_id);
-}
-
-
-
-
-/*
-  Code that generates info about timing of input events for receiver.
-
-  We could generate the info and the events using a big array of
-  timestamps and a call to usleep(), but instead we are using a new
-  generator that can inform us when marks/spaces start.
-*/
-void * receiver_input_generator_fn(void * arg_tester)
-{
-	cw_rec_tester_t * tester = arg_tester;
-
-	/* Start sending the test string. Registered callback will be
-	   called on every mark/space. Enqueue only initial part of
-	   string, just to start sending, the rest should be sent by
-	   'low watermark' callback. */
-	cw_gen_start(tester->gen);
-	for (int i = 0; i < 5; i++) {
-		const char c = g_rec_tester.input_string[g_rec_tester.input_string_i];
-		if ('\0' == c) {
-			/* A very short input string. */
-			break;
-		} else {
-			cw_gen_enqueue_character(tester->gen, c);
-			g_rec_tester.input_string_i++;
-		}
-	}
-
-	/* Wait for all characters to be played out. */
-	cw_tq_wait_for_level_internal(tester->gen->tq, 0);
-	cw_usleep_internal(1000 * 1000);
-
-	cw_gen_delete(&tester->gen);
-	g_rec_tester.generating_in_progress = false;
-
-	cw_rec_tester_evaluate_receive_correctness(&g_rec_tester);
-
-
-	return NULL;
-}
 
 
 

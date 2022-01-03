@@ -393,4 +393,63 @@ void low_tone_queue_callback(void * arg)
 
 
 
+/*
+  Code that generates info about timing of input events for receiver.
+
+  We could generate the info and the events using a big array of
+  timestamps and a call to usleep(), but instead we are using a new
+  generator that can inform us when marks/spaces start.
+*/
+void * cw_rec_tester_receiver_input_generator_fn(void * arg_tester)
+{
+	cw_rec_tester_t * tester = arg_tester;
+
+	/* Start sending the test string. Registered callback will be
+	   called on every mark/space. Enqueue only initial part of
+	   string, just to start sending, the rest should be sent by
+	   'low watermark' callback. */
+	cw_gen_start(tester->gen);
+	for (int i = 0; i < 5; i++) {
+		const char c = tester->input_string[tester->input_string_i];
+		if ('\0' == c) {
+			/* A very short input string. */
+			break;
+		} else {
+			cw_gen_enqueue_character(tester->gen, c);
+			tester->input_string_i++;
+		}
+	}
+
+	/* Wait for all characters to be played out. */
+	cw_tq_wait_for_level_internal(tester->gen->tq, 0);
+	cw_usleep_internal(1000 * 1000);
+
+	cw_gen_delete(&tester->gen); /* TODO (2022.01.03) if we are doing delete() in this function, then should we also do new() here? */
+	tester->generating_in_progress = false;
+
+	return NULL;
+}
+
+
+
+
+void cw_rec_tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester)
+{
+	/* TODO 2022.01.03: should we set the flag here or in thread
+	   function? */
+	tester->generating_in_progress = true;
+
+	pthread_create(&tester->receiver_test_code_thread_id, NULL, cw_rec_tester_receiver_input_generator_fn, tester);
+}
+
+
+
+
+void cw_rec_tester_stop_test_code(cw_rec_tester_t * tester)
+{
+	pthread_cancel(tester->receiver_test_code_thread_id);
+}
+
+
+
 

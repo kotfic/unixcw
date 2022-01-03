@@ -353,7 +353,9 @@ void Receiver::poll_character()
 void Receiver::start_test_code()
 {
 	this->easy_rec_tester = &g_rec_tester;
-	easy_rec_start_test_code(this->easy_rec, this->easy_rec_tester);
+	cw_rec_tester_init(this->easy_rec_tester);
+	cw_rec_tester_configure(this->easy_rec_tester, this->easy_rec, false);
+	cw_rec_tester_start_test_code(this->easy_rec, this->easy_rec_tester);
 }
 
 
@@ -361,7 +363,8 @@ void Receiver::start_test_code()
 
 void Receiver::stop_test_code()
 {
-	easy_rec_stop_test_code(this->easy_rec_tester);
+	cw_rec_tester_stop_test_code(this->easy_rec_tester);
+	cw_rec_tester_evaluate_receive_correctness(this->easy_rec_tester);
 }
 
 

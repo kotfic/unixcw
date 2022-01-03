@@ -89,7 +89,6 @@ static cw_test_executor_t * g_cte;
 void xcwcp_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
 
 static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool get_representation);
-void * receiver_input_generator_fn(void * arg_tester);
 
 
 /* Main poll function and its helpers. */
@@ -99,9 +98,6 @@ void receiver_poll_character_c_r(cw_easy_receiver_t * easy_rec);
 void receiver_poll_character_r_c(cw_easy_receiver_t * easy_rec);
 void receiver_poll_space_c_r(cw_easy_receiver_t * easy_rec);
 void receiver_poll_space_r_c(cw_easy_receiver_t * easy_rec);
-
-void tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester);
-void tester_stop_test_code(cw_rec_tester_t * tester);
 
 static int easy_rec_test_on_character_c_r(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer);
 static int easy_rec_test_on_character_r_c(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, const struct timeval * timer);
@@ -488,75 +484,6 @@ void receiver_poll_space_r_c(cw_easy_receiver_t * easy_rec)
 
 
 
-/*
-  Code that generates info about timing of input events for receiver.
-
-  We could generate the info and the events using a big array of
-  timestamps and a call to usleep(), but instead we are using a new
-  generator that can inform us when marks/spaces start.
-*/
-void * receiver_input_generator_fn(void * arg_tester)
-{
-	cw_rec_tester_t * tester = arg_tester;
-
-	/* Start sending the test string. Registered callback will be
-	   called on every mark/space. Enqueue only initial part of
-	   string, just to start sending, the rest should be sent by
-	   'low watermark' callback. */
-	cw_gen_start(tester->gen);
-	for (int i = 0; i < 5; i++) {
-		const char c = tester->input_string[tester->input_string_i];
-		if ('\0' == c) {
-			/* A very short input string. */
-			break;
-		} else {
-			cw_gen_enqueue_character(tester->gen, c);
-			tester->input_string_i++;
-		}
-	}
-
-	/* Wait for all characters to be played out. */
-	cw_tq_wait_for_level_internal(tester->gen->tq, 0);
-	cw_usleep_internal(1000 * 1000);
-
-	cw_gen_delete(&tester->gen);
-	tester->generating_in_progress = false;
-
-
-	const int receive_correctness = cw_rec_tester_evaluate_receive_correctness(tester);
-	if (g_cte->expect_op_int(g_cte, 0, "==", receive_correctness, "Final comparison of receive correctness")) {
-		fprintf(stderr, "[II] Test result: success\n");
-	} else {
-		fprintf(stderr, "[EE] Test result: failure\n");
-	}
-
-	return NULL;
-}
-
-
-
-
-void tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester)
-{
-	tester->generating_in_progress = true;
-
-	cw_rec_tester_init(tester);
-	cw_rec_tester_configure(tester, easy_rec, true);
-
-	pthread_create(&tester->receiver_test_code_thread_id, NULL, receiver_input_generator_fn, tester);
-}
-
-
-
-
-void tester_stop_test_code(cw_rec_tester_t * tester)
-{
-	pthread_cancel(tester->receiver_test_code_thread_id);
-}
-
-
-
-
 /**
    @reviewed 2020-08-27
 */
@@ -617,8 +544,9 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 	g_easy_rec.get_representation = get_representation;
 
 
-	/* Start thread with test code. */
-	tester_start_test_code(&g_easy_rec, &g_tester);
+	cw_rec_tester_init(&g_tester);
+	cw_rec_tester_configure(&g_tester, &g_easy_rec, true);
+	cw_rec_tester_start_test_code(&g_easy_rec, &g_tester);
 
 
 	while (g_tester.generating_in_progress) {
@@ -652,8 +580,14 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 	  ==2402==    by 0x10E703: main (test_main.c:130)
 	*/
 	/* TODO: remove this function altogether. */
-	//tester_stop_test_code(&g_tester);
+	//cw_rec_tester_stop_test_code(&g_tester);
 
+	const int receive_correctness = cw_rec_tester_evaluate_receive_correctness(&g_tester);
+	if (g_cte->expect_op_int(g_cte, 0, "==", receive_correctness, "Final comparison of receive correctness")) {
+		fprintf(stderr, "[II] Test result: success\n");
+	} else {
+		fprintf(stderr, "[EE] Test result: failure\n");
+	}
 
 	/* Tell legacy objects of libcw (those in production code) to stop working. */
 	cw_complete_reset();
