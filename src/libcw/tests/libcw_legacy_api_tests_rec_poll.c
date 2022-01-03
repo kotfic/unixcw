@@ -554,12 +554,10 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 		   library needs a 10ms timeout. */
 		usleep(10);
 		receiver_poll_receiver(&g_easy_rec);
-#if 0 /* TODO: restore ranger code. */
 		int new_speed = 0;
 		if (cwtest_param_ranger_get_next(&g_tester.speed_ranger, &new_speed)) {
 			cw_gen_set_speed(g_tester.gen, new_speed);
 		}
-#endif
 	}
 
 	/*

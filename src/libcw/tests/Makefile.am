@@ -42,9 +42,7 @@ bug_test_files = \
 
 test_framework_files = \
 	test_framework.c \
-	test_framework.h \
-	test_framework_tools.c \
-	test_framework_tools.h
+	test_framework.h
 
 modern_api_test_files = \
 	libcw_data_tests.c \

@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include "../libcw/libcw_key.h"
-#include "../libcw/tests/test_framework_tools.h"
+#include "test_framework_tools.h"
 
 #include "cw_rec_utils.h"
 

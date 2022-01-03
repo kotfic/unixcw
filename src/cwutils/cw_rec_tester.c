@@ -345,12 +345,10 @@ void cw_rec_tester_configure(cw_rec_tester_t * tester, cw_easy_receiver_t * easy
 	//cw_key_register_keying_callback(&key, test_callback_func, (void *) easy_rec);
 
 	if (use_ranger) {
-#if 0 /* TODO: restore the code, use ranger code from libcw test. */
 		/* TODO: use full range of allowed speeds. */
 		cwtest_param_ranger_init(&tester->speed_ranger, 6 /* CW_SPEED_MIN */, 40 /* CW_SPEED_MAX */, 1, cw_gen_get_speed(tester->gen));
 		cwtest_param_ranger_set_interval_sec(&tester->speed_ranger, 4);
 		cwtest_param_ranger_set_plateau_length(&tester->speed_ranger, 6);
-#endif
 	}
 }
 

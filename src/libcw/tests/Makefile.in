@@ -130,8 +130,7 @@ am__objects_2 = libcw_tests-libcw_data_tests.$(OBJEXT) \
 	libcw_tests-libcw_debug_tests.$(OBJEXT) \
 	libcw_tests-libcw_tq_tests.$(OBJEXT)
 am__objects_3 = libcw_tests-libcw_test_tq_short_space.$(OBJEXT)
-am__objects_4 = libcw_tests-test_framework.$(OBJEXT) \
-	libcw_tests-test_framework_tools.$(OBJEXT)
+am__objects_4 = libcw_tests-test_framework.$(OBJEXT)
 am_libcw_tests_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) \
 	libcw_tests-test_data.$(OBJEXT) \
@@ -175,7 +174,6 @@ am__depfiles_remade = ./$(DEPDIR)/libcw_tests-libcw_data_tests.Po \
 	./$(DEPDIR)/libcw_tests-libcw_utils_tests.Po \
 	./$(DEPDIR)/libcw_tests-test_data.Po \
 	./$(DEPDIR)/libcw_tests-test_framework.Po \
-	./$(DEPDIR)/libcw_tests-test_framework_tools.Po \
 	./$(DEPDIR)/libcw_tests-test_main.Po \
 	./$(DEPDIR)/libcw_tests-test_sets.Po
 am__mv = mv -f
@@ -582,9 +580,7 @@ bug_test_files = \
 
 test_framework_files = \
 	test_framework.c \
-	test_framework.h \
-	test_framework_tools.c \
-	test_framework_tools.h
+	test_framework.h
 
 modern_api_test_files = \
 	libcw_data_tests.c \
@@ -698,7 +694,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcw_tests-libcw_utils_tests.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcw_tests-test_data.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcw_tests-test_framework.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcw_tests-test_framework_tools.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcw_tests-test_main.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcw_tests-test_sets.Po@am__quote@ # am--include-marker
 
@@ -896,20 +891,6 @@ libcw_tests-test_framework.obj: test_framework.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_framework.c' object='libcw_tests-test_framework.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcw_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libcw_tests-test_framework.obj `if test -f 'test_framework.c'; then $(CYGPATH_W) 'test_framework.c'; else $(CYGPATH_W) '$(srcdir)/test_framework.c'; fi`
-
-libcw_tests-test_framework_tools.o: test_framework_tools.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcw_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libcw_tests-test_framework_tools.o -MD -MP -MF $(DEPDIR)/libcw_tests-test_framework_tools.Tpo -c -o libcw_tests-test_framework_tools.o `test -f 'test_framework_tools.c' || echo '$(srcdir)/'`test_framework_tools.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcw_tests-test_framework_tools.Tpo $(DEPDIR)/libcw_tests-test_framework_tools.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_framework_tools.c' object='libcw_tests-test_framework_tools.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcw_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libcw_tests-test_framework_tools.o `test -f 'test_framework_tools.c' || echo '$(srcdir)/'`test_framework_tools.c
-
-libcw_tests-test_framework_tools.obj: test_framework_tools.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcw_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libcw_tests-test_framework_tools.obj -MD -MP -MF $(DEPDIR)/libcw_tests-test_framework_tools.Tpo -c -o libcw_tests-test_framework_tools.obj `if test -f 'test_framework_tools.c'; then $(CYGPATH_W) 'test_framework_tools.c'; else $(CYGPATH_W) '$(srcdir)/test_framework_tools.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcw_tests-test_framework_tools.Tpo $(DEPDIR)/libcw_tests-test_framework_tools.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_framework_tools.c' object='libcw_tests-test_framework_tools.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcw_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libcw_tests-test_framework_tools.obj `if test -f 'test_framework_tools.c'; then $(CYGPATH_W) 'test_framework_tools.c'; else $(CYGPATH_W) '$(srcdir)/test_framework_tools.c'; fi`
 
 libcw_tests-test_data.o: test_data.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcw_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libcw_tests-test_data.o -MD -MP -MF $(DEPDIR)/libcw_tests-test_data.Tpo -c -o libcw_tests-test_data.o `test -f 'test_data.c' || echo '$(srcdir)/'`test_data.c
@@ -1265,7 +1246,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libcw_tests-libcw_utils_tests.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_data.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_framework.Po
-	-rm -f ./$(DEPDIR)/libcw_tests-test_framework_tools.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_main.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_sets.Po
 	-rm -f Makefile
@@ -1326,7 +1306,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libcw_tests-libcw_utils_tests.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_data.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_framework.Po
-	-rm -f ./$(DEPDIR)/libcw_tests-test_framework_tools.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_main.Po
 	-rm -f ./$(DEPDIR)/libcw_tests-test_sets.Po
 	-rm -f Makefile
