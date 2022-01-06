@@ -21,6 +21,12 @@ static void cw_rec_tester_normalize_input_and_received(cw_rec_tester_t * tester)
 static void test_callback_func(void * arg, int key_state);
 static void low_tone_queue_callback(void * arg);
 
+static void * cw_rec_tester_receiver_input_generator_fn(void * arg_tester);
+
+static void cw_rec_tester_init_text_buffers(cw_rec_tester_t * tester, size_t len);
+
+static void cw_rec_tester_display_differences(const cw_rec_tester_t * tester);
+
 
 
 
@@ -75,7 +81,7 @@ int cw_rec_tester_evaluate_receive_correctness(cw_rec_tester_t * tester)
 
 
 
-void cw_rec_tester_init_text_buffers(cw_rec_tester_t * tester, size_t len)
+static void cw_rec_tester_init_text_buffers(cw_rec_tester_t * tester, size_t len)
 {
 	memset(tester->input_string, 0, sizeof (tester->input_string));
 	tester->input_string_i = 0;
@@ -130,7 +136,7 @@ void cw_rec_tester_init_text_buffers(cw_rec_tester_t * tester, size_t len)
    @return 0 if input and received string are similar enough
    @return -1 otherwise
 */
-int cw_rec_tester_compare_input_and_received(cw_rec_tester_t * tester)
+static int cw_rec_tester_compare_input_and_received(cw_rec_tester_t * tester)
 {
 	const size_t input_len = strlen(tester->input_string);
 	const size_t received_len = strlen(tester->received_string);
@@ -252,7 +258,7 @@ static void string_tolower(char * string)
 
    Remove ending space characters make strings lower case case.
 */
-void cw_rec_tester_normalize_input_and_received(cw_rec_tester_t * tester)
+static void cw_rec_tester_normalize_input_and_received(cw_rec_tester_t * tester)
 {
 	/* Normalize input string. */
 	string_trim_end(tester->input_string);
@@ -265,7 +271,21 @@ void cw_rec_tester_normalize_input_and_received(cw_rec_tester_t * tester)
 
 
 
-void cw_rec_tester_display_differences(const cw_rec_tester_t * tester)
+/**
+   @brief Display differences between input and received string
+
+   Start displaying differences from the end of string.  Few
+   differences at the beginning may be inevitable because the receiver
+   didn't tune yet into incoming data. But if there are some
+   differences at the end of the string, then those are much more
+   interesting and should be displayed first.
+
+   Also because of possible receive errors, the input string and
+   received string may have different lengths. If we started comparing
+   from the beginning, all received characters may be recognized as
+   non-matching.
+*/
+static void cw_rec_tester_display_differences(const cw_rec_tester_t * tester)
 {
 	if (0 == strcmp(tester->input_string, tester->received_string)) {
 		/* No differences to display. */
@@ -355,7 +375,7 @@ void cw_rec_tester_configure(cw_rec_tester_t * tester, cw_easy_receiver_t * easy
 
 
 
-void test_callback_func(void * arg, int key_state)
+static void test_callback_func(void * arg, int key_state)
 {
 	/* Inform libcw receiver about new state of straight key ("sk").
 
@@ -370,7 +390,7 @@ void test_callback_func(void * arg, int key_state)
 
 
 
-void low_tone_queue_callback(void * arg)
+static void low_tone_queue_callback(void * arg)
 {
 	cw_rec_tester_t * tester = (cw_rec_tester_t *) arg;
 
@@ -398,7 +418,7 @@ void low_tone_queue_callback(void * arg)
   timestamps and a call to usleep(), but instead we are using a new
   generator that can inform us when marks/spaces start.
 */
-void * cw_rec_tester_receiver_input_generator_fn(void * arg_tester)
+static void * cw_rec_tester_receiver_input_generator_fn(void * arg_tester)
 {
 	cw_rec_tester_t * tester = arg_tester;
 
@@ -448,6 +468,90 @@ void cw_rec_tester_stop_test_code(cw_rec_tester_t * tester)
 	pthread_cancel(tester->receiver_test_code_thread_id);
 }
 
+
+
+
+int cw_rec_tester_on_character(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer)
+{
+	fprintf(stderr, "[II] Character: '%c'\n", erd->character);
+
+	tester->received_string[tester->received_string_i++] = erd->character;
+
+	cw_rec_data_t test_data = { 0 };
+	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_iws, &test_data.is_error);
+	if (CW_SUCCESS != cw_ret) {
+		fprintf(stderr, "[EE] Character: failed to get representation\n");
+		return CW_FAILURE;
+	}
+
+	if (test_data.is_iws != erd->is_iws) {
+		fprintf(stderr, "[EE] Character: 'is end of word' markers mismatch: %d != %d\n", test_data.is_iws, erd->is_iws);
+		return CW_FAILURE;
+	}
+
+	if (test_data.is_iws) {
+		fprintf(stderr, "[EE] Character: 'is end of word' marker is unexpectedly 'true'\n");
+		return CW_FAILURE;
+	}
+
+	const char looked_up = cw_representation_to_character(test_data.representation);
+	if (0 == looked_up) {
+		fprintf(stderr, "[EE] Character: Failed to look up character for representation\n");
+		return CW_FAILURE;
+	}
+
+	if (looked_up != erd->character) {
+		fprintf(stderr, "[EE] Character: Looked up character is different than received: %c != %c\n", looked_up, erd->character);
+	}
+
+	fprintf(stderr, "[II] Character: Representation: %c -> '%s'\n",
+		erd->character, test_data.representation);
+
+	/* Not entirely a success if looked up char does not match received
+	   character, but returning failure here would lead to calling
+	   exit(). */
+	return CW_SUCCESS;
+}
+
+
+
+
+int cw_rec_tester_on_space(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer)
+{
+	fprintf(stderr, "[II] Space:\n");
+
+	/* cw_receive_character() will return through 'c' variable the last
+	   character that was polled before space.
+
+	   Maybe this is good, maybe this is bad, but this is the legacy
+	   behaviour that we will keep supporting. */
+	if (' ' == erd->character) {
+		fprintf(stderr, "[EE] Space: returned character should not be space\n");
+		return CW_FAILURE;
+	}
+
+
+	tester->received_string[tester->received_string_i++] = ' ';
+
+	cw_rec_data_t test_data = { 0 };
+	int cw_ret = cw_receive_representation(timer, test_data.representation, &test_data.is_iws, &test_data.is_error);
+	if (CW_SUCCESS != cw_ret) {
+		fprintf(stderr, "[EE] Space: Failed to get representation\n");
+		return CW_FAILURE;
+	}
+
+	if (test_data.is_iws != erd->is_iws) {
+		fprintf(stderr, "[EE] Space: 'is end of word' markers mismatch: %d != %d\n", test_data.is_iws, erd->is_iws);
+		return CW_FAILURE;
+	}
+
+	if (!test_data.is_iws) {
+		fprintf(stderr, "[EE] Space: 'is end of word' marker is unexpectedly 'false'\n");
+		return CW_FAILURE;
+	}
+
+	return CW_SUCCESS;
+}
 
 
 

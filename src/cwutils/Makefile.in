@@ -160,11 +160,13 @@ am__lib_xcwcp_a_SOURCES_DIST = cw_copyright.h i18n.c i18n.h \
 	memory.h cw_common.c cw_common.h dictionary.c dictionary.h \
 	cw_words.h cw_rec_utils.c cw_rec_utils.h \
 	test_framework_tools.c test_framework_tools.h
-@WITH_XCWCP_REC_TEST_TRUE@am__objects_1 =  \
-@WITH_XCWCP_REC_TEST_TRUE@	test_framework_tools.$(OBJEXT)
-am_lib_xcwcp_a_OBJECTS = i18n.$(OBJEXT) cw_config.$(OBJEXT) \
-	cw_cmdline.$(OBJEXT) memory.$(OBJEXT) cw_common.$(OBJEXT) \
-	dictionary.$(OBJEXT) cw_rec_utils.$(OBJEXT) $(am__objects_1)
+@WITH_XCWCP_REC_TEST_TRUE@am__objects_1 = lib_xcwcp_a-test_framework_tools.$(OBJEXT)
+am_lib_xcwcp_a_OBJECTS = lib_xcwcp_a-i18n.$(OBJEXT) \
+	lib_xcwcp_a-cw_config.$(OBJEXT) \
+	lib_xcwcp_a-cw_cmdline.$(OBJEXT) lib_xcwcp_a-memory.$(OBJEXT) \
+	lib_xcwcp_a-cw_common.$(OBJEXT) \
+	lib_xcwcp_a-dictionary.$(OBJEXT) \
+	lib_xcwcp_a-cw_rec_utils.$(OBJEXT) $(am__objects_1)
 lib_xcwcp_a_OBJECTS = $(am_lib_xcwcp_a_OBJECTS)
 am_cw_dictionary_tests_OBJECTS =  \
 	cw_dictionary_tests-dictionary.$(OBJEXT) \
@@ -207,6 +209,14 @@ am__depfiles_remade = ./$(DEPDIR)/cw_cmdline.Po \
 	./$(DEPDIR)/cw_dictionary_tests-memory.Po \
 	./$(DEPDIR)/cw_rec_tester.Po ./$(DEPDIR)/cw_rec_utils.Po \
 	./$(DEPDIR)/dictionary.Po ./$(DEPDIR)/i18n.Po \
+	./$(DEPDIR)/lib_xcwcp_a-cw_cmdline.Po \
+	./$(DEPDIR)/lib_xcwcp_a-cw_common.Po \
+	./$(DEPDIR)/lib_xcwcp_a-cw_config.Po \
+	./$(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Po \
+	./$(DEPDIR)/lib_xcwcp_a-dictionary.Po \
+	./$(DEPDIR)/lib_xcwcp_a-i18n.Po \
+	./$(DEPDIR)/lib_xcwcp_a-memory.Po \
+	./$(DEPDIR)/lib_xcwcp_a-test_framework_tools.Po \
 	./$(DEPDIR)/memory.Po ./$(DEPDIR)/test_framework_tools.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -478,7 +488,7 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CC_LINKS_SO = @CC_LINKS_SO@
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ $(AM_CPPFLAGS)
 CFLAG_PIC = @CFLAG_PIC@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
@@ -629,6 +639,7 @@ lib_xcwcp_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c \
 	cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h \
 	cw_common.c cw_common.h dictionary.c dictionary.h cw_words.h \
 	cw_rec_utils.c cw_rec_utils.h $(am__append_1)
+@WITH_XCWCP_REC_TEST_TRUE@lib_xcwcp_a_CPPFLAGS = -DXCWCP_WITH_REC_TEST
 lib_cwgen_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h
 lib_libcw_tests_a_SOURCES = cw_copyright.h i18n.c i18n.h cw_config.c cw_config.h cw_cmdline.c cw_cmdline.h memory.c memory.h cw_common.c cw_common.h
 lib_rec_tests_a_SOURCES = cw_rec_tester.c cw_rec_tester.h cw_rec_utils.c cw_rec_utils.h test_framework_tools.c test_framework_tools.h
@@ -741,6 +752,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cw_rec_utils.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dictionary.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i18n.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-cw_cmdline.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-cw_common.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-cw_config.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-dictionary.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-i18n.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-memory.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib_xcwcp_a-test_framework_tools.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_framework_tools.Po@am__quote@ # am--include-marker
 
@@ -770,6 +789,118 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+lib_xcwcp_a-i18n.o: i18n.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-i18n.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-i18n.Tpo -c -o lib_xcwcp_a-i18n.o `test -f 'i18n.c' || echo '$(srcdir)/'`i18n.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-i18n.Tpo $(DEPDIR)/lib_xcwcp_a-i18n.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='i18n.c' object='lib_xcwcp_a-i18n.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-i18n.o `test -f 'i18n.c' || echo '$(srcdir)/'`i18n.c
+
+lib_xcwcp_a-i18n.obj: i18n.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-i18n.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-i18n.Tpo -c -o lib_xcwcp_a-i18n.obj `if test -f 'i18n.c'; then $(CYGPATH_W) 'i18n.c'; else $(CYGPATH_W) '$(srcdir)/i18n.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-i18n.Tpo $(DEPDIR)/lib_xcwcp_a-i18n.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='i18n.c' object='lib_xcwcp_a-i18n.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-i18n.obj `if test -f 'i18n.c'; then $(CYGPATH_W) 'i18n.c'; else $(CYGPATH_W) '$(srcdir)/i18n.c'; fi`
+
+lib_xcwcp_a-cw_config.o: cw_config.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_config.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_config.Tpo -c -o lib_xcwcp_a-cw_config.o `test -f 'cw_config.c' || echo '$(srcdir)/'`cw_config.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_config.Tpo $(DEPDIR)/lib_xcwcp_a-cw_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_config.c' object='lib_xcwcp_a-cw_config.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_config.o `test -f 'cw_config.c' || echo '$(srcdir)/'`cw_config.c
+
+lib_xcwcp_a-cw_config.obj: cw_config.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_config.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_config.Tpo -c -o lib_xcwcp_a-cw_config.obj `if test -f 'cw_config.c'; then $(CYGPATH_W) 'cw_config.c'; else $(CYGPATH_W) '$(srcdir)/cw_config.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_config.Tpo $(DEPDIR)/lib_xcwcp_a-cw_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_config.c' object='lib_xcwcp_a-cw_config.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_config.obj `if test -f 'cw_config.c'; then $(CYGPATH_W) 'cw_config.c'; else $(CYGPATH_W) '$(srcdir)/cw_config.c'; fi`
+
+lib_xcwcp_a-cw_cmdline.o: cw_cmdline.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_cmdline.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_cmdline.Tpo -c -o lib_xcwcp_a-cw_cmdline.o `test -f 'cw_cmdline.c' || echo '$(srcdir)/'`cw_cmdline.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_cmdline.Tpo $(DEPDIR)/lib_xcwcp_a-cw_cmdline.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_cmdline.c' object='lib_xcwcp_a-cw_cmdline.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_cmdline.o `test -f 'cw_cmdline.c' || echo '$(srcdir)/'`cw_cmdline.c
+
+lib_xcwcp_a-cw_cmdline.obj: cw_cmdline.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_cmdline.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_cmdline.Tpo -c -o lib_xcwcp_a-cw_cmdline.obj `if test -f 'cw_cmdline.c'; then $(CYGPATH_W) 'cw_cmdline.c'; else $(CYGPATH_W) '$(srcdir)/cw_cmdline.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_cmdline.Tpo $(DEPDIR)/lib_xcwcp_a-cw_cmdline.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_cmdline.c' object='lib_xcwcp_a-cw_cmdline.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_cmdline.obj `if test -f 'cw_cmdline.c'; then $(CYGPATH_W) 'cw_cmdline.c'; else $(CYGPATH_W) '$(srcdir)/cw_cmdline.c'; fi`
+
+lib_xcwcp_a-memory.o: memory.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-memory.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-memory.Tpo -c -o lib_xcwcp_a-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-memory.Tpo $(DEPDIR)/lib_xcwcp_a-memory.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='memory.c' object='lib_xcwcp_a-memory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
+
+lib_xcwcp_a-memory.obj: memory.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-memory.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-memory.Tpo -c -o lib_xcwcp_a-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-memory.Tpo $(DEPDIR)/lib_xcwcp_a-memory.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='memory.c' object='lib_xcwcp_a-memory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
+
+lib_xcwcp_a-cw_common.o: cw_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_common.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_common.Tpo -c -o lib_xcwcp_a-cw_common.o `test -f 'cw_common.c' || echo '$(srcdir)/'`cw_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_common.Tpo $(DEPDIR)/lib_xcwcp_a-cw_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_common.c' object='lib_xcwcp_a-cw_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_common.o `test -f 'cw_common.c' || echo '$(srcdir)/'`cw_common.c
+
+lib_xcwcp_a-cw_common.obj: cw_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_common.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_common.Tpo -c -o lib_xcwcp_a-cw_common.obj `if test -f 'cw_common.c'; then $(CYGPATH_W) 'cw_common.c'; else $(CYGPATH_W) '$(srcdir)/cw_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_common.Tpo $(DEPDIR)/lib_xcwcp_a-cw_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_common.c' object='lib_xcwcp_a-cw_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_common.obj `if test -f 'cw_common.c'; then $(CYGPATH_W) 'cw_common.c'; else $(CYGPATH_W) '$(srcdir)/cw_common.c'; fi`
+
+lib_xcwcp_a-dictionary.o: dictionary.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-dictionary.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-dictionary.Tpo -c -o lib_xcwcp_a-dictionary.o `test -f 'dictionary.c' || echo '$(srcdir)/'`dictionary.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-dictionary.Tpo $(DEPDIR)/lib_xcwcp_a-dictionary.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dictionary.c' object='lib_xcwcp_a-dictionary.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-dictionary.o `test -f 'dictionary.c' || echo '$(srcdir)/'`dictionary.c
+
+lib_xcwcp_a-dictionary.obj: dictionary.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-dictionary.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-dictionary.Tpo -c -o lib_xcwcp_a-dictionary.obj `if test -f 'dictionary.c'; then $(CYGPATH_W) 'dictionary.c'; else $(CYGPATH_W) '$(srcdir)/dictionary.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-dictionary.Tpo $(DEPDIR)/lib_xcwcp_a-dictionary.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dictionary.c' object='lib_xcwcp_a-dictionary.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-dictionary.obj `if test -f 'dictionary.c'; then $(CYGPATH_W) 'dictionary.c'; else $(CYGPATH_W) '$(srcdir)/dictionary.c'; fi`
+
+lib_xcwcp_a-cw_rec_utils.o: cw_rec_utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_rec_utils.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Tpo -c -o lib_xcwcp_a-cw_rec_utils.o `test -f 'cw_rec_utils.c' || echo '$(srcdir)/'`cw_rec_utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Tpo $(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_rec_utils.c' object='lib_xcwcp_a-cw_rec_utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_rec_utils.o `test -f 'cw_rec_utils.c' || echo '$(srcdir)/'`cw_rec_utils.c
+
+lib_xcwcp_a-cw_rec_utils.obj: cw_rec_utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-cw_rec_utils.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Tpo -c -o lib_xcwcp_a-cw_rec_utils.obj `if test -f 'cw_rec_utils.c'; then $(CYGPATH_W) 'cw_rec_utils.c'; else $(CYGPATH_W) '$(srcdir)/cw_rec_utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Tpo $(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cw_rec_utils.c' object='lib_xcwcp_a-cw_rec_utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-cw_rec_utils.obj `if test -f 'cw_rec_utils.c'; then $(CYGPATH_W) 'cw_rec_utils.c'; else $(CYGPATH_W) '$(srcdir)/cw_rec_utils.c'; fi`
+
+lib_xcwcp_a-test_framework_tools.o: test_framework_tools.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-test_framework_tools.o -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-test_framework_tools.Tpo -c -o lib_xcwcp_a-test_framework_tools.o `test -f 'test_framework_tools.c' || echo '$(srcdir)/'`test_framework_tools.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-test_framework_tools.Tpo $(DEPDIR)/lib_xcwcp_a-test_framework_tools.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_framework_tools.c' object='lib_xcwcp_a-test_framework_tools.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-test_framework_tools.o `test -f 'test_framework_tools.c' || echo '$(srcdir)/'`test_framework_tools.c
+
+lib_xcwcp_a-test_framework_tools.obj: test_framework_tools.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib_xcwcp_a-test_framework_tools.obj -MD -MP -MF $(DEPDIR)/lib_xcwcp_a-test_framework_tools.Tpo -c -o lib_xcwcp_a-test_framework_tools.obj `if test -f 'test_framework_tools.c'; then $(CYGPATH_W) 'test_framework_tools.c'; else $(CYGPATH_W) '$(srcdir)/test_framework_tools.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_xcwcp_a-test_framework_tools.Tpo $(DEPDIR)/lib_xcwcp_a-test_framework_tools.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_framework_tools.c' object='lib_xcwcp_a-test_framework_tools.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_xcwcp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib_xcwcp_a-test_framework_tools.obj `if test -f 'test_framework_tools.c'; then $(CYGPATH_W) 'test_framework_tools.c'; else $(CYGPATH_W) '$(srcdir)/test_framework_tools.c'; fi`
 
 cw_dictionary_tests-dictionary.o: dictionary.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cw_dictionary_tests_CPPFLAGS) $(CPPFLAGS) $(cw_dictionary_tests_CFLAGS) $(CFLAGS) -MT cw_dictionary_tests-dictionary.o -MD -MP -MF $(DEPDIR)/cw_dictionary_tests-dictionary.Tpo -c -o cw_dictionary_tests-dictionary.o `test -f 'dictionary.c' || echo '$(srcdir)/'`dictionary.c
@@ -1153,6 +1284,14 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/cw_rec_utils.Po
 	-rm -f ./$(DEPDIR)/dictionary.Po
 	-rm -f ./$(DEPDIR)/i18n.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_cmdline.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_common.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_config.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-dictionary.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-i18n.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-memory.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-test_framework_tools.Po
 	-rm -f ./$(DEPDIR)/memory.Po
 	-rm -f ./$(DEPDIR)/test_framework_tools.Po
 	-rm -f Makefile
@@ -1212,6 +1351,14 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/cw_rec_utils.Po
 	-rm -f ./$(DEPDIR)/dictionary.Po
 	-rm -f ./$(DEPDIR)/i18n.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_cmdline.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_common.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_config.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-cw_rec_utils.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-dictionary.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-i18n.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-memory.Po
+	-rm -f ./$(DEPDIR)/lib_xcwcp_a-test_framework_tools.Po
 	-rm -f ./$(DEPDIR)/memory.Po
 	-rm -f ./$(DEPDIR)/test_framework_tools.Po
 	-rm -f Makefile

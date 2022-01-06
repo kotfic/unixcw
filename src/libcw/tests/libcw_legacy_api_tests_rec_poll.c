@@ -545,6 +545,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 
 
 	cw_rec_tester_init(&g_tester);
+	g_easy_rec.rec_tester = &g_tester;
 	cw_rec_tester_configure(&g_tester, &g_easy_rec, true);
 	cw_rec_tester_start_test_code(&g_easy_rec, &g_tester);
 
@@ -650,7 +651,8 @@ static int easy_rec_test_on_character_c_r(cw_easy_receiver_t * easy_rec, cw_rec_
 			   test_cwret, "==", CW_SUCCESS,
 			   "Polling character");
 
-	g_tester.received_string[g_tester.received_string_i++] = erd->character;
+	cw_rec_tester_t * tester = (cw_rec_tester_t *) easy_rec->rec_tester;
+	tester->received_string[tester->received_string_i++] = erd->character;
 
 	return test_cwret;
 }
@@ -707,7 +709,8 @@ static int easy_rec_test_on_character_r_c(cw_easy_receiver_t * easy_rec, cw_rec_
 			   test_cwret, "==", CW_SUCCESS,
 			   "Poll representation");
 
-	g_tester.received_string[g_tester.received_string_i++] = test.character;
+	cw_rec_tester_t * tester = (cw_rec_tester_t *) easy_rec->rec_tester;
+	tester->received_string[tester->received_string_i++] = test.character;
 
 	free(looked_up_representation);
 
@@ -762,7 +765,8 @@ static int easy_rec_test_on_space_r_c(cw_easy_receiver_t * easy_rec, cw_rec_data
 			   test_cwret, "==", CW_SUCCESS,
 			   "Polling inter-word-space");
 
-	g_tester.received_string[g_tester.received_string_i++] = ' ';
+	cw_rec_tester_t * tester = (cw_rec_tester_t *) easy_rec->rec_tester;
+	tester->received_string[tester->received_string_i++] = ' ';
 
 	return test_cwret;
 }
@@ -815,7 +819,8 @@ static int easy_rec_test_on_space_c_r(cw_easy_receiver_t * easy_rec, cw_rec_data
 			   CW_SUCCESS, "==", test_cwret,
 			   "Polling inter-word-space");
 
-	g_tester.received_string[g_tester.received_string_i++] = ' ';
+	cw_rec_tester_t * tester = (cw_rec_tester_t *) easy_rec->rec_tester;
+	tester->received_string[tester->received_string_i++] = ' ';
 
 	return test_cwret;
 }

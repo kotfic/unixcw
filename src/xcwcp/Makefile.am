@@ -31,8 +31,7 @@ xcwcp_SOURCES = \
 	main.cc \
 	modeset.cc modeset.h \
 	receiver.cc receiver.h\
-	sender.cc sender.h \
-	easy_rec.c easy_rec.h
+	sender.cc sender.h
 
 nodist_xcwcp_SOURCES = moc_application.cc
 

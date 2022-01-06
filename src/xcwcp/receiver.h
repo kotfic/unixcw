@@ -25,7 +25,8 @@
 
 
 
-#include "easy_rec.h"
+#include "cw_rec_utils.h"
+#include "cw_rec_tester.h"
 
 
 
@@ -82,7 +83,7 @@ namespace cw {
 #ifdef XCWCP_WITH_REC_TEST
 		void start_test_code();
 		void stop_test_code();
-		cw_rec_tester_t * easy_rec_tester = nullptr;
+		cw_rec_tester_t rec_tester = {};
 #endif
 		cw_easy_receiver_t * easy_rec = nullptr;
 

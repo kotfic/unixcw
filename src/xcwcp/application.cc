@@ -57,7 +57,7 @@
 
 #include "i18n.h"
 #include "cw_copyright.h"
-
+#include "cw_rec_utils.h"
 
 
 
@@ -1112,7 +1112,7 @@ void Application::make_auxiliaries_end(void)
 	   code. */
 	cw_register_keying_callback(libcw_keying_event_static, receiver->easy_rec);
 
-	easy_rec_start(receiver->easy_rec);
+	cw_easy_receiver_start(receiver->easy_rec);
 
 	QString label("Output: ");
 	label += cw_generator_get_audio_system_label();

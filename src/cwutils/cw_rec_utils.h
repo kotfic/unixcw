@@ -56,6 +56,8 @@ struct cw_easy_receiver_t {
 	/* Whether to get a representation or a character from receiver's
 	   internals with libcw low-level API. */
 	bool get_representation;
+
+	void * rec_tester;
 };
 typedef struct cw_easy_receiver_t cw_easy_receiver_t;
 
@@ -82,6 +84,13 @@ typedef struct cw_rec_data_t {
 
 cw_easy_receiver_t * cw_easy_receiver_new(void);
 void cw_easy_receiver_delete(cw_easy_receiver_t ** easy_rec);
+void cw_easy_receiver_start(cw_easy_receiver_t * easy_rec);
+bool cw_easy_receiver_poll_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd);
+void cw_easy_receiver_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd);
+int cw_easy_receiver_get_libcw_errno(const cw_easy_receiver_t * easy_rec);
+void cw_easy_receiver_clear_libcw_errno(cw_easy_receiver_t * easy_rec);
+bool cw_easy_receiver_is_pending_inter_word_space(const cw_easy_receiver_t * easy_rec);
+void cw_easy_receiver_clear(cw_easy_receiver_t * easy_rec);
 
 
 
@@ -111,8 +120,10 @@ void cw_easy_receiver_ik_right_event(cw_easy_receiver_t * easy_rec, bool is_down
 
 
 
+
 /* CW library keying event handler. */
 void cw_easy_receiver_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
+
 
 
 

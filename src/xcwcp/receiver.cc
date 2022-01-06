@@ -37,15 +37,7 @@
 
 
 
-#ifdef XCWCP_WITH_REC_TEST
-extern cw_rec_tester_t g_rec_tester;
-#endif
-
-
-
-
 namespace cw {
-
 
 
 
@@ -62,11 +54,11 @@ void Receiver::poll(const Mode *current_mode)
 		return;
 	}
 
-	if (easy_rec_get_libcw_errno(easy_rec) != 0) {
+	if (cw_easy_receiver_get_libcw_errno(easy_rec) != 0) {
 		poll_report_error();
 	}
 
-	if (easy_rec_is_pending_inter_word_space(easy_rec)) {
+	if (cw_easy_receiver_is_pending_inter_word_space(easy_rec)) {
 
 		/**
 		   If we received a character on an earlier poll, check again to see
@@ -76,13 +68,13 @@ void Receiver::poll(const Mode *current_mode)
 		/* Check if receiver received the pending inter-word
 		   space. */
 		cw_rec_data_t erd = { };
-		easy_rec_poll_space(easy_rec, &erd);
+		cw_easy_receiver_poll_space(easy_rec, &erd);
 		if (erd.is_iws) {
 			//fprintf(stderr, "End of word '%c'\n\n", c);
 			textarea->append(' ');
 		}
 
-		if (!easy_rec_is_pending_inter_word_space(easy_rec)) {
+		if (!cw_easy_receiver_is_pending_inter_word_space(easy_rec)) {
 			/* We received the pending space. After it the
 			   receiver may have received another
 			   character.  Try to get it too. */
@@ -257,7 +249,7 @@ void Receiver::ik_right_event(bool is_down, bool is_reverse_paddles)
 */
 void Receiver::clear()
 {
-	easy_rec_clear(easy_rec);
+	cw_easy_receiver_clear(easy_rec);
 	return;
 }
 
@@ -272,7 +264,7 @@ void Receiver::poll_report_error()
 {
 	/* Handle any receive errors detected on tone end but delayed until here. */
 
-	switch (easy_rec_get_libcw_errno(easy_rec)) {
+	switch (cw_easy_receiver_get_libcw_errno(easy_rec)) {
 	case ENOMEM:
 		app->show_status(_("Representation buffer too small"));
 		break;
@@ -290,7 +282,7 @@ void Receiver::poll_report_error()
 		break;
 	}
 
-	easy_rec_clear_libcw_errno(easy_rec);
+	cw_easy_receiver_clear_libcw_errno(easy_rec);
 
 	return;
 }
@@ -305,7 +297,7 @@ void Receiver::poll_report_error()
 void Receiver::poll_character()
 {
 	cw_rec_data_t erd = { };
-	if (easy_rec_poll_character(this->easy_rec, &erd)) {
+	if (cw_easy_receiver_poll_character(this->easy_rec, &erd)) {
 		/* Receiver stores full, well formed
 		   character. Display it. */
 		textarea->append(erd.character);
@@ -352,10 +344,10 @@ void Receiver::poll_character()
 
 void Receiver::start_test_code()
 {
-	this->easy_rec_tester = &g_rec_tester;
-	cw_rec_tester_init(this->easy_rec_tester);
-	cw_rec_tester_configure(this->easy_rec_tester, this->easy_rec, false);
-	cw_rec_tester_start_test_code(this->easy_rec, this->easy_rec_tester);
+	cw_rec_tester_init(&this->rec_tester);
+	this->easy_rec->rec_tester = &this->rec_tester;
+	cw_rec_tester_configure(&this->rec_tester, this->easy_rec, false);
+	cw_rec_tester_start_test_code(this->easy_rec, &this->rec_tester);
 }
 
 
@@ -363,8 +355,8 @@ void Receiver::start_test_code()
 
 void Receiver::stop_test_code()
 {
-	cw_rec_tester_stop_test_code(this->easy_rec_tester);
-	cw_rec_tester_evaluate_receive_correctness(this->easy_rec_tester);
+	cw_rec_tester_stop_test_code(&this->rec_tester);
+	cw_rec_tester_evaluate_receive_correctness(&this->rec_tester);
 }
 
 
