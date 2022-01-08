@@ -180,7 +180,7 @@ namespace cw {
 		   version for each object.  The class version calls
 		   the relevant instance version, based on which
 		   instance is the current registered libcw user. */
-		static void libcw_keying_event_static(void *, int key_state);
+		static void libcw_keying_event_static(void * easy_receiver, int key_state);
 
 		/* Wrappers for creating UI. */
 		void make_central_widget(void);

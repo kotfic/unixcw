@@ -172,7 +172,7 @@ Application::Application() :
    (if any), then calls that instance's receiver handler function.
 
    This function is called in signal handler context. */
-void Application::libcw_keying_event_static(void *arg, int key_state)
+void Application::libcw_keying_event_static(void * easy_receiver, int key_state)
 {
 	const Application *app = libcw_user_application_instance;
 
@@ -186,8 +186,7 @@ void Application::libcw_keying_event_static(void *arg, int key_state)
 
 		//fprintf(stderr, "calling callback, stage 1 (key = %d)\n", key_state);
 
-		cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) arg;
-		cw_easy_receiver_handle_libcw_keying_event(easy_rec, key_state);
+		cw_easy_receiver_handle_libcw_keying_event(easy_receiver, key_state);
 	}
 
 	return;

@@ -122,7 +122,7 @@ void cw_easy_receiver_ik_right_event(cw_easy_receiver_t * easy_rec, bool is_down
 
 
 /* CW library keying event handler. */
-void cw_easy_receiver_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
+void cw_easy_receiver_handle_libcw_keying_event(void * easy_receiver, int key_state);
 
 
 

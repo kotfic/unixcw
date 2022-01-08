@@ -163,8 +163,9 @@ void cw_easy_receiver_ik_right_event(cw_easy_receiver_t * easy_rec, bool is_down
    particular, it goes out of its way to deliver results by setting
    flags that are later handled by receive polling.
 */
-void cw_easy_receiver_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state)
+void cw_easy_receiver_handle_libcw_keying_event(void * easy_receiver, int key_state)
 {
+	cw_easy_receiver_t * easy_rec = (cw_easy_receiver_t *) easy_receiver;
 	/* Ignore calls where the key state matches our tracked key
 	   state.  This avoids possible problems where this event
 	   handler is redirected between application instances; we
@@ -275,7 +276,7 @@ bool cw_easy_receiver_poll_character(cw_easy_receiver_t * easy_rec, cw_rec_data_
 	if (received) {
 
 #ifdef XCWCP_WITH_REC_TEST
-		if (CW_SUCCESS != cw_rec_tester_on_character(easy_rec->rec_tester, easy_rec, erd, &timer2)) {
+		if (CW_SUCCESS != cw_rec_tester_on_character(easy_rec->rec_tester, erd, &timer2)) {
 			exit(EXIT_FAILURE);
 		}
 #endif
@@ -353,7 +354,7 @@ void cw_easy_receiver_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * 
 		//fprintf(stderr, "End of word '%c'\n\n", erd->character);
 
 #ifdef XCWCP_WITH_REC_TEST
-		if (CW_SUCCESS != cw_rec_tester_on_space(easy_rec->rec_tester, easy_rec, erd, &timer2)) {
+		if (CW_SUCCESS != cw_rec_tester_on_space(easy_rec->rec_tester, erd, &timer2)) {
 			exit(EXIT_FAILURE);
 		}
 #endif

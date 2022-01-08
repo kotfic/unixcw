@@ -347,7 +347,7 @@ void Receiver::start_test_code()
 	cw_rec_tester_init(&this->rec_tester);
 	this->easy_rec->rec_tester = &this->rec_tester;
 	cw_rec_tester_configure(&this->rec_tester, this->easy_rec, false);
-	cw_rec_tester_start_test_code(this->easy_rec, &this->rec_tester);
+	cw_rec_tester_start_test_code(&this->rec_tester);
 }
 
 

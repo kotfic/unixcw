@@ -85,9 +85,6 @@ static cw_test_executor_t * g_cte;
 
 
 
-/* Callback. */
-void xcwcp_handle_libcw_keying_event(cw_easy_receiver_t * easy_rec, int key_state);
-
 static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool get_representation);
 
 
@@ -547,7 +544,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 	cw_rec_tester_init(&g_tester);
 	g_easy_rec.rec_tester = &g_tester;
 	cw_rec_tester_configure(&g_tester, &g_easy_rec, true);
-	cw_rec_tester_start_test_code(&g_easy_rec, &g_tester);
+	cw_rec_tester_start_test_code(&g_tester);
 
 
 	while (g_tester.generating_in_progress) {

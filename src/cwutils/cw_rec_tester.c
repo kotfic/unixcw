@@ -6,6 +6,7 @@
 
 
 #include <libcw_gen.h>
+#include <libcw_utils.h>
 
 
 
@@ -451,7 +452,7 @@ static void * cw_rec_tester_receiver_input_generator_fn(void * arg_tester)
 
 
 
-void cw_rec_tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester)
+void cw_rec_tester_start_test_code(cw_rec_tester_t * tester)
 {
 	/* TODO 2022.01.03: should we set the flag here or in thread
 	   function? */
@@ -471,7 +472,7 @@ void cw_rec_tester_stop_test_code(cw_rec_tester_t * tester)
 
 
 
-int cw_rec_tester_on_character(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer)
+int cw_rec_tester_on_character(cw_rec_tester_t * tester, cw_rec_data_t * erd, struct timeval * timer)
 {
 	fprintf(stderr, "[II] Character: '%c'\n", erd->character);
 
@@ -516,7 +517,7 @@ int cw_rec_tester_on_character(cw_rec_tester_t * tester, cw_easy_receiver_t * ea
 
 
 
-int cw_rec_tester_on_space(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer)
+int cw_rec_tester_on_space(cw_rec_tester_t * tester, cw_rec_data_t * erd, struct timeval * timer)
 {
 	fprintf(stderr, "[II] Space:\n");
 

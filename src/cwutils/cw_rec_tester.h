@@ -85,7 +85,7 @@ void cw_rec_tester_init(cw_rec_tester_t * tester);
 
 void cw_rec_tester_configure(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, bool use_ranger);
 
-void cw_rec_tester_start_test_code(cw_easy_receiver_t * easy_rec, cw_rec_tester_t * tester);
+void cw_rec_tester_start_test_code(cw_rec_tester_t * tester);
 
 void cw_rec_tester_stop_test_code(cw_rec_tester_t * tester);
 
@@ -108,8 +108,8 @@ int cw_rec_tester_evaluate_receive_correctness(cw_rec_tester_t * tester);
 
 
 
-int cw_rec_tester_on_character(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
-int cw_rec_tester_on_space(cw_rec_tester_t * tester, cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd, struct timeval * timer);
+int cw_rec_tester_on_character(cw_rec_tester_t * tester, cw_rec_data_t * erd, struct timeval * timer);
+int cw_rec_tester_on_space(cw_rec_tester_t * tester, cw_rec_data_t * erd, struct timeval * timer);
 
 
 
