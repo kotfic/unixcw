@@ -549,7 +549,7 @@ static cwt_retv legacy_api_test_rec_poll_inner(cw_test_executor_t * cte, bool ge
 
 	while (g_tester.generating_in_progress) {
 		/* At 60WPM, a dot is 20ms, so polling for the maximum speed
-		   library needs a 10ms timeout. */
+		   library needs a 10ms timeout. TODO: fix the timeout, multiply by 1000. */
 		usleep(10);
 		receiver_poll_receiver(&g_easy_rec);
 		int new_speed = 0;

@@ -182,7 +182,7 @@ cw_rec_t * cw_rec_new(void)
 
 
 /**
-   @brief Delete a generator
+   @brief Delete a receiver
 
    Deallocate all memory and free all resources associated with given
    receiver that was allocated with cw_rec_new().

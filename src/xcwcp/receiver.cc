@@ -68,7 +68,7 @@ void Receiver::poll(const Mode *current_mode)
 		/* Check if receiver received the pending inter-word
 		   space. */
 		cw_rec_data_t erd = { };
-		cw_easy_receiver_poll_space(easy_rec, &erd);
+		cw_easy_receiver_poll_space(easy_rec, &erd); /* TODO: check return value of function instead of checking is_iws. */
 		if (erd.is_iws) {
 			//fprintf(stderr, "End of word '%c'\n\n", c);
 			textarea->append(' ');

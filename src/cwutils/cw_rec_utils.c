@@ -26,7 +26,6 @@
 #include <libcw.h>
 
 #include "cw_rec_utils.h"
-#include "cw_rec_tester.h"
 
 
 
@@ -257,26 +256,67 @@ void cw_easy_receiver_start(cw_easy_receiver_t * easy_rec)
 
 
 
+/**
+   \brief Poll the CW library receive buffer and handle anything found in the
+   buffer
+*/
+bool cw_easy_receiver_poll(cw_easy_receiver_t * easy_rec, int (* callback)(const cw_rec_data_t *))
+{
+	easy_rec->libcw_receive_errno = 0;
+
+	if (easy_rec->is_pending_iws) {
+		/* Check if receiver received the pending inter-word-space. */
+		cw_rec_data_t erd = { 0 };
+		if (cw_easy_receiver_poll_space(easy_rec, &erd) && callback) {
+			callback(&erd);
+		}
+
+		if (!easy_rec->is_pending_iws) {
+			/* We received the pending space. After it the
+			   receiver may have received another
+			   character.  Try to get it too. */
+			cw_rec_data_t erd = { 0 };
+			if (cw_easy_receiver_poll_character(easy_rec, &erd) && callback) {
+				callback(&erd);
+			}
+			return true; /* A space has been polled successfully. */
+		}
+	} else {
+		/* Not awaiting a possible space, so just poll the
+		   next possible received character. */
+		cw_rec_data_t erd = { 0 };
+		if (cw_easy_receiver_poll_character(easy_rec, &erd) && callback) {
+			callback(&erd);
+			return true; /* A character has been polled successfully. */
+		}
+	}
+
+	return false; /* Nothing was polled at this time. */
+}
+
+
+
+
 bool cw_easy_receiver_poll_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd)
 {
 	/* Don't use receiver.easy_rec->main_timer - it is used exclusively for
 	   marking initial "key down" events. Use local throw-away
-	   timer2.
+	   timer.
 
 	   Additionally using reveiver.easy_rec->main_timer here would mess up time
 	   intervals measured by receiver.easy_rec->main_timer, and that would
 	   interfere with recognizing dots and dashes. */
-	struct timeval timer2;
-	gettimeofday(&timer2, NULL);
-	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
+	struct timeval timer;
+	gettimeofday(&timer, NULL);
+	//fprintf(stderr, "poll_receive_char:  %10ld : %10ld\n", timer.tv_sec, timer.tv_usec);
 
 	errno = 0;
-	const bool received = cw_receive_character(&timer2, &erd->character, &erd->is_iws, NULL);
+	const bool received = cw_receive_character(&timer, &erd->character, &erd->is_iws, NULL);
 	erd->errno_val = errno;
 	if (received) {
 
 #ifdef XCWCP_WITH_REC_TEST
-		if (CW_SUCCESS != cw_rec_tester_on_character(easy_rec->rec_tester, erd, &timer2)) {
+		if (CW_SUCCESS != cw_rec_tester_on_character(easy_rec->rec_tester, erd, &timer)) {
 			exit(EXIT_FAILURE);
 		}
 #endif
@@ -333,7 +373,7 @@ bool cw_easy_receiver_poll_character(cw_easy_receiver_t * easy_rec, cw_rec_data_
 
 // TODO: can we return true when a space has been successfully polled,
 // instead of returning it through erd?
-void cw_easy_receiver_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd)
+bool cw_easy_receiver_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd)
 {
 	/* We expect the receiver to contain a character, but we don't
 	   ask for it this time. The receiver should also store
@@ -344,23 +384,24 @@ void cw_easy_receiver_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * 
 
 	   Don't use receiver.easy_rec->main_timer - it is used eclusively for
 	   marking initial "key down" events. Use local throw-away
-	   timer2. */
-	struct timeval timer2;
-	gettimeofday(&timer2, NULL);
-	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", timer2.tv_sec, timer2.tv_usec);
+	   timer. */
+	struct timeval timer;
+	gettimeofday(&timer, NULL);
+	//fprintf(stderr, "poll_space(): %10ld : %10ld\n", timer.tv_sec, timer.tv_usec);
 
-	cw_receive_character(&timer2, &erd->character, &erd->is_iws, NULL);
+	cw_receive_character(&timer, &erd->character, &erd->is_iws, NULL);
 	if (erd->is_iws) {
 		//fprintf(stderr, "End of word '%c'\n\n", erd->character);
 
 #ifdef XCWCP_WITH_REC_TEST
-		if (CW_SUCCESS != cw_rec_tester_on_space(easy_rec->rec_tester, erd, &timer2)) {
+		if (CW_SUCCESS != cw_rec_tester_on_space(easy_rec->rec_tester, erd, &timer)) {
 			exit(EXIT_FAILURE);
 		}
 #endif
 
 		cw_clear_receive_buffer();
 		easy_rec->is_pending_iws = false;
+		return true; /* Inter-word-space has been polled. */
 	} else {
 		/* We don't reset easy_rec->is_pending_iws. The
 		   space that currently lasts, and isn't long enough
@@ -373,9 +414,8 @@ void cw_easy_receiver_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * 
 		   beginning of new character within the same
 		   word. And since a new character begins, the flag
 		   will be reset (elsewhere). */
+		return false; /* Inter-word-space has not been polled. */
 	}
-
-	return;
 }
 
 
