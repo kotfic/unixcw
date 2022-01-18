@@ -275,7 +275,7 @@ bool cw_easy_receiver_poll(cw_easy_receiver_t * easy_rec, int (* callback)(const
 			/* We received the pending space. After it the
 			   receiver may have received another
 			   character.  Try to get it too. */
-			cw_rec_data_t erd = { 0 };
+			memset(&erd, 0, sizeof (erd));
 			if (cw_easy_receiver_poll_character(easy_rec, &erd) && callback) {
 				callback(&erd);
 			}
