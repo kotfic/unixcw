@@ -86,7 +86,9 @@ cw_easy_receiver_t * cw_easy_receiver_new(void);
 void cw_easy_receiver_delete(cw_easy_receiver_t ** easy_rec);
 void cw_easy_receiver_start(cw_easy_receiver_t * easy_rec);
 
+
 bool cw_easy_receiver_poll(cw_easy_receiver_t * easy_rec, int (* callback)(const cw_rec_data_t *));
+bool cw_easy_receiver_poll_data(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd);
 bool cw_easy_receiver_poll_character(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd);
 bool cw_easy_receiver_poll_space(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd);
 

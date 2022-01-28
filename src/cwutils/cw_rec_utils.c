@@ -18,6 +18,8 @@
 */
 
 
+
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -267,8 +269,10 @@ bool cw_easy_receiver_poll(cw_easy_receiver_t * easy_rec, int (* callback)(const
 	if (easy_rec->is_pending_iws) {
 		/* Check if receiver received the pending inter-word-space. */
 		cw_rec_data_t erd = { 0 };
-		if (cw_easy_receiver_poll_space(easy_rec, &erd) && callback) {
-			callback(&erd);
+		if (cw_easy_receiver_poll_space(easy_rec, &erd)) {
+			if (callback) {
+				callback(&erd);
+			}
 		}
 
 		if (!easy_rec->is_pending_iws) {
@@ -276,8 +280,10 @@ bool cw_easy_receiver_poll(cw_easy_receiver_t * easy_rec, int (* callback)(const
 			   receiver may have received another
 			   character.  Try to get it too. */
 			memset(&erd, 0, sizeof (erd));
-			if (cw_easy_receiver_poll_character(easy_rec, &erd) && callback) {
-				callback(&erd);
+			if (cw_easy_receiver_poll_character(easy_rec, &erd)) {
+				if (callback) {
+					callback(&erd);
+				}
 			}
 			return true; /* A space has been polled successfully. */
 		}
@@ -285,8 +291,43 @@ bool cw_easy_receiver_poll(cw_easy_receiver_t * easy_rec, int (* callback)(const
 		/* Not awaiting a possible space, so just poll the
 		   next possible received character. */
 		cw_rec_data_t erd = { 0 };
-		if (cw_easy_receiver_poll_character(easy_rec, &erd) && callback) {
-			callback(&erd);
+		if (cw_easy_receiver_poll_character(easy_rec, &erd)) {
+			if (callback) {
+				callback(&erd);
+			}
+			return true; /* A character has been polled successfully. */
+		}
+	}
+
+	return false; /* Nothing was polled at this time. */
+}
+
+
+
+
+/**
+   \brief Poll the CW library receive buffer and handle anything found in the
+   buffer
+*/
+bool cw_easy_receiver_poll_data(cw_easy_receiver_t * easy_rec, cw_rec_data_t * erd)
+{
+	easy_rec->libcw_receive_errno = 0;
+
+	if (easy_rec->is_pending_iws) {
+		/* Check if receiver received the pending inter-word-space. */
+		cw_easy_receiver_poll_space(easy_rec, erd);
+
+		if (!easy_rec->is_pending_iws) {
+			/* We received the pending space. After it the
+			   receiver may have received another
+			   character.  Try to get it too. */
+			cw_easy_receiver_poll_character(easy_rec, erd);
+			return true; /* A space has been polled successfully. */
+		}
+	} else {
+		/* Not awaiting a possible space, so just poll the
+		   next possible received character. */
+		if (cw_easy_receiver_poll_character(easy_rec, erd)) {
 			return true; /* A character has been polled successfully. */
 		}
 	}
