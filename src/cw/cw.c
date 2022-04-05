@@ -454,9 +454,6 @@ send_cw_character (int c, int is_partial)
         }
     }
 
-  /* Echo the original character while sending it. */
-  write_to_echo_stream ("%c", c);
-
   /* Wait for the character to complete. */
   if (!cw_wait_for_tone_queue_critical (1))
     {
@@ -464,6 +461,11 @@ send_cw_character (int c, int is_partial)
       cw_flush_tone_queue ();
       abort ();
     }
+
+  /* Echo the original character after sending it. */
+  write_to_echo_stream ("%c", c);
+
+
 }
 
 
